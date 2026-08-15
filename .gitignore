@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+
+# Env / secrets
+.env
+*.env
+!.env.example
+
+# Run data (artifacts can be large; keep dir, ignore contents)
+data/runs/*
+!data/runs/.gitkeep
+
+# Generated: trajectories (test runs and launched runs), captured job output
+projects/
+jobs/
+
+# Node / monorepo
+node_modules/
+apps/web/.next/
+apps/web/dist/
+packages/*/dist/
+.turbo/
+*.tsbuildinfo
+
+# Expo / React Native
+apps/mobile/.expo/
+apps/mobile/.expo-shared/
+apps/mobile/dist/
+apps/mobile/web-build/
+
+# OS
+.DS_Store
+
+# Source-only upstreams: sam2, Depth-Anything-V2 (fetched via docs/repos.md; not tracked here)
+/third_party/
