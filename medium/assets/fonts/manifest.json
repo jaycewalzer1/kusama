@@ -34,16 +34,16 @@
       "source": "https://github.com/google/fonts/blob/main/ofl/archivoblack/ArchivoBlack-Regular.ttf",
       "variable": false
     },
-    "oswald": {
-      "family": "Oswald",
+    "fjalla-one": {
+      "family": "Fjalla One",
       "role": "display",
-      "file": "assets/fonts/oswald.ttf",
-      "bytes": 172088,
-      "sha256": "5b38c246e255a12f5712d640d56bcced0472466fc68983d2d0410ec0457c2817",
+      "file": "assets/fonts/fjalla-one.ttf",
+      "bytes": 209052,
+      "sha256": "ce3b299625abe3c76f8acd235b57b3e07ac6ee2d550e106a4b4e4d60095ae2ba",
       "license": "OFL-1.1",
-      "licenseFile": "assets/fonts/licenses/ofl-oswald.txt",
-      "source": "https://github.com/google/fonts/blob/main/ofl/oswald/Oswald[wght].ttf",
-      "variable": true
+      "licenseFile": "assets/fonts/licenses/ofl-fjallaone.txt",
+      "source": "https://github.com/google/fonts/blob/main/ofl/fjallaone/FjallaOne-Regular.ttf",
+      "variable": false
     },
     "rubik-mono-one": {
       "family": "Rubik Mono One",
@@ -78,16 +78,16 @@
       "source": "https://github.com/google/fonts/blob/main/ofl/barlowcondensed/BarlowCondensed-Black.ttf",
       "variable": false
     },
-    "league-gothic": {
-      "family": "League Gothic",
+    "pathway-gothic": {
+      "family": "Pathway Gothic One",
       "role": "condensed",
-      "file": "assets/fonts/league-gothic.ttf",
-      "bytes": 65972,
-      "sha256": "3b0e998c9a0034222394ffecdd383e6948259ad037b95555b139a217629ce1d0",
+      "file": "assets/fonts/pathway-gothic.ttf",
+      "bytes": 49944,
+      "sha256": "0b2785c0bbd9c67667875d8d48eeeef9751bb814038747ba00f693b888dbbdf7",
       "license": "OFL-1.1",
-      "licenseFile": "assets/fonts/licenses/ofl-leaguegothic.txt",
-      "source": "https://github.com/google/fonts/blob/main/ofl/leaguegothic/LeagueGothic[wdth].ttf",
-      "variable": true
+      "licenseFile": "assets/fonts/licenses/ofl-pathwaygothicone.txt",
+      "source": "https://github.com/google/fonts/blob/main/ofl/pathwaygothicone/PathwayGothicOne-Regular.ttf",
+      "variable": false
     },
     "six-caps": {
       "family": "Six Caps",
@@ -100,16 +100,16 @@
       "source": "https://github.com/google/fonts/blob/main/ofl/sixcaps/SixCaps.ttf",
       "variable": false
     },
-    "big-shoulders": {
-      "family": "Big Shoulders Display",
+    "abel": {
+      "family": "Abel",
       "role": "condensed",
-      "file": "assets/fonts/big-shoulders.ttf",
-      "bytes": 219532,
-      "sha256": "60e208dc276a1c35fc5b62e94f9fb959c40c11783a9eb7548175c14b1fbeb720",
+      "file": "assets/fonts/abel.ttf",
+      "bytes": 35220,
+      "sha256": "8809dcad25318225052f88333e208c5aad4adcb7b2c934c135735ec19aa410b4",
       "license": "OFL-1.1",
-      "licenseFile": "assets/fonts/licenses/ofl-bigshouldersdisplay.txt",
-      "source": "https://github.com/google/fonts/blob/main/ofl/bigshouldersdisplay/BigShouldersDisplay[wght].ttf",
-      "variable": true
+      "licenseFile": "assets/fonts/licenses/ofl-abel.txt",
+      "source": "https://github.com/google/fonts/blob/main/ofl/abel/Abel-Regular.ttf",
+      "variable": false
     },
     "space-mono": {
       "family": "Space Mono",
@@ -144,16 +144,16 @@
       "source": "https://github.com/google/fonts/blob/main/ofl/ibmplexmono/IBMPlexMono-Regular.ttf",
       "variable": false
     },
-    "jetbrains-mono": {
-      "family": "JetBrains Mono",
+    "share-tech-mono": {
+      "family": "Share Tech Mono",
       "role": "mono",
-      "file": "assets/fonts/jetbrains-mono.ttf",
-      "bytes": 187208,
-      "sha256": "48715a42ec242c21e9f02692891e147d022299a52e48d5e413e1a942193ffeda",
+      "file": "assets/fonts/share-tech-mono.ttf",
+      "bytes": 43272,
+      "sha256": "9ceab1f87414829af259c0f537573ae03ef7dd3147c0b27a36a1a0beb6732677",
       "license": "OFL-1.1",
-      "licenseFile": "assets/fonts/licenses/ofl-jetbrainsmono.txt",
-      "source": "https://github.com/google/fonts/blob/main/ofl/jetbrainsmono/JetBrainsMono[wght].ttf",
-      "variable": true
+      "licenseFile": "assets/fonts/licenses/ofl-sharetechmono.txt",
+      "source": "https://github.com/google/fonts/blob/main/ofl/sharetechmono/ShareTechMono-Regular.ttf",
+      "variable": false
     },
     "courier-prime": {
       "family": "Courier Prime",
@@ -221,16 +221,16 @@
       "source": "https://github.com/google/fonts/blob/main/apache/rocksalt/RockSalt-Regular.ttf",
       "variable": false
     },
-    "caveat": {
-      "family": "Caveat",
+    "indie-flower": {
+      "family": "Indie Flower",
       "role": "hand",
-      "file": "assets/fonts/caveat.ttf",
-      "bytes": 403648,
-      "sha256": "0bdb6b660482d31531b3945849fba5916b3ef8695da7024a9e6b9ee3c4157988",
+      "file": "assets/fonts/indie-flower.ttf",
+      "bytes": 108196,
+      "sha256": "ccc94b22b156e9c5dfe50fd051f01b097600b252c24473e624bb43a143140a94",
       "license": "OFL-1.1",
-      "licenseFile": "assets/fonts/licenses/ofl-caveat.txt",
-      "source": "https://github.com/google/fonts/blob/main/ofl/caveat/Caveat[wght].ttf",
-      "variable": true
+      "licenseFile": "assets/fonts/licenses/ofl-indieflower.txt",
+      "source": "https://github.com/google/fonts/blob/main/ofl/indieflower/IndieFlower-Regular.ttf",
+      "variable": false
     },
     "reenie-beanie": {
       "family": "Reenie Beanie",
@@ -265,16 +265,16 @@
       "source": "https://github.com/google/fonts/blob/main/ofl/stardosstencil/StardosStencil-Bold.ttf",
       "variable": false
     },
-    "big-shoulders-stencil": {
-      "family": "Big Shoulders Stencil Display",
+    "saira-stencil": {
+      "family": "Saira Stencil One",
       "role": "stencil",
-      "file": "assets/fonts/big-shoulders-stencil.ttf",
-      "bytes": 226508,
-      "sha256": "93bbefb9f3a497fcfeec5d1ac85c4a947a32b8e5bcaf3b7b5efff52f1b11b0e4",
+      "file": "assets/fonts/saira-stencil.ttf",
+      "bytes": 109944,
+      "sha256": "781496fdaf8e04cf6741b31025f6b4ba84f66021b097a8e0d85cbea2180cf223",
       "license": "OFL-1.1",
-      "licenseFile": "assets/fonts/licenses/ofl-bigshouldersstencildisplay.txt",
-      "source": "https://github.com/google/fonts/blob/main/ofl/bigshouldersstencildisplay/BigShouldersStencilDisplay[wght].ttf",
-      "variable": true
+      "licenseFile": "assets/fonts/licenses/ofl-sairastencilone.txt",
+      "source": "https://github.com/google/fonts/blob/main/ofl/sairastencilone/SairaStencilOne-Regular.ttf",
+      "variable": false
     },
     "unifraktur": {
       "family": "UnifrakturMaguntia",
@@ -342,16 +342,16 @@
       "source": "https://github.com/google/fonts/blob/main/ofl/audiowide/Audiowide-Regular.ttf",
       "variable": false
     },
-    "orbitron": {
-      "family": "Orbitron",
+    "major-mono": {
+      "family": "Major Mono Display",
       "role": "techno",
-      "file": "assets/fonts/orbitron.ttf",
-      "bytes": 38576,
-      "sha256": "f42db2dd16e642258e35782916eceb1dcdbea06fb958d77ad71dc5963587e8fd",
+      "file": "assets/fonts/major-mono.ttf",
+      "bytes": 126788,
+      "sha256": "3f2ee71c2b8464f065bf960a148be81d68fcc13385df87737928f948208dffc6",
       "license": "OFL-1.1",
-      "licenseFile": "assets/fonts/licenses/ofl-orbitron.txt",
-      "source": "https://github.com/google/fonts/blob/main/ofl/orbitron/Orbitron[wght].ttf",
-      "variable": true
+      "licenseFile": "assets/fonts/licenses/ofl-majormonodisplay.txt",
+      "source": "https://github.com/google/fonts/blob/main/ofl/majormonodisplay/MajorMonoDisplay-Regular.ttf",
+      "variable": false
     },
     "michroma": {
       "family": "Michroma",
@@ -395,11 +395,11 @@
       "sha256": "3173acd82f8c6159b5b1037b539fcbd4edff68e65c2ea8b9412b5a5ca97b08ff",
       "source": "https://github.com/google/fonts/blob/main/ofl/archivoblack/OFL.txt"
     },
-    "ofl-oswald": {
+    "ofl-fjallaone": {
       "spdx": "OFL-1.1",
-      "file": "assets/fonts/licenses/ofl-oswald.txt",
-      "sha256": "0fd731a904b729a4e02eaf5e8ebd06783edd9abe400e8882760160230675b652",
-      "source": "https://github.com/google/fonts/blob/main/ofl/oswald/OFL.txt"
+      "file": "assets/fonts/licenses/ofl-fjallaone.txt",
+      "sha256": "047c204476dacfeddbf93d33ab3d43ba82fb7e66e398fdacfce8e815e9a5c270",
+      "source": "https://github.com/google/fonts/blob/main/ofl/fjallaone/OFL.txt"
     },
     "ofl-rubikmonoone": {
       "spdx": "OFL-1.1",
@@ -413,11 +413,11 @@
       "sha256": "186d750eb496a4c17a76385f82be6aea2ac1cf2de074a811d63786cf374ea73f",
       "source": "https://github.com/google/fonts/blob/main/ofl/barlowcondensed/OFL.txt"
     },
-    "ofl-leaguegothic": {
+    "ofl-pathwaygothicone": {
       "spdx": "OFL-1.1",
-      "file": "assets/fonts/licenses/ofl-leaguegothic.txt",
-      "sha256": "44778c339892f79188c60b7471485dd5af92c59351c7f9629a00fc625c6cae5d",
-      "source": "https://github.com/google/fonts/blob/main/ofl/leaguegothic/OFL.txt"
+      "file": "assets/fonts/licenses/ofl-pathwaygothicone.txt",
+      "sha256": "ad4275c6aa3ddcf5ed3f0a788732e13ba57799b1d8deb00de3fc2a928ea70ea2",
+      "source": "https://github.com/google/fonts/blob/main/ofl/pathwaygothicone/OFL.txt"
     },
     "ofl-sixcaps": {
       "spdx": "OFL-1.1",
@@ -425,11 +425,11 @@
       "sha256": "29cca754098468057880970c604e55c4e2bcb8479742e4130c94f2ddc0363f9c",
       "source": "https://github.com/google/fonts/blob/main/ofl/sixcaps/OFL.txt"
     },
-    "ofl-bigshouldersdisplay": {
+    "ofl-abel": {
       "spdx": "OFL-1.1",
-      "file": "assets/fonts/licenses/ofl-bigshouldersdisplay.txt",
-      "sha256": "338f9c050f19daeda1d597243faf79f3a3d437c338af58cb7047617d0ce08771",
-      "source": "https://github.com/google/fonts/blob/main/ofl/bigshouldersdisplay/OFL.txt"
+      "file": "assets/fonts/licenses/ofl-abel.txt",
+      "sha256": "4f4bc3806a1e55789c6ef75ca5fc628297b05292f74966474dc0d40324abc609",
+      "source": "https://github.com/google/fonts/blob/main/ofl/abel/OFL.txt"
     },
     "ofl-spacemono": {
       "spdx": "OFL-1.1",
@@ -443,11 +443,11 @@
       "sha256": "7e6b2818edbd8f6a01ae80641cc8f16a51080d08fb4e532be3a0b6f74adb07da",
       "source": "https://github.com/google/fonts/blob/main/ofl/ibmplexmono/OFL.txt"
     },
-    "ofl-jetbrainsmono": {
+    "ofl-sharetechmono": {
       "spdx": "OFL-1.1",
-      "file": "assets/fonts/licenses/ofl-jetbrainsmono.txt",
-      "sha256": "b2fe5e8987594e9ffd1d2ca52a2f5d73eb8335243893c5d6254b5ad69269591d",
-      "source": "https://github.com/google/fonts/blob/main/ofl/jetbrainsmono/OFL.txt"
+      "file": "assets/fonts/licenses/ofl-sharetechmono.txt",
+      "sha256": "9d96f445b6e9c701428811d0177f894874f8d6f07ecc30d568c506542368f3ff",
+      "source": "https://github.com/google/fonts/blob/main/ofl/sharetechmono/OFL.txt"
     },
     "ofl-courierprime": {
       "spdx": "OFL-1.1",
@@ -479,11 +479,11 @@
       "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
       "source": "https://github.com/google/fonts/blob/main/apache/rocksalt/LICENSE.txt"
     },
-    "ofl-caveat": {
+    "ofl-indieflower": {
       "spdx": "OFL-1.1",
-      "file": "assets/fonts/licenses/ofl-caveat.txt",
-      "sha256": "1f9d81d094273d82f3898a1ee8b598a717d050ecbf5ff7bede105b704880157b",
-      "source": "https://github.com/google/fonts/blob/main/ofl/caveat/OFL.txt"
+      "file": "assets/fonts/licenses/ofl-indieflower.txt",
+      "sha256": "d9cdb075679d15a99bab2a8541b9c4fdc71347502111fbe9affd1d462219d96b",
+      "source": "https://github.com/google/fonts/blob/main/ofl/indieflower/OFL.txt"
     },
     "ofl-reeniebeanie": {
       "spdx": "OFL-1.1",
@@ -503,11 +503,11 @@
       "sha256": "88d3abd47414e7912d0d2eb44ca89e0b1bd7c43cc2ebe58a8a75281ad75a0f60",
       "source": "https://github.com/google/fonts/blob/main/ofl/stardosstencil/OFL.txt"
     },
-    "ofl-bigshouldersstencildisplay": {
+    "ofl-sairastencilone": {
       "spdx": "OFL-1.1",
-      "file": "assets/fonts/licenses/ofl-bigshouldersstencildisplay.txt",
-      "sha256": "338f9c050f19daeda1d597243faf79f3a3d437c338af58cb7047617d0ce08771",
-      "source": "https://github.com/google/fonts/blob/main/ofl/bigshouldersstencildisplay/OFL.txt"
+      "file": "assets/fonts/licenses/ofl-sairastencilone.txt",
+      "sha256": "fc7c16a0d286a351a7de245a0bd661275e9d393de8955c7fa37ef3c8b85b7e3e",
+      "source": "https://github.com/google/fonts/blob/main/ofl/sairastencilone/OFL.txt"
     },
     "ofl-unifrakturmaguntia": {
       "spdx": "OFL-1.1",
@@ -545,11 +545,11 @@
       "sha256": "4fe01b13ffb41faa8f030d84843a95dab32792dfeeca7c072abbfd3f4d6896ad",
       "source": "https://github.com/google/fonts/blob/main/ofl/audiowide/OFL.txt"
     },
-    "ofl-orbitron": {
+    "ofl-majormonodisplay": {
       "spdx": "OFL-1.1",
-      "file": "assets/fonts/licenses/ofl-orbitron.txt",
-      "sha256": "ab609b0e110d622435ff337cdf233288556e011bbf9bd0550be98846c0630819",
-      "source": "https://github.com/google/fonts/blob/main/ofl/orbitron/OFL.txt"
+      "file": "assets/fonts/licenses/ofl-majormonodisplay.txt",
+      "sha256": "616e75d879831bedfa7725c078e09bb56f8a17f40b194e16691b12251bb42b3e",
+      "source": "https://github.com/google/fonts/blob/main/ofl/majormonodisplay/OFL.txt"
     },
     "ofl-michroma": {
       "spdx": "OFL-1.1",

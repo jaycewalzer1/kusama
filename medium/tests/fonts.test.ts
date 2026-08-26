@@ -42,10 +42,19 @@ test('every vendored face on disk is byte-for-byte the file the manifest declare
   for (const [name, face] of Object.entries(manifest.faces)) {
     assert.equal(statSync(path.join(ROOT, face.file)).size, face.bytes, `${name}: file size does not match the declared bytes`);
     assert.equal(sha256(face.file), face.sha256, `${name}: file contents do not match the declared sha256`);
-    // Recorded, not inferred: seven upstreams ship only a variable font, and which ones is a fact
-    // about the library that has to survive in the manifest rather than in someone's head.
     assert.equal(typeof face.variable, 'boolean', `${name}: does not record whether it is a variable font`);
   }
+});
+
+test('no vendored face is a variable font', () => {
+  // p5 2.2.0 loads a variable font without complaint and returns sensible advance widths from it, and
+  // then draws nothing at all: the metrics tables parse, the outlines never reach the WEBGL text path
+  // (NOTES O6). Seven faces shipped that way and cleared the two-independent-process determinism gate
+  // with a perfect score, because nothing renders byte-identically to nothing. They were replaced with
+  // static families in the same role. This is the cheap standing check; the expensive one is
+  // docs/substrate-test/tools/face-ink.mjs, which counts pixels.
+  const variable = Object.entries(manifest.faces).filter(([, f]) => f.variable).map(([n]) => n);
+  assert.deepEqual(variable, [], 'a variable face draws nothing and must not be vendored');
 });
 
 test('every face names a licence that is on disk, unmodified, and one this medium may ship', () => {
@@ -80,7 +89,7 @@ test("core-v1's shapes are byte-identical to core's, so the two packs cannot dri
 test('both packs on disk hash to the hash they declare', () => {
   assert.equal(packHash(core), core.hash);
   assert.equal(packHash(coreV1), coreV1.hash);
-  assert.equal(coreV1.hash.slice(0, 12), '3a2f66a052c0');
+  assert.equal(coreV1.hash.slice(0, 12), 'dd47bb1c2e34');
 });
 
 test('a pack whose declared face bytes are altered no longer matches its hash', () => {

@@ -440,7 +440,7 @@ Node — because a single program holding 135 cells plus a caption per row would
 `assets/packs/core-v1/author.mjs` follows the same rule from one step further back: it does **not**
 re-author a single shape. It reads `fragments` and `motifs` out of `assets/packs/core/pack.json` and
 `faces`/`licenses` out of `assets/fonts/manifest.json`, so there is exactly one definition of
-`figure.standing` in the repo and the two packs cannot drift. `core-v1@3a2f66a052c0` is therefore
+`figure.standing` in the repo and the two packs cannot drift. `core-v1@dd47bb1c2e34` is therefore
 `core@003e484d9602`'s 15 fragments and 1 motif plus a 36-face `faces` map and a 31-entry `licenses`
 map, and the only reason its hash differs is the type. Each face carries the `sha256` of its file,
 which is what makes the pack hash cover the bytes the glyphs are drawn from and not merely their
@@ -465,6 +465,45 @@ The trap is that the conversion is not simply wrong everywhere. `textAnchorTrans
 take radians, so the two files are correct in opposite ways over the same numbers. Anything new that
 computes a text or group bound in Node and then replays it in p5 has to convert on one side and not
 the other.
+
+## O6. A variable font loads, measures, and draws nothing — and the determinism gate cannot see it
+
+Seven of the thirty-four faces first vendored into `core-v1` drew no glyphs at all. They were exactly
+the seven whose upstream file is a variable font — google/fonts names those `Family[wght].ttf` — and
+the correlation was perfect: all 7 variable faces blank, all 27 static faces inked.
+
+The mechanism, from `out/probe/variable.mjs` (throwaway, in the gitignored `out/`): `loadFont`
+resolves and returns a font object, and `textWidth('HELLO')` at size 60 returns a plausible,
+face-specific number. Then `p.text(...)` on a white canvas leaves zero dark pixels.
+
+| face | `variable` | `textWidth('HELLO')` | dark pixels |
+| --- | --- | --- | --- |
+| anton | no | 127.35 | 4364 |
+| space-mono | no | 175.62 | 2168 |
+| oswald | yes | 131.04 | **0** |
+| league-gothic | yes | 94.80 | **0** |
+| big-shoulders | yes | 90.08 | **0** |
+| jetbrains-mono | yes | 169.14 | **0** |
+| caveat | yes | 139.98 | **0** |
+| orbitron | yes | 233.52 | **0** |
+| big-shoulders-stencil | yes | 90.06 | **0** |
+
+So p5 2.2.0 parses the metrics tables of a variable font and its WEBGL text path gets no contours
+from it. There is no `static/` directory upstream for any of the seven, so there is nothing to swap
+to within the same family; all seven were dropped and replaced with static families holding the same
+role: `oswald`→`fjalla-one`, `league-gothic`→`pathway-gothic`, `big-shoulders`→`abel`,
+`jetbrains-mono`→`share-tech-mono`, `caveat`→`indie-flower`, `orbitron`→`major-mono`,
+`big-shoulders-stencil`→`saira-stencil`. All seven replacements ink (1244–4283 px on the same probe).
+
+**The part worth keeping.** All seven blank faces passed the two-independent-process determinism gate
+with a perfect score. Of course they did: nothing renders byte-identically to nothing. This is the
+same shape of error as R8 from the other side — there, agreement was produced by a shared cause; here,
+agreement is produced by there being no effect to disagree about. A determinism gate answers "did the
+same thing happen twice", never "did anything happen". Any new capability needs a second gate that
+asserts the capability had an effect. Two were added: `tests/fonts.test.ts` refuses a vendored face
+whose manifest entry says `variable` (cheap, runs always), and
+`docs/substrate-test/tools/face-ink.mjs` counts ink in every face golden and fails under 400 pixels
+(expensive, run with the gate). `assets/fonts/fetch.mjs` also now refuses to fetch a `[axis]` file.
 
 ## Proposed operators and macros that were wanted but NOT added
 

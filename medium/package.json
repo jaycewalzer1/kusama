@@ -19,7 +19,8 @@
     "contact-sheet": "npm run build && node dist/cli/contact-sheet.js",
     "fragments-sheet": "npm run build && node dist/cli/fragments-sheet.js",
     "ui": "npm run build && node dist/cli/ui.js",
-    "check": "npm run build && node dist/cli/check.js"
+    "check": "npm run build && node dist/cli/check.js",
+    "fonts": "node assets/fonts/fetch.mjs"
   },
   "dependencies": {
     "ajv": "8.17.1",

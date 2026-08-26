@@ -19,27 +19,32 @@ const RAW = 'https://raw.githubusercontent.com/google/fonts/main';
 /**
  * face name -> [repo directory, font file, human family name, role]
  *
- * Static instances are preferred; a few families ship only a variable font upstream and are marked
- * `variable: true` so the manifest says so. Roles are the vocabulary the aesthetic layer talks in,
- * not a property of the file.
+ * Every face here is a STATIC .ttf. Variable fonts are not usable: p5 2.2.0 loads one without
+ * complaint and measures sensible advance widths from it, and then draws absolutely nothing --
+ * the metrics tables parse, the outlines never reach the WEBGL text path (NOTES O6). Seven faces
+ * were dropped for this and replaced with static families in the same role; the manifest's
+ * `variable` field is kept so that a future variable face is at least labelled, and the face gate
+ * in tests/fonts.test.ts asserts ink, not just determinism.
+ *
+ * Roles are the vocabulary the aesthetic layer talks in, not a property of the file.
  */
 const FACES = [
   ['anton', 'ofl/anton', 'Anton-Regular.ttf', 'Anton', 'display'],
   ['bebas-neue', 'ofl/bebasneue', 'BebasNeue-Regular.ttf', 'Bebas Neue', 'display'],
   ['archivo-black', 'ofl/archivoblack', 'ArchivoBlack-Regular.ttf', 'Archivo Black', 'display'],
-  ['oswald', 'ofl/oswald', 'Oswald[wght].ttf', 'Oswald', 'display'],
+  ['fjalla-one', 'ofl/fjallaone', 'FjallaOne-Regular.ttf', 'Fjalla One', 'display'],
   ['rubik-mono-one', 'ofl/rubikmonoone', 'RubikMonoOne-Regular.ttf', 'Rubik Mono One', 'display'],
 
   ['barlow-condensed', 'ofl/barlowcondensed', 'BarlowCondensed-Regular.ttf', 'Barlow Condensed', 'condensed'],
   ['barlow-condensed-black', 'ofl/barlowcondensed', 'BarlowCondensed-Black.ttf', 'Barlow Condensed Black', 'condensed'],
-  ['league-gothic', 'ofl/leaguegothic', 'LeagueGothic[wdth].ttf', 'League Gothic', 'condensed'],
+  ['pathway-gothic', 'ofl/pathwaygothicone', 'PathwayGothicOne-Regular.ttf', 'Pathway Gothic One', 'condensed'],
   ['six-caps', 'ofl/sixcaps', 'SixCaps.ttf', 'Six Caps', 'condensed'],
-  ['big-shoulders', 'ofl/bigshouldersdisplay', 'BigShouldersDisplay[wght].ttf', 'Big Shoulders Display', 'condensed'],
+  ['abel', 'ofl/abel', 'Abel-Regular.ttf', 'Abel', 'condensed'],
 
   ['space-mono', 'ofl/spacemono', 'SpaceMono-Regular.ttf', 'Space Mono', 'mono'],
   ['space-mono-bold', 'ofl/spacemono', 'SpaceMono-Bold.ttf', 'Space Mono Bold', 'mono'],
   ['ibm-plex-mono', 'ofl/ibmplexmono', 'IBMPlexMono-Regular.ttf', 'IBM Plex Mono', 'mono'],
-  ['jetbrains-mono', 'ofl/jetbrainsmono', 'JetBrainsMono[wght].ttf', 'JetBrains Mono', 'mono'],
+  ['share-tech-mono', 'ofl/sharetechmono', 'ShareTechMono-Regular.ttf', 'Share Tech Mono', 'mono'],
 
   ['courier-prime', 'ofl/courierprime', 'CourierPrime-Regular.ttf', 'Courier Prime', 'typewriter'],
   ['courier-prime-bold', 'ofl/courierprime', 'CourierPrime-Bold.ttf', 'Courier Prime Bold', 'typewriter'],
@@ -48,12 +53,12 @@ const FACES = [
 
   ['permanent-marker', 'apache/permanentmarker', 'PermanentMarker-Regular.ttf', 'Permanent Marker', 'hand'],
   ['rock-salt', 'apache/rocksalt', 'RockSalt-Regular.ttf', 'Rock Salt', 'hand'],
-  ['caveat', 'ofl/caveat', 'Caveat[wght].ttf', 'Caveat', 'hand'],
+  ['indie-flower', 'ofl/indieflower', 'IndieFlower-Regular.ttf', 'Indie Flower', 'hand'],
   ['reenie-beanie', 'ofl/reeniebeanie', 'ReenieBeanie.ttf', 'Reenie Beanie', 'hand'],
 
   ['allerta-stencil', 'ofl/allertastencil', 'AllertaStencil-Regular.ttf', 'Allerta Stencil', 'stencil'],
   ['stardos-stencil', 'ofl/stardosstencil', 'StardosStencil-Bold.ttf', 'Stardos Stencil Bold', 'stencil'],
-  ['big-shoulders-stencil', 'ofl/bigshouldersstencildisplay', 'BigShouldersStencilDisplay[wght].ttf', 'Big Shoulders Stencil Display', 'stencil'],
+  ['saira-stencil', 'ofl/sairastencilone', 'SairaStencilOne-Regular.ttf', 'Saira Stencil One', 'stencil'],
 
   ['unifraktur', 'ofl/unifrakturmaguntia', 'UnifrakturMaguntia-Book.ttf', 'UnifrakturMaguntia', 'blackletter'],
   ['pirata-one', 'ofl/pirataone', 'PirataOne-Regular.ttf', 'Pirata One', 'blackletter'],
@@ -63,7 +68,7 @@ const FACES = [
   ['silkscreen', 'ofl/silkscreen', 'Silkscreen-Regular.ttf', 'Silkscreen', 'pixel'],
 
   ['audiowide', 'ofl/audiowide', 'Audiowide-Regular.ttf', 'Audiowide', 'techno'],
-  ['orbitron', 'ofl/orbitron', 'Orbitron[wght].ttf', 'Orbitron', 'techno'],
+  ['major-mono', 'ofl/majormonodisplay', 'MajorMonoDisplay-Regular.ttf', 'Major Mono Display', 'techno'],
   ['michroma', 'ofl/michroma', 'Michroma-Regular.ttf', 'Michroma', 'techno'],
   ['bungee', 'ofl/bungee', 'Bungee-Regular.ttf', 'Bungee', 'techno'],
 ];
@@ -89,6 +94,12 @@ async function main() {
   const problems = [];
 
   for (const [name, dir, file, family, role] of FACES) {
+    // google/fonts names a variable font `Family[axis].ttf`. Refuse here rather than downstream:
+    // a variable face loads, measures, and then draws nothing, which no determinism check can see.
+    if (file.includes('[')) {
+      problems.push(`${name}: ${file} is a variable font, which p5 loads but cannot draw (NOTES O6)`);
+      continue;
+    }
     const kind = dir.split('/')[0];
     const licence = LICENCE_NAME[kind];
     licencesNeeded.set(kind, `${RAW}/${dir}/${LICENCE_FILE[kind]}`);
@@ -144,10 +155,14 @@ async function main() {
   if (check) {
     const on = existsSync(manifestPath) ? readFileSync(manifestPath, 'utf8') : '';
     if (on !== text) problems.push('manifest.json does not match the files on disk');
-    if (problems.length) {
-      for (const p of problems) console.error(`FAIL ${p}`);
-      process.exit(1);
-    }
+  }
+  // Problems are fatal in both modes: a fetch that quietly skipped a face would write a manifest
+  // that is shorter than the table above and nothing downstream would notice.
+  if (problems.length) {
+    for (const p of problems) console.error(`FAIL ${p}`);
+    process.exit(1);
+  }
+  if (check) {
     console.log(`ok: ${Object.keys(manifest.faces).length} faces verified against manifest.json`);
     return;
   }

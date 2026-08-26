@@ -37,8 +37,8 @@ The pinned configuration is:
 | GL | software WebGL2 through ANGLE + SwiftShader; no host GPU is used |
 | antialiasing | off — the page calls `setAttributes('antialias', false)` and `pixelDensity(1)` |
 | fonts | `fonts/grotesque.ttf` (PT Sans) `9cc83149…6d0f10a`, `fonts/serif.ttf` (PT Serif) `a4951fad…a2557a`, plus the 34 faces vendored under `assets/fonts/`, each hashed in the pack |
-| asset pack | content-hashed; `core@003e484d9602` (15 fragments, 1 motif) or `core-v1@3a2f66a052c0` (the same shapes plus 36 faces) |
-| profile | content-hashed; `default-v0@15ad87c16095` or `default-v1@ae2dcf3d3558` |
+| asset pack | content-hashed; `core@003e484d9602` (15 fragments, 1 motif) or `core-v1@dd47bb1c2e34` (the same shapes plus 36 faces) |
+| profile | content-hashed; `default-v0@15ad87c16095` or `default-v1@2738ad37acce` |
 | OS / arch | the same one; recorded per render as e.g. `darwin` / `arm64` |
 
 Every one of those, plus the Node version and the GL renderer string, is written into `trace.json`
@@ -201,8 +201,18 @@ Google Fonts repo under `assets/fonts/`, in the roles `display`, `condensed`, `m
 `hand`, `stencil`, `blackletter`, `pixel` and `techno`. `assets/fonts/manifest.json` and the pack's
 `faces` map are the list; both record family, role, file, byte count, sha256, licence, licence file
 and the upstream URL. Licences are OFL-1.1 and Apache-2.0 (Special Elite, Permanent Marker, Rock
-Salt), with 31 licence texts vendored under `assets/fonts/licenses/`. Seven upstreams ship only a
-variable font and are flagged `variable: true`.
+Salt), with 31 licence texts vendored under `assets/fonts/licenses/`.
+
+**Every vendored face is a static `.ttf`, and that is enforced.** Seven families were vendored from
+their upstream variable fonts first and every one of them drew nothing at all: p5 2.2.0 loads a
+variable font, measures sensible advance widths from it, and then puts no glyph outlines on the
+canvas (NOTES O6). They passed the two-independent-process determinism gate with a perfect score,
+because nothing renders byte-identically to nothing. `oswald`, `league-gothic`, `big-shoulders`,
+`jetbrains-mono`, `caveat`, `orbitron` and `big-shoulders-stencil` were dropped and replaced with
+static families in the same role — `fjalla-one`, `pathway-gothic`, `abel`, `share-tech-mono`,
+`indie-flower`, `major-mono`, `saira-stencil`. `assets/fonts/fetch.mjs` now refuses a `Family[axis]`
+file outright, `tests/fonts.test.ts` fails if any manifest entry says `variable`, and
+`docs/substrate-test/tools/face-ink.mjs` counts ink in every face golden and fails a blank one.
 
 There is **no `face` argument**. `font` already was that argument; it is now checked against two
 gates rather than one — the profile says which faces this medium may speak in at all, and the pack
@@ -219,6 +229,18 @@ node assets/fonts/fetch.mjs           # fetch anything missing and rewrite the m
 `fetch.mjs` is a build-time tool and the only thing in the repo that touches the network. It is
 never run at render time; the page loads faces off disk over the same hermetic route as everything
 else (NOTES O3).
+
+Both halves of the face gate, which is how a face earns its way into the pack:
+
+```bash
+node docs/substrate-test/tools/face-programs.mjs out/faces        # one dense program per face
+node dist/cli/golden.js -e out/faces -g out/faces-goldens --update  # process 1: pin
+node dist/cli/golden.js -e out/faces -g out/faces-goldens --check   # process 2: agree
+node docs/substrate-test/tools/face-ink.mjs out/faces-goldens       # and did anything happen
+```
+
+The last line is not redundant. The first three ask whether the same thing happened twice; only the
+fourth asks whether anything happened at all.
 
 ## The print pass
 
@@ -283,7 +305,7 @@ Two are shipped, and a program says which it means:
 | profile | pack | what it is |
 | --- | --- | --- |
 | `default-v0@15ad87c16095` | `core@003e484d9602` | V0 unchanged: 2 faces, no print pass. The four committed goldens are rendered against it. |
-| `default-v1@ae2dcf3d3558` | `core-v1@3a2f66a052c0` | v0 widened: 36 faces, the `print` allow-list, `limits.maxPrintStages: 6`, and ranges and quantize steps for the new text and print fields. |
+| `default-v1@2738ad37acce` | `core-v1@dd47bb1c2e34` | v0 widened: 36 faces, the `print` allow-list, `limits.maxPrintStages: 6`, and ranges and quantize steps for the new text and print fields. |
 
 `default-v0.profile.json` is the file V0 shipped as `default.profile.json`; only the filename
 changed, because profiles are looked up by name and the name should be the `id`. Its hash is
