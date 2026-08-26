@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "npm run build && node --test dist/tests/*.test.js && node dist/cli/golden.js --check",
+    "test": "npm run build && node --test dist/tests/*.test.js && node dist/cli/golden.js --check && node dist/cli/golden.js -e examples/v1 -g goldens-v1 --check",
     "render": "npm run build && node dist/cli/render.js",
     "validate": "npm run build && node dist/cli/validate.js",
     "diff": "npm run build && node dist/cli/diff.js",

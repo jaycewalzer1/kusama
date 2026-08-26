@@ -441,9 +441,12 @@ npm run batch -- examples -o batch-out
 # `spillover` is the share of changed pixels lying outside the changed nodes' declared bounds.
 npm run diff -- before.json after.json -o out --max-spillover 0.05
 
-# The committed evidence that this medium still renders what it used to.
+# The committed evidence that this medium still renders what it used to. Two sets, one per
+# profile: examples/ against default-v0 in goldens/, examples/v1 against default-v1 in
+# goldens-v1/. `npm test` checks both. v0's four are the ones that must never move.
 npm run golden -- --update     # re-render examples/ and rewrite goldens/
 npm run golden -- --check      # re-render and compare pixel hashes; exit 1 on any difference
+npm run golden -- -e examples/v1 -g goldens-v1 --check
 
 # Utilities.
 npm run apply-edit -- program.json action.json -o next.json
