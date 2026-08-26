@@ -166,6 +166,23 @@ two balanced heavy corners — both average back to the middle. Tone weighting m
 counts less than a small black one, which is right for "where is the weight" and wrong if you wanted
 "where are the marks". It says nothing about which direction the weight went.
 
+*It decays as the sheet fills — far less than `symmetryMax`, but it does decay.* "A full bleed still
+has an answer" is true, but the answer gets smaller. Four renders against the `crass-collage`
+position, `min: 0.08`:
+
+| tree | ink | `inkOffset` |
+|---|---|---|
+| `examples/probes/crass-collage.json` (v0) | 0.3978 | 0.1914 |
+| `examples/aesthetic/crass-collage-pass.json` | 0.9854 | 0.2011 |
+| `examples/aesthetic/crass-collage-fail.json` | 0.9854 | 0.2014 |
+| `examples/probes/v1/crass-collage.json` | **0.9967** | **0.0849** |
+
+The floor was calibrated against the pass fixture and has ~2.5x headroom there, which is the number
+to trust. The v1 probe is the warning: at 0.9967 ink it clears `0.08` by **6%**. That is not the old
+degeneracy — `symmetryMax` would read a flat 1.0 and measure nothing at all — but a position pairing
+this with `inkDensityRange {min}` up near 1.0 is working in the last few percent of the measure's
+useful range. **If you raise an ink floor, re-measure this; the headroom does not travel.**
+
 ---
 
 ## Judge scope
@@ -197,10 +214,14 @@ fifteen by these moves, and later at sixteen when `inkOffsetRange` was added:
 
 Kinds considered and **not** added, because the tree cannot support them:
 
-- **`fontCount` / `requireFonts`** — a ransom note is defined by mismatched faces. The pack has two
-  fonts and both are Regular (probe: ransom-note), so any constraint over faces would have a range of
-  two and would be satisfiable by accident. This gap is real and is currently carried by nothing:
-  not a constraint, not a rubric.
+- **`fontCount` / `requireFonts`** — a ransom note is defined by mismatched faces. This was rejected
+  because `core` has two fonts and both are Regular (probe: ransom-note), so any constraint over
+  faces would have a range of two and be satisfiable by accident. **That reason expired on
+  2026-08-26.** `core-v1` carries 36 faces across 10 roles, each with a `role` field, so
+  `fontCount {min}` and a role-aware `requireFonts` are now both meaningful and both cheap — the
+  tree already names its faces, so this stays a pure tree-scope walk. It is still not implemented,
+  and the gap is still carried by nothing: not a constraint, not a rubric. Reconsider it against
+  `core-v1` rather than inheriting this entry's verdict.
 - **`maxTextSizeRatio`** ("one element far too big for its box") — expressible, but it needs resolved
   geometry to know what the box is, and tree-scope checkers are pure by design.
 - **`requireOverlap` / `requireCollision`** — the situationist and crass positions both ask for
