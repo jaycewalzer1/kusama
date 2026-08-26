@@ -1,0 +1,247 @@
+{
+  "version": "0.2",
+  "profile": "default-v1",
+  "assetPack": "core-v1",
+  "seed": 6606,
+  "canvas": { "width": 800, "height": 1200, "ground": "#0e0e10", "brushScale": 1 },
+  "palette": {
+    "dark": "#0e0e10",
+    "paper": "#ece7db",
+    "news": "#bdb7a8",
+    "blood": "#b21b1b",
+    "ink": "#111111"
+  },
+  "print": [
+    { "stage": "grain", "amount": 0.05, "mono": true },
+    { "stage": "halftone", "shape": "dot", "cell": 4, "angle": 15, "ink": "ink", "paper": "paper" },
+    { "stage": "paper", "tint": "news", "amount": 0.06, "vignette": 0.14 }
+  ],
+  "meta": {
+    "probe": "ransom-note-b",
+    "of": "examples/probes/ransom-note-b.json",
+    "target": "same target as ransom-note, different object: one word stacked down a whole page on cut strips, rather than a slogan hand-set across the middle",
+    "method": "the same five rows at the same five transforms. Each strip is now a rect clip over five overlapping torn `object.bowl` fragments, so the ends are scissor cuts and the long edges are a seeded tear -- there is no fragment in the pack anywhere near 5:1 and `span` scales uniformly, so a page-width torn strip has to be assembled out of square ones. Five real faces across four roles replace two Regulars. This is the probe that takes the screen: `halftone` at cell 4, angle 15, which is the row `ransom-note` could not afford.",
+    "notDone": "the screen is whole-canvas and two-tone, so the three stocks survive as three dot densities rather than three colours and the multiply overprint is flattened to a dark patch. The colour evidence for both is in `ransom-note`, which keeps its ink and stays faked on the screen. `transform.rotate` still quantises to a whole degree."
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "grime",
+        "type": "op",
+        "op": "wash",
+        "rngKey": "rnb/grime",
+        "args": {
+          "region": { "type": "rect", "x": -20, "y": -20, "w": 840, "h": 1240 },
+          "style": { "kind": "wash", "color": "news", "opacity": 22, "bleed": 0.25, "texture": [0.65, 0.4] }
+        }
+      },
+      {
+        "id": "masthead",
+        "type": "op",
+        "op": "text",
+        "rngKey": "rnb/masthead",
+        "args": {
+          "text": "A   DEMAND   IS   NOT   A   REQUEST",
+          "font": "space-mono",
+          "size": 15,
+          "x": 400,
+          "y": 66,
+          "align": "center",
+          "color": "news",
+          "tracking": 3
+        }
+      },
+      {
+        "id": "row-n",
+        "type": "group",
+        "transform": { "translate": [398, 202], "rotate": -2 },
+        "children": [
+          {
+            "id": "patch-n",
+            "type": "group",
+            "clip": { "type": "rect", "x": -310, "y": -75, "w": 620, "h": 150 },
+            "label": "the strip: cut at both ends, torn along both long edges",
+            "children": [
+              { "id": "patch-n1", "type": "op", "op": "fragment", "rngKey": "rnb/patch-n", "args": { "name": "object.bowl", "x": -252, "y": 0, "span": 170, "rotate": 0, "tear": { "roughness": 0.55, "segment": 12 }, "style": { "kind": "solid", "color": "paper", "opacity": 255 } } },
+              { "id": "patch-n2", "type": "op", "op": "fragment", "rngKey": "rnb/patch-n2", "args": { "name": "object.bowl", "x": -126, "y": 0, "span": 170, "rotate": 180, "tear": { "roughness": 0.55, "segment": 12 }, "style": { "kind": "solid", "color": "paper", "opacity": 255 } } },
+              { "id": "patch-n3", "type": "op", "op": "fragment", "rngKey": "rnb/patch-n3", "args": { "name": "object.bowl", "x": 0, "y": 0, "span": 170, "rotate": 0, "tear": { "roughness": 0.55, "segment": 12 }, "style": { "kind": "solid", "color": "paper", "opacity": 255 } } },
+              { "id": "patch-n4", "type": "op", "op": "fragment", "rngKey": "rnb/patch-n4", "args": { "name": "object.bowl", "x": 126, "y": 0, "span": 170, "rotate": 180, "tear": { "roughness": 0.55, "segment": 12 }, "style": { "kind": "solid", "color": "paper", "opacity": 255 } } },
+              { "id": "patch-n5", "type": "op", "op": "fragment", "rngKey": "rnb/patch-n5", "args": { "name": "object.bowl", "x": 252, "y": 0, "span": 170, "rotate": 0, "tear": { "roughness": 0.55, "segment": 12 }, "style": { "kind": "solid", "color": "paper", "opacity": 255 } } }
+            ]
+          },
+          {
+            "id": "letter-n",
+            "type": "op",
+            "op": "text",
+            "rngKey": "rnb/letter-n",
+            "args": { "text": "N", "font": "archivo-black", "size": 150, "x": 0, "y": 52, "align": "center", "color": "ink", "tracking": 0 }
+          }
+        ]
+      },
+      {
+        "id": "row-o",
+        "type": "group",
+        "transform": { "translate": [404, 382], "rotate": 2 },
+        "children": [
+          {
+            "id": "patch-o",
+            "type": "group",
+            "clip": { "type": "rect", "x": -310, "y": -75, "w": 620, "h": 150 },
+            "children": [
+              { "id": "patch-o1", "type": "op", "op": "fragment", "rngKey": "rnb/patch-o", "args": { "name": "object.bowl", "x": -252, "y": 0, "span": 170, "rotate": 180, "tear": { "roughness": 0.6, "segment": 11 }, "style": { "kind": "solid", "color": "news", "opacity": 255 } } },
+              { "id": "patch-o2", "type": "op", "op": "fragment", "rngKey": "rnb/patch-o2", "args": { "name": "object.bowl", "x": -126, "y": 0, "span": 170, "rotate": 0, "tear": { "roughness": 0.6, "segment": 11 }, "style": { "kind": "solid", "color": "news", "opacity": 255 } } },
+              { "id": "patch-o3", "type": "op", "op": "fragment", "rngKey": "rnb/patch-o3", "args": { "name": "object.bowl", "x": 0, "y": 0, "span": 170, "rotate": 180, "tear": { "roughness": 0.6, "segment": 11 }, "style": { "kind": "solid", "color": "news", "opacity": 255 } } },
+              { "id": "patch-o4", "type": "op", "op": "fragment", "rngKey": "rnb/patch-o4", "args": { "name": "object.bowl", "x": 126, "y": 0, "span": 170, "rotate": 0, "tear": { "roughness": 0.6, "segment": 11 }, "style": { "kind": "solid", "color": "news", "opacity": 255 } } },
+              { "id": "patch-o5", "type": "op", "op": "fragment", "rngKey": "rnb/patch-o5", "args": { "name": "object.bowl", "x": 252, "y": 0, "span": 170, "rotate": 180, "tear": { "roughness": 0.6, "segment": 11 }, "style": { "kind": "solid", "color": "news", "opacity": 255 } } }
+            ]
+          },
+          {
+            "id": "letter-o",
+            "type": "op",
+            "op": "text",
+            "rngKey": "rnb/letter-o",
+            "label": "a typewriter O among display letters, sheared: skew is the one distortion no transform in the tree can make",
+            "args": { "text": "O", "font": "courier-prime", "size": 142, "x": 0, "y": 50, "align": "center", "color": "ink", "tracking": 0, "skew": -7 }
+          }
+        ]
+      },
+      {
+        "id": "row-i",
+        "type": "group",
+        "transform": { "translate": [396, 562], "rotate": -1 },
+        "children": [
+          {
+            "id": "patch-i",
+            "type": "group",
+            "clip": { "type": "rect", "x": -310, "y": -75, "w": 620, "h": 150 },
+            "label": "the one strip torn from a red page",
+            "children": [
+              { "id": "patch-i1", "type": "op", "op": "fragment", "rngKey": "rnb/patch-i", "args": { "name": "object.bowl", "x": -252, "y": 0, "span": 170, "rotate": 0, "tear": { "roughness": 0.7, "segment": 13 }, "style": { "kind": "solid", "color": "blood", "opacity": 255 } } },
+              { "id": "patch-i2", "type": "op", "op": "fragment", "rngKey": "rnb/patch-i2", "args": { "name": "object.bowl", "x": -126, "y": 0, "span": 170, "rotate": 180, "tear": { "roughness": 0.7, "segment": 13 }, "style": { "kind": "solid", "color": "blood", "opacity": 255 } } },
+              { "id": "patch-i3", "type": "op", "op": "fragment", "rngKey": "rnb/patch-i3", "args": { "name": "object.bowl", "x": 0, "y": 0, "span": 170, "rotate": 0, "tear": { "roughness": 0.7, "segment": 13 }, "style": { "kind": "solid", "color": "blood", "opacity": 255 } } },
+              { "id": "patch-i4", "type": "op", "op": "fragment", "rngKey": "rnb/patch-i4", "args": { "name": "object.bowl", "x": 126, "y": 0, "span": 170, "rotate": 180, "tear": { "roughness": 0.7, "segment": 13 }, "style": { "kind": "solid", "color": "blood", "opacity": 255 } } },
+              { "id": "patch-i5", "type": "op", "op": "fragment", "rngKey": "rnb/patch-i5", "args": { "name": "object.bowl", "x": 252, "y": 0, "span": 170, "rotate": 0, "tear": { "roughness": 0.7, "segment": 13 }, "style": { "kind": "solid", "color": "blood", "opacity": 255 } } }
+            ]
+          },
+          {
+            "id": "letter-i",
+            "type": "op",
+            "op": "text",
+            "rngKey": "rnb/letter-i",
+            "args": { "text": "I", "font": "rubik-mono-one", "size": 158, "x": 0, "y": 55, "align": "center", "color": "paper", "tracking": 0 }
+          }
+        ]
+      },
+      {
+        "id": "row-s",
+        "type": "group",
+        "transform": { "translate": [402, 742], "rotate": 2 },
+        "children": [
+          {
+            "id": "patch-s",
+            "type": "group",
+            "clip": { "type": "rect", "x": -310, "y": -75, "w": 620, "h": 150 },
+            "children": [
+              { "id": "patch-s1", "type": "op", "op": "fragment", "rngKey": "rnb/patch-s", "args": { "name": "object.bowl", "x": -252, "y": 0, "span": 170, "rotate": 180, "tear": { "roughness": 0.5, "segment": 10 }, "style": { "kind": "solid", "color": "paper", "opacity": 255 } } },
+              { "id": "patch-s2", "type": "op", "op": "fragment", "rngKey": "rnb/patch-s2", "args": { "name": "object.bowl", "x": -126, "y": 0, "span": 170, "rotate": 0, "tear": { "roughness": 0.5, "segment": 10 }, "style": { "kind": "solid", "color": "paper", "opacity": 255 } } },
+              { "id": "patch-s3", "type": "op", "op": "fragment", "rngKey": "rnb/patch-s3", "args": { "name": "object.bowl", "x": 0, "y": 0, "span": 170, "rotate": 180, "tear": { "roughness": 0.5, "segment": 10 }, "style": { "kind": "solid", "color": "paper", "opacity": 255 } } },
+              { "id": "patch-s4", "type": "op", "op": "fragment", "rngKey": "rnb/patch-s4", "args": { "name": "object.bowl", "x": 126, "y": 0, "span": 170, "rotate": 0, "tear": { "roughness": 0.5, "segment": 10 }, "style": { "kind": "solid", "color": "paper", "opacity": 255 } } },
+              { "id": "patch-s5", "type": "op", "op": "fragment", "rngKey": "rnb/patch-s5", "args": { "name": "object.bowl", "x": 252, "y": 0, "span": 170, "rotate": 180, "tear": { "roughness": 0.5, "segment": 10 }, "style": { "kind": "solid", "color": "paper", "opacity": 255 } } }
+            ]
+          },
+          {
+            "id": "letter-s",
+            "type": "op",
+            "op": "text",
+            "rngKey": "rnb/letter-s",
+            "args": { "text": "S", "font": "unifraktur", "size": 146, "x": 0, "y": 51, "align": "center", "color": "ink", "tracking": 0 }
+          }
+        ]
+      },
+      {
+        "id": "row-e",
+        "type": "group",
+        "transform": { "translate": [400, 922], "rotate": -2 },
+        "children": [
+          {
+            "id": "patch-e",
+            "type": "group",
+            "clip": { "type": "rect", "x": -310, "y": -75, "w": 620, "h": 150 },
+            "children": [
+              { "id": "patch-e1", "type": "op", "op": "fragment", "rngKey": "rnb/patch-e", "args": { "name": "object.bowl", "x": -252, "y": 0, "span": 170, "rotate": 0, "tear": { "roughness": 0.65, "segment": 14 }, "style": { "kind": "solid", "color": "paper", "opacity": 255 } } },
+              { "id": "patch-e2", "type": "op", "op": "fragment", "rngKey": "rnb/patch-e2", "args": { "name": "object.bowl", "x": -126, "y": 0, "span": 170, "rotate": 180, "tear": { "roughness": 0.65, "segment": 14 }, "style": { "kind": "solid", "color": "paper", "opacity": 255 } } },
+              { "id": "patch-e3", "type": "op", "op": "fragment", "rngKey": "rnb/patch-e3", "args": { "name": "object.bowl", "x": 0, "y": 0, "span": 170, "rotate": 0, "tear": { "roughness": 0.65, "segment": 14 }, "style": { "kind": "solid", "color": "paper", "opacity": 255 } } },
+              { "id": "patch-e4", "type": "op", "op": "fragment", "rngKey": "rnb/patch-e4", "args": { "name": "object.bowl", "x": 126, "y": 0, "span": 170, "rotate": 180, "tear": { "roughness": 0.65, "segment": 14 }, "style": { "kind": "solid", "color": "paper", "opacity": 255 } } },
+              { "id": "patch-e5", "type": "op", "op": "fragment", "rngKey": "rnb/patch-e5", "args": { "name": "object.bowl", "x": 252, "y": 0, "span": 170, "rotate": 0, "tear": { "roughness": 0.65, "segment": 14 }, "style": { "kind": "solid", "color": "paper", "opacity": 255 } } }
+            ]
+          },
+          {
+            "id": "letter-e",
+            "type": "op",
+            "op": "text",
+            "rngKey": "rnb/letter-e",
+            "args": { "text": "E", "font": "barlow-condensed", "size": 152, "x": 0, "y": 53, "align": "center", "color": "ink", "tracking": 0 }
+          }
+        ]
+      },
+      {
+        "id": "overprint",
+        "type": "group",
+        "blend": "multiply",
+        "label": "the same red run a second time and out of register: ink on ink, not a shape behind a shape",
+        "children": [
+          {
+            "id": "overprint-p",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "rnb/overprint",
+            "args": { "name": "object.bowl", "x": 250, "y": 300, "span": 380, "rotate": 90, "tear": { "roughness": 0.8, "segment": 14 }, "style": { "kind": "solid", "color": "blood", "opacity": 255 } }
+          }
+        ]
+      },
+      {
+        "id": "pin",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "rnb/pin",
+        "label": "the only visible hand on the sheet",
+        "args": {
+          "points": [[104, 1006], [188, 1042], [262, 1004], [352, 1048], [438, 1002], [530, 1046], [614, 1008], [700, 1044]],
+          "brush": "marker",
+          "color": "blood",
+          "weight": 5,
+          "closed": false,
+          "curve": 0.4
+        }
+      },
+      {
+        "id": "foot-bar",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "rnb/foot-bar",
+        "args": {
+          "region": { "type": "rect", "x": 96, "y": 1092, "w": 608, "h": 40 },
+          "style": { "kind": "solid", "color": "news", "opacity": 255 }
+        }
+      },
+      {
+        "id": "foot-text",
+        "type": "op",
+        "op": "text",
+        "rngKey": "rnb/foot-text",
+        "args": {
+          "text": "WE   HAVE   YOUR   SILENCE",
+          "font": "stardos-stencil",
+          "size": 21,
+          "x": 400,
+          "y": 1120,
+          "align": "center",
+          "color": "ink",
+          "tracking": 4
+        }
+      }
+    ]
+  }
+}

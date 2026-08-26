@@ -481,6 +481,42 @@ multiply, so a plausible-looking pair of numbers is four orders of magnitude out
 validation problem, not a performance one, and it is now handled where validation problems are
 handled.
 
+## R13. The print pass is what finally made the seed visible, and it has an accidental control
+
+The substrate test's closing finding was that "the closer a program gets to looking like print, the
+less the seed does", because `solid`, `text` and hand-authored polygons never consult the RNG. That
+diagnosis is still true and the conclusion drawn from it was still too strong.
+
+Re-running the 60-render seed sweep under v1 (twelve designs, five seed offsets, 148.3s serial,
+position-independent, 60/60 distinct hashes) and *measuring* the variation rather than counting
+hashes: mean absolute per-channel difference between seed variant 1 and variant 2, as a percentage of
+full scale, and the share of pixels that differ at all.
+
+| design | v0 Δ | v0 px | v1 Δ | v1 px |
+| --- | ---: | ---: | ---: | ---: |
+| xerox-zine | 3.08% | 31.6% | 9.54% | 96.5% |
+| rave-flyer-b | 0.21% | 46.8% | 9.55% | 98.0% |
+| ransom-note | 2.00% | 5.9% | 6.89% | 97.5% |
+| ur-stencil-b | 0.12% | 17.0% | 2.70% | 95.3% |
+| *ikeda-austerity* | *0.95%* | *1.0%* | *0.95%* | *1.0%* |
+| *ikeda-austerity-b* | *1.34%* | *1.5%* | *1.34%* | *1.5%* |
+
+(Full table in `docs/substrate-test/trait-table-v1.md`.)
+
+**The last two rows are a control nobody designed.** Both Ikeda probes refused every print stage on
+their own merits — their author's argument was that each stage writes values that are not palette
+colours and "absolute flatness" is the whole of that row. They are consequently the only two probes
+whose seed sensitivity is *identical to four decimal places* between v0 and v1, while every probe
+that takes a stage moves by 3x to 45x. That isolates the cause without an experiment being run for
+it: `grain`, `misregister` and `generation` draw from a seeded stream and touch every pixel, so they
+are the first thing here that makes the RNG visible on marks that never consulted it.
+
+Two cautions against over-reading this. A different grain field is a different sheet but not a
+different design; the variation that is actually compositional comes from `tear`, which is seeded per
+node *and per repeat instance*. And `ransom-note-b` inverts the usual shape — 2.28% of full scale
+across only 3.0% of pixels — because its `halftone` quantises to two colours, so a seed change either
+moves a dot or does nothing. A screen is a low-pass filter on the seed.
+
 ## O1. Operator/library mapping, and where the fixed constants are
 
 - Our `PaintStyle.kind: "wash"` uses `brush.fill` + `fillBleed` + `fillTexture`. It does **not** use

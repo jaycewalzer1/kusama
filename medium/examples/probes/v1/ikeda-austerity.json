@@ -1,0 +1,238 @@
+{
+  "version": "0.2",
+  "profile": "default-v1",
+  "assetPack": "core-v1",
+  "seed": 20001,
+  "canvas": { "width": 800, "height": 1200, "ground": "#050506", "brushScale": 1 },
+  "palette": {
+    "void": "#050506",
+    "white": "#f2f2f0",
+    "dim": "#242427",
+    "signal": "#d8232a"
+  },
+  "meta": {
+    "probe": "ikeda-austerity",
+    "variant": "v1",
+    "of": "examples/probes/ikeda-austerity.json",
+    "target": "Raster-Noton lineage: a near-empty field, hairline rules, tiny monospaced data, one interruption",
+    "method": "identical to v0 in every rect, every rngKey, every seed and every layout. Five fields changed and no others: each of the five text ops swaps grotesque for ibm-plex-mono and drops the literal space that v0 put between every character. Nothing else on the sheet moved, so a changed trait score is attributable to the face and to nothing else.",
+    "unchanged": "size stays 9 and tracking stays 2, the numbers v0 used, so the before/after isolates the face. The geometry, the seed and therefore the 96 scattered punch positions are byte-for-byte the v0 decisions.",
+    "notDone": "size still bottoms out at 6 and a rect still bottoms out at one device pixel, so the finest data here is still coarser than the references. No print stage, no tear, no blend and no non-rect clip: every one of them would cost this sheet its flatness or its hard edges, which are the two things it is good at.",
+    "declined": "print stages were considered and rejected. grain, paper, halftone and generation all write values that are not palette colours, and 'every value on the sheet is exactly a palette colour' is the whole of the Absolute flatness row. tear is a deckle edge on a fragment; there is no torn paper anywhere in this object."
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "plate",
+        "type": "op",
+        "op": "wash",
+        "rngKey": "ikeda/plate",
+        "label": "the only non-geometric mark on the sheet, and it is almost invisible",
+        "args": {
+          "region": { "type": "rect", "x": -20, "y": -20, "w": 840, "h": 1240 },
+          "style": { "kind": "wash", "color": "dim", "opacity": 18, "bleed": 0.1, "texture": [0.3, 0.15] }
+        }
+      },
+      {
+        "id": "head",
+        "type": "op",
+        "op": "text",
+        "rngKey": "ikeda/head",
+        "label": "the v0 string, unchanged; only the face is different",
+        "args": {
+          "text": "data.scan   [ n = 8 ]",
+          "font": "ibm-plex-mono",
+          "size": 9,
+          "x": 64,
+          "y": 72,
+          "align": "left",
+          "color": "white",
+          "tracking": 2
+        }
+      },
+      {
+        "id": "head-right",
+        "type": "op",
+        "op": "text",
+        "rngKey": "ikeda/head-right",
+        "label": "a real fixed advance: the period and the digits sit in cells of identical width",
+        "args": {
+          "text": "0000.0008.44100hz",
+          "font": "ibm-plex-mono",
+          "size": 9,
+          "x": 736,
+          "y": 72,
+          "align": "right",
+          "color": "white",
+          "tracking": 2
+        }
+      },
+      {
+        "id": "rules",
+        "type": "repeat",
+        "rngKey": "ikeda/rules",
+        "label": "hairlines: one device pixel, hard edged because solid is a plain fill",
+        "count": 8,
+        "layout": { "type": "line", "origin": [64, 168], "dx": 0, "dy": 41 },
+        "children": [
+          {
+            "id": "hairline",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "ikeda/hairline",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 0, "w": 672, "h": 1 },
+              "style": { "kind": "solid", "color": "white", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "spine",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "ikeda/spine",
+        "args": {
+          "region": { "type": "rect", "x": 400, "y": 168, "w": 1, "h": 872 },
+          "style": { "kind": "solid", "color": "white", "opacity": 255 }
+        }
+      },
+      {
+        "id": "band",
+        "type": "group",
+        "label": "the data: a bar field, then the same field punched back out at scattered positions",
+        "children": [
+          {
+            "id": "band-bars",
+            "type": "repeat",
+            "rngKey": "ikeda/band-bars",
+            "count": 168,
+            "layout": { "type": "line", "origin": [64, 592], "dx": 4, "dy": 0 },
+            "children": [
+              {
+                "id": "band-bar",
+                "type": "op",
+                "op": "paint",
+                "rngKey": "ikeda/band-bar",
+                "args": {
+                  "region": { "type": "rect", "x": 0, "y": 0, "w": 2, "h": 96 },
+                  "style": { "kind": "solid", "color": "white", "opacity": 255 }
+                }
+              }
+            ]
+          },
+          {
+            "id": "band-punch",
+            "type": "repeat",
+            "rngKey": "ikeda/band-punch",
+            "count": 96,
+            "layout": { "type": "scatter", "origin": [64, 592], "w": 660, "h": 78 },
+            "children": [
+              {
+                "id": "punch",
+                "type": "op",
+                "op": "paint",
+                "rngKey": "ikeda/punch",
+                "args": {
+                  "region": { "type": "rect", "x": 0, "y": 0, "w": 9, "h": 18 },
+                  "style": { "kind": "solid", "color": "void", "opacity": 255 }
+                }
+              }
+            ]
+          },
+          {
+            "id": "band-caption",
+            "type": "op",
+            "op": "text",
+            "rngKey": "ikeda/band-caption",
+            "args": {
+              "text": "ch.01 / 168 samples / 96 null",
+              "font": "ibm-plex-mono",
+              "size": 9,
+              "x": 64,
+              "y": 712,
+              "align": "left",
+              "color": "white",
+              "tracking": 2
+            }
+          }
+        ]
+      },
+      {
+        "id": "interruption",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "ikeda/interruption",
+        "label": "the one interruption. it is the only thing on the sheet that is not information",
+        "args": {
+          "region": { "type": "rect", "x": 592, "y": 800, "w": 144, "h": 144 },
+          "style": { "kind": "solid", "color": "signal", "opacity": 255 }
+        }
+      },
+      {
+        "id": "matrix",
+        "type": "repeat",
+        "rngKey": "ikeda/matrix",
+        "label": "a sparse dot matrix, the quietest thing here",
+        "count": 96,
+        "layout": { "type": "grid", "origin": [64, 800], "cols": 24, "dx": 20, "dy": 20 },
+        "children": [
+          {
+            "id": "dot",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "ikeda/dot",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 0, "w": 2, "h": 2 },
+              "style": { "kind": "solid", "color": "white", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "base-rule",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "ikeda/base-rule",
+        "args": {
+          "region": { "type": "rect", "x": 64, "y": 1040, "w": 672, "h": 1 },
+          "style": { "kind": "solid", "color": "white", "opacity": 255 }
+        }
+      },
+      {
+        "id": "foot-left",
+        "type": "op",
+        "op": "text",
+        "rngKey": "ikeda/foot-left",
+        "args": {
+          "text": "rn142 / test pattern / no title",
+          "font": "ibm-plex-mono",
+          "size": 9,
+          "x": 64,
+          "y": 1068,
+          "align": "left",
+          "color": "white",
+          "tracking": 2
+        }
+      },
+      {
+        "id": "foot-right",
+        "type": "op",
+        "op": "text",
+        "rngKey": "ikeda/foot-right",
+        "args": {
+          "text": "+/-",
+          "font": "ibm-plex-mono",
+          "size": 9,
+          "x": 736,
+          "y": 1068,
+          "align": "right",
+          "color": "signal",
+          "tracking": 2
+        }
+      }
+    ]
+  }
+}

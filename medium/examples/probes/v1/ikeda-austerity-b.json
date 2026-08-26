@@ -1,0 +1,204 @@
+{
+  "version": "0.2",
+  "profile": "default-v1",
+  "assetPack": "core-v1",
+  "seed": 20101,
+  "canvas": { "width": 800, "height": 1200, "ground": "#f4f4f2", "brushScale": 1 },
+  "palette": {
+    "paper": "#f4f4f2",
+    "black": "#0a0a0b",
+    "grey": "#b8b8b6",
+    "signal": "#0b4fd8"
+  },
+  "meta": {
+    "probe": "ikeda-austerity-b",
+    "variant": "v1",
+    "of": "examples/probes/ikeda-austerity-b.json",
+    "target": "same target as ikeda-austerity, inverted: a white field, black hairlines, one dense black data slab, one blue interruption",
+    "method": "the same inversion argument as v0, retested with the one thing v0 could not have. Three text ops swap grotesque for ibm-plex-mono and drop the literal space v0 put between every character. Every rect, every rngKey, the seed and therefore the 132 scattered punch positions are unchanged, and the face is the same face the black variant uses, so the only difference between this sheet and ikeda-austerity remains the palette.",
+    "finding": "the inversion argument survives the new face intact. A monospaced face is neither easier nor harder to set on white than on black, because text still carries its own colour and still never consults the ground. Nothing added in v1 -- not the 34 new faces, not the print pass, not blend, not the wider clip -- gives the substrate any new opinion about which way round a sheet is.",
+    "notDone": "still no rule finer than one device pixel and no rule softer than one either; rule is a brush line with grain, so every hairline here is still a solid rect of h: 1. Size still bottoms out at 6.",
+    "declined": "no print stage. This is the cheapest probe in the test and the flattest; grain, paper or generation would write values that are not palette colours and would cost the Absolute flatness row to buy nothing this object wants."
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "head",
+        "type": "op",
+        "op": "text",
+        "rngKey": "ikb/head",
+        "label": "the v0 string with the fake letterspacing removed; the face now supplies the grid",
+        "args": {
+          "text": "test pattern 02 / full scale",
+          "font": "ibm-plex-mono",
+          "size": 9,
+          "x": 64,
+          "y": 80,
+          "align": "left",
+          "color": "black",
+          "tracking": 2
+        }
+      },
+      {
+        "id": "top-rule",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "ikb/top-rule",
+        "args": {
+          "region": { "type": "rect", "x": 64, "y": 96, "w": 672, "h": 1 },
+          "style": { "kind": "solid", "color": "black", "opacity": 255 }
+        }
+      },
+      {
+        "id": "comb",
+        "type": "repeat",
+        "rngKey": "ikb/comb",
+        "label": "a comb of hairlines whose only variation is that there is none",
+        "count": 96,
+        "layout": { "type": "line", "origin": [64, 128], "dx": 7, "dy": 0 },
+        "children": [
+          {
+            "id": "tooth",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "ikb/tooth",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 0, "w": 1, "h": 40 },
+              "style": { "kind": "solid", "color": "black", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "slab",
+        "type": "group",
+        "label": "the one dense thing on an otherwise empty sheet",
+        "children": [
+          {
+            "id": "slab-ground",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "ikb/slab-ground",
+            "args": {
+              "region": { "type": "rect", "x": 64, "y": 336, "w": 672, "h": 208 },
+              "style": { "kind": "solid", "color": "black", "opacity": 255 }
+            }
+          },
+          {
+            "id": "slab-punch",
+            "type": "repeat",
+            "rngKey": "ikb/slab-punch",
+            "count": 132,
+            "layout": { "type": "scatter", "origin": [70, 342], "w": 648, "h": 190 },
+            "children": [
+              {
+                "id": "punch",
+                "type": "op",
+                "op": "paint",
+                "rngKey": "ikb/punch",
+                "args": {
+                  "region": { "type": "rect", "x": 0, "y": 0, "w": 6, "h": 10 },
+                  "style": { "kind": "solid", "color": "paper", "opacity": 255 }
+                }
+              }
+            ]
+          },
+          {
+            "id": "slab-caption",
+            "type": "op",
+            "op": "text",
+            "rngKey": "ikb/slab-caption",
+            "args": {
+              "text": "132 null in 672 x 208",
+              "font": "ibm-plex-mono",
+              "size": 9,
+              "x": 64,
+              "y": 568,
+              "align": "left",
+              "color": "black",
+              "tracking": 2
+            }
+          }
+        ]
+      },
+      {
+        "id": "grid",
+        "type": "repeat",
+        "rngKey": "ikb/grid",
+        "label": "a register grid, drawn and then almost entirely ignored",
+        "count": 9,
+        "layout": { "type": "line", "origin": [64, 664], "dx": 84, "dy": 0 },
+        "children": [
+          {
+            "id": "column",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "ikb/column",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 0, "w": 1, "h": 336 },
+              "style": { "kind": "solid", "color": "grey", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "interruption",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "ikb/interruption",
+        "label": "one blue bar, sitting on the grid it does not belong to",
+        "args": {
+          "region": { "type": "rect", "x": 232, "y": 796, "w": 253, "h": 24 },
+          "style": { "kind": "solid", "color": "signal", "opacity": 255 }
+        }
+      },
+      {
+        "id": "readout",
+        "type": "repeat",
+        "rngKey": "ikb/readout",
+        "count": 4,
+        "layout": { "type": "line", "origin": [64, 872], "dx": 0, "dy": 26 },
+        "children": [
+          {
+            "id": "readout-rule",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "ikb/readout-rule",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 0, "w": 336, "h": 1 },
+              "style": { "kind": "solid", "color": "black", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "base-rule",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "ikb/base-rule",
+        "args": {
+          "region": { "type": "rect", "x": 64, "y": 1064, "w": 672, "h": 1 },
+          "style": { "kind": "solid", "color": "black", "opacity": 255 }
+        }
+      },
+      {
+        "id": "foot",
+        "type": "op",
+        "op": "text",
+        "rngKey": "ikb/foot",
+        "args": {
+          "text": "no title / no duration / no sleeve",
+          "font": "ibm-plex-mono",
+          "size": 9,
+          "x": 64,
+          "y": 1092,
+          "align": "left",
+          "color": "black",
+          "tracking": 2
+        }
+      }
+    ]
+  }
+}

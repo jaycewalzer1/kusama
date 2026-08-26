@@ -1,0 +1,289 @@
+{
+  "version": "0.2",
+  "profile": "default-v1",
+  "assetPack": "core-v1",
+  "seed": 4201,
+  "canvas": { "width": 800, "height": 800, "ground": "#111112", "brushScale": 1 },
+  "palette": {
+    "black": "#111112",
+    "steel": "#cfcfc9",
+    "red": "#c1121f",
+    "dim": "#3d3d3a"
+  },
+  "print": [
+    { "stage": "misregister", "amount": 0.5, "spread": 1 },
+    { "stage": "grain", "amount": 0.04, "mono": true }
+  ],
+  "meta": {
+    "probe": "ur-stencil-b",
+    "reAuthorOf": "examples/probes/ur-stencil-b.json",
+    "target": "same lineage as ur-stencil, different object: a square record label rather than a poster -- centre hole, catalogue text, matrix numbers, one red mark",
+    "method": "the same label as the v0 probe. Every one of the four clip rects that removed nothing is gone: each disc is now a circle clip and the thing painted inside it is a plain rect, so the round shape is the clip rather than a region that happened to be routed through the polygon path by a rectangle wrapped around it. The catalogue and matrix type moves to real faces -- Anton for the side letter, Barlow Condensed for the title, Share Tech Mono and Space Mono for the matrix and runout, which is what a stamped runout actually is. print carries misregister and grain.",
+    "notDone": "text still cannot be set on a curve. text.rotate turns a whole line about its anchor, which is a chord, not an arc, and there is no per-character placement, so the ring of catalogue type that defines this object is still two straight lines above and below the spindle. The ring layout still has no sweep, so the red spokes are still spread around the whole circle."
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "plate-tone",
+        "type": "op",
+        "op": "wash",
+        "rngKey": "urb/plate-tone",
+        "args": {
+          "region": { "type": "rect", "x": -20, "y": -20, "w": 840, "h": 840 },
+          "style": { "kind": "wash", "color": "dim", "opacity": 26, "bleed": 0.12, "texture": [0.55, 0.3] }
+        }
+      },
+      {
+        "id": "disc-clip",
+        "type": "group",
+        "label": "the disc is the clip: a circle clip over a rect, instead of a rect clip over a circle",
+        "clip": { "type": "circle", "cx": 400, "cy": 400, "r": 300 },
+        "children": [
+          {
+            "id": "label-disc",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "urb/label-disc",
+            "args": {
+              "region": { "type": "rect", "x": 96, "y": 96, "w": 608, "h": 608 },
+              "style": { "kind": "solid", "color": "steel", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "ring-clip",
+        "type": "group",
+        "clip": { "type": "circle", "cx": 400, "cy": 400, "r": 268 },
+        "children": [
+          {
+            "id": "disc-ring",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "urb/disc-ring",
+            "args": {
+              "region": { "type": "rect", "x": 128, "y": 128, "w": 544, "h": 544 },
+              "style": { "kind": "solid", "color": "black", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "spokes",
+        "type": "repeat",
+        "rngKey": "urb/spokes",
+        "label": "steel spokes placed by angle, not by grid",
+        "count": 24,
+        "layout": { "type": "ring", "origin": [400, 400], "r": 232, "startAngle": 0 },
+        "children": [
+          {
+            "id": "spoke",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "urb/spoke",
+            "args": {
+              "region": { "type": "rect", "x": -3, "y": -22, "w": 6, "h": 44 },
+              "style": { "kind": "solid", "color": "steel", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "red-arc",
+        "type": "repeat",
+        "rngKey": "urb/red-arc",
+        "label": "every fourth spoke in the only colour on the sheet",
+        "count": 6,
+        "layout": { "type": "ring", "origin": [400, 400], "r": 232, "startAngle": 0 },
+        "children": [
+          {
+            "id": "red-spoke",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "urb/red-spoke",
+            "args": {
+              "region": { "type": "rect", "x": -3, "y": -22, "w": 6, "h": 44 },
+              "style": { "kind": "solid", "color": "red", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "core-clip",
+        "type": "group",
+        "clip": { "type": "circle", "cx": 400, "cy": 400, "r": 168 },
+        "children": [
+          {
+            "id": "core",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "urb/core",
+            "args": {
+              "region": { "type": "rect", "x": 228, "y": 228, "w": 344, "h": 344 },
+              "style": { "kind": "solid", "color": "steel", "opacity": 255 }
+            }
+          },
+          {
+            "id": "core-inner",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "urb/core-inner",
+            "args": {
+              "region": { "type": "circle", "cx": 400, "cy": 400, "r": 160 },
+              "style": { "kind": "solid", "color": "black", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "side",
+        "type": "op",
+        "op": "text",
+        "rngKey": "urb/side",
+        "args": {
+          "text": "A",
+          "font": "anton",
+          "size": 96,
+          "x": 400,
+          "y": 322,
+          "align": "center",
+          "color": "steel",
+          "tracking": 0
+        }
+      },
+      {
+        "id": "title",
+        "type": "op",
+        "op": "text",
+        "rngKey": "urb/title",
+        "args": {
+          "text": "NO   SLEEVE   NOTES",
+          "font": "barlow-condensed",
+          "size": 19,
+          "x": 400,
+          "y": 358,
+          "align": "center",
+          "color": "steel",
+          "tracking": 3
+        }
+      },
+      {
+        "id": "rule-left",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "urb/rule-left",
+        "label": "the rule stops either side of the spindle instead of running through it",
+        "args": {
+          "region": { "type": "rect", "x": 268, "y": 399, "w": 88, "h": 1 },
+          "style": { "kind": "solid", "color": "steel", "opacity": 255 }
+        }
+      },
+      {
+        "id": "rule-right",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "urb/rule-right",
+        "args": {
+          "region": { "type": "rect", "x": 444, "y": 399, "w": 88, "h": 1 },
+          "style": { "kind": "solid", "color": "steel", "opacity": 255 }
+        }
+      },
+      {
+        "id": "spindle-clip",
+        "type": "group",
+        "clip": { "type": "circle", "cx": 400, "cy": 400, "r": 22 },
+        "children": [
+          {
+            "id": "spindle",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "urb/spindle",
+            "args": {
+              "region": { "type": "rect", "x": 374, "y": 374, "w": 52, "h": 52 },
+              "style": { "kind": "solid", "color": "steel", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "spindle-hole",
+        "type": "op",
+        "op": "cover",
+        "rngKey": "urb/spindle-hole",
+        "label": "the centre hole is the ground showing through, which is the only true hole available",
+        "args": {
+          "region": { "type": "circle", "cx": 400, "cy": 400, "r": 15 },
+          "softness": 0
+        }
+      },
+      {
+        "id": "matrix",
+        "type": "op",
+        "op": "text",
+        "rngKey": "urb/matrix",
+        "label": "a matrix number is a stamped fixed-advance string; it now is one",
+        "args": {
+          "text": "UR-041   A1",
+          "font": "share-tech-mono",
+          "size": 16,
+          "x": 400,
+          "y": 456,
+          "align": "center",
+          "color": "red",
+          "tracking": 3
+        }
+      },
+      {
+        "id": "runout",
+        "type": "op",
+        "op": "text",
+        "rngKey": "urb/runout",
+        "args": {
+          "text": "133   BPM   CUT   HOT   DO   NOT   SLEEP",
+          "font": "space-mono",
+          "size": 12,
+          "x": 400,
+          "y": 492,
+          "align": "center",
+          "color": "steel",
+          "tracking": 2
+        }
+      },
+      {
+        "id": "trim",
+        "type": "macro",
+        "macro": "frame",
+        "rngKey": "urb/trim",
+        "args": { "x": 24, "y": 24, "w": 752, "h": 752, "style": "corners", "arm": 56, "brush": "rotring", "color": "steel", "weight": 1.5 }
+      },
+      {
+        "id": "corner-text",
+        "type": "op",
+        "op": "text",
+        "rngKey": "urb/corner-text",
+        "args": {
+          "text": "PRESSED   WITHOUT   PERMISSION",
+          "font": "share-tech-mono",
+          "size": 12,
+          "x": 42,
+          "y": 762,
+          "align": "left",
+          "color": "steel",
+          "tracking": 2.5
+        }
+      },
+      {
+        "id": "corner-mark",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "urb/corner-mark",
+        "args": {
+          "region": { "type": "rect", "x": 700, "y": 744, "w": 58, "h": 14 },
+          "style": { "kind": "solid", "color": "red", "opacity": 255 }
+        }
+      }
+    ]
+  }
+}

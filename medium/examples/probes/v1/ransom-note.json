@@ -1,0 +1,275 @@
+{
+  "version": "0.2",
+  "profile": "default-v1",
+  "assetPack": "core-v1",
+  "seed": 4103,
+  "canvas": { "width": 800, "height": 1200, "ground": "#cfc9bb", "brushScale": 1 },
+  "palette": {
+    "ink": "#111010",
+    "paper": "#f3eee1",
+    "yellow": "#f0c81e",
+    "pink": "#e4508a",
+    "misprint": "#d02b1e",
+    "screen": "#8f8878"
+  },
+  "print": [
+    { "stage": "misregister", "amount": 0.75, "spread": 2 },
+    { "stage": "grain", "amount": 0.06, "mono": true },
+    { "stage": "paper", "tint": "screen", "amount": 0.05, "vignette": 0.1 }
+  ],
+  "meta": {
+    "probe": "ransom-note",
+    "of": "examples/probes/ransom-note.json",
+    "target": "Jamie Reid lineage: one slogan cut letter by letter out of other printed matter, mismatched size and face, torn edges, overprint",
+    "method": "the same slogan, the same eight transforms, the same rngKeys. Three things are re-authored against default-v1: every cutting is now a seeded `tear` on a fragment clipped by a convex polygon, so it has two scissor edges and two torn ones; the misprint patch has moved on top of the cutting inside a `blend: multiply` group, so the red is a second impression rather than a shape behind the paper; and the nine faces on the sheet are nine real faces rather than two.",
+    "notDone": "the newsprint ground is still the v0 field of rotring dots at density 19. `halftone` is a real screen but it is a whole-canvas two-tone stage, so screening this sheet would take the colour off the cuttings and off the overprint at the same time. The screen is tested on ransom-note-b instead, which is what pays for keeping it faked here."
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "newsprint",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "rn/newsprint",
+        "label": "unchanged from v0: a fine hatch standing in for a halftone screen, kept as the control",
+        "args": {
+          "region": { "type": "rect", "x": -10, "y": -10, "w": 820, "h": 1220 },
+          "style": { "kind": "field", "brush": "rotring", "color": "screen", "density": 19, "length": 0.5, "angle": 0, "jitter": 0, "marks": "dots" }
+        }
+      },
+      {
+        "id": "masthead",
+        "type": "group",
+        "children": [
+          {
+            "id": "masthead-bar",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "rn/masthead-bar",
+            "args": { "region": { "type": "rect", "x": 0, "y": 64, "w": 800, "h": 74 }, "style": { "kind": "solid", "color": "ink", "opacity": 255 } }
+          },
+          {
+            "id": "masthead-text",
+            "type": "op",
+            "op": "text",
+            "rngKey": "rn/masthead-text",
+            "label": "the masthead of the paper the letters were cut out of, in a real blackletter",
+            "args": { "text": "GOD   SAVE   THE   QUEUE", "font": "pirata-one", "size": 38, "x": 400, "y": 118, "align": "center", "color": "paper", "tracking": 4 }
+          },
+          {
+            "id": "masthead-notch",
+            "type": "op",
+            "op": "cover",
+            "rngKey": "rn/masthead-notch",
+            "label": "still a hand-authored zigzag: `tear` attaches to a fragment and `cover` takes a region, so a torn bar cannot be got this way",
+            "args": {
+              "region": { "type": "polygon", "points": [[0, 130], [64, 142], [140, 128], [214, 144], [292, 130], [372, 146], [448, 132], [530, 148], [604, 132], [682, 146], [760, 130], [800, 142], [800, 168], [0, 168]] },
+              "softness": 0
+            }
+          }
+        ]
+      },
+      {
+        "id": "scraps",
+        "type": "group",
+        "label": "loose cuttings that did not make it into the slogan, now genuinely torn",
+        "children": [
+          {
+            "id": "scrap-a",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "rn/scrap-a",
+            "args": { "name": "debris.shard", "x": 118, "y": 900, "span": 190, "rotate": 24, "tear": { "roughness": 0.6, "segment": 9 }, "style": { "kind": "solid", "color": "paper", "opacity": 255 } }
+          },
+          {
+            "id": "scrap-b",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "rn/scrap-b",
+            "args": { "name": "debris.shard", "x": 662, "y": 946, "span": 230, "rotate": -38, "tear": { "roughness": 0.75, "segment": 11 }, "style": { "kind": "solid", "color": "yellow", "opacity": 255 } }
+          },
+          {
+            "id": "scrap-c",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "rn/scrap-c",
+            "args": { "name": "debris.shard", "x": 396, "y": 1006, "span": 150, "rotate": 108, "tear": { "roughness": 0.5, "segment": 6 }, "style": { "kind": "solid", "color": "ink", "opacity": 255 } }
+          },
+          {
+            "id": "scrap-hatch",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "rn/scrap-hatch",
+            "args": { "name": "debris.shard", "x": 240, "y": 1030, "span": 220, "rotate": -12, "tear": { "roughness": 0.85, "segment": 13 }, "style": { "kind": "hatch", "brush": "rotring", "color": "ink", "spacing": 3, "angle": 90, "rand": 0.3, "layers": 1 } }
+          }
+        ]
+      },
+      {
+        "id": "slogan",
+        "type": "group",
+        "label": "NO FUTURE, eight cuttings, none of them the same size and none of them the same face",
+        "children": [
+          {
+            "id": "cut-n",
+            "type": "group",
+            "transform": { "translate": [286, 336], "rotate": -7, "scale": 1.55 },
+            "children": [
+              { "id": "cut-n-cut", "type": "group", "clip": { "type": "polygon", "points": [[-50, -76], [52, -72], [48, 76], [-52, 72]] }, "label": "two scissor edges, two torn ones", "children": [
+                { "id": "cut-n-p", "type": "op", "op": "fragment", "rngKey": "rn/cut-n-p", "args": { "name": "mark.sponsor-c", "x": 0, "y": 0, "span": 120, "rotate": 0, "tear": { "roughness": 0.85, "segment": 13 }, "style": { "kind": "solid", "color": "paper", "opacity": 255 } } }
+              ] },
+              { "id": "cut-n-mis", "type": "group", "blend": "multiply", "transform": { "translate": [20, -18] }, "children": [
+                { "id": "cut-n-mis-p", "type": "op", "op": "fragment", "rngKey": "rn/cut-n-mis", "args": { "name": "mark.sponsor-c", "x": 0, "y": 0, "span": 130, "rotate": 22, "tear": { "roughness": 0.7, "segment": 11 }, "style": { "kind": "solid", "color": "misprint", "opacity": 255 } } }
+              ] },
+              { "id": "cut-n-t", "type": "op", "op": "text", "rngKey": "rn/cut-n-t", "args": { "text": "N", "font": "rubik-mono-one", "size": 96, "x": 0, "y": 32, "align": "center", "color": "ink", "tracking": 0 } }
+            ]
+          },
+          {
+            "id": "cut-o",
+            "type": "group",
+            "transform": { "translate": [494, 320], "rotate": 6, "scale": 1.7 },
+            "children": [
+              { "id": "cut-o-cut", "type": "group", "clip": { "type": "polygon", "points": [[-52, -72], [50, -78], [52, 74], [-48, 78]] }, "children": [
+                { "id": "cut-o-p", "type": "op", "op": "fragment", "rngKey": "rn/cut-o-p", "args": { "name": "mark.sponsor-c", "x": 0, "y": 0, "span": 120, "rotate": 40, "tear": { "roughness": 0.85, "segment": 13 }, "style": { "kind": "solid", "color": "yellow", "opacity": 255 } } }
+              ] },
+              { "id": "cut-o-mis", "type": "group", "blend": "multiply", "transform": { "translate": [-22, 16] }, "children": [
+                { "id": "cut-o-mis-p", "type": "op", "op": "fragment", "rngKey": "rn/cut-o-mis", "args": { "name": "mark.sponsor-c", "x": 0, "y": 0, "span": 130, "rotate": -14, "tear": { "roughness": 0.7, "segment": 11 }, "style": { "kind": "solid", "color": "misprint", "opacity": 255 } } }
+              ] },
+              { "id": "cut-o-t", "type": "op", "op": "text", "rngKey": "rn/cut-o-t", "args": { "text": "O", "font": "anton", "size": 104, "x": 0, "y": 36, "align": "center", "color": "ink", "tracking": 0 } }
+            ]
+          },
+          {
+            "id": "cut-f",
+            "type": "group",
+            "transform": { "translate": [136, 640], "rotate": 8, "scale": 0.98 },
+            "children": [
+              { "id": "cut-f-cut", "type": "group", "clip": { "type": "polygon", "points": [[-48, -78], [52, -74], [50, 72], [-52, 76]] }, "children": [
+                { "id": "cut-f-p", "type": "op", "op": "fragment", "rngKey": "rn/cut-f-p", "args": { "name": "mark.sponsor-c", "x": 0, "y": 0, "span": 120, "rotate": -26, "tear": { "roughness": 0.85, "segment": 13 }, "style": { "kind": "solid", "color": "paper", "opacity": 255 } } }
+              ] },
+              { "id": "cut-f-mis", "type": "group", "blend": "multiply", "transform": { "translate": [18, 20] }, "children": [
+                { "id": "cut-f-mis-p", "type": "op", "op": "fragment", "rngKey": "rn/cut-f-mis", "args": { "name": "mark.sponsor-c", "x": 0, "y": 0, "span": 130, "rotate": 8, "tear": { "roughness": 0.7, "segment": 11 }, "style": { "kind": "solid", "color": "misprint", "opacity": 255 } } }
+              ] },
+              { "id": "cut-f-t", "type": "op", "op": "text", "rngKey": "rn/cut-f-t", "label": "photocopier drag: a shear, which no transform in the substrate can produce", "args": { "text": "F", "font": "barlow-condensed-black", "size": 88, "x": 0, "y": 30, "align": "center", "color": "ink", "tracking": 0, "skew": 9 } }
+            ]
+          },
+          {
+            "id": "cut-u1",
+            "type": "group",
+            "transform": { "translate": [252, 664], "rotate": -11, "scale": 1.14 },
+            "children": [
+              { "id": "cut-u1-cut", "type": "group", "clip": { "type": "polygon", "points": [[-50, -76], [52, -72], [48, 76], [-52, 72]] }, "children": [
+                { "id": "cut-u1-p", "type": "op", "op": "fragment", "rngKey": "rn/cut-u1-p", "args": { "name": "mark.sponsor-c", "x": 0, "y": 0, "span": 120, "rotate": 62, "tear": { "roughness": 0.85, "segment": 13 }, "style": { "kind": "solid", "color": "pink", "opacity": 255 } } }
+              ] },
+              { "id": "cut-u1-mis", "type": "group", "blend": "multiply", "transform": { "translate": [-24, 14] }, "children": [
+                { "id": "cut-u1-mis-p", "type": "op", "op": "fragment", "rngKey": "rn/cut-u1-mis", "args": { "name": "mark.sponsor-c", "x": 0, "y": 0, "span": 130, "rotate": 34, "tear": { "roughness": 0.7, "segment": 11 }, "style": { "kind": "solid", "color": "misprint", "opacity": 255 } } }
+              ] },
+              { "id": "cut-u1-t", "type": "op", "op": "text", "rngKey": "rn/cut-u1-t", "args": { "text": "U", "font": "courier-prime-bold", "size": 82, "x": 0, "y": 28, "align": "center", "color": "ink", "tracking": 0 } }
+            ]
+          },
+          {
+            "id": "cut-t",
+            "type": "group",
+            "transform": { "translate": [368, 636], "rotate": 5, "scale": 0.9 },
+            "children": [
+              { "id": "cut-t-cut", "type": "group", "clip": { "type": "polygon", "points": [[-52, -72], [50, -78], [52, 74], [-48, 78]] }, "children": [
+                { "id": "cut-t-p", "type": "op", "op": "fragment", "rngKey": "rn/cut-t-p", "args": { "name": "mark.sponsor-c", "x": 0, "y": 0, "span": 120, "rotate": -48, "tear": { "roughness": 0.85, "segment": 13 }, "style": { "kind": "solid", "color": "paper", "opacity": 255 } } }
+              ] },
+              { "id": "cut-t-mis", "type": "group", "blend": "multiply", "transform": { "translate": [22, -20] }, "children": [
+                { "id": "cut-t-mis-p", "type": "op", "op": "fragment", "rngKey": "rn/cut-t-mis", "args": { "name": "mark.sponsor-c", "x": 0, "y": 0, "span": 130, "rotate": 51, "tear": { "roughness": 0.7, "segment": 11 }, "style": { "kind": "solid", "color": "misprint", "opacity": 255 } } }
+              ] },
+              { "id": "cut-t-t", "type": "op", "op": "text", "rngKey": "rn/cut-t-t", "args": { "text": "T", "font": "six-caps", "size": 110, "x": 0, "y": 34, "align": "center", "color": "ink", "tracking": 0 } }
+            ]
+          },
+          {
+            "id": "cut-u2",
+            "type": "group",
+            "transform": { "translate": [482, 668], "rotate": -6, "scale": 1.06 },
+            "children": [
+              { "id": "cut-u2-cut", "type": "group", "clip": { "type": "polygon", "points": [[-48, -78], [52, -74], [50, 72], [-52, 76]] }, "children": [
+                { "id": "cut-u2-p", "type": "op", "op": "fragment", "rngKey": "rn/cut-u2-p", "args": { "name": "mark.sponsor-c", "x": 0, "y": 0, "span": 120, "rotate": 15, "tear": { "roughness": 0.85, "segment": 13 }, "style": { "kind": "solid", "color": "paper", "opacity": 255 } } }
+              ] },
+              { "id": "cut-u2-mis", "type": "group", "blend": "multiply", "transform": { "translate": [16, 22] }, "children": [
+                { "id": "cut-u2-mis-p", "type": "op", "op": "fragment", "rngKey": "rn/cut-u2-mis", "args": { "name": "mark.sponsor-c", "x": 0, "y": 0, "span": 130, "rotate": -37, "tear": { "roughness": 0.7, "segment": 11 }, "style": { "kind": "solid", "color": "misprint", "opacity": 255 } } }
+              ] },
+              { "id": "cut-u2-t", "type": "op", "op": "text", "rngKey": "rn/cut-u2-t", "args": { "text": "U", "font": "archivo-black", "size": 100, "x": 0, "y": 34, "align": "center", "color": "ink", "tracking": 0 } }
+            ]
+          },
+          {
+            "id": "cut-r",
+            "type": "group",
+            "transform": { "translate": [598, 632], "rotate": 13, "scale": 1.02 },
+            "children": [
+              { "id": "cut-r-cut", "type": "group", "clip": { "type": "polygon", "points": [[-50, -76], [52, -72], [48, 76], [-52, 72]] }, "children": [
+                { "id": "cut-r-p", "type": "op", "op": "fragment", "rngKey": "rn/cut-r-p", "args": { "name": "mark.sponsor-c", "x": 0, "y": 0, "span": 120, "rotate": -70, "tear": { "roughness": 0.85, "segment": 13 }, "style": { "kind": "solid", "color": "yellow", "opacity": 255 } } }
+              ] },
+              { "id": "cut-r-mis", "type": "group", "blend": "multiply", "transform": { "translate": [-20, 18] }, "children": [
+                { "id": "cut-r-mis-p", "type": "op", "op": "fragment", "rngKey": "rn/cut-r-mis", "args": { "name": "mark.sponsor-c", "x": 0, "y": 0, "span": 130, "rotate": 5, "tear": { "roughness": 0.7, "segment": 11 }, "style": { "kind": "solid", "color": "misprint", "opacity": 255 } } }
+              ] },
+              { "id": "cut-r-t", "type": "op", "op": "text", "rngKey": "rn/cut-r-t", "args": { "text": "R", "font": "unifraktur", "size": 90, "x": 0, "y": 31, "align": "center", "color": "ink", "tracking": 0 } }
+            ]
+          },
+          {
+            "id": "cut-e",
+            "type": "group",
+            "transform": { "translate": [702, 660], "rotate": -9, "scale": 0.92 },
+            "children": [
+              { "id": "cut-e-cut", "type": "group", "clip": { "type": "polygon", "points": [[-52, -72], [50, -78], [52, 74], [-48, 78]] }, "children": [
+                { "id": "cut-e-p", "type": "op", "op": "fragment", "rngKey": "rn/cut-e-p", "args": { "name": "mark.sponsor-c", "x": 0, "y": 0, "span": 120, "rotate": 78, "tear": { "roughness": 0.85, "segment": 13 }, "style": { "kind": "solid", "color": "paper", "opacity": 255 } } }
+              ] },
+              { "id": "cut-e-mis", "type": "group", "blend": "multiply", "transform": { "translate": [24, 16] }, "children": [
+                { "id": "cut-e-mis-p", "type": "op", "op": "fragment", "rngKey": "rn/cut-e-mis", "args": { "name": "mark.sponsor-c", "x": 0, "y": 0, "span": 130, "rotate": -60, "tear": { "roughness": 0.7, "segment": 11 }, "style": { "kind": "solid", "color": "misprint", "opacity": 255 } } }
+              ] },
+              { "id": "cut-e-t", "type": "op", "op": "text", "rngKey": "rn/cut-e-t", "args": { "text": "E", "font": "special-elite", "size": 86, "x": 0, "y": 30, "align": "center", "color": "ink", "tracking": 0 } }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "strip",
+        "type": "group",
+        "transform": { "translate": [400, 862], "rotate": -5 },
+        "label": "a strip cut off a headline and stuck back down crooked; still a hand-authored polygon, because no fragment in the pack is 10:1 and span scales uniformly",
+        "children": [
+          {
+            "id": "strip-bar",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "rn/strip-bar",
+            "args": { "region": { "type": "polygon", "points": [[-320, -30], [-240, -36], [-160, -28], [-80, -36], [0, -28], [80, -36], [160, -28], [240, -36], [320, -28], [326, 30], [240, 24], [160, 34], [80, 24], [0, 34], [-80, 24], [-160, 34], [-240, 24], [-322, 32]] }, "style": { "kind": "solid", "color": "ink", "opacity": 255 } }
+          },
+          {
+            "id": "strip-text",
+            "type": "op",
+            "op": "text",
+            "rngKey": "rn/strip-text",
+            "args": { "text": "NOTHING   WAS   ARRANGED   IN   ADVANCE", "font": "bebas-neue", "size": 28, "x": 0, "y": 10, "align": "center", "color": "paper", "tracking": 3 }
+          }
+        ]
+      },
+      {
+        "id": "pin",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "rn/pin",
+        "label": "the safety pin, such as it is: a rule bent round on itself",
+        "args": { "region": { "type": "circle", "cx": 400, "cy": 500, "r": 13 }, "style": { "kind": "solid", "color": "ink", "opacity": 255 } }
+      },
+      {
+        "id": "pin-wire",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "rn/pin-wire",
+        "args": { "points": [[400, 500], [452, 476], [500, 492], [522, 528], [498, 556], [458, 540]], "brush": "rotring", "color": "ink", "weight": 3, "curve": 0.6 }
+      },
+      {
+        "id": "footer",
+        "type": "op",
+        "op": "text",
+        "rngKey": "rn/footer",
+        "label": "struck unevenly: per-glyph jitter off this node's own glyph stream",
+        "args": { "text": "CUT   FROM   THIS   WEEK   /   RETURNED   WITHOUT   COMMENT", "font": "special-elite", "size": 16, "x": 400, "y": 1148, "align": "center", "color": "ink", "tracking": 3, "jitter": { "translate": 1, "rotate": 1, "scale": 0.05 } }
+      }
+    ]
+  }
+}

@@ -1,5 +1,11 @@
 # Trait table
 
+> **This is the v0 table and it is the *before*.** The same twelve probes were re-authored against
+> `default-v1` / `core-v1` and re-scored in **`trait-table-v1.md`**, which carries the before/after
+> per row. Nothing here has been edited: overwriting it would have destroyed the only thing the
+> re-score measures against. Totals moved **35 / 22 / 11 → 53 / 10 / 5** on these 68 rows, and
+> **62 / 11 / 5** across the 78 rows v1 makes expressible.
+
 One row per trait of each target look. **Achieved** means the substrate produces the thing itself.
 **Faked** means it was approximated with a primitive not designed for it and would not survive close
 viewing — the standard applied is a 2x crop, and every "faked" below was checked at 2x.
