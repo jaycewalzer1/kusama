@@ -146,6 +146,22 @@ they continue to resolve `default-v0`, their `profileHash` in `goldens/index.jso
 `61982d731298` keep passing without being regenerated. Nothing about this change forces a golden
 rewrite, and if it appears to, that is a bug in the change and not in the goldens.
 
+> **Outcome, 2026-08-26 — the prediction held, and the four hashes above are still dead.** Read
+> that carefully, because the two halves look contradictory. `default-v0` is byte-identical and
+> still hashes `15ad87c16095`; the shipped profile is `default-v1@be50e7c6f0a6` with pack
+> `core-v1@dd47bb1c2e34`; and **no part of the v1 work moved a v0 pixel.** The goldens were
+> nevertheless re-pinned to `dca4125bd3ec` / `7428a3c1efeb` / `d06eb1f14840` / `aca457b2491c`,
+> because a separate bug fix landed the same day: `textWidth(' ')` returns exactly 0, so every
+> per-glyph path had been dropping word spaces (NOTES E7). That is the case this paragraph
+> explicitly did not cover — a golden rewrite forced by a *correctness fix*, not by a capability
+> addition. The rule "if a v1 change appears to force a v0 golden rewrite, that is a bug in the
+> change" survives intact; it just is not the only reason a golden can legitimately move. The
+> re-pin is commit `c98bdf3`, kept separate so it can be reverted alone.
+>
+> Two naming drifts from this section as written: the profile key shipped as **`print`**, not
+> `post`, and the stage list is `threshold` / `posterize` / `halftone` / `grain` / `misregister` /
+> `paper` / `generation` rather than a single `degrade`. The limit is `limits.maxPrintStages`.
+
 ---
 
 ## Spec 2 — `stencil`

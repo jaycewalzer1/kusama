@@ -496,7 +496,7 @@ reading the program against a medium other than the one it declares.
 ## Layout
 
 ```
-cli/         the eight commands above
+cli/         the ten commands above
 env/         Node side: browser control, validation, profiles, packs, edits, diffing, PNG, print, presentation
 renderer/    plain ESM shared with the browser: resolve, draw, ops, macros, compositing, rng, page
 schema/      program, paintstyle, edit and profile JSON Schemas
