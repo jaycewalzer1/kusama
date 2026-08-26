@@ -1,0 +1,123 @@
+{
+  "version": "0.2",
+  "profile": "default-v1",
+  "assetPack": "core-v1",
+  "canvas": { "width": 520, "height": 700, "ground": "#e8e4d8", "brushScale": 1.5 },
+  "seed": 71144,
+  "palette": { "ink": "#101010", "acid": "#c8d400", "bruise": "#4a2352" },
+  "print": [{ "stage": "posterize", "levels": 4 }],
+  "meta": {
+    "note": "Author two on the same capability: cut paper, not apertures. Angled convex polygons, a nested clip that intersects to a smaller polygon, and a print stage on top so the edges read as printed rather than drawn."
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "diamond",
+        "type": "group",
+        "clip": { "type": "polygon", "points": [[260, 40], [480, 260], [260, 480], [40, 260]] },
+        "note": "A rotated square as a polygon clip. Under default-v0 the clip could not be turned.",
+        "children": [
+          {
+            "id": "d-ground",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "d-ground",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 0, "w": 520, "h": 520 },
+              "style": { "kind": "solid", "color": "acid", "opacity": 255 }
+            }
+          },
+          {
+            "id": "d-stripes",
+            "type": "repeat",
+            "rngKey": "d-stripes",
+            "count": 9,
+            "layout": { "type": "line", "origin": [30, 60], "dx": 0, "dy": 50 },
+            "children": [
+              {
+                "id": "stripe",
+                "type": "op",
+                "op": "paint",
+                "rngKey": "stripe",
+                "args": {
+                  "region": { "type": "rect", "x": 0, "y": 0, "w": 460, "h": 22 },
+                  "style": { "kind": "solid", "color": "bruise", "opacity": 255 }
+                }
+              }
+            ]
+          },
+          {
+            "id": "wedge",
+            "type": "group",
+            "clip": { "type": "polygon", "points": [[200, 120], [460, 200], [420, 420], [180, 380]] },
+            "note": "A clip inside a clip. Two convex polygons intersect to a convex polygon, so this is still a legal clip for everything below it.",
+            "children": [
+              {
+                "id": "w-fill",
+                "type": "op",
+                "op": "paint",
+                "rngKey": "w-fill",
+                "args": {
+                  "region": { "type": "rect", "x": 0, "y": 0, "w": 520, "h": 520 },
+                  "style": { "kind": "solid", "color": "ink", "opacity": 255 }
+                }
+              },
+              {
+                "id": "w-bird",
+                "type": "op",
+                "op": "fragment",
+                "rngKey": "w-bird",
+                "args": {
+                  "name": "animal.bird",
+                  "x": 310,
+                  "y": 270,
+                  "span": 200,
+                  "rotate": 12,
+                  "style": { "kind": "solid", "color": "acid", "opacity": 255 }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "flag",
+        "type": "group",
+        "clip": { "type": "polygon", "points": [[40, 530], [480, 510], [480, 610], [40, 640]] },
+        "note": "A convex quadrilateral that is not a rectangle at any rotation.",
+        "children": [
+          {
+            "id": "flag-fill",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "flag-fill",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 490, "w": 520, "h": 180 },
+              "style": { "kind": "hatch", "brush": "charcoal", "color": "ink", "spacing": 4, "angle": 82, "rand": 0.3, "layers": 1 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "stamp",
+        "type": "op",
+        "op": "text",
+        "rngKey": "stamp",
+        "args": {
+          "x": 40,
+          "y": 682,
+          "size": 30,
+          "text": "cut, not drawn",
+          "font": "stardos-stencil",
+          "color": "ink",
+          "align": "left",
+          "tracking": 1.5,
+          "case": "upper",
+          "skew": -8
+        }
+      }
+    ]
+  }
+}

@@ -151,6 +151,26 @@ function checkAssets(prog: ProgramShape, profile: MediumProfile, pack: AssetPack
   return issues;
 }
 
+/**
+ * Does this ring turn the same way at every corner? Collinear corners are allowed, so a rectangle
+ * with a redundant midpoint still passes. Self-intersecting rings fail, which is the point: they are
+ * the other shape Sutherland-Hodgman gets quietly wrong.
+ */
+function isConvex(points: [number, number][]): boolean {
+  let sign = 0;
+  for (let i = 0; i < points.length; i++) {
+    const [ax, ay] = points[i]!;
+    const [bx, by] = points[(i + 1) % points.length]!;
+    const [cx, cy] = points[(i + 2) % points.length]!;
+    const cross = (bx - ax) * (cy - by) - (by - ay) * (cx - bx);
+    if (cross === 0) continue;
+    const s = cross > 0 ? 1 : -1;
+    if (sign === 0) sign = s;
+    else if (s !== sign) return false;
+  }
+  return true;
+}
+
 /** One pass over the source tree: ids, profile allowances, structural rules, numbers, counts. */
 function walkAndCheck(prog: ProgramShape, profile: MediumProfile, pack: AssetPack): Issue[] {
   const issues: Issue[] = [];
@@ -189,6 +209,27 @@ function walkAndCheck(prog: ProgramShape, profile: MediumProfile, pack: AssetPac
     }
     numbers(node.transform, 'transform', `${at}/transform`);
     numbers(node.clip, 'clip', `${at}/clip`);
+    // A clip is intersected geometrically (NOTES L1) and Sutherland-Hodgman is only correct for a
+    // convex clip. Rect and circle are convex by construction; a polygon has to earn it here,
+    // because the failure downstream is a wrong shape rather than an error.
+    //
+    // The shape set is profile-gated so that widening it is a versioned change like any other. The
+    // default is V0's ["rect"], which is what lets `default-v0` keep 15ad87c16095 unedited while
+    // sharing one schema file with `default-v1`.
+    if (node.clip) {
+      const shape = String(node.clip['type']);
+      if (!(profile.clipShapes ?? ['rect']).includes(shape)) {
+        issues.push({ code: 'clip.notAllowed', path: `${at}/clip`, message: `the profile does not allow a "${shape}" clip` });
+      }
+    }
+    if (node.clip?.['type'] === 'polygon') {
+      const pts = node.clip['points'] as [number, number][];
+      if (pts.length > profile.limits.maxPolygonPoints) {
+        issues.push({ code: 'limit.polygonPoints', path: `${at}/clip/points`, message: `${pts.length} clip polygon points exceeds the profile's limit of ${profile.limits.maxPolygonPoints}` });
+      } else if (!isConvex(pts)) {
+        issues.push({ code: 'clip.concave', path: `${at}/clip`, message: 'a clip polygon must be convex: the clipper intersects half-planes, so a concave clip would silently paint the wrong shape rather than fail' });
+      }
+    }
 
     if (node.type === 'group') {
       if (node.blend !== undefined && !profile.blendModes.includes(node.blend)) {

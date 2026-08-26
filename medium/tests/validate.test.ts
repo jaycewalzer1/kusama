@@ -6,8 +6,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { validateProgram, validateEditAction, validateProfile } from '../env/validate.js';
-import { loadProfile } from '../env/profile.js';
-import { EMPTY_PACK, group, hatchNode, program, strokeNode, testProfile, washNode } from './helpers.js';
+import { loadProfile, type MediumProfile } from '../env/profile.js';
+import { EMPTY_PACK, group, hatchNode, program, resolve, strokeNode, testProfile, washNode } from './helpers.js';
 
 const PROFILE = testProfile();
 
@@ -95,6 +95,52 @@ test('text inside a clipped group is refused rather than silently unclipped', ()
   clipped['clip'] = { type: 'rect', x: 0, y: 0, w: 200, h: 200 };
   assert.ok(codes(program([clipped])).includes('text.clipped'));
   assert.deepEqual(codes(program([text])), [], 'the same text unclipped is fine');
+});
+
+test('a clip may be any convex region the profile allows, and nothing else', () => {
+  // `clipShapes` is absent from default-v0, which means ["rect"], so PROFILE here is V0's answer.
+  const wide = { ...PROFILE, clipShapes: ['rect', 'circle', 'polygon'] };
+  const clipped = (clip: Record<string, unknown>) => {
+    const g = group('g1', [hatchNode('h1', 20, 20)]);
+    g['clip'] = clip;
+    return program([g]);
+  };
+  const check = (p: MediumProfile, prog: Record<string, unknown>) =>
+    validateProgram(prog, p, EMPTY_PACK).issues.map((i) => i.code);
+
+  const circle = clipped({ type: 'circle', cx: 100, cy: 100, r: 60 });
+  assert.deepEqual(check(PROFILE, circle), ['clip.notAllowed'], 'a v0 profile still clips with rects only');
+  assert.deepEqual(check(wide, circle), []);
+
+  // A square with a redundant collinear midpoint on one side: convex, and a naive cross-product
+  // check that treats a zero cross as a direction change would reject it.
+  const square = clipped({ type: 'polygon', points: [[20, 20], [120, 20], [220, 20], [220, 220], [20, 220]] });
+  assert.deepEqual(check(wide, square), []);
+
+  // A chevron. Sutherland-Hodgman does not fail on this, it returns a wrong shape, so the refusal
+  // has to happen here or not at all.
+  const chevron = clipped({ type: 'polygon', points: [[20, 20], [120, 120], [220, 20], [220, 220], [20, 220]] });
+  assert.deepEqual(check(wide, chevron), ['clip.concave']);
+
+  const tooMany = clipped({
+    type: 'polygon',
+    points: Array.from({ length: PROFILE.limits.maxPolygonPoints + 1 }, (_, i) => [20 + i * 0.5, 20]),
+  });
+  assert.ok(check(wide, tooMany).includes('limit.polygonPoints'));
+});
+
+test('a polygon clip actually clips, and nested clips intersect', () => {
+  const inner = group('inner', [hatchNode('h1', 0, 0)]);
+  inner['clip'] = { type: 'polygon', points: [[0, 0], [200, 0], [200, 200], [0, 200]] };
+  const outer = group('outer', [inner]);
+  outer['clip'] = { type: 'rect', x: 100, y: 100, w: 200, h: 200 };
+  const resolved = resolve(program([outer]));
+  const clip = resolved.nodes[0]!.clip!;
+  const xs = clip.map(([x]) => x);
+  const ys = clip.map(([, y]) => y);
+  // The 0..200 square met the 100..300 rect, so the leaf sees 100..200 in both axes.
+  assert.deepEqual([Math.min(...xs), Math.max(...xs)], [100, 200]);
+  assert.deepEqual([Math.min(...ys), Math.max(...ys)], [100, 200]);
 });
 
 test('a program may only name fragments and motifs that are in its pack', () => {

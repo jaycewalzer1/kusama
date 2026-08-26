@@ -166,17 +166,41 @@
     },
 
     "clip": {
-      "description": "Rect only in V0: p5.brush cannot clip, so clipping is done geometrically and only convex rects are supported (NOTES L1).",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["type", "x", "y", "w", "h"],
-      "properties": {
-        "type": { "const": "rect" },
-        "x": { "type": "number" },
-        "y": { "type": "number" },
-        "w": { "type": "number", "exclusiveMinimum": 0 },
-        "h": { "type": "number", "exclusiveMinimum": 0 }
-      }
+      "description": "p5.brush cannot clip, so clipping is done geometrically on the CPU with Sutherland-Hodgman, which is correct only for a convex clip (NOTES L1). Rect and circle are convex by construction; a polygon is checked for convexity in Node and refused if it is not, because a concave clip does not fail loudly here -- it quietly produces a wrong shape. Not a fragment: fragment outlines are concave. Text inside a clipped group is still refused, since a glyph has no polygon to intersect.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "x", "y", "w", "h"],
+          "properties": {
+            "type": { "const": "rect" },
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "w": { "type": "number", "exclusiveMinimum": 0 },
+            "h": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "cx", "cy", "r"],
+          "properties": {
+            "type": { "const": "circle" },
+            "cx": { "type": "number" },
+            "cy": { "type": "number" },
+            "r": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "points"],
+          "properties": {
+            "type": { "const": "polygon" },
+            "points": { "type": "array", "minItems": 3, "items": { "$ref": "#/$defs/point" } }
+          }
+        }
+      ]
     },
 
     "region": {

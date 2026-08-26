@@ -463,9 +463,15 @@ export function resolveProgram(program, pack, limits = {}) {
       const world = matMul(ctx.world, localMatrix(node.transform));
       let clip = ctx.clip;
       if (node.clip) {
-        const local = regionPolygon({ ...node.clip, type: 'rect' }, pack);
-        const quad = local.map(([x, y]) => matApply(world, x, y));
-        clip = ctx.clip ? clipPolygon(quad, ctx.clip) : quad;
+        // Any convex region, not just a rect. The `type: 'rect'` override that used to sit here was
+        // the whole of the V0 restriction -- `clipPolygon` has always been a general convex clipper.
+        // Convexity is the real requirement and it is checked in Node (env/validate.ts), because
+        // Sutherland-Hodgman does not fail on a concave clip, it silently returns a wrong shape.
+        const local = regionPolygon(node.clip, pack);
+        const poly = local.map(([x, y]) => matApply(world, x, y));
+        // Nested clips intersect. Two convex polygons intersect to a convex polygon, so a clip
+        // inside a clip is still a legal clip for everything below it.
+        clip = ctx.clip ? clipPolygon(poly, ctx.clip) : poly;
         if (clip.length < 3) warnings.push(`clip of group "${resolvedId}" is empty; its subtree paints nothing`);
       }
       groups.push({

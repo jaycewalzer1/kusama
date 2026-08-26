@@ -38,6 +38,11 @@ export interface MediumProfile {
   assetPacks: string[];
   /** Post-process stages allowed in a program's `print` list. Absent means this medium has no "after". */
   print?: string[];
+  /**
+   * Region kinds a group's `clip` may use. Absent means `["rect"]`, which is what V0 allowed and is
+   * how `default-v0` keeps its hash without having to be edited to say so.
+   */
+  clipShapes?: string[];
   limits: ProfileLimits;
   ranges: Record<string, [number, number]>;
   quantize: Record<string, number>;

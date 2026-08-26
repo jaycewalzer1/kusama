@@ -29,6 +29,12 @@
     "macros": { "type": "array", "items": { "enum": ["frame", "motif", "quarantine"] }, "uniqueItems": true },
     "layouts": { "type": "array", "items": { "enum": ["grid", "ring", "line", "scatter"] }, "uniqueItems": true },
     "styles": { "type": "array", "items": { "enum": ["wash", "hatch", "field", "outline", "solid"] }, "uniqueItems": true },
+    "clipShapes": {
+      "description": "Region kinds a group's clip may use. Absent means [\"rect\"], which is what V0 allowed, so default-v0 keeps that behaviour and its hash without being edited to say so.",
+      "type": "array",
+      "items": { "enum": ["rect", "circle", "polygon"] },
+      "uniqueItems": true
+    },
     "fonts": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
     "brushes": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
     "blendModes": {

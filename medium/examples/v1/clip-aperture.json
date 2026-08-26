@@ -1,0 +1,118 @@
+{
+  "version": "0.2",
+  "profile": "default-v1",
+  "assetPack": "core-v1",
+  "canvas": { "width": 520, "height": 700, "ground": "#efe9dc", "brushScale": 1.5 },
+  "seed": 20261,
+  "palette": { "ink": "#141210", "red": "#b81f1a", "sky": "#3d5a80" },
+  "meta": {
+    "note": "Author one on the generalised clip: apertures. Everything is seen through a hole. A circle clip and a nested circle-inside-rect, which under v0 could only have been squares."
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "porthole",
+        "type": "group",
+        "clip": { "type": "circle", "cx": 260, "cy": 250, "r": 180 },
+        "note": "A round hole cut in a field of hatch. Under default-v0 this had to be a square.",
+        "children": [
+          {
+            "id": "field",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "field",
+            "args": {
+              "region": { "type": "rect", "x": 40, "y": 30, "w": 440, "h": 440 },
+              "style": { "kind": "hatch", "brush": "2B", "color": "sky", "spacing": 5, "angle": 28, "rand": 0.2, "layers": 2 }
+            }
+          },
+          {
+            "id": "bar",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "bar",
+            "args": {
+              "region": { "type": "rect", "x": 40, "y": 210, "w": 440, "h": 60 },
+              "style": { "kind": "solid", "color": "red", "opacity": 255 }
+            }
+          },
+          {
+            "id": "walker",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "walker",
+            "args": {
+              "name": "figure.standing",
+              "x": 260,
+              "y": 330,
+              "span": 190,
+              "rotate": 0,
+              "style": { "kind": "solid", "color": "ink", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "slot",
+        "type": "group",
+        "clip": { "type": "circle", "cx": 130, "cy": 560, "r": 85 },
+        "note": "A second, smaller aperture, so the shape is clearly the clip and not the paint.",
+        "children": [
+          {
+            "id": "slot-fill",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "slot-fill",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 460, "w": 520, "h": 200 },
+              "style": { "kind": "solid", "color": "ink", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "rule-1",
+        "type": "op",
+        "op": "rule",
+        "rngKey": "rule-1",
+        "args": { "from": [40, 486], "to": [480, 486], "brush": "marker", "color": "red", "weight": 4 }
+      },
+      {
+        "id": "title",
+        "type": "op",
+        "op": "text",
+        "rngKey": "title",
+        "args": {
+          "x": 250,
+          "y": 552,
+          "size": 44,
+          "text": "aperture",
+          "font": "pathway-gothic",
+          "color": "ink",
+          "align": "left",
+          "tracking": 3,
+          "case": "upper"
+        }
+      },
+      {
+        "id": "sub",
+        "type": "op",
+        "op": "text",
+        "rngKey": "sub",
+        "args": {
+          "x": 250,
+          "y": 590,
+          "size": 15,
+          "text": "the hole is the shape the clip makes, not the shape anything was painted in",
+          "font": "ibm-plex-mono",
+          "color": "ink",
+          "align": "left",
+          "maxWidth": 230,
+          "leading": 1.4
+        }
+      }
+    ]
+  }
+}
