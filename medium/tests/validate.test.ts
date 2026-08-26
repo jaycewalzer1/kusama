@@ -7,7 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { validateProgram, validateEditAction, validateProfile } from '../env/validate.js';
 import { loadProfile, type MediumProfile } from '../env/profile.js';
-import { tearPointCount, tearPolygon } from '../renderer/resolve.js';
+import { tearPointCount, tearPolygon, sprayParticleCount } from '../renderer/resolve.js';
 import { EMPTY_PACK, group, hatchNode, program, resolve, strokeNode, testProfile, washNode } from './helpers.js';
 
 const PROFILE = testProfile();
@@ -229,6 +229,54 @@ test('a torn fragment edge is gated, budgeted, and the same tear every time', ()
     return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
   };
   assert.deepEqual(tearPolygon(square, tear, seeded()), tearPolygon(square, tear, seeded()));
+});
+
+test('a spray is gated, and its particle count is known exactly in Node', () => {
+  const spray = (args: Record<string, unknown>) => ({
+    id: 's1', type: 'op', op: 'spray', rngKey: 'key-s1',
+    args: { x: 200, y: 200, r: 100, density: 0.5, falloff: 1, brush: '2B', color: 'ink', weight: 2, ...args },
+  });
+  const check = (p: MediumProfile, node: Record<string, unknown>) =>
+    validateProgram(program([node]), p, EMPTY_PACK).issues.map((i) => i.code);
+
+  // V0 has no aerosol. It says so by not having the limit, the same way it says a fragment may not
+  // be torn -- so `default-v0` keeps its hash without being edited to refuse something it predates.
+  assert.ok(check(PROFILE, spray({})).includes('spray.notAllowed'));
+
+  const wide = {
+    ...PROFILE,
+    primitives: [...PROFILE.primitives, 'spray'],
+    limits: { ...PROFILE.limits, maxSprayParticles: 4000 },
+    ranges: { ...PROFILE.ranges, falloff: [0.2, 6] as [number, number], wander: [0, 12] as [number, number] },
+    quantize: { ...PROFILE.quantize, falloff: 0.1, wander: 0.5 },
+  };
+  assert.deepEqual(check(wide, spray({})), []);
+
+  // The point of computing the count here rather than discovering it in a browser: this is a
+  // hundred thousand brush stamps, and it costs a millisecond to refuse.
+  assert.ok(check(wide, spray({ density: 20, r: 400 })).includes('limit.sprayParticles'));
+
+  // Exact, not estimated, and the same integer the operator will loop over. pi * 100^2 * 0.5 / 100.
+  assert.equal(sprayParticleCount({ density: 0.5, r: 100 }), 157);
+  assert.equal(sprayParticleCount({ density: 20, r: 400 }), 100531);
+
+  // `falloff: 1` is a uniform disc, and that is the identity worth having: it means the parameter
+  // has a meaningful zero point rather than a default somebody liked the look of. Check it against
+  // the property a uniform disc actually has -- area, not radius, is uniformly distributed, so half
+  // the particles fall inside r/sqrt(2).
+  const sample = (falloff: number, n: number) => {
+    let s = 12345;
+    const rnd = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+    let inner = 0;
+    for (let i = 0; i < n; i++) {
+      rnd(); // the angle, drawn and discarded, exactly as the operator draws it
+      if (Math.pow(rnd(), falloff / 2) < Math.SQRT1_2) inner++;
+    }
+    return inner / n;
+  };
+  assert.ok(Math.abs(sample(1, 20000) - 0.5) < 0.02, 'falloff 1 is not a uniform disc');
+  assert.ok(sample(2.6, 20000) > 0.72, 'falloff above 1 should crowd the centre');
+  assert.ok(sample(0.4, 20000) < 0.25, 'falloff below 1 should hollow out into a ring');
 });
 
 test('a program may only name fragments and motifs that are in its pack', () => {

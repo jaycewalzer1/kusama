@@ -11,7 +11,7 @@ import type { ValidateFunction } from 'ajv';
 import { ROOT } from './browser.js';
 import { contentHash, estimateBudget, type Budget, type MediumProfile } from './profile.js';
 import { packHash, type AssetPack } from './pack.js';
-import { ResolveError, resolveProgram, fragmentPolygon, tearPointCount, type ResolvedProgram } from '../renderer/resolve.js';
+import { ResolveError, resolveProgram, fragmentPolygon, tearPointCount, sprayParticleCount, type ResolvedProgram } from '../renderer/resolve.js';
 import { MacroError } from '../renderer/macros.js';
 
 const Ajv = _Ajv2020 as unknown as typeof _Ajv2020.default;
@@ -326,6 +326,20 @@ function walkAndCheck(prog: ProgramShape, profile: MediumProfile, pack: AssetPac
           if (n > cap) {
             issues.push({ code: 'limit.tearPoints', path: `${at}/args/tear`, message: `tearing this fragment at segment ${tear.segment} needs ${n} vertices, which exceeds the profile's limit of ${cap}` });
           }
+        }
+      }
+    }
+    if (op === 'spray') {
+      // The whole point of computing the particle count in Node is that this can be refused here.
+      // `density: 20` over `r: 400` is ten million stamps, which a browser would accept and then
+      // spend the rest of the afternoon on.
+      const cap = profile.limits.maxSprayParticles;
+      if (cap === undefined) {
+        issues.push({ code: 'spray.notAllowed', path: at, message: 'this profile has no aerosol: `spray` needs a maxSprayParticles limit' });
+      } else {
+        const n = sprayParticleCount(a as { density: number; r: number });
+        if (n > cap) {
+          issues.push({ code: 'limit.sprayParticles', path: `${at}/args/density`, message: `density ${String(a['density'])} over radius ${String(a['r'])} is ${n} particles, which exceeds the profile's limit of ${cap}` });
         }
       }
     }

@@ -111,6 +111,11 @@ export interface Tear {
 
 export declare function fragmentPolygon(args: Record<string, never> | any, pack: any): Point[];
 export declare function tearPointCount(points: Point[], tear: Tear): number;
+
+/** Canvas units per vertex of a drip's walk. */
+export declare const DRIP_STEP: number;
+/** Particles a `spray` lays down, from its arguments alone: the same integer in Node and in the browser. */
+export declare function sprayParticleCount(args: { density: number; r: number }): number;
 export declare function tearPolygon(points: Point[], tear: Tear, rng: () => number): Point[];
 export declare function regionPolygon(region: any, pack: any, segments?: number): Point[];
 export declare function styleMargin(style: any, brushScale?: number): number;

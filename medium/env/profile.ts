@@ -8,6 +8,7 @@ import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { ROOT } from './browser.js';
 import type { ResolvedLeaf, ResolvedProgram } from '../renderer/resolve.js';
+import { sprayParticleCount, DRIP_STEP } from '../renderer/resolve.js';
 
 export interface ProfileLimits {
   maxSourceNodes: number;
@@ -28,6 +29,11 @@ export interface ProfileLimits {
    * which is V0's answer and is how `default-v0` keeps its hash without being edited to say so.
    */
   maxTearPoints?: number;
+  /**
+   * Particles one `spray` may lay down. Absent means this medium has no aerosol, which is V0's
+   * answer and, like `maxTearPoints`, is how `default-v0` says so without being edited.
+   */
+  maxSprayParticles?: number;
 }
 
 export interface MediumProfile {
@@ -159,6 +165,13 @@ function estimateMarks(node: ResolvedLeaf): number {
     }
     case 'cover':
       return 40 + Number(a['softness'] ?? 0) * 400;
+    case 'spray': {
+      // The one op whose mark count is exact rather than estimated: every particle is one stamp,
+      // and the count is fixed by the arguments. Drips add their walk's vertices on top.
+      const drip = a['drip'] as { count: number; length: number } | undefined;
+      const dripMarks = drip ? drip.count * Math.max(1, Math.round(drip.length / DRIP_STEP)) : 0;
+      return sprayParticleCount(a as { density: number; r: number }) + dripMarks;
+    }
     default:
       break;
   }

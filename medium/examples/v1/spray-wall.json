@@ -1,0 +1,115 @@
+{
+  "version": "0.2",
+  "profile": "default-v1",
+  "assetPack": "core-v1",
+  "canvas": { "width": 520, "height": 700, "ground": "#cfc9bd", "brushScale": 1.5 },
+  "seed": 60217,
+  "palette": {
+    "wall": "#b8b1a4",
+    "black": "#17161a",
+    "pink": "#e0417a",
+    "chrome": "#dcdce2",
+    "sun": "#f0a91c"
+  },
+  "meta": {
+    "note": "A wall. Three sprays at three falloffs -- a tight core, a plain uniform disc, and a hollow ring from a can held too close -- with drips running out of the two wet ones. The `falloff: 1` middle cloud is the control: it is a uniform disc by construction, so if it comes out looking like anything else the sampler is wrong."
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "render",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "render",
+        "args": {
+          "region": { "type": "rect", "x": 0, "y": 0, "w": 520, "h": 700 },
+          "style": { "kind": "hatch", "brush": "2H", "color": "wall", "spacing": 5, "angle": 84, "rand": 0.14, "layers": 1 }
+        }
+      },
+      {
+        "id": "halo",
+        "type": "op",
+        "op": "spray",
+        "rngKey": "halo",
+        "note": "falloff 0.4: hollow. The can is close enough that the cone lands as a ring.",
+        "args": { "x": 262, "y": 236, "r": 168, "density": 0.55, "falloff": 0.4, "brush": "spray", "color": "sun", "weight": 1.5 }
+      },
+      {
+        "id": "cloud-black",
+        "type": "op",
+        "op": "spray",
+        "rngKey": "cloud-black",
+        "note": "falloff 1: the control. A uniform disc by construction.",
+        "args": {
+          "x": 190, "y": 300, "r": 140, "density": 0.75, "falloff": 1, "brush": "spray", "color": "black", "weight": 2,
+          "drip": { "count": 9, "length": 96, "wander": 2.5 }
+        }
+      },
+      {
+        "id": "cloud-pink",
+        "type": "op",
+        "op": "spray",
+        "rngKey": "cloud-pink",
+        "note": "falloff 2.6: tight core, edge going to overspray.",
+        "args": {
+          "x": 340, "y": 356, "r": 132, "density": 1.1, "falloff": 2.6, "brush": "spray", "color": "pink", "weight": 1.5,
+          "drip": { "count": 14, "length": 118, "wander": 4 }
+        }
+      },
+      {
+        "id": "piece",
+        "type": "group",
+        "children": [
+          {
+            "id": "piece-shadow",
+            "type": "op",
+            "op": "text",
+            "rngKey": "piece-shadow",
+            "args": {
+              "text": "buff", "x": 262, "y": 322, "size": 132, "font": "archivo-black", "color": "black",
+              "align": "center", "case": "upper", "tracking": -3, "skew": -11, "stretch": [1.14, 1]
+            }
+          },
+          {
+            "id": "piece-fill",
+            "type": "op",
+            "op": "text",
+            "rngKey": "piece-fill",
+            "args": {
+              "text": "buff", "x": 257, "y": 316, "size": 132, "font": "archivo-black", "color": "chrome",
+              "align": "center", "case": "upper", "tracking": -3, "skew": -11, "stretch": [1.14, 1]
+            }
+          }
+        ]
+      },
+      {
+        "id": "tag-rule",
+        "type": "op",
+        "op": "rule",
+        "rngKey": "tag-rule",
+        "args": { "from": [64, 512], "to": [456, 512], "brush": "charcoal", "color": "black", "weight": 3 }
+      },
+      {
+        "id": "cap",
+        "type": "op",
+        "op": "spray",
+        "rngKey": "cap",
+        "note": "A dry can: no drips, low density, wide.",
+        "args": { "x": 262, "y": 572, "r": 196, "density": 0.2, "falloff": 1.6, "brush": "spray", "color": "black", "weight": 1 }
+      },
+      {
+        "id": "credit",
+        "type": "op",
+        "op": "text",
+        "rngKey": "credit",
+        "args": {
+          "text": "one coat and it is somebody else's problem", "x": 262, "y": 604, "size": 15,
+          "font": "share-tech-mono", "color": "black", "align": "center", "case": "upper", "tracking": 1.5
+        }
+      }
+    ]
+  },
+  "print": [{ "stage": "grain", "amount": 0.08 }]
+}

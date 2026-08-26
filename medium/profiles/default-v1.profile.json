@@ -8,7 +8,8 @@
     "fragment",
     "text",
     "rule",
-    "cover"
+    "cover",
+    "spray"
   ],
   "macros": [
     "frame",
@@ -107,7 +108,8 @@
     "maxEstimatedMarks": 60000,
     "maxRenderCost": 240000,
     "maxPrintStages": 6,
-    "maxTearPoints": 600
+    "maxTearPoints": 600,
+    "maxSprayParticles": 4000
   },
   "ranges": {
     "x": [
@@ -229,6 +231,14 @@
     "segment": [
       1,
       60
+    ],
+    "falloff": [
+      0.2,
+      6
+    ],
+    "wander": [
+      0,
+      12
     ]
   },
   "quantize": {
@@ -293,7 +303,9 @@
     "vignette": 0.01,
     "passes": 1,
     "roughness": 0.01,
-    "segment": 0.5
+    "segment": 0.5,
+    "falloff": 0.1,
+    "wander": 0.5
   },
   "print": [
     "threshold",

@@ -44,37 +44,43 @@
     "blend-negative": {
       "programHash": "7609a451599022d7fd22784c307cf2759742348c15e1e027ded7a225313aff78",
       "packHash": "dd47bb1c2e34530b551e90cf092e6f8a8a98a1490c4098a25920bc728c74ce44",
-      "profileHash": "2bb06aaaf316d45500abc166b35ccf31e7768b477dfbf23dc915e7550a9a3906",
+      "profileHash": "be50e7c6f0a61fde03b5b03c7071e507a3fdfe36ebc449762e9bf94144dbf800",
       "pixels": "0ffd95e025a3e8eaad3602428fe0172db82ffe5f620b0b178ddde62432561acd"
     },
     "blend-overprint": {
       "programHash": "425579b9b79dd4310b35520dd2edca64197313f00458efdc3846bf8ecd99978e",
       "packHash": "dd47bb1c2e34530b551e90cf092e6f8a8a98a1490c4098a25920bc728c74ce44",
-      "profileHash": "2bb06aaaf316d45500abc166b35ccf31e7768b477dfbf23dc915e7550a9a3906",
+      "profileHash": "be50e7c6f0a61fde03b5b03c7071e507a3fdfe36ebc449762e9bf94144dbf800",
       "pixels": "9878b386da5729b2507fb44ee661c4f607ed4843ad0258b2bdce259d57561356"
     },
     "clip-aperture": {
       "programHash": "9e53150b09323836436bbb252acf32c962e87a9cfaef13141d6e46487cb89518",
       "packHash": "dd47bb1c2e34530b551e90cf092e6f8a8a98a1490c4098a25920bc728c74ce44",
-      "profileHash": "2bb06aaaf316d45500abc166b35ccf31e7768b477dfbf23dc915e7550a9a3906",
+      "profileHash": "be50e7c6f0a61fde03b5b03c7071e507a3fdfe36ebc449762e9bf94144dbf800",
       "pixels": "990d83a573875cac9520d4a7c7fdc7d5a0082d28a173ea1e07fdf2a58052f930"
     },
     "clip-cut-paper": {
       "programHash": "5876ede219800a5302167f2ef9293d990f004ccccfde9f988dc07f5eb431926c",
       "packHash": "dd47bb1c2e34530b551e90cf092e6f8a8a98a1490c4098a25920bc728c74ce44",
-      "profileHash": "2bb06aaaf316d45500abc166b35ccf31e7768b477dfbf23dc915e7550a9a3906",
+      "profileHash": "be50e7c6f0a61fde03b5b03c7071e507a3fdfe36ebc449762e9bf94144dbf800",
       "pixels": "5f321ca4161afb70843864947c690aff996989e2d11ff507862925a7d7ece486"
+    },
+    "spray-wall": {
+      "programHash": "bb33fccc1b0071dd069d30309bbf28e49d921ecf44d2858ded33d70b2bb5f9aa",
+      "packHash": "dd47bb1c2e34530b551e90cf092e6f8a8a98a1490c4098a25920bc728c74ce44",
+      "profileHash": "be50e7c6f0a61fde03b5b03c7071e507a3fdfe36ebc449762e9bf94144dbf800",
+      "pixels": "8895b3af0246b5746aa4ff5af45c3b16d8aeeab288d2b25d611b0127dd0ad4fa"
     },
     "tear-ransom": {
       "programHash": "32190daa07fef646d4c62e792130ec22223d6724215aff260d74edb097734cdb",
       "packHash": "dd47bb1c2e34530b551e90cf092e6f8a8a98a1490c4098a25920bc728c74ce44",
-      "profileHash": "2bb06aaaf316d45500abc166b35ccf31e7768b477dfbf23dc915e7550a9a3906",
+      "profileHash": "be50e7c6f0a61fde03b5b03c7071e507a3fdfe36ebc449762e9bf94144dbf800",
       "pixels": "64e740a8db7f555e03155b8f3e3e187c2da9147fe3ccd2d957cfcc596c455418"
     },
     "tear-strata": {
       "programHash": "a7eb75ef674ef3e3265ae3bf0728ad37f978c797156b0d47eb2a3dfc6b7e4177",
       "packHash": "dd47bb1c2e34530b551e90cf092e6f8a8a98a1490c4098a25920bc728c74ce44",
-      "profileHash": "2bb06aaaf316d45500abc166b35ccf31e7768b477dfbf23dc915e7550a9a3906",
+      "profileHash": "be50e7c6f0a61fde03b5b03c7071e507a3fdfe36ebc449762e9bf94144dbf800",
       "pixels": "89328b491ca01cf488c147e14b715aebf8a022382c26eaadb39d2a6d8dda640a"
     }
   }

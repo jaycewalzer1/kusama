@@ -294,3 +294,74 @@ not compositing, it is just dimming.
 `program.schema.json`; `ranges.opacity` and `quantize.opacity` already exist and already mean the
 same thing, so no new field name is needed. Hash consequence: `default-v1` moves, `default-v0`
 untouched.
+
+---
+
+## Spec (not built): type on a path, and mesh warp
+
+Tier 3b of the widening brief. `spray` (Tier 3a) shipped; this did not, and the reason is not that it
+is hard but that the honest version of it is a different feature than the one the brief describes.
+
+### What was asked for
+
+"Text along a polyline, and a simple mesh warp (arc, bulge, wave)."
+
+### Why it did not ship as one thing
+
+These are two features wearing one bullet point, and only one of them fits the medium as built.
+
+**Type on a path is tractable.** `opText` already measures per-glyph advances (`drawTracked`) and
+already draws each glyph under its own `push`/`translate`/`rotate` when jitter is on. Putting a glyph
+on a polyline is the same loop with the transform read off an arc-length parameterisation of the path
+instead of off a seeded stream. The measurement it needs — `spaceWidth`, and NOTES E7's warning that
+`textWidth(' ')` is 0 — is already solved. The work is arc-length tabulation of the polyline, and
+bounds in `leafBounds` that follow the path rather than a box, which is the only part with any risk in
+it: a text op whose declared bounds stop describing its marks is how `diff` starts reading one node's
+spillover as somebody else's.
+
+**Mesh warp is not tractable on this path, and would be a lie if shipped.** A warp deforms *rendered
+output*, and there is no rendered output to deform until p5 has finished — at which point we are in
+the print pass, on the CPU, working on a whole canvas rather than on one node. The three options were
+all bad:
+
+- Warp the glyph outlines. p5's WEBGL text does not expose outlines here; we draw glyphs, we do not
+  own their contours. There is nothing to bend.
+- Warp per glyph — place each glyph on the arc/bulge/wave with its own rotation and scale. This is
+  *type on a path* with a curve generator attached, not a mesh warp. It bends the baseline and leaves
+  every letterform rigid, which at large sizes is visibly not a warp. Shipping it under the name
+  `warp` would be the O6 failure shape again: the call succeeds, the effect the name promises never
+  happens, and nothing in the determinism gate can see the difference.
+- Warp in the print pass, per-pixel. Deterministic and real, but it warps the entire sheet including
+  everything that was not the text, which is a different primitive with a different name.
+
+So the useful, honest subset is **one** feature: `text` gains a `path`, and the arc/bulge/wave curves
+become ways of *generating* that path rather than a separate `warp` argument. What is lost against the
+brief is per-letterform deformation, and that is lost because the renderer genuinely cannot do it,
+not because it was skipped.
+
+### The measurement that decided it
+
+None — and that is why it is here rather than in the medium. The rule for today was that a capability
+that cannot be proven deterministic does not ship, and the corollary that was applied twice this
+session (overlay/difference in R11, blank variable fonts in O6) is that a capability that *cannot be
+distinguished from its own failure* must not ship either. `warp` on rigid glyphs cannot be
+distinguished from `warp` unimplemented by any gate this repo owns. Type on a path can: put a known
+string on a known circle and the glyph centres have closed-form positions, in the manner of R11.
+
+### If it is built
+
+`textArgs` gains `path`: either an explicit polyline (reusing `maxStrokePoints`) or
+`{ kind: "arc" | "bulge" | "wave", ... }` generating one. Glyphs are placed by arc length from the
+existing `align` anchor; `tracking`, `case`, `leading` and the glyph jitter stream all continue to
+mean what they mean, and `maxWidth` wrapping is refused on a path, because a wrapped second line has
+nowhere to go.
+
+Gate: the R11-style closed-form check above; then the standard loop — the text-heavy per-face program
+re-run on a path for all 36 faces, two independent processes, zero differing hashes — plus a
+`leafBounds` assertion that the declared box contains every drawn glyph, checked against the rendered
+alpha rather than against the same arithmetic that produced it.
+
+Profile change, when it happens: `limits.maxPathTextGlyphs`; `ranges`/`quantize` for whatever the
+curve generators need (`bulge` and `wave` would add two field names; `arc` reuses `r` and
+`startAngle`, both of which already exist and already mean this). Hash consequence: `default-v1`
+moves, `default-v0` untouched.

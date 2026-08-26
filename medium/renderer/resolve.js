@@ -210,6 +210,19 @@ export function fragmentPolygon(args, pack) {
   });
 }
 
+/** Canvas units per vertex of a drip's walk. Fixed on purpose: not a program-level decision. */
+export const DRIP_STEP = 6;
+
+/**
+ * How many particles a spray lays down. Lives here rather than in ops.js because both the operator
+ * and the validator need the same answer, and a budget that can only be bounded in expectation is
+ * not a budget: this has to be knowable in Node, before a browser starts. It is a pure function of
+ * the two declared numbers, so both places get the same integer.
+ */
+export function sprayParticleCount(args) {
+  return Math.round((args.density * Math.PI * args.r * args.r) / 100);
+}
+
 /**
  * How many vertices `tearPolygon` will produce for this outline, without producing them. The
  * validator needs the count before a browser exists, and the count is a pure function of the
@@ -361,6 +374,24 @@ export function leafBounds(node, pack, brushScale) {
       localPts = a.points.map((p) => [p[0], p[1]]);
       margin = (4 + (a.weight ?? 1) * 4) * (brushScale ?? 1);
       break;
+    case 'spray': {
+      // The disc, plus the furthest a drip could get. A drip walks straight down `length` and can
+      // wander at most `wander` per step in either direction, so the box is asymmetric: it grows
+      // downward by the full length but sideways only by the worst-case drift. Bounds may be
+      // conservative and must not need the node's RNG, so this takes the worst case rather than the
+      // walk the seed will actually produce.
+      const d = a.drip;
+      const steps = d ? Math.max(1, Math.round(d.length / DRIP_STEP)) : 0;
+      const drift = d ? steps * d.wander : 0;
+      localPts = [
+        [a.x - a.r - drift, a.y - a.r],
+        [a.x + a.r + drift, a.y - a.r],
+        [a.x + a.r + drift, a.y + a.r + (d ? steps * DRIP_STEP : 0)],
+        [a.x - a.r - drift, a.y + a.r + (d ? steps * DRIP_STEP : 0)],
+      ];
+      margin = (4 + (a.weight ?? 1) * 4) * (brushScale ?? 1);
+      break;
+    }
     case 'rule':
       localPts = [a.from, a.to];
       margin = (4 + (a.weight ?? 1) * 4) * (brushScale ?? 1);

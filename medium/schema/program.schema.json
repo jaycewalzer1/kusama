@@ -451,7 +451,7 @@
       "properties": {
         "id": { "$ref": "#/$defs/id" },
         "type": { "const": "op" },
-        "op": { "enum": ["wash", "paint", "stroke", "fragment", "text", "rule", "cover"] },
+        "op": { "enum": ["wash", "paint", "stroke", "fragment", "text", "rule", "cover", "spray"] },
         "rngKey": { "$ref": "#/$defs/rngKey" },
         "seedOffset": { "type": "integer", "minimum": 0, "maximum": 65535 },
         "args": { "type": "object" },
@@ -467,8 +467,39 @@
         { "if": { "properties": { "op": { "const": "fragment" } } }, "then": { "properties": { "args": { "$ref": "#/$defs/fragmentArgs" } } } },
         { "if": { "properties": { "op": { "const": "text" } } }, "then": { "properties": { "args": { "$ref": "#/$defs/textArgs" } } } },
         { "if": { "properties": { "op": { "const": "rule" } } }, "then": { "properties": { "args": { "$ref": "#/$defs/ruleArgs" } } } },
-        { "if": { "properties": { "op": { "const": "cover" } } }, "then": { "properties": { "args": { "$ref": "#/$defs/coverArgs" } } } }
+        { "if": { "properties": { "op": { "const": "cover" } } }, "then": { "properties": { "args": { "$ref": "#/$defs/coverArgs" } } } },
+        { "if": { "properties": { "op": { "const": "spray" } } }, "then": { "properties": { "args": { "$ref": "#/$defs/sprayArgs" } } } }
       ]
+    },
+
+    "sprayArgs": {
+      "description": "A seeded particle spray about an anchor: an aerosol can rather than a brush. The particle count is a pure function of density and r, so the validator knows it in Node and can refuse an unaffordable cloud before a browser starts.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "r", "density", "falloff", "brush", "color", "weight"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "r": { "description": "Radius of the cone where it meets the sheet.", "type": "number", "minimum": 0.5, "maximum": 4000 },
+        "density": { "description": "Particles per 100 square canvas units of the disc.", "type": "number", "minimum": 0.05, "maximum": 20 },
+        "falloff": { "description": "1 is exactly a uniform disc. Above 1 the cloud tightens to the centre and the edge goes to overspray; below 1 it hollows into a ring, the way a can held too close sprays.", "type": "number", "minimum": 0.2, "maximum": 6 },
+        "brush": { "type": "string" },
+        "color": { "$ref": "#/$defs/color" },
+        "weight": { "type": "number", "minimum": 0.1, "maximum": 20 },
+        "drip": { "$ref": "#/$defs/drip" }
+      }
+    },
+
+    "drip": {
+      "description": "Runs of wet paint leaving the spray, as seeded random walks starting from particles the spray actually laid down. An exact count rather than a per-particle probability: the worst case of a probability is every particle, and a bound nothing can be budgeted against is not a bound.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "length", "wander"],
+      "properties": {
+        "count": { "type": "integer", "minimum": 0, "maximum": 40 },
+        "length": { "type": "number", "minimum": 0, "maximum": 120 },
+        "wander": { "description": "Furthest a drip may stagger sideways per step of its walk.", "type": "number", "minimum": 0, "maximum": 12 }
+      }
     },
 
     "paintArgs": {

@@ -38,7 +38,7 @@ The pinned configuration is:
 | antialiasing | off — the page calls `setAttributes('antialias', false)` and `pixelDensity(1)` |
 | fonts | `fonts/grotesque.ttf` (PT Sans) `9cc83149…6d0f10a`, `fonts/serif.ttf` (PT Serif) `a4951fad…a2557a`, plus the 34 faces vendored under `assets/fonts/`, each hashed in the pack |
 | asset pack | content-hashed; `core@003e484d9602` (15 fragments, 1 motif) or `core-v1@dd47bb1c2e34` (the same shapes plus 36 faces) |
-| profile | content-hashed; `default-v0@15ad87c16095` or `default-v1@2bb06aaaf316` |
+| profile | content-hashed; `default-v0@15ad87c16095` or `default-v1@be50e7c6f0a6` |
 | OS / arch | the same one; recorded per render as e.g. `darwin` / `arm64` |
 
 Every one of those, plus the Node version and the GL renderer string, is written into `trace.json`
@@ -144,9 +144,10 @@ that omits one is refused, rather than rendered against whatever happened to be 
   from the asset pack), `quarantine` (a boxed, labelled region). Macros are pure functions of
   `(args, rngKey)` expanded at resolve time; each part appears in `resolved.json` with its own id
   `<macroId>/<partName>` and an `expandedFrom`.
-- **`op`** — one of the 7 drawing primitives: `wash`, `paint`, `stroke`, `fragment`, `text`, `rule`,
-  `cover`. `cover` paints the ground colour back over a region and is the one way to take something
-  away.
+- **`op`** — one of the drawing primitives: `wash`, `paint`, `stroke`, `fragment`, `text`, `rule`,
+  `cover`, and in `default-v1` also `spray`. `cover` paints the ground colour back over a region and
+  is the one way to take something away. Which primitives exist at all is the profile's `primitives`
+  list — v0 has 7, v1 has 8.
 
 Two structural rules matter:
 
@@ -201,6 +202,30 @@ never moves is a corner the eye reads as a cut.
 The cost is the outline's perimeter over `segment`, which is not a number anyone typed, so the
 validator computes the resampled vertex count in Node and refuses it against `limits.maxTearPoints`.
 A profile without that limit refuses `tear` outright.
+
+### Spray
+
+`spray` is an aerosol can rather than a brush: `density` particles per 100 square units over a disc of
+radius `r` about `(x, y)`, each one a brush stamp, plus an optional `drip`.
+
+Particles are sampled in polar coordinates as `r * u^(falloff/2)`, which is the inverse CDF chosen so
+that **`falloff: 1` is exactly a uniform disc**. That identity is the point of the parameterisation:
+the number has a meaningful zero rather than a default somebody liked the look of, and the test asserts
+it against the property a uniform disc actually has — area is uniform, not radius, so half the
+particles must fall inside `r/√2`. Above 1 the cloud tightens to the centre and the edge goes to
+overspray; below 1 it hollows into a ring, which is what a can held too close does.
+
+`drip` is `{ count, length, wander }` — seeded random walks down the sheet, each starting from a
+particle the spray actually laid down, so a drip always begins somewhere there was paint. It is an
+exact **count**, not the per-particle probability the brief asked for, and the reason is the budget:
+the worst case of a probability is every particle, and a bound nothing can be budgeted against is not
+a bound. The particle count is likewise `round(density · π · r² / 100)` — a pure function of two
+declared numbers — so `env/validate.ts` knows it in Node and refuses it against
+`limits.maxSprayParticles` before a browser starts. `density: 20` over `r: 400` is 100,531 stamps and
+costs a millisecond to say no to.
+
+Placement, texture and the drips draw from three separate substreams, so retuning the drips cannot
+move a single particle.
 
 ### Blend
 
@@ -359,12 +384,13 @@ Two are shipped, and a program says which it means:
 | profile | pack | what it is |
 | --- | --- | --- |
 | `default-v0@15ad87c16095` | `core@003e484d9602` | V0 unchanged: 2 faces, no print pass. The four committed goldens are rendered against it. |
-| `default-v1@2bb06aaaf316` | `core-v1@dd47bb1c2e34` | v0 widened: 36 faces, the `print` allow-list, `clipShapes: ["rect","circle","polygon"]`, `limits.maxPrintStages: 6`, `limits.maxTearPoints: 600`, `blendModes: ["normal","multiply","screen","exclusion"]`, and ranges and quantize steps for the new text, print and tear fields. |
+| `default-v1@be50e7c6f0a6` | `core-v1@dd47bb1c2e34` | v0 widened: 36 faces, the `print` allow-list, `clipShapes: ["rect","circle","polygon"]`, the 8th primitive `spray`, `limits.maxPrintStages: 6`, `limits.maxTearPoints: 600`, `limits.maxSprayParticles: 4000`, `blendModes: ["normal","multiply","screen","exclusion"]`, and ranges and quantize steps for the new text, print, tear and spray fields. |
 
-Three of those are absences in v0 rather than negations: `print`, `clipShapes` and
-`limits.maxTearPoints` are all keys `default-v0.profile.json` does not have, and the validator reads
-a missing key as V0's answer — no post-process, rect clips only, no torn edges. That is why v0 still
-hashes to `15ad87c16095` after gaining three capabilities it does not have.
+Four of those are absences in v0 rather than negations: `print`, `clipShapes`,
+`limits.maxTearPoints` and `limits.maxSprayParticles` are all keys `default-v0.profile.json` does not
+have, and the validator reads a missing key as V0's answer — no post-process, rect clips only, no
+torn edges, no aerosol. That is why v0 still hashes to `15ad87c16095` after the medium gained four
+capabilities it does not have.
 
 `default-v0.profile.json` is the file V0 shipped as `default.profile.json`; only the filename
 changed, because profiles are looked up by name and the name should be the `id`. Its hash is

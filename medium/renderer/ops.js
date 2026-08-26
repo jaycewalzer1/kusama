@@ -1,4 +1,4 @@
-// The seven primitive operators. Browser only.
+// The eight primitive operators. Browser only.
 //
 // Substream discipline (build document section 5.3). Every operator declares which named stream it
 // draws each kind of randomness from, and reseeds at the start of that use:
@@ -17,7 +17,7 @@
 // changing a placement argument cannot reshuffle the texture, and moving a node cannot change its
 // marks at all.
 
-import { regionPolygon, fragmentPolygon, tearPolygon, clipPolygon, clipPolyline, pointInPolygon, CLIP_CIRCLE_SEGMENTS } from './resolve.js';
+import { regionPolygon, fragmentPolygon, tearPolygon, clipPolygon, clipPolyline, pointInPolygon, sprayParticleCount, CLIP_CIRCLE_SEGMENTS, DRIP_STEP } from './resolve.js';
 
 /** Hand-drawn wobble handed to brush.circle. Fixed on purpose: not a program-level decision. */
 export const CIRCLE_IRREGULARITY = 0.12;
@@ -30,6 +30,7 @@ export const OPS = {
   text: opText,
   rule: opRule,
   cover: opCover,
+  spray: opSpray,
 };
 
 // --- shape helpers ---------------------------------------------------------------------------------
@@ -262,6 +263,73 @@ function opCover(p, brush, node, ctx) {
     const k = 1 + a.softness * (0.5 - i / Math.max(1, layers - 1));
     p.fill(hexWithAlpha(p, ctx.ground, Math.round((255 * (i + 1)) / layers)));
     p5Polygon(p, base.map(([x, y]) => [cx + (x - cx) * k, cy + (y - cy) * k]));
+  }
+}
+
+// --- spray ---------------------------------------------------------------------------------------------
+
+/**
+ * A seeded particle spray: an aerosol can, not a brush.
+ *
+ * Particles are sampled in polar coordinates about the anchor. `r = radius * u^(falloff/2)` is the
+ * inverse CDF of a density that goes as `(r/radius)^(2/falloff - 2)`, which makes `falloff: 1`
+ * exactly a uniform disc -- the identity worth having, because it means the parameter has a
+ * meaningful zero point rather than a taste-based default. Above 1 the cloud tightens to the centre
+ * and the edge goes to overspray; below 1 it hollows out into a ring, which is what a can held too
+ * close actually does.
+ *
+ * Drips are an exact `drip.count`, not a per-particle probability. The count has to be knowable in
+ * Node for the same reason the particle count does, and "probability 0.05 of 226 particles" bounds
+ * at 226 in the worst case, which is not a bound anyone can budget against. The drips are still
+ * seeded random walks and still land wherever the spray happens to be thickest, because they start
+ * from particle positions drawn from the same distribution in the same stream.
+ *
+ * Every particle is drawn as a degenerate `brush.line`, the same trick `paintField` uses for dots:
+ * p5.brush has no dot call, and a zero-length line draws nothing at all.
+ */
+function opSpray(p, brush, node, ctx, stream) {
+  const a = node.args;
+  const n = sprayParticleCount(a);
+  brush.set(a.brush, a.color, a.weight);
+
+  // Placement and geometry are separate streams so that changing the drips cannot move a single
+  // particle, and vice versa.
+  const place = stream('placement');
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const theta = place.next() * Math.PI * 2;
+    const rad = a.r * Math.pow(place.next(), a.falloff / 2);
+    pts.push([a.x + Math.cos(theta) * rad, a.y + Math.sin(theta) * rad]);
+  }
+
+  stream('texture');
+  for (const [x, y] of pts) {
+    if (ctx.clip && !pointInPolygon(x, y, ctx.clip)) continue;
+    brush.line(x, y, x + 0.4, y + 0.4);
+  }
+
+  const drip = a.drip;
+  if (!drip || drip.count === 0 || n === 0) return;
+  const geo = stream('geometry');
+  const steps = Math.max(1, Math.round(drip.length / DRIP_STEP));
+  for (let d = 0; d < drip.count; d++) {
+    // Start from a particle rather than from a fresh sample, so a drip always begins somewhere the
+    // spray actually reached.
+    const start = pts[Math.min(n - 1, Math.floor(geo.next() * n))];
+    let [x, y] = start;
+    const walk = [[x, y]];
+    for (let s = 0; s < steps; s++) {
+      x += (geo.next() * 2 - 1) * drip.wander;
+      y += DRIP_STEP;
+      walk.push([x, y]);
+    }
+    const paths = ctx.clip ? clipPolyline(walk, ctx.clip) : [walk];
+    for (const path of paths) {
+      if (path.length < 2) continue;
+      brush.beginShape(0);
+      for (const [vx, vy] of path) brush.vertex(vx, vy);
+      brush.endShape(false);
+    }
   }
 }
 

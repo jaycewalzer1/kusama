@@ -23,7 +23,7 @@
     "description": { "type": "string" },
     "primitives": {
       "type": "array",
-      "items": { "enum": ["wash", "paint", "stroke", "fragment", "text", "rule", "cover"] },
+      "items": { "enum": ["wash", "paint", "stroke", "fragment", "text", "rule", "cover", "spray"] },
       "uniqueItems": true
     },
     "macros": { "type": "array", "items": { "enum": ["frame", "motif", "quarantine"] }, "uniqueItems": true },
@@ -81,7 +81,8 @@
         "maxEstimatedMarks": { "type": "integer", "minimum": 1 },
         "maxRenderCost": { "type": "number", "exclusiveMinimum": 0 },
         "maxPrintStages": { "type": "integer", "minimum": 0 },
-        "maxTearPoints": { "description": "Vertices one torn fragment edge may resample to. Absent means a fragment may not be torn at all, which is what V0 allowed, so default-v0 keeps that behaviour and its hash without being edited to say so.", "type": "integer", "minimum": 3 }
+        "maxTearPoints": { "description": "Vertices one torn fragment edge may resample to. Absent means a fragment may not be torn at all, which is what V0 allowed, so default-v0 keeps that behaviour and its hash without being edited to say so.", "type": "integer", "minimum": 3 },
+        "maxSprayParticles": { "description": "Particles one spray may lay down. The count is a pure function of density and r, so it is checked in Node. Absent means this medium has no aerosol, which is V0's answer and, like maxTearPoints, is how default-v0 says so without being edited.", "type": "integer", "minimum": 1 }
       }
     },
     "ranges": {

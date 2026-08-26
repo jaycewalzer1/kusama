@@ -437,6 +437,50 @@ larger change than the rest of blend put together, and the leaf-level `opacity` 
 already covers most of what it would be reached for. It is written up in
 `docs/substrate-test/proposed-primitives.md` instead of half-built here.
 
+## R12. A probability is not a budget, so the drips are counted
+
+`spray` was specified as "density, radius, falloff, drip probability with drips as seeded random
+walks". Everything in that list survived contact with the medium except the word *probability*, and
+the reason is worth writing down because it is a constraint this medium imposes that most drawing
+libraries do not.
+
+Every other budget here is checked in Node, before a browser is launched, and is exact or
+conservative. A per-particle drip probability is neither. If 226 particles each drip with probability
+0.05, the honest bound on the vertex count is 226 drips, not 11 — the expected value is not a bound,
+and a bound of 226 is so far from the typical case that budgeting against it would refuse every
+program anyone would actually write. Both alternatives were worse than changing the parameter: bound
+at the expectation and the limit stops being a limit, or let the renderer stop after N drips and the
+picture starts depending on the value of a safety limit. So `drip` takes an exact `count`. The drips
+are still seeded random walks, and they still start from particle positions drawn from the same
+distribution in the same stream, so they still land where the paint is thickest. Only the *number* of
+them moved from the RNG to the author.
+
+The particle count went the same way and for the same reason. `round(density · π · r² / 100)` is a
+pure function of two declared numbers, so `env/validate.ts` computes it and refuses it against
+`limits.maxSprayParticles`. `density: 20` over `r: 400` is **100,531** brush stamps; it is refused in
+about a millisecond, which is the whole argument for keeping the arithmetic in Node.
+
+**The falloff parameterisation, and why it has a test rather than a default.** Particles are placed at
+`r · u^(falloff/2)`, which is the inverse CDF picked so that `falloff: 1` is *exactly* a uniform disc.
+That identity is the reason to prefer this form over any of the obvious alternatives: it gives the
+parameter a meaningful zero point, so an author reading `falloff: 2.6` knows what it is 2.6 times
+more concentrated *than*. It also gives the property a test can assert without a golden image, which
+matters because a distribution is precisely the kind of thing that looks plausible when it is wrong.
+The test checks the property a uniform disc actually has — **area** is uniformly distributed, not
+radius, so half the particles must fall inside `r/√2`. Measured over 20,000 samples: `falloff: 1` puts
+0.500 of them inside that circle, `falloff: 2.6` puts 0.74, `falloff: 0.4` puts 0.22. The middle
+number was the design; the other two are what make the parameter mean anything.
+
+The surprise, such as it was: `spray` is not the most expensive primitive by far, and the brief's
+warning to "budget particles hard" was aimed at the wrong quantity. `examples/v1/spray-wall.json`
+carries four sprays totalling about 1,900 particles and estimates ~15,568 marks — but 13,000 of those
+are the single background hatch, not the aerosol. A spray particle is one degenerate `brush.line`, the
+cheapest stamp p5.brush draws; a two-layer hatch over a full sheet is thousands of them and always
+was. What needed the hard budget was not the primitive's cost per mark, it was that `density` and `r`
+multiply, so a plausible-looking pair of numbers is four orders of magnitude out. That is a
+validation problem, not a performance one, and it is now handled where validation problems are
+handled.
+
 ## O1. Operator/library mapping, and where the fixed constants are
 
 - Our `PaintStyle.kind: "wash"` uses `brush.fill` + `fillBleed` + `fillTexture`. It does **not** use
