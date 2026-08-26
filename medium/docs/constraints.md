@@ -1,0 +1,190 @@
+# The constraint language
+
+Fifteen kinds, closed. Eleven decide from the program tree alone, three from the canonical PNG, one
+decides nothing and says so. A sixteenth kind costs one of these.
+
+Every kind is a pure function. Tree-scope checkers read `treeFacts()` — one walk over the **source**
+JSON — and return `{status, evidence}`. Render-scope checkers read a `RenderMetrics` and nothing
+else. `rubric` returns `unverified` always.
+
+Three rules hold across the whole language:
+
+- **`blocked_by` short-circuits everything.** A constraint that names a primitive the medium does not
+  have is `unverified` before its checker is ever called, and is excluded from both the numerator and
+  the denominator of the score. A position cannot score well by being untestable.
+- **`unverified` is never a pass.** No metrics means no verdict, not a generous one.
+- **A violation must carry evidence**: node ids, or a measured number against the bound it broke.
+  "Violated" with neither is an opinion, and this layer does not have opinions.
+
+## The blind spot they all share
+
+`treeFacts` walks the source tree, not the resolved one. **A `repeat` with `count: 40` contributes
+one node, one mark and one colour use, not forty.** This is deliberate: resolving needs the profile
+and the asset pack and is no longer pure, and purity is what makes these checks cheap enough to run
+on every candidate edit inside a search loop. The cost is listed per kind below. The render scope is
+where instance counts actually show up, because it measures pixels.
+
+Second shared blind spot: **nothing here knows about stacking order or occlusion.** A `cover` op or a
+later opaque block can hide an element completely and every tree-scope checker still counts it.
+
+---
+
+## Tree scope
+
+### `maxDistinctColors`
+`{ max: number, includeGround?: boolean }` — counts distinct `#rrggbb` after resolving palette names,
+optionally plus `canvas.ground`. Default `includeGround: true`.
+
+*Blind spots.* Two hexes one step apart (`#111111` and `#121212`) are two colours; a human sees one.
+A colour used on one 4px mark counts the same as one used on the whole sheet. Opacity is invisible to
+it, so `solid` at `opacity: 12` still registers as a full colour. It cannot see the colours p5.brush
+actually mixes on the canvas (NOTES L4), only the ones the tree named.
+
+### `palette`
+`{ allow: string[], includeGround?: boolean }` — every colour must be in the list. Case-insensitive.
+Reports the offending node and the colour it used.
+
+*Blind spots.* An allow-list of near-identical greys is as satisfiable as a real restriction, so this
+kind measures obedience to a list and not restraint. Same opacity and area blindness as above.
+
+### `forbidNode`
+`{ ops?: OpName[], macros?: MacroName[] }` — any occurrence is a violation.
+
+*Blind spots.* Names, not effects. Forbidding `fragment` removes the pack's drawn figures; it does
+not stop a figure being built out of six `stroke` ops. Forbidding the `frame` macro does not stop
+four `rule` ops from forming a border. Every prohibition in this language is nameable-primitive deep,
+and a determined tree can route around all of them.
+
+### `requireNode`
+`{ op?: OpName, macro?: MacroName, min?: number }` — a floor on one named node type. `min` defaults 1.
+
+*Blind spots.* One name per constraint (there is no "four of any of these"). Counts source nodes, so
+a `repeat` of 96 text instances counts as **one** — which is exactly the trick the rave-flyer probe
+used to smear type without spending against `maxTextOps`. A floor cannot express "at four different
+sizes", which is what most of the positions that use it actually mean.
+
+### `nodeCount`
+`{ min?: number, max?: number, countGroups?: boolean }` — drawing nodes, plus containers when asked.
+
+*Blind spots.* The worst instance-count blindness in the set: a two-node tree can resolve to four
+hundred marks. It is a proxy for visual density and a bad one; `inkDensityRange` is the one that
+knows. Used here as a ceiling on a *tendency* (strip until it looks like a label), never as a claim
+that node n+1 is wrong.
+
+### `textCase`
+`{ case: 'upper' | 'lower' }` — every string in the tree, including `quarantine.label`.
+
+*Blind spots.* Strings with no case (`"014"`, `"0.0031"`, `"23:00"`) satisfy both settings silently.
+It cannot see typographic voice at all: the medium has two fonts, both Regular, so "capitals" here is
+a string property and not a face. Mixed-script or accented text is whatever the JS locale-free
+`toUpperCase` says it is.
+
+### `textMaxWords`
+`{ max: number }` — per string, split on whitespace runs.
+
+*Blind spots.* Splitting on runs means the three-space word-separator workaround (NOTES E3) is free,
+which is correct, but it also means `"A B"` and `"ANTIDISESTABLISHMENTARIANISM"` are both one-word-ish
+to it. It measures word count, not read time, line length or how much of the sheet the words eat.
+
+### `textRequired`
+`{ contains: string[] }` — case- and whitespace-insensitive substring match over all strings joined.
+
+*Blind spots.* Joining before matching means a required phrase can be satisfied by an accident that
+spans two unrelated text ops. It cannot check that the string is legible, large enough, on the sheet,
+or not covered by a later block. **This is the one kind briefs use, and it is the weakest guarantee
+in the file**: a poster can contain "14 NOVEMBER" at 6pt behind a solid rectangle and pass.
+
+### `maxRepeatDepth`
+`{ max: number }` — deepest nesting of `repeat` nodes. 0 for a tree with none.
+
+*Blind spots.* Depth, not width: `count: 4096` at depth 1 satisfies `max: 1`. Two sibling repeats are
+depth 1, which is usually the right reading and occasionally not.
+
+### `forbidMark`
+`{ styles?: StyleKind[], brushes?: string[] }` — either match is a violation. Reads `style.kind`,
+`args.brush`, `style.brush` and `quarantine.boxBrush`.
+
+*Blind spots.* Brush names, not brush behaviour. It cannot tell `rotring` at weight 12 from
+`charcoal` at weight 1, and the first is by far the heavier mark. `brushScale` is invisible to it.
+
+### `requireMark`
+`{ styles?: StyleKind[], brushes?: string[], min?: number }` — styles and brushes counted together
+against one floor.
+
+*Blind spots.* Counts nodes that *asked* for the mark, not marks made or area covered. Two `solid`
+rects of 4px satisfy `min: 2` as well as two full-bleed plates. The union of styles and brushes into
+one floor means `{styles:['solid'], brushes:['spray'], min:3}` can be satisfied by three sprays and
+no solid — a shape the positions here deliberately do not use.
+
+---
+
+## Render scope
+
+All three read a `RenderMetrics` produced by `src/aesthetic/measure.ts` from the **canonical** RGBA:
+the deterministic path, hermetic Chromium, antialiasing off, cached by program hash. With no metrics
+they are `unverified`. They never launch a browser themselves.
+
+### `inkDensityRange`
+`{ min?: number, max?: number }` — fraction of pixels differing from `canvas.ground` by more than a
+small threshold.
+
+*Blind spots.* Says how much is marked, never what the marks are. A page of even 50% grey noise and a
+page with one enormous black rectangle can report the same number. Ground-coloured marks drawn over
+other marks (the stencil-bridge trick, the `cover` op) read as *removal* here, which is right for the
+sheet and wrong if you wanted to know how much was drawn.
+
+### `coverageRange`
+`{ min?: number, max?: number }` — fraction of a fixed 16×16 grid of cells containing any ink.
+
+*Blind spots.* Deliberately coarse, so it measures reach rather than amount. One thin line crossing
+the sheet corner to corner lights up a diagonal of cells and scores as well-spread. The grid is
+axis-aligned and fixed, so a composition on a 15- or 17-part rhythm interacts with it arbitrarily.
+
+### `symmetryMax`
+`{ axis: 'vertical' | 'horizontal', max: number }` — intersection-over-union of the ink mask against
+its own mirror. 0 when there is no ink.
+
+*Blind spots.* Binary mask only: colour, weight and shape are invisible, so a picture that is
+symmetric in silhouette and wildly asymmetric in colour scores as symmetric. It tests reflection
+about the exact centre line and nothing else — near-symmetry offset by ten pixels reads as
+asymmetric. On a sparse page (Ikeda) the IoU is dominated by a handful of marks and is jumpy.
+
+---
+
+## Judge scope
+
+### `rubric`
+`{ text: string }` — carried, never executed. Always `unverified`. `checkProgram` returns every
+rubric in `pendingRubrics`, verbatim, for a judge that is not part of this layer and never will be.
+
+The rubrics in `programs/` are where the positions put what the tree and the pixels cannot hold:
+mode of address, whether an image refers to anything outside itself, whether roughness was caused or
+applied, whether emptiness is signal or good taste. See the final section of each program's `why`
+fields for what specifically was pushed here and why.
+
+---
+
+## What was dropped, merged or renamed
+
+The task's suggested list had thirteen tree kinds, three render kinds and `rubric`. It came out at
+fifteen by these moves:
+
+| Suggested | Became | Why |
+|---|---|---|
+| `forbidPrimitive`, `forbidMacro` | `forbidNode` | Ops and macros are both just node types with a name. Two kinds to check one field was a waste of a slot. |
+| `requirePrimitive`, `requireMacro` | `requireNode` | Same. |
+| `maxNodes`, `minNodes` | `nodeCount` | One kind with optional `min` and `max`, matching `inkDensityRange` and `coverageRange`, which already had that shape. |
+| `requireCover` | *dropped* | It is `requireNode {op: 'cover'}`. A kind whose whole content is one argument value is not a kind. |
+| — | **`forbidMark`, `requireMark`** *(new)* | Style kind and brush are the strongest aesthetic levers this substrate has — `solid` versus `wash` is the whole difference between a printed block and a painted one (probes: xerox-zine, ikeda-austerity), and `rotring` versus `charcoal` decides whether a hand was in the room. The suggested list had no way to reach either. Four freed slots bought these two. |
+
+Kinds considered and **not** added, because the tree cannot support them:
+
+- **`fontCount` / `requireFonts`** — a ransom note is defined by mismatched faces. The pack has two
+  fonts and both are Regular (probe: ransom-note), so any constraint over faces would have a range of
+  two and would be satisfiable by accident. This gap is real and is currently carried by nothing:
+  not a constraint, not a rubric.
+- **`maxTextSizeRatio`** ("one element far too big for its box") — expressible, but it needs resolved
+  geometry to know what the box is, and tree-scope checkers are pure by design.
+- **`requireOverlap` / `requireCollision`** — the situationist and crass positions both ask for
+  butted and colliding elements as a *generative rule*, and both would need resolved bounding boxes.
+  Left as prose for the artist model.

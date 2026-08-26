@@ -1,0 +1,199 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 20101,
+  "canvas": { "width": 800, "height": 1200, "ground": "#f4f4f2", "brushScale": 1 },
+  "palette": {
+    "paper": "#f4f4f2",
+    "black": "#0a0a0b",
+    "grey": "#b8b8b6",
+    "signal": "#0b4fd8"
+  },
+  "meta": {
+    "probe": "ikeda-austerity-b",
+    "target": "same target as ikeda-austerity, inverted: a white field, black hairlines, one dense black data slab, one blue interruption",
+    "method": "the whole sheet is reversed out of the first variant to test whether the substrate's competence is the black ground or the hard-edged geometry. It is the geometry: nothing in this program is harder to draw on white than on black, because solid and text carry their own colour and never consult the ground.",
+    "notDone": "still no monospace, still no rule finer than one device pixel"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "head",
+        "type": "op",
+        "op": "text",
+        "rngKey": "ikb/head",
+        "args": {
+          "text": "t e s t   p a t t e r n   0 2   /   f u l l   s c a l e",
+          "font": "grotesque",
+          "size": 9,
+          "x": 64,
+          "y": 80,
+          "align": "left",
+          "color": "black",
+          "tracking": 2
+        }
+      },
+      {
+        "id": "top-rule",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "ikb/top-rule",
+        "args": {
+          "region": { "type": "rect", "x": 64, "y": 96, "w": 672, "h": 1 },
+          "style": { "kind": "solid", "color": "black", "opacity": 255 }
+        }
+      },
+      {
+        "id": "comb",
+        "type": "repeat",
+        "rngKey": "ikb/comb",
+        "label": "a comb of hairlines whose only variation is that there is none",
+        "count": 96,
+        "layout": { "type": "line", "origin": [64, 128], "dx": 7, "dy": 0 },
+        "children": [
+          {
+            "id": "tooth",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "ikb/tooth",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 0, "w": 1, "h": 40 },
+              "style": { "kind": "solid", "color": "black", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "slab",
+        "type": "group",
+        "label": "the one dense thing on an otherwise empty sheet",
+        "children": [
+          {
+            "id": "slab-ground",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "ikb/slab-ground",
+            "args": {
+              "region": { "type": "rect", "x": 64, "y": 336, "w": 672, "h": 208 },
+              "style": { "kind": "solid", "color": "black", "opacity": 255 }
+            }
+          },
+          {
+            "id": "slab-punch",
+            "type": "repeat",
+            "rngKey": "ikb/slab-punch",
+            "count": 132,
+            "layout": { "type": "scatter", "origin": [70, 342], "w": 648, "h": 190 },
+            "children": [
+              {
+                "id": "punch",
+                "type": "op",
+                "op": "paint",
+                "rngKey": "ikb/punch",
+                "args": {
+                  "region": { "type": "rect", "x": 0, "y": 0, "w": 6, "h": 10 },
+                  "style": { "kind": "solid", "color": "paper", "opacity": 255 }
+                }
+              }
+            ]
+          },
+          {
+            "id": "slab-caption",
+            "type": "op",
+            "op": "text",
+            "rngKey": "ikb/slab-caption",
+            "args": {
+              "text": "1 3 2   n u l l   i n   6 7 2   x   2 0 8",
+              "font": "grotesque",
+              "size": 9,
+              "x": 64,
+              "y": 568,
+              "align": "left",
+              "color": "black",
+              "tracking": 2
+            }
+          }
+        ]
+      },
+      {
+        "id": "grid",
+        "type": "repeat",
+        "rngKey": "ikb/grid",
+        "label": "a register grid, drawn and then almost entirely ignored",
+        "count": 9,
+        "layout": { "type": "line", "origin": [64, 664], "dx": 84, "dy": 0 },
+        "children": [
+          {
+            "id": "column",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "ikb/column",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 0, "w": 1, "h": 336 },
+              "style": { "kind": "solid", "color": "grey", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "interruption",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "ikb/interruption",
+        "label": "one blue bar, sitting on the grid it does not belong to",
+        "args": {
+          "region": { "type": "rect", "x": 232, "y": 796, "w": 253, "h": 24 },
+          "style": { "kind": "solid", "color": "signal", "opacity": 255 }
+        }
+      },
+      {
+        "id": "readout",
+        "type": "repeat",
+        "rngKey": "ikb/readout",
+        "count": 4,
+        "layout": { "type": "line", "origin": [64, 872], "dx": 0, "dy": 26 },
+        "children": [
+          {
+            "id": "readout-rule",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "ikb/readout-rule",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 0, "w": 336, "h": 1 },
+              "style": { "kind": "solid", "color": "black", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "base-rule",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "ikb/base-rule",
+        "args": {
+          "region": { "type": "rect", "x": 64, "y": 1064, "w": 672, "h": 1 },
+          "style": { "kind": "solid", "color": "black", "opacity": 255 }
+        }
+      },
+      {
+        "id": "foot",
+        "type": "op",
+        "op": "text",
+        "rngKey": "ikb/foot",
+        "args": {
+          "text": "n o   t i t l e   /   n o   d u r a t i o n   /   n o   s l e e v e",
+          "font": "grotesque",
+          "size": 9,
+          "x": 64,
+          "y": 1092,
+          "align": "left",
+          "color": "black",
+          "tracking": 2
+        }
+      }
+    ]
+  }
+}

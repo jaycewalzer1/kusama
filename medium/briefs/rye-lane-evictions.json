@@ -1,0 +1,37 @@
+{
+  "version": "1.0",
+  "id": "rye-lane-evictions",
+  "title": "Nobody moves: the Bussey Building evictions",
+  "event": "Section 21 notices went out to the eleven remaining tenants of the yard behind the old cricket bat factory, with two months to clear premises some of them have held since 1994. The freeholder has planning consent for a hundred and forty flats, twelve of which are described as affordable at eighty percent of a market rent nobody in the yard can pay. The council's own consultation ran for eighteen days in August and received nine responses.",
+  "when": "Meeting Tuesday 3 March 1998, 19:00; the notices expire on 31 March",
+  "where": "The yard, Bussey Building, 133 Rye Lane, London SE15",
+  "function": "A meeting and a call to physically occupy the yard on the morning the bailiffs are expected. Pasted on the shutters of the yard itself and on every hoarding along the lane.",
+  "stakes": "Eleven households and four workshops, and a two-month clock that has already started. A poster that reads as a protest rather than as an instruction will get people to agree and not to turn up.",
+  "hard_constraints": [
+    {
+      "id": "hc-meeting",
+      "kind": "textRequired",
+      "params": { "contains": ["3 MARCH"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "The meeting is the only thing on the poster that anybody can act on. Without the date it is a statement of feeling."
+    },
+    {
+      "id": "hc-deadline",
+      "kind": "textRequired",
+      "params": { "contains": ["31 MARCH"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "The expiry date is what makes the meeting urgent rather than worthy. Both dates or neither."
+    },
+    {
+      "id": "hc-place",
+      "kind": "textRequired",
+      "params": { "contains": ["BUSSEY"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Naming the building names the freeholder's asset. A poster about gentrification in general is a poster nobody has to answer."
+    }
+  ],
+  "notes": "The commission fixes no slogan. 'Nobody moves' is the organisers' working phrase and may be used or dropped."
+}

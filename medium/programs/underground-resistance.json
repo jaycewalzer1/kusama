@@ -1,0 +1,188 @@
+{
+  "version": "1.0",
+  "id": "underground-resistance",
+  "name": "Militant Transmission",
+  "lineage": [
+    {
+      "ref": "Underground Resistance, \"Riot EP\" and \"Sonic Destroyer\" as X-101 (Detroit, 1991-92)",
+      "why": "Sleeves that look like ordnance labels. Stencil type, a serial number, no photograph of anyone, and no indication that a designer was involved."
+    },
+    {
+      "ref": "'Mad' Mike Banks and UR's refusal of press photographs",
+      "why": "Anonymity is not mystique here, it is a working method: if there is no face, the record cannot be sold as a personality and the label cannot be bought by signing one person."
+    },
+    {
+      "ref": "Abdul Qadim Haqq, sleeve illustration for UR, Transmat and Metroplex (1990- )",
+      "why": "The one place figuration is allowed, and it is Afrofuturist: machines, cities and armour, never portraits. It sets the limit this position works inside."
+    },
+    {
+      "ref": "Jeff Mills, \"Waveform Transmission Vol. 1\" (Tresor, 1992)",
+      "why": "The record presented as a transmission with a volume number rather than as a release with a title. Sequence and callsign instead of branding."
+    },
+    {
+      "ref": "Underground Resistance, \"Message to the Majors\" (1992)",
+      "why": "States the economics directly on the record: independence is a distribution position before it is a sound. The graphics have to be producible in Detroit for nothing."
+    },
+    {
+      "ref": "Black bandana and paramilitary insignia as adopted in UR's presentation",
+      "why": "Uniform without individuals. The visual grammar is military stencil and unit marking, which is exactly a grammar for saying things without saying who is saying them."
+    }
+  ],
+  "worldview": "This is a transmission, not an advertisement. It carries a callsign, a number and an instruction, and it does not carry a face, a name or a personality, because the moment there is a person to like there is a person to buy. Black, one weight of white, and a single accent that means alarm. Hard geometric blocks with edges you could cut yourself on, because the reference is ordnance marking and unit insignia, not graphic design. Type is stencil and terse: three words is a long sentence. Everything soft, hand-drawn, atmospheric or decorative is a way of asking to be liked, and this is not asking. The picture should look like it was produced by an organisation that does not want to be found, using a machine that was already in the building.",
+  "tensions": [
+    {
+      "between": "anonymity as protection from the market",
+      "and": "anonymity as the most effective branding available",
+      "claim": "UR's refusal to be photographed made UR instantly identifiable. The mask became the logo. The position cannot escape this by trying harder at concealment; concealment is legible. It can only stay honest by keeping the economics real, which is a fact about the pressing plant and not about the sleeve."
+    },
+    {
+      "between": "militant imagery as a description of a real fight",
+      "and": "militant imagery as a costume",
+      "claim": "Camouflage, stencils and serial numbers signify seriousness at almost no cost. When the fight named is a real one about masters, distribution and money, the imagery is a report. When there is no fight, the imagery is cosplay, and nothing in the image distinguishes the two cases."
+    },
+    {
+      "between": "the record as a functional object",
+      "and": "the sleeve as the thing people actually see",
+      "claim": "Everything here argues that the music and its distribution matter and the graphics are incidental, while the graphics are what carried it worldwide. Treating the sleeve as merely functional is itself a design decision with an enormous aesthetic payoff, which makes the modesty slightly false."
+    },
+    {
+      "between": "Haqq's figuration",
+      "and": "the refusal of the human image",
+      "claim": "The catalogue contains both, and they are not reconciled. Armoured bodies and city machines are figures; they are simply figures that cannot be signed with a personality. Where the line falls is a judgement made record by record."
+    }
+  ],
+  "commitments": [
+    {
+      "id": "c-black-plus-one",
+      "kind": "maxDistinctColors",
+      "params": { "max": 3, "includeGround": true },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Ground, one value against it, and one accent that means alarm. A fourth colour is a palette, and a palette is a decision made to be pleasant."
+    },
+    {
+      "id": "c-hard-block",
+      "kind": "requireMark",
+      "params": { "styles": ["solid"], "min": 2 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Flat blocks with absolute edges: unit markings, stencil bars, the black rectangle over what is not being shown. Two minimum, so the geometry carries the picture."
+    },
+    {
+      "id": "c-terse",
+      "kind": "textMaxWords",
+      "params": { "max": 3 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "A transmission is short because it is expensive to send and dangerous to prolong. Three words per element; a fourth is an explanation and explanations are for advertising."
+    },
+    {
+      "id": "c-stencil",
+      "kind": "textCase",
+      "params": { "case": "upper" },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Stencil capitals. Lowercase implies a voice; capitals imply a designation."
+    },
+    {
+      "id": "b-airbrush",
+      "kind": "requireMark",
+      "params": { "brushes": ["spray"], "min": 3 },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "The Haqq register is airbrushed continuous tone: chrome, armour and city light modelled smoothly. This asks for the nearest available thing, which is a stipple stamp.",
+      "blocked_by": "a mass or gradient primitive: `spray` deposits discrete dots and every fill in this medium is either flat or a watercolour bleed, so smooth modelled tone is not expressible at all"
+    },
+    {
+      "id": "j-transmission",
+      "kind": "rubric",
+      "params": {
+        "text": "Does this read as a message sent by an organisation, or as a product announcing itself? Look for the marks of transmission: a designation rather than a title, a number that implies a sequence, an instruction rather than an invitation. Then look for the marks of advertising: a benefit stated, a mood offered, an implied listener being flattered. The failure mode is a poster that adopts military typography to make an event sound exciting, which is advertising in a uniform."
+      },
+      "scope": "judge",
+      "severity": "hard",
+      "why": "Whether an image is addressing you as a recipient or as a customer is a question about mode of address. It is entirely absent from the tree and the pixels."
+    },
+    {
+      "id": "j-anonymity",
+      "kind": "rubric",
+      "params": {
+        "text": "Is there a person in this picture, in any form, including implied? Count not only faces and figures but signatures, handwriting, a visible individual sensibility, or a joke that only one person would make. Anonymity here is corporate in the literal sense: it should look like the output of a body, not of an author. Then ask the harder question: does the anonymity read as protection, or as a mystique being cultivated? Cultivated mystique is a personality with the lights off."
+      },
+      "scope": "judge",
+      "severity": "soft",
+      "why": "Forbidding fragments removes drawn figures. It cannot remove the presence of an author, which is the thing actually being refused."
+    }
+  ],
+  "prohibitions": [
+    {
+      "id": "p-no-faces",
+      "kind": "forbidNode",
+      "params": { "ops": ["fragment"], "macros": ["motif", "frame"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Every fragment in the core pack is a body, a hand or an object with a personality, and a motif is an emblem. No figure, no ornament, no border: nothing that can be recognised as belonging to someone."
+    },
+    {
+      "id": "p-no-atmosphere",
+      "kind": "forbidMark",
+      "params": {
+        "styles": ["wash", "field"],
+        "brushes": ["crayon", "pastel", "cpencil", "charcoal"]
+      },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Bleeds, drifting marks and soft media are mood. Mood is an offer, and this is not offering anything."
+    },
+    {
+      "id": "p-one-formation",
+      "kind": "maxRepeatDepth",
+      "params": { "max": 1 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "One rank of identical marks reads as a unit. A rank of ranks reads as a pattern, and a pattern is wallpaper."
+    },
+    {
+      "id": "r-signal-strength",
+      "kind": "inkDensityRange",
+      "params": { "min": 0.12, "max": 0.6 },
+      "scope": "render",
+      "severity": "hard",
+      "why": "Below a eighth of the sheet marked the transmission is too weak to read across a room; above three fifths it is a solid field and the geometry that carries the meaning has been swallowed."
+    }
+  ],
+  "generative_rules": [
+    {
+      "rule": "Every element is either a block, a rule or a designation. If a new element is none of those three, it does not go in."
+    },
+    {
+      "rule": "Place by measurement, not by eye. Things sit on hard offsets from the edge, because a unit marking is stencilled to a spec and not composed."
+    },
+    {
+      "rule": "The accent colour appears exactly once, on the smallest element, and never on the largest."
+    },
+    {
+      "rule": "Strip until it stops looking like a design and starts looking like a label. When in doubt, remove the element that is doing the most work aesthetically.",
+      "constraint": {
+        "id": "g-strip",
+        "kind": "nodeCount",
+        "params": { "max": 24 },
+        "scope": "tree",
+        "severity": "soft",
+        "why": "Twenty-four drawing nodes is about where a stencilled label becomes a composition. It is a ceiling for the tendency, not a claim that twenty-five is wrong."
+      }
+    }
+  ],
+  "cliches": [
+    "camouflage patterns used as a background fill",
+    "a stencil font applied to a club night with no politics in it",
+    "the phrase 'RESISTANCE' or 'REVOLUTION' with no named opponent",
+    "black and white plus red treated as a colourway rather than as a printing constraint",
+    "crosshairs, target reticles and radar sweeps as ornament",
+    "a barcode or serial number invented to look official",
+    "Detroit's skyline or the Renaissance Center as a location signifier",
+    "the raised fist, at any angle",
+    "'ANALOG' or 'TRANSMISSION' set in a technical face as a mood",
+    "redaction bars over text that was never sensitive"
+  ]
+}

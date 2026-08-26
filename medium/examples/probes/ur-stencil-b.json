@@ -1,0 +1,244 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 4201,
+  "canvas": { "width": 800, "height": 800, "ground": "#111112", "brushScale": 1 },
+  "palette": {
+    "black": "#111112",
+    "steel": "#cfcfc9",
+    "red": "#c1121f",
+    "dim": "#3d3d3a"
+  },
+  "meta": {
+    "probe": "ur-stencil-b",
+    "target": "same lineage as ur-stencil, different object: a square record label rather than a poster -- centre hole, ring of catalogue text, matrix numbers, one red mark",
+    "method": "the composition is built from circle regions and a ring layout instead of a grid, to test whether the substrate's competence survives leaving the rectangle. It does: circle is a first-class region for solid, and repeat's ring layout places by angle.",
+    "notDone": "text cannot be set on a curve -- there is no text-on-path -- so the ring of catalogue type had to become straight lines placed around a circle, which is the one thing on this sheet that a real label would never do"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "plate-tone",
+        "type": "op",
+        "op": "wash",
+        "rngKey": "urb/plate-tone",
+        "args": {
+          "region": { "type": "rect", "x": -20, "y": -20, "w": 840, "h": 840 },
+          "style": { "kind": "wash", "color": "dim", "opacity": 26, "bleed": 0.12, "texture": [0.55, 0.3] }
+        }
+      },
+      {
+        "id": "label-disc",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "urb/label-disc",
+        "label": "the label itself: a hard-edged circle, which solid gives for free",
+        "args": {
+          "region": { "type": "circle", "cx": 400, "cy": 400, "r": 300 },
+          "style": { "kind": "solid", "color": "steel", "opacity": 255 }
+        }
+      },
+      {
+        "id": "disc-ring",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "urb/disc-ring",
+        "args": {
+          "region": { "type": "circle", "cx": 400, "cy": 400, "r": 268 },
+          "style": { "kind": "solid", "color": "black", "opacity": 255 }
+        }
+      },
+      {
+        "id": "spokes",
+        "type": "repeat",
+        "rngKey": "urb/spokes",
+        "label": "steel spokes placed by angle, not by grid",
+        "count": 24,
+        "layout": { "type": "ring", "origin": [400, 400], "r": 232, "startAngle": 0 },
+        "children": [
+          {
+            "id": "spoke",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "urb/spoke",
+            "args": {
+              "region": { "type": "rect", "x": -3, "y": -22, "w": 6, "h": 44 },
+              "style": { "kind": "solid", "color": "steel", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "red-arc",
+        "type": "repeat",
+        "rngKey": "urb/red-arc",
+        "label": "one quarter of the ring, in the only colour on the sheet",
+        "count": 6,
+        "layout": { "type": "ring", "origin": [400, 400], "r": 232, "startAngle": 0 },
+        "children": [
+          {
+            "id": "red-spoke",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "urb/red-spoke",
+            "args": {
+              "region": { "type": "rect", "x": -3, "y": -22, "w": 6, "h": 44 },
+              "style": { "kind": "solid", "color": "red", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "core",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "urb/core",
+        "args": {
+          "region": { "type": "circle", "cx": 400, "cy": 400, "r": 168 },
+          "style": { "kind": "solid", "color": "steel", "opacity": 255 }
+        }
+      },
+      {
+        "id": "core-inner",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "urb/core-inner",
+        "args": {
+          "region": { "type": "circle", "cx": 400, "cy": 400, "r": 160 },
+          "style": { "kind": "solid", "color": "black", "opacity": 255 }
+        }
+      },
+      {
+        "id": "spindle",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "urb/spindle",
+        "label": "the centre hole is the ground showing through, which is the only true hole available",
+        "args": {
+          "region": { "type": "circle", "cx": 400, "cy": 400, "r": 22 },
+          "style": { "kind": "solid", "color": "steel", "opacity": 255 }
+        }
+      },
+      {
+        "id": "spindle-hole",
+        "type": "op",
+        "op": "cover",
+        "rngKey": "urb/spindle-hole",
+        "args": {
+          "region": { "type": "circle", "cx": 400, "cy": 400, "r": 15 },
+          "softness": 0
+        }
+      },
+      {
+        "id": "side",
+        "type": "op",
+        "op": "text",
+        "rngKey": "urb/side",
+        "args": {
+          "text": "A",
+          "font": "grotesque",
+          "size": 92,
+          "x": 400,
+          "y": 306,
+          "align": "center",
+          "color": "steel",
+          "tracking": 0
+        }
+      },
+      {
+        "id": "title",
+        "type": "op",
+        "op": "text",
+        "rngKey": "urb/title",
+        "args": {
+          "text": "N O   S L E E V E   N O T E S",
+          "font": "grotesque",
+          "size": 20,
+          "x": 400,
+          "y": 356,
+          "align": "center",
+          "color": "steel",
+          "tracking": 2
+        }
+      },
+      {
+        "id": "matrix",
+        "type": "op",
+        "op": "text",
+        "rngKey": "urb/matrix",
+        "args": {
+          "text": "U R - 0 4 1   A 1",
+          "font": "grotesque",
+          "size": 16,
+          "x": 400,
+          "y": 424,
+          "align": "center",
+          "color": "red",
+          "tracking": 2
+        }
+      },
+      {
+        "id": "runout",
+        "type": "op",
+        "op": "text",
+        "rngKey": "urb/runout",
+        "args": {
+          "text": "1 3 3   B P M   /   C U T   H O T   /   D O   N O T   S L E E P",
+          "font": "grotesque",
+          "size": 12,
+          "x": 400,
+          "y": 468,
+          "align": "center",
+          "color": "steel",
+          "tracking": 1.5
+        }
+      },
+      {
+        "id": "core-rule",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "urb/core-rule",
+        "args": {
+          "region": { "type": "rect", "x": 288, "y": 388, "w": 224, "h": 1 },
+          "style": { "kind": "solid", "color": "steel", "opacity": 255 }
+        }
+      },
+      {
+        "id": "trim",
+        "type": "macro",
+        "macro": "frame",
+        "rngKey": "urb/trim",
+        "args": { "x": 24, "y": 24, "w": 752, "h": 752, "style": "corners", "arm": 56, "brush": "rotring", "color": "steel", "weight": 1.5 }
+      },
+      {
+        "id": "corner-text",
+        "type": "op",
+        "op": "text",
+        "rngKey": "urb/corner-text",
+        "args": {
+          "text": "P R E S S E D   W I T H O U T   P E R M I S S I O N",
+          "font": "grotesque",
+          "size": 12,
+          "x": 42,
+          "y": 762,
+          "align": "left",
+          "color": "steel",
+          "tracking": 2
+        }
+      },
+      {
+        "id": "corner-mark",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "urb/corner-mark",
+        "args": {
+          "region": { "type": "rect", "x": 700, "y": 744, "w": 58, "h": 14 },
+          "style": { "kind": "solid", "color": "red", "opacity": 255 }
+        }
+      }
+    ]
+  }
+}

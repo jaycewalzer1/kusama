@@ -1,0 +1,232 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 20001,
+  "canvas": { "width": 800, "height": 1200, "ground": "#050506", "brushScale": 1 },
+  "palette": {
+    "void": "#050506",
+    "white": "#f2f2f0",
+    "dim": "#242427",
+    "signal": "#d8232a"
+  },
+  "meta": {
+    "probe": "ikeda-austerity",
+    "target": "Raster-Noton lineage: a near-empty field, hairline rules, tiny monospaced data, one interruption",
+    "method": "every rule is a one-pixel solid rect rather than a brush stroke, because solid is the only style that draws with plain p5 fill and therefore the only one with a hard edge. The data band is a repeat of two-pixel bars with a scattered repeat of ground-coloured bars punched back through it, which is the only subtractive move available.",
+    "notDone": "there is no monospaced face, so the data is PT Sans tracked out until it reads as tabular; there is no hairline below one device pixel and no way to set type smaller than 6pt, so the smallest data here is four times finer in the references than it can be here"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "plate",
+        "type": "op",
+        "op": "wash",
+        "rngKey": "ikeda/plate",
+        "label": "the only non-geometric mark on the sheet, and it is almost invisible",
+        "args": {
+          "region": { "type": "rect", "x": -20, "y": -20, "w": 840, "h": 1240 },
+          "style": { "kind": "wash", "color": "dim", "opacity": 18, "bleed": 0.1, "texture": [0.3, 0.15] }
+        }
+      },
+      {
+        "id": "head",
+        "type": "op",
+        "op": "text",
+        "rngKey": "ikeda/head",
+        "args": {
+          "text": "data.scan   [ n = 8 ]",
+          "font": "grotesque",
+          "size": 9,
+          "x": 64,
+          "y": 72,
+          "align": "left",
+          "color": "white",
+          "tracking": 2
+        }
+      },
+      {
+        "id": "head-right",
+        "type": "op",
+        "op": "text",
+        "rngKey": "ikeda/head-right",
+        "args": {
+          "text": "0 0 0 0 . 0 0 0 8 . 4 4 1 0 0 h z",
+          "font": "grotesque",
+          "size": 9,
+          "x": 736,
+          "y": 72,
+          "align": "right",
+          "color": "white",
+          "tracking": 2
+        }
+      },
+      {
+        "id": "rules",
+        "type": "repeat",
+        "rngKey": "ikeda/rules",
+        "label": "hairlines: one device pixel, hard edged because solid is a plain fill",
+        "count": 8,
+        "layout": { "type": "line", "origin": [64, 168], "dx": 0, "dy": 41 },
+        "children": [
+          {
+            "id": "hairline",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "ikeda/hairline",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 0, "w": 672, "h": 1 },
+              "style": { "kind": "solid", "color": "white", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "spine",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "ikeda/spine",
+        "args": {
+          "region": { "type": "rect", "x": 400, "y": 168, "w": 1, "h": 872 },
+          "style": { "kind": "solid", "color": "white", "opacity": 255 }
+        }
+      },
+      {
+        "id": "band",
+        "type": "group",
+        "label": "the data: a bar field, then the same field punched back out at scattered positions",
+        "children": [
+          {
+            "id": "band-bars",
+            "type": "repeat",
+            "rngKey": "ikeda/band-bars",
+            "count": 168,
+            "layout": { "type": "line", "origin": [64, 592], "dx": 4, "dy": 0 },
+            "children": [
+              {
+                "id": "band-bar",
+                "type": "op",
+                "op": "paint",
+                "rngKey": "ikeda/band-bar",
+                "args": {
+                  "region": { "type": "rect", "x": 0, "y": 0, "w": 2, "h": 96 },
+                  "style": { "kind": "solid", "color": "white", "opacity": 255 }
+                }
+              }
+            ]
+          },
+          {
+            "id": "band-punch",
+            "type": "repeat",
+            "rngKey": "ikeda/band-punch",
+            "count": 96,
+            "layout": { "type": "scatter", "origin": [64, 592], "w": 660, "h": 78 },
+            "children": [
+              {
+                "id": "punch",
+                "type": "op",
+                "op": "paint",
+                "rngKey": "ikeda/punch",
+                "args": {
+                  "region": { "type": "rect", "x": 0, "y": 0, "w": 9, "h": 18 },
+                  "style": { "kind": "solid", "color": "void", "opacity": 255 }
+                }
+              }
+            ]
+          },
+          {
+            "id": "band-caption",
+            "type": "op",
+            "op": "text",
+            "rngKey": "ikeda/band-caption",
+            "args": {
+              "text": "c h . 0 1   /   1 6 8   s a m p l e s   /   9 6   n u l l",
+              "font": "grotesque",
+              "size": 9,
+              "x": 64,
+              "y": 712,
+              "align": "left",
+              "color": "white",
+              "tracking": 2
+            }
+          }
+        ]
+      },
+      {
+        "id": "interruption",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "ikeda/interruption",
+        "label": "the one interruption. it is the only thing on the sheet that is not information",
+        "args": {
+          "region": { "type": "rect", "x": 592, "y": 800, "w": 144, "h": 144 },
+          "style": { "kind": "solid", "color": "signal", "opacity": 255 }
+        }
+      },
+      {
+        "id": "matrix",
+        "type": "repeat",
+        "rngKey": "ikeda/matrix",
+        "label": "a sparse dot matrix, the quietest thing here",
+        "count": 96,
+        "layout": { "type": "grid", "origin": [64, 800], "cols": 24, "dx": 20, "dy": 20 },
+        "children": [
+          {
+            "id": "dot",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "ikeda/dot",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 0, "w": 2, "h": 2 },
+              "style": { "kind": "solid", "color": "white", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "base-rule",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "ikeda/base-rule",
+        "args": {
+          "region": { "type": "rect", "x": 64, "y": 1040, "w": 672, "h": 1 },
+          "style": { "kind": "solid", "color": "white", "opacity": 255 }
+        }
+      },
+      {
+        "id": "foot-left",
+        "type": "op",
+        "op": "text",
+        "rngKey": "ikeda/foot-left",
+        "args": {
+          "text": "r n 1 4 2   /   t e s t   p a t t e r n   /   n o   t i t l e",
+          "font": "grotesque",
+          "size": 9,
+          "x": 64,
+          "y": 1068,
+          "align": "left",
+          "color": "white",
+          "tracking": 2
+        }
+      },
+      {
+        "id": "foot-right",
+        "type": "op",
+        "op": "text",
+        "rngKey": "ikeda/foot-right",
+        "args": {
+          "text": "+ / -",
+          "font": "grotesque",
+          "size": 9,
+          "x": 736,
+          "y": 1068,
+          "align": "right",
+          "color": "signal",
+          "tracking": 2
+        }
+      }
+    ]
+  }
+}

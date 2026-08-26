@@ -38,6 +38,9 @@ apps/mobile/.expo-shared/
 apps/mobile/dist/
 apps/mobile/web-build/
 
+# Aesthetic render-metrics cache (keyed by program hash; regenerable)
+medium/.cache/
+
 # OS
 .DS_Store
 

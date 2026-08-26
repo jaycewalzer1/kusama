@@ -18,7 +18,8 @@
     "apply-edit": "npm run build && node dist/cli/apply-edit.js",
     "contact-sheet": "npm run build && node dist/cli/contact-sheet.js",
     "fragments-sheet": "npm run build && node dist/cli/fragments-sheet.js",
-    "ui": "npm run build && node dist/cli/ui.js"
+    "ui": "npm run build && node dist/cli/ui.js",
+    "check": "npm run build && node dist/cli/check.js"
   },
   "dependencies": {
     "ajv": "8.17.1",

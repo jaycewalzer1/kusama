@@ -1,0 +1,7 @@
+# xerox-zine
+
+**Target.** A photocopied zine page, third or fourth generation: high-contrast black on grey copier stock, degraded edges, typewriter body text, visible generational loss.
+
+**Tried.** `solid` at opacity 255 for the black, because `solid` is the only style that draws through plain p5 fill and so is the only one with a true opaque black and a hard aliased edge. Loss was manufactured by hand: 110 paper-coloured 5x2 rects scattered into the masthead bar and 70 into the footer bar (toner dropout), 190 toner-coloured 1.5px circles scattered over the sheet (dirt on the platen), nine paper-coloured 1.5px streaks across the plate (drum drag), and a seven-point `cover` polygon at `softness: 0` biting a hard notch out of the plate. Body copy is PT Serif at 21/1.4 tracking with the three-space word workaround. The `quarantine` macro fences a hatched block labelled REMOVED BY HAND.
+
+**Could not do.** There is no threshold, no posterize, no halftone and no post-process pass of any kind, so nothing on this sheet is *degradation of an image* — it is degradation drawn on top of a clean one, and it does not survive a 2x crop. No typewriter face exists (two fonts, both Regular), so "typewriter" is PT Serif tracked out. Toner dropout inside glyphs is impossible: the flecks can only sit on top of the type, never eat into a letterform's interior, because there is no mask and no per-pixel operation.

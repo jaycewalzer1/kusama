@@ -1,0 +1,188 @@
+{
+  "version": "1.0",
+  "id": "riot-grrrl-zine",
+  "name": "Xerox First Person",
+  "lineage": [
+    {
+      "ref": "Kathleen Hanna and Tobi Vail, \"Bikini Kill\" zine #2 (Olympia WA, 1991)",
+      "why": "Handwriting, typewriter and cut headlines on one page, photocopied at whatever contrast the machine was set to. The page is a letter that happens to have been duplicated."
+    },
+    {
+      "ref": "Tobi Vail, \"Jigsaw\" (Olympia WA, 1988- )",
+      "why": "The zine that established that a scene could be argued with in print by one person with access to a copier. Editorial voice and layout are the same gesture."
+    },
+    {
+      "ref": "Molly Neuman and Allison Wolfe, \"Riot Grrrl\" zine (Washington DC, 1991)",
+      "why": "Named the thing and distributed it for the cost of postage. The distribution model is part of the form: an edition of forty is not a failed edition of four thousand."
+    },
+    {
+      "ref": "The Riot Grrrl Manifesto, printed in Bikini Kill #2 (1991)",
+      "why": "A list of because-statements in the first person plural, set as a solid block. The argument is made by accumulation rather than by structure."
+    },
+    {
+      "ref": "Carol Hanisch, \"The Personal Is Political\" (1969)",
+      "why": "The prior claim the whole form rests on: an account of your own week is a political document, and refusing to abstract it is the method."
+    },
+    {
+      "ref": "The Xerox 914 and the workplace copier as an unlicensed press",
+      "why": "Two values, no greys that survive a second generation, and a hard limit of one sheet at a time. Every visual property of the form is a property of that machine."
+    }
+  ],
+  "worldview": "Write it out by hand and copy it, because anything that goes through a design step goes through someone else's judgement first. The page is one person talking, at length, in the first person, about something that happened to them, and the fact that it is untidy is the evidence that nobody edited it. Toner and paper: two values, no halftones, no shading, because the copier has none and pretending otherwise means the page was made on a computer and photographed to look copied. Fill the sheet. Empty space on a zine page means you ran out of things to say, and the whole premise is that you have not run out. It should be legible to forty people and unimportant to everyone else, and it should look like it cost four dollars, because it did.",
+  "tensions": [
+    {
+      "between": "the untidiness is evidence of urgency",
+      "and": "the untidiness is now a layout style",
+      "claim": "Ransom cuts, crooked photocopies and handwriting are all reproducible as effects, and once reproduced they say the opposite of what they said: someone spent time making this look like nobody spent time. The only defence is that the mess has to be caused rather than applied, and nothing in a picture proves which happened."
+    },
+    {
+      "between": "the personal account as the strongest available evidence",
+      "and": "the personal account as unfalsifiable",
+      "claim": "The form's whole authority comes from refusing to abstract, and abstraction is also how a claim becomes checkable by someone else. The zine accepts that trade knowingly. It is not naive about it; it has decided that the alternative silences more than it verifies."
+    },
+    {
+      "between": "an edition of forty",
+      "and": "an image that will be reproduced forever",
+      "claim": "These pages were made to be disposable and are now archived, taught and imitated. The form assumed a small, known audience, and the tone that is right for forty people who know you is a tone that reads as either brave or embarrassing to forty thousand who do not."
+    },
+    {
+      "between": "shouting to be heard at all",
+      "and": "shouting flattening everything to one volume",
+      "claim": "Caps throughout is how the page gets its urgency and also how it loses its dynamics. A page with no quiet passage has nothing to be loud against."
+    }
+  ],
+  "commitments": [
+    {
+      "id": "c-talking",
+      "kind": "requireNode",
+      "params": { "op": "text", "min": 4 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "The page is somebody talking at length. Four separate pieces of text is the minimum at which a sheet stops being a poster and starts being a page."
+    },
+    {
+      "id": "c-shout",
+      "kind": "textCase",
+      "params": { "case": "upper" },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Block capitals, because they can be written faster than they can be set and because they carry across a room."
+    },
+    {
+      "id": "c-hand-media",
+      "kind": "requireMark",
+      "params": { "brushes": ["crayon", "charcoal", "pastel", "cpencil", "2B"], "min": 2 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Marks made by dragging something soft across paper. Two of them at minimum, so at least part of the page was made by a hand and not by a menu."
+    },
+    {
+      "id": "b-written-not-set",
+      "kind": "requireNode",
+      "params": { "op": "stroke", "min": 12 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "The words should be drawn, not set. Twelve free strokes is the nearest this medium comes to a page of handwriting, and it is not near.",
+      "blocked_by": "a handwriting or per-glyph transform primitive: `text` places one font at one size on one horizontal baseline, so nothing on this page can be written crooked, run out of room, or be crossed out and redone"
+    },
+    {
+      "id": "j-first-person",
+      "kind": "rubric",
+      "params": {
+        "text": "Is one identifiable person talking, and are they talking about something that happened to them? Look for the first person, for specifics that could not have been invented for the poster (a street, a band, a week, a name), and for at least one sentence that is more honest than it needed to be. The failure mode is a page that has the graphic properties of a zine and the voice of a campaign: plural, abstract, addressed to everyone. If you cannot say who is speaking, this is not it."
+      },
+      "scope": "judge",
+      "severity": "hard",
+      "why": "Voice is the entire position and it lives in what the words say. A checker can count text ops and enforce capitals; it cannot tell a confession from a slogan."
+    },
+    {
+      "id": "j-not-a-brand",
+      "kind": "rubric",
+      "params": {
+        "text": "Does the roughness look caused or applied? Caused roughness is uneven: one part of the page is a disaster and another is careful, because the person was tired by the end. Applied roughness is homogeneous, tastefully distributed, and every element is misaligned by about the same amount. Check whether the mess has a gradient of care across the sheet. If everything is equally rough, a filter did it."
+      },
+      "scope": "judge",
+      "severity": "soft",
+      "why": "'Evenly distributed imperfection' is a statistical property nobody has been able to define well enough to check, and it is the single most common way this position is faked."
+    }
+  ],
+  "prohibitions": [
+    {
+      "id": "p-two-values",
+      "kind": "maxDistinctColors",
+      "params": { "max": 2, "includeGround": true },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "One toner and one paper. A copier has no third colour and a second pass through it costs another forty cents an edition."
+    },
+    {
+      "id": "p-no-furniture",
+      "kind": "forbidNode",
+      "params": { "macros": ["frame", "motif", "quarantine"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Borders, ornaments and labelled boxes are the furniture of a publication with an art director. This page does not have one, and the absence is the claim."
+    },
+    {
+      "id": "p-no-gradient",
+      "kind": "forbidMark",
+      "params": { "styles": ["wash"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "A photocopy has two values. A soft graded bleed means the file was made somewhere else and the copier was simulated."
+    },
+    {
+      "id": "r-fills-the-sheet",
+      "kind": "coverageRange",
+      "params": { "min": 0.55 },
+      "scope": "render",
+      "severity": "hard",
+      "why": "Marks in more than half the cells of the sheet. Empty space on a zine page means you ran out of things to say."
+    },
+    {
+      "id": "r-not-centred",
+      "kind": "symmetryMax",
+      "params": { "axis": "vertical", "max": 0.35 },
+      "scope": "render",
+      "severity": "hard",
+      "why": "Nothing on a hand-assembled page lands on the centre line. Vertical symmetry is proof that the page was laid out rather than filled up."
+    }
+  ],
+  "generative_rules": [
+    {
+      "rule": "Write until you reach the bottom edge, then keep going in the margin, sideways, smaller. Running out of room is information and should be left in."
+    },
+    {
+      "rule": "Never delete a sentence to make the layout work. Move it, shrink it, or let it collide with something, but the words win over the page."
+    },
+    {
+      "rule": "Nothing is centred and nothing is aligned to anything else on purpose. Where two things do line up, that is an accident and does not need to be preserved.",
+      "constraint": {
+        "id": "g-no-grid",
+        "kind": "maxRepeatDepth",
+        "params": { "max": 1 },
+        "scope": "tree",
+        "severity": "soft",
+        "why": "One repeat is a row of things somebody stamped out; a repeat inside a repeat is a page layout system, and there is no page layout system here."
+      }
+    },
+    {
+      "rule": "One element on the page should be so specific that it means nothing to a stranger: an initial, a date, a room number. Do not explain it."
+    },
+    {
+      "rule": "If you find yourself balancing the composition, stop and add another paragraph instead."
+    }
+  ],
+  "cliches": [
+    "handwriting fonts standing in for handwriting",
+    "the word GRRRL, in any casing, as a graphic element",
+    "torn notebook paper edges as a decorative frame",
+    "a cassette tape or a Polaroid frame as shorthand for the nineties",
+    "hot pink as the designated feminist colour",
+    "a lipstick kiss mark or a heart drawn in marker",
+    "artfully crooked photocopies where every element is crooked by five degrees",
+    "'the personal is political' quoted rather than demonstrated",
+    "a collaged eye or mouth from a fashion magazine",
+    "coffee ring stains added to a file that never touched a table"
+  ]
+}

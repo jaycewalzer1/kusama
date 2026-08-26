@@ -1,0 +1,396 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 7734,
+  "canvas": { "width": 800, "height": 1200, "ground": "#060608", "brushScale": 1 },
+  "palette": {
+    "void": "#060608",
+    "acid": "#c8ff00",
+    "deep": "#3a4a00",
+    "bone": "#d8d4c6",
+    "grime": "#1c1f14"
+  },
+  "meta": {
+    "probe": "rave-flyer",
+    "target": "Tresor-era Berlin flyer: distorted or stretched display type, a dense information block, one saturated colour on black",
+    "method": "type is stretched by extrusion, not by scaling -- a repeat wrapping a single text op steps it one pixel at a time to smear the word vertically and horizontally, because group scale is uniform only and there is no non-uniform transform. The information block is one wrapped text op; the colour budget is a single acid green.",
+    "notDone": "no condensed or bold face exists, so the display type is PT Sans Regular smeared; no true horizontal compression, no skew, no outline-only display type, and no photographic ground"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "plate-grime",
+        "type": "op",
+        "op": "wash",
+        "rngKey": "rave/plate-grime",
+        "label": "the only wet mark: a dirty sheen so the black is not flat black",
+        "args": {
+          "region": { "type": "rect", "x": -20, "y": -20, "w": 840, "h": 1240 },
+          "style": { "kind": "wash", "color": "grime", "opacity": 60, "bleed": 0.2, "texture": [0.7, 0.45] }
+        }
+      },
+      {
+        "id": "top-rail",
+        "type": "group",
+        "label": "promoter line and the acid rule under it",
+        "children": [
+          {
+            "id": "rail-bar",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "rave/rail-bar",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 96, "w": 800, "h": 9 },
+              "style": { "kind": "solid", "color": "acid", "opacity": 255 }
+            }
+          },
+          {
+            "id": "rail-text",
+            "type": "op",
+            "op": "text",
+            "rngKey": "rave/rail-text",
+            "args": {
+              "text": "LEIPZIGER   STR   126A   /   VAULT   +   GLOBUS   /   23:00   TILL   IT   STOPS",
+              "font": "grotesque",
+              "size": 14,
+              "x": 48,
+              "y": 78,
+              "align": "left",
+              "color": "bone",
+              "tracking": 2.5
+            }
+          },
+          {
+            "id": "rail-ticks",
+            "type": "repeat",
+            "rngKey": "rave/rail-ticks",
+            "count": 40,
+            "layout": { "type": "line", "origin": [48, 116], "dx": 18, "dy": 0 },
+            "children": [
+              {
+                "id": "rail-tick",
+                "type": "op",
+                "op": "paint",
+                "rngKey": "rave/rail-tick",
+                "args": {
+                  "region": { "type": "rect", "x": 0, "y": 0, "w": 3, "h": 14 },
+                  "style": { "kind": "solid", "color": "deep", "opacity": 255 }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "stretch",
+        "type": "group",
+        "label": "the display word, extruded downward one pixel at a time and then struck once in acid",
+        "children": [
+          {
+            "id": "stretch-body",
+            "type": "repeat",
+            "rngKey": "rave/stretch-body",
+            "count": 96,
+            "layout": { "type": "line", "origin": [0, 0], "dx": 0, "dy": 1.5 },
+            "children": [
+              {
+                "id": "stretch-step",
+                "type": "op",
+                "op": "text",
+                "rngKey": "rave/stretch-step",
+                "args": {
+                  "text": "TRESOR",
+                  "font": "grotesque",
+                  "size": 132,
+                  "x": 400,
+                  "y": 268,
+                  "align": "center",
+                  "color": "deep",
+                  "tracking": 8
+                }
+              }
+            ]
+          },
+          {
+            "id": "stretch-face",
+            "type": "op",
+            "op": "text",
+            "rngKey": "rave/stretch-face",
+            "args": {
+              "text": "TRESOR",
+              "font": "grotesque",
+              "size": 132,
+              "x": 400,
+              "y": 268,
+              "align": "center",
+              "color": "acid",
+              "tracking": 8
+            }
+          }
+        ]
+      },
+      {
+        "id": "smear",
+        "type": "group",
+        "label": "the second line, smeared sideways instead of down",
+        "children": [
+          {
+            "id": "smear-body",
+            "type": "repeat",
+            "rngKey": "rave/smear-body",
+            "count": 64,
+            "layout": { "type": "line", "origin": [-48, 0], "dx": 1.5, "dy": 0 },
+            "children": [
+              {
+                "id": "smear-step",
+                "type": "op",
+                "op": "text",
+                "rngKey": "rave/smear-step",
+                "args": {
+                  "text": "NEW   BUILDING",
+                  "font": "grotesque",
+                  "size": 46,
+                  "x": 400,
+                  "y": 492,
+                  "align": "center",
+                  "color": "deep",
+                  "tracking": 4
+                }
+              }
+            ]
+          },
+          {
+            "id": "smear-face",
+            "type": "op",
+            "op": "text",
+            "rngKey": "rave/smear-face",
+            "args": {
+              "text": "NEW   BUILDING",
+              "font": "grotesque",
+              "size": 46,
+              "x": 400,
+              "y": 492,
+              "align": "center",
+              "color": "bone",
+              "tracking": 4
+            }
+          }
+        ]
+      },
+      {
+        "id": "date-block",
+        "type": "group",
+        "label": "the date, set solid in an acid slab",
+        "children": [
+          {
+            "id": "date-slab",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "rave/date-slab",
+            "args": {
+              "region": { "type": "rect", "x": 48, "y": 536, "w": 704, "h": 62 },
+              "style": { "kind": "solid", "color": "acid", "opacity": 255 }
+            }
+          },
+          {
+            "id": "date-text",
+            "type": "op",
+            "op": "text",
+            "rngKey": "rave/date-text",
+            "args": {
+              "text": "FR   14   /   SA   15   /   SO   16",
+              "font": "grotesque",
+              "size": 42,
+              "x": 400,
+              "y": 582,
+              "align": "center",
+              "color": "void",
+              "tracking": 6
+            }
+          }
+        ]
+      },
+      {
+        "id": "info",
+        "type": "group",
+        "label": "the dense block: everything that will not fit anywhere else",
+        "children": [
+          {
+            "id": "info-rule-top",
+            "type": "op",
+            "op": "rule",
+            "rngKey": "rave/info-rule-top",
+            "args": {
+              "from": [48, 636],
+              "to": [388, 636],
+              "brush": "rotring",
+              "color": "deep",
+              "weight": 1
+            }
+          },
+          {
+            "id": "info-text",
+            "type": "op",
+            "op": "text",
+            "rngKey": "rave/info-text",
+            "args": {
+              "text": "NO   GUEST   LIST.   NO   PRESS.   NO   CAMERAS   AND   THE   DOOR   WILL   TAKE   YOUR   PHONE   IF   IT   HAS   TO.   TWENTY   MARKS   BEFORE   MIDNIGHT,   THIRTY   AFTER.",
+              "font": "grotesque",
+              "size": 15,
+              "x": 62,
+              "y": 662,
+              "align": "left",
+              "color": "bone",
+              "tracking": 2,
+              "maxWidth": 312
+            }
+          },
+          {
+            "id": "info-text-b",
+            "type": "op",
+            "op": "text",
+            "rngKey": "rave/info-text-b",
+            "label": "the block had to be cut in two: maxTextLength is 240 characters",
+            "args": {
+              "text": "THE   LOWER   FLOOR   OPENS   WHEN   THE   UPPER   FLOOR   IS   FULL   AND   NOT   ONE   MINUTE   SOONER.   IF   THE   STAIRS   ARE   CLOSED   THEN   THE   STAIRS   ARE   CLOSED.",
+              "font": "grotesque",
+              "size": 15,
+              "x": 62,
+              "y": 812,
+              "align": "left",
+              "color": "bone",
+              "tracking": 2,
+              "maxWidth": 312
+            }
+          },
+          {
+            "id": "lineup",
+            "type": "op",
+            "op": "text",
+            "rngKey": "rave/lineup",
+            "args": {
+              "text": "VAULT   ///   BLAKE   BAXTER   ///   TANITH   ///   SURGEON   ///   DJ   ROLANDO   ///   REGIS   ///   CRISTIAN   VOGEL   ///   GLOBUS   ///   DR   MOTTE   ///   MIJK   VAN   DIJK",
+              "font": "grotesque",
+              "size": 21,
+              "x": 424,
+              "y": 664,
+              "align": "left",
+              "color": "acid",
+              "tracking": 1.5,
+              "maxWidth": 328
+            }
+          },
+          {
+            "id": "info-ladder",
+            "type": "repeat",
+            "rngKey": "rave/info-ladder",
+            "count": 22,
+            "layout": { "type": "line", "origin": [424, 906], "dx": 0, "dy": 4 },
+            "children": [
+              {
+                "id": "ladder-bar",
+                "type": "op",
+                "op": "paint",
+                "rngKey": "rave/ladder-bar",
+                "args": {
+                  "region": { "type": "rect", "x": 0, "y": 0, "w": 328, "h": 2 },
+                  "style": { "kind": "solid", "color": "deep", "opacity": 255 }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "barcode",
+        "type": "repeat",
+        "rngKey": "rave/barcode",
+        "label": "a bar block that is only a bar block: no data, all authority",
+        "count": 58,
+        "layout": { "type": "line", "origin": [48, 1012], "dx": 12, "dy": 0 },
+        "children": [
+          {
+            "id": "bar",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "rave/bar",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 0, "w": 5, "h": 54 },
+              "style": { "kind": "solid", "color": "bone", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "barcode-knock",
+        "type": "repeat",
+        "rngKey": "rave/barcode-knock",
+        "label": "acid slots knocked through the bar block",
+        "count": 12,
+        "layout": { "type": "line", "origin": [60, 1012], "dx": 60, "dy": 0 },
+        "children": [
+          {
+            "id": "knock",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "rave/knock",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 0, "w": 24, "h": 54 },
+              "style": { "kind": "solid", "color": "acid", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "foot",
+        "type": "group",
+        "label": "the small print, and the one thing that is not information",
+        "children": [
+          {
+            "id": "foot-rule",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "rave/foot-rule",
+            "args": {
+              "region": { "type": "rect", "x": 48, "y": 1096, "w": 704, "h": 3 },
+              "style": { "kind": "solid", "color": "acid", "opacity": 255 }
+            }
+          },
+          {
+            "id": "foot-text",
+            "type": "op",
+            "op": "text",
+            "rngKey": "rave/foot-text",
+            "args": {
+              "text": "GEDRUCKT   OHNE   GENEHMIGUNG   /   NICHT   AN   DIE   WAND   /   AN   DIE   WAND",
+              "font": "grotesque",
+              "size": 13,
+              "x": 48,
+              "y": 1128,
+              "align": "left",
+              "color": "bone",
+              "tracking": 2
+            }
+          },
+          {
+            "id": "foot-mark",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "rave/foot-mark",
+            "args": {
+              "name": "debris.shard",
+              "x": 704,
+              "y": 1128,
+              "span": 92,
+              "rotate": 24,
+              "style": { "kind": "solid", "color": "acid", "opacity": 255 }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

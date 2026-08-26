@@ -1,0 +1,37 @@
+{
+  "version": "1.0",
+  "id": "night-market-bombing",
+  "title": "Benefit for the night market dead",
+  "event": "Two aircraft came over the covered market at Al-Hurriya on a Thursday evening, when the vegetable stalls were still open and the school across the road had just emptied. Thirty-one people were killed and the roof came down over the western aisle. The ordnance was sold, under an export licence granted eleven weeks earlier, by a company with an office nine hundred metres from where this poster will be pasted up.",
+  "when": "Friday 14 November 1997, doors 19:30",
+  "where": "The Pit, 12 Rye Lane, London SE15",
+  "function": "A benefit show. Four bands, five pounds on the door, everything through the door goes to the medical fund; the poster is fly-posted along Rye Lane and Peckham High Street the week before.",
+  "stakes": "The company that made the bomb has an office on the same road as the venue, and the poster has to be the thing that makes that fact impossible to walk past.",
+  "hard_constraints": [
+    {
+      "id": "hc-date",
+      "kind": "textRequired",
+      "params": { "contains": ["14 NOVEMBER"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "A benefit with no date on it raises nothing. This is the one fact the poster exists to transmit."
+    },
+    {
+      "id": "hc-venue",
+      "kind": "textRequired",
+      "params": { "contains": ["RYE LANE"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "The address is also the argument: the venue and the arms office are on the same street, and naming the street is what connects them."
+    },
+    {
+      "id": "hc-price",
+      "kind": "textRequired",
+      "params": { "contains": ["5 POUNDS"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "The door price is a promise about who is expected to come. Leaving it off means the answer is 'whoever can afford to ask'."
+    }
+  ],
+  "notes": "The commission does not fix a tone. A poster that treats the thirty-one as a number and a poster that names one of them are both possible readings of this brief, and the aesthetic program should decide which."
+}

@@ -1,0 +1,191 @@
+{
+  "version": "1.0",
+  "id": "crass-collage",
+  "name": "Grisaille Montage",
+  "lineage": [
+    {
+      "ref": "Gee Vaucher, cover and poster for Crass, \"Stations of the Crass\" (Crass Records, 1979)",
+      "why": "Gouache painted to photographic finish, then cut and butted against other painted photographs. The seam is left visible, so the join is the argument."
+    },
+    {
+      "ref": "Gee Vaucher, \"International Anthem: a nihilist newspaper for the living\", issues 1-3 (1977-84)",
+      "why": "The domestic magazine page is the site of the war. A kitchen, a bride, a baby and a bomber occupy one surface at one scale, and none of them is treated as the surprising one."
+    },
+    {
+      "ref": "Crass, \"Yes Sir, I Will\" gatefold (1983)",
+      "why": "Dense monochrome to the edge, no rest, no white margin to recover in. The reader is not given anywhere to look away to."
+    },
+    {
+      "ref": "Penny Rimbaud, \"The Last of the Hippies: an hysterical romance\" (1982)",
+      "why": "The text that establishes the record sleeve as a place for an argument rather than a signature. The design exists to make a long claim readable, not to be admired."
+    },
+    {
+      "ref": "John Heartfield, photomontages for AIZ (Berlin/Prague, 1930-38)",
+      "why": "The technique's origin and its rule: use the enemy's own photographs, unaltered, and let the caption do the cutting. Vaucher inherits the method and paints her own photographs when she cannot find them."
+    },
+    {
+      "ref": "Dave King, the Crass symbol (1977)",
+      "why": "One black mark that works at any size and belongs to nobody. It is a stencil, not a logo, and it was given away."
+    }
+  ],
+  "worldview": "The photograph is the state's own evidence and it should be handed back with the caption changed. Nothing is stylised, nothing is abstracted, nothing is made beautiful: the horror is already in the source material and any decoration added to it is a way of making it bearable, which is a way of taking its side. Grey is the working colour because grey is what newsprint and gun-camera film and hospital light actually are. The page is filled corner to corner because an empty margin is a place to rest, and the argument being made does not offer one. Where a colour appears at all it is blood, once, and it should be shocking rather than pretty. The maker is not present in the surface. There is no brushwork to admire.",
+  "tensions": [
+    {
+      "between": "the montage must be legible as photograph",
+      "and": "every photograph in it was painted by hand over weeks",
+      "claim": "Vaucher's images are not collages of found photographs but paintings that impersonate them, and the labour is deliberately invisible. The position therefore demands enormous craft while forbidding any sign of craft, which is a real contradiction and not a paradox to be resolved: the craft goes into the disappearance."
+    },
+    {
+      "between": "showing atrocity to stop it",
+      "and": "showing atrocity as a graphic device",
+      "claim": "The same image can indict or decorate depending on nothing visible in the image. Repetition is what turns one into the other, and this position has been repeated for forty-five years. Every new use has to answer for that."
+    },
+    {
+      "between": "filling the page as refusal of comfort",
+      "and": "filling the page until nothing can be read",
+      "claim": "Density is the point, but density past legibility becomes texture, and texture is decoration. The edge between the two is where the work is, and it cannot be found by measuring ink."
+    },
+    {
+      "between": "anonymity as a political commitment",
+      "and": "a style so specific that it is a signature",
+      "claim": "Crass refused personality and produced one of the most identifiable visual identities in British music. The refusal worked and became its opposite. Anyone using it now inherits the signature without the refusal."
+    }
+  ],
+  "commitments": [
+    {
+      "id": "c-montage-bodies",
+      "kind": "requireNode",
+      "params": { "op": "fragment", "min": 4 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "The picture is assembled out of cut human material, not composed. Four separate bodies or objects, butted against each other, so the surface is a join rather than a scene."
+    },
+    {
+      "id": "c-hard-edge",
+      "kind": "requireMark",
+      "params": { "styles": ["solid"], "min": 1 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "A cut edge is absolute. At least one flat block with no bleed, so the montage has something to be cut against."
+    },
+    {
+      "id": "c-shout",
+      "kind": "textCase",
+      "params": { "case": "upper" },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Stencil capitals. The text is a statement being read out, not a caption being offered."
+    },
+    {
+      "id": "b-continuous-tone",
+      "kind": "requireMark",
+      "params": { "styles": ["wash"], "min": 3 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Grisaille is continuous tone: a painted photograph, modelled from black to paper with no visible step. This constraint asks for the nearest thing the medium has and the nearest thing is wrong.",
+      "blocked_by": "a mass or gradient primitive: `wash` is watercolour bleed with a soft irregular edge, which reads as painting rather than photography, and p5.brush's pigment mixing means light cannot be laid over dark at all (NOTES L4). The probe tried `hatch` instead and reported it is engraving, not halftone: fixed spacing, no tonal ramp, so it cannot render a face or a midtone"
+    },
+    {
+      "id": "j-indictment",
+      "kind": "rubric",
+      "params": {
+        "text": "Does this image accuse, or does it use the vocabulary of accusation as a graphic device? Ask what specifically is being claimed and who is being held responsible. If the answer is 'war is bad' or 'the system', the picture is wearing the position rather than holding it. Look for a particular: a named institution, a recognisable uniform, a domestic object placed where it does not belong. Then ask whether the picture would still work if the atrocity were replaced with a different atrocity. If it would, the atrocity is decoration."
+      },
+      "scope": "judge",
+      "severity": "hard",
+      "why": "Whether an image indicts anything depends on what it refers to and who is looking. Nothing on the tree or in the pixels contains a referent."
+    },
+    {
+      "id": "j-domestic-uncanny",
+      "kind": "rubric",
+      "params": {
+        "text": "Is there a collision between the domestic and the military, and is it handled without irony? Vaucher's method places a bomber and a tea service on one surface at one scale and treats neither as the joke. Ask whether this picture has two registers in it at all, and if it does, whether it is winking. A wink is the failure mode: it converts the collision into wit and lets the viewer off."
+      },
+      "scope": "judge",
+      "severity": "soft",
+      "why": "Register, irony and tone are exactly the properties a tree walk cannot see. Two fragments named 'figure' and 'object.bowl' tell a checker nothing about whether their meeting is funny."
+    }
+  ],
+  "prohibitions": [
+    {
+      "id": "p-grisaille",
+      "kind": "palette",
+      "params": {
+        "allow": ["#0d0d0d", "#3a3a3a", "#6e6e6e", "#a8a8a8", "#d6d3cc", "#f2efe9", "#8f1d1d"],
+        "includeGround": true
+      },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Newsprint greys, black, paper, and one blood red that is allowed to appear and is not required to. A colour outside this list is a colour that was chosen to be attractive."
+    },
+    {
+      "id": "p-no-decor",
+      "kind": "forbidNode",
+      "params": { "macros": ["frame", "motif"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "A border makes the page a picture and the picture a possession. An ornament says someone wanted this to be liked."
+    },
+    {
+      "id": "p-no-drift",
+      "kind": "forbidMark",
+      "params": { "styles": ["field"], "brushes": ["pastel", "crayon"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Scattered drifting marks and soft coloured media are atmosphere. This position has no atmosphere; it has evidence."
+    },
+    {
+      "id": "r-no-rest",
+      "kind": "inkDensityRange",
+      "params": { "min": 0.35 },
+      "scope": "render",
+      "severity": "hard",
+      "why": "An empty margin is somewhere for the eye to recover. Over a third of the sheet marked is the point at which the page stops offering one."
+    },
+    {
+      "id": "r-off-axis",
+      "kind": "symmetryMax",
+      "params": { "axis": "vertical", "max": 0.6 },
+      "scope": "render",
+      "severity": "soft",
+      "why": "A symmetrical montage is a composition, and composing the material is a way of settling it."
+    }
+  ],
+  "generative_rules": [
+    {
+      "rule": "Every addition must butt against something already present, sharing an edge. Nothing floats in its own space; if there is space around a new element, the element is being displayed rather than joined."
+    },
+    {
+      "rule": "Add the domestic object last and at the same scale as the military one. Never shrink it to make the joke land."
+    },
+    {
+      "rule": "Keep adding until the page is uncomfortable to look at, then remove exactly one thing so that the rest can be read.",
+      "constraint": {
+        "id": "g-crowded",
+        "kind": "nodeCount",
+        "params": { "min": 10 },
+        "scope": "tree",
+        "severity": "soft",
+        "why": "Ten drawing nodes is roughly where a page stops being a layout and starts being a pile. It is a floor, not a target: the render-scope density constraint is the one that actually knows."
+      }
+    },
+    {
+      "rule": "Red enters once or not at all, and when it enters it is on the smallest element in the picture."
+    },
+    {
+      "rule": "If an element could be described as 'a nice touch', delete it and do not replace it."
+    }
+  ],
+  "cliches": [
+    "a gas mask, anywhere, for any reason",
+    "a bomber silhouette over a suburban house",
+    "the Crass stencil font applied to an unrelated argument",
+    "barbed wire as a border, which is a border pretending not to be one",
+    "a single red splash on a monochrome page used as an accent rather than as blood",
+    "torn-edge photo corners as a texture preset",
+    "a screaming face at 40% opacity behind the text",
+    "the word WAR set in the largest available size",
+    "skulls substituted for the faces of politicians",
+    "monochrome plus one colour treated as a palette decision rather than as a printing constraint"
+  ]
+}

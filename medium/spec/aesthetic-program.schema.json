@@ -1,0 +1,314 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://medium.invalid/spec/aesthetic-program.schema.json",
+  "title": "AestheticProgram",
+  "description": "An explicit, inspectable artistic position. Not a persona and not a style: five parts, of which two (worldview, tensions) are prose for the artist model and three (commitments, prohibitions, generative_rules) carry machine-checkable constraints. The archive keeps distinct ones; the evaluator asks whether a given program tree honours one.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "id",
+    "name",
+    "lineage",
+    "worldview",
+    "tensions",
+    "commitments",
+    "prohibitions",
+    "generative_rules",
+    "cliches"
+  ],
+  "properties": {
+    "version": { "const": "1.0" },
+    "id": {
+      "description": "Stable and unique in the archive. Names a position, not a person.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{0,63}$"
+    },
+    "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "lineage": {
+      "description": "Real references only. Each one says in a line why it is in this lineage; a reference with no reason is decoration.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ref", "why"],
+        "properties": {
+          "ref": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "why": { "type": "string", "minLength": 1, "maxLength": 400 }
+        }
+      }
+    },
+    "worldview": {
+      "description": "Prose, for the artist model to read. Never checked by anything.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "tensions": {
+      "description": "Prose, for the artist model to read. Never checked by anything. A position with no internal disagreement is a style guide.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["between", "and", "claim"],
+        "properties": {
+          "between": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "and": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "claim": { "type": "string", "minLength": 1, "maxLength": 600 }
+        }
+      }
+    },
+    "commitments": {
+      "description": "What this position insists on. Checked.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/constraint" }
+    },
+    "prohibitions": {
+      "description": "What this position refuses. Checked.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/constraint" }
+    },
+    "generative_rules": {
+      "description": "Edit-level tendencies: how a tree under this position should be grown and changed. Prose for the artist, plus an optional constraint when the tendency happens to be mechanically decidable.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rule"],
+        "properties": {
+          "rule": { "type": "string", "minLength": 1, "maxLength": 600 },
+          "constraint": { "$ref": "#/$defs/constraint" }
+        }
+      }
+    },
+    "cliches": {
+      "description": "Data only. The moves that read as this position from a distance and mean nothing up close. Never enforced anywhere; the reward-hacking monitor reads this list later.",
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 300 }
+    },
+    "meta": { "type": "object" }
+  },
+
+  "$defs": {
+    "constraint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "params", "scope", "severity", "why"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
+        "kind": {
+          "description": "The closed set. Fifteen kinds, each with one pure checker.",
+          "enum": [
+            "maxDistinctColors",
+            "palette",
+            "forbidNode",
+            "requireNode",
+            "nodeCount",
+            "textCase",
+            "textMaxWords",
+            "textRequired",
+            "maxRepeatDepth",
+            "forbidMark",
+            "requireMark",
+            "inkDensityRange",
+            "symmetryMax",
+            "coverageRange",
+            "rubric"
+          ]
+        },
+        "params": { "type": "object" },
+        "scope": {
+          "description": "tree: decidable from the JSON alone. render: needs the deterministic canonical PNG. judge: needs a model with a rubric, and is always returned unverified.",
+          "enum": ["tree", "render", "judge"]
+        },
+        "severity": { "enum": ["hard", "soft"] },
+        "why": {
+          "description": "Human-readable. What this constraint is protecting, not what it does.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 600
+        },
+        "blocked_by": {
+          "description": "Names the primitive the medium does not have. A constraint with this field is a proxy for something this medium cannot express; it is reported unverified and excluded from every score, so that the gap stays visible instead of being scored as a pass.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 400
+        }
+      },
+      "allOf": [
+        { "if": { "properties": { "kind": { "const": "maxDistinctColors" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/maxDistinctColorsParams" } } } },
+        { "if": { "properties": { "kind": { "const": "palette" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/paletteParams" } } } },
+        { "if": { "properties": { "kind": { "const": "forbidNode" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/forbidNodeParams" } } } },
+        { "if": { "properties": { "kind": { "const": "requireNode" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/requireNodeParams" } } } },
+        { "if": { "properties": { "kind": { "const": "nodeCount" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/nodeCountParams" } } } },
+        { "if": { "properties": { "kind": { "const": "textCase" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/textCaseParams" } } } },
+        { "if": { "properties": { "kind": { "const": "textMaxWords" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/textMaxWordsParams" } } } },
+        { "if": { "properties": { "kind": { "const": "textRequired" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/textRequiredParams" } } } },
+        { "if": { "properties": { "kind": { "const": "maxRepeatDepth" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/maxRepeatDepthParams" } } } },
+        { "if": { "properties": { "kind": { "const": "forbidMark" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/forbidMarkParams" } } } },
+        { "if": { "properties": { "kind": { "const": "requireMark" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/requireMarkParams" } } } },
+        { "if": { "properties": { "kind": { "const": "inkDensityRange" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "render" }, "params": { "$ref": "#/$defs/rangeParams" } } } },
+        { "if": { "properties": { "kind": { "const": "symmetryMax" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "render" }, "params": { "$ref": "#/$defs/symmetryMaxParams" } } } },
+        { "if": { "properties": { "kind": { "const": "coverageRange" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "render" }, "params": { "$ref": "#/$defs/rangeParams" } } } },
+        { "if": { "properties": { "kind": { "const": "rubric" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "judge" }, "params": { "$ref": "#/$defs/rubricParams" } } } }
+      ]
+    },
+
+    "opName": { "enum": ["wash", "paint", "stroke", "fragment", "text", "rule", "cover"] },
+    "macroName": { "enum": ["frame", "motif", "quarantine"] },
+    "styleKind": { "enum": ["wash", "hatch", "field", "outline", "solid"] },
+    "hex": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+
+    "maxDistinctColorsParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max"],
+      "properties": {
+        "max": { "type": "integer", "minimum": 1, "maximum": 64 },
+        "includeGround": {
+          "description": "Whether the canvas ground counts as one of the colours. Default true: on a poster the paper is a colour choice.",
+          "type": "boolean"
+        }
+      }
+    },
+
+    "paletteParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allow"],
+      "properties": {
+        "allow": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/hex" } },
+        "includeGround": { "type": "boolean" }
+      }
+    },
+
+    "forbidNodeParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "ops": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/opName" } },
+        "macros": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/macroName" } }
+      }
+    },
+
+    "requireNodeParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min"],
+      "oneOf": [{ "required": ["op"] }, { "required": ["macro"] }],
+      "properties": {
+        "op": { "$ref": "#/$defs/opName" },
+        "macro": { "$ref": "#/$defs/macroName" },
+        "min": { "type": "integer", "minimum": 1, "maximum": 300 }
+      }
+    },
+
+    "nodeCountParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "min": { "type": "integer", "minimum": 0, "maximum": 300 },
+        "max": { "type": "integer", "minimum": 0, "maximum": 300 },
+        "countGroups": {
+          "description": "Whether group/repeat/macro nodes count, or only drawing ops. Default false: counting containers measures the author's filing habits, not the picture.",
+          "type": "boolean"
+        }
+      }
+    },
+
+    "textCaseParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case"],
+      "properties": { "case": { "enum": ["upper", "lower"] } }
+    },
+
+    "textMaxWordsParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max"],
+      "properties": {
+        "max": { "description": "Per text op, not per program.", "type": "integer", "minimum": 1, "maximum": 100 }
+      }
+    },
+
+    "textRequiredParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contains"],
+      "properties": {
+        "contains": {
+          "description": "Every one of these must appear somewhere in the program's text, case-insensitively and ignoring runs of whitespace. This is how a brief's fixed facts (a date, an address) survive a hundred edits.",
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1, "maxLength": 120 }
+        }
+      }
+    },
+
+    "maxRepeatDepthParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max"],
+      "properties": { "max": { "type": "integer", "minimum": 0, "maximum": 8 } }
+    },
+
+    "forbidMarkParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "styles": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/styleKind" } },
+        "brushes": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+
+    "requireMarkParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min"],
+      "properties": {
+        "styles": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/styleKind" } },
+        "brushes": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "min": { "type": "integer", "minimum": 1, "maximum": 300 }
+      }
+    },
+
+    "rangeParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "min": { "type": "number", "minimum": 0, "maximum": 1 },
+        "max": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+
+    "symmetryMaxParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["axis", "max"],
+      "properties": {
+        "axis": { "enum": ["vertical", "horizontal"] },
+        "max": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+
+    "rubricParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text"],
+      "properties": {
+        "text": {
+          "description": "Free text, handed back to the caller unchecked and unexecuted. Nothing in this layer reads it.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 3000
+        }
+      }
+    }
+  }
+}

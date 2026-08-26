@@ -1,0 +1,361 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 1977,
+  "canvas": { "width": 800, "height": 1200, "ground": "#e2ded2", "brushScale": 1 },
+  "palette": {
+    "ink": "#121212",
+    "paper": "#e2ded2",
+    "blood": "#a41616",
+    "grey": "#7d7a72",
+    "smoke": "#3b3a36"
+  },
+  "meta": {
+    "probe": "crass-collage",
+    "target": "Gee Vaucher lineage: found fragments layered as an argument, photographic material set against clean type, anti-war content",
+    "method": "the plate is a black rectangle and every 'photograph' in it is a pack fragment -- crowd, columns, beams, a bird -- filled either solid (silhouette) or with a fine charcoal hatch standing in for continuous tone. The argument is made by stacking order: state architecture behind, crowd beneath, sponsors on top, and the bird cut out of all of it.",
+    "notDone": "there is no photographic or found material in the pack at all, so every 'photograph' is a fifteen-outline vector; hatch is not halftone and reads as engraving, and there is no way to knock type out of an image except by drawing it in the ground colour"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "stock",
+        "type": "op",
+        "op": "wash",
+        "rngKey": "crass/stock",
+        "label": "cheap paper, so the white is never white",
+        "args": {
+          "region": { "type": "rect", "x": -20, "y": -20, "w": 840, "h": 1240 },
+          "style": { "kind": "wash", "color": "grey", "opacity": 34, "bleed": 0.22, "texture": [0.7, 0.4] }
+        }
+      },
+      {
+        "id": "kicker",
+        "type": "op",
+        "op": "text",
+        "rngKey": "crass/kicker",
+        "args": {
+          "text": "A   SERIES   OF   SHOCKS   TO   THE   SYSTEM   /   SHEET   THREE   OF   NINE",
+          "font": "grotesque",
+          "size": 14,
+          "x": 48,
+          "y": 74,
+          "align": "left",
+          "color": "ink",
+          "tracking": 2.5
+        }
+      },
+      {
+        "id": "plate",
+        "type": "group",
+        "label": "the photograph that is not a photograph",
+        "children": [
+          {
+            "id": "plate-ground",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "crass/plate-ground",
+            "args": {
+              "region": { "type": "rect", "x": 48, "y": 96, "w": 704, "h": 520 },
+              "style": { "kind": "solid", "color": "ink", "opacity": 255 }
+            }
+          },
+          {
+            "id": "beams",
+            "type": "repeat",
+            "rngKey": "crass/beams",
+            "label": "searchlights, hatched because there is no gradient",
+            "count": 3,
+            "layout": { "type": "line", "origin": [200, 320], "dx": 200, "dy": -18 },
+            "children": [
+              {
+                "id": "beam",
+                "type": "op",
+                "op": "fragment",
+                "rngKey": "crass/beam",
+                "args": {
+                  "name": "light.beam",
+                  "x": 0,
+                  "y": 0,
+                  "span": 300,
+                  "rotate": 8,
+                  "style": { "kind": "hatch", "brush": "2H", "color": "grey", "spacing": 5, "angle": 78, "rand": 0.2, "layers": 1, "continuous": false }
+                }
+              }
+            ]
+          },
+          {
+            "id": "colonnade-left",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "crass/colonnade-left",
+            "args": {
+              "name": "arch.column",
+              "x": 150,
+              "y": 350,
+              "span": 300,
+              "style": { "kind": "hatch", "brush": "charcoal", "color": "smoke", "spacing": 3, "angle": 90, "rand": 0.35, "layers": 2, "continuous": false }
+            }
+          },
+          {
+            "id": "colonnade-right",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "crass/colonnade-right",
+            "args": {
+              "name": "arch.column",
+              "x": 650,
+              "y": 350,
+              "span": 300,
+              "flipX": true,
+              "style": { "kind": "hatch", "brush": "charcoal", "color": "smoke", "spacing": 3, "angle": 90, "rand": 0.35, "layers": 2, "continuous": false }
+            }
+          },
+          {
+            "id": "arch",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "crass/arch",
+            "args": {
+              "name": "arch.arch",
+              "x": 400,
+              "y": 268,
+              "span": 340,
+              "style": { "kind": "outline", "brush": "rotring", "color": "grey", "weight": 2.5 }
+            }
+          },
+          {
+            "id": "crowd",
+            "type": "repeat",
+            "rngKey": "crass/crowd",
+            "label": "the crowd is a silhouette because a silhouette is what they were to it",
+            "count": 5,
+            "layout": { "type": "line", "origin": [128, 552], "dx": 136, "dy": 0 },
+            "children": [
+              {
+                "id": "crowd-band",
+                "type": "op",
+                "op": "fragment",
+                "rngKey": "crass/crowd-band",
+                "args": {
+                  "name": "figure.crowd",
+                  "x": 0,
+                  "y": 0,
+                  "span": 230,
+                  "style": { "kind": "solid", "color": "paper", "opacity": 255 }
+                }
+              }
+            ]
+          },
+          {
+            "id": "speaker",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "crass/speaker",
+            "args": {
+              "name": "figure.standing",
+              "x": 400,
+              "y": 452,
+              "span": 210,
+              "style": { "kind": "solid", "color": "paper", "opacity": 255 }
+            }
+          },
+          {
+            "id": "bird-shadow",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "crass/bird-shadow",
+            "label": "the red plate is off register, as it always was",
+            "args": {
+              "name": "animal.bird",
+              "x": 406,
+              "y": 246,
+              "span": 300,
+              "rotate": -14,
+              "style": { "kind": "solid", "color": "blood", "opacity": 255 }
+            }
+          },
+          {
+            "id": "bird",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "crass/bird",
+            "args": {
+              "name": "animal.bird",
+              "x": 400,
+              "y": 240,
+              "span": 300,
+              "rotate": -14,
+              "style": { "kind": "solid", "color": "paper", "opacity": 255 }
+            }
+          },
+          {
+            "id": "plate-caption-bar",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "crass/plate-caption-bar",
+            "args": {
+              "region": { "type": "rect", "x": 48, "y": 578, "w": 704, "h": 38 },
+              "style": { "kind": "solid", "color": "paper", "opacity": 255 }
+            }
+          },
+          {
+            "id": "plate-caption",
+            "type": "op",
+            "op": "text",
+            "rngKey": "crass/plate-caption",
+            "args": {
+              "text": "FIG.   3   -   CIVILIANS   ARE   ADVISED   THAT   THE   CEREMONY   WILL   PROCEED",
+              "font": "serif",
+              "size": 15,
+              "x": 62,
+              "y": 604,
+              "align": "left",
+              "color": "ink",
+              "tracking": 1.5
+            }
+          }
+        ]
+      },
+      {
+        "id": "argument",
+        "type": "group",
+        "label": "the type, which is clean on purpose",
+        "children": [
+          {
+            "id": "line-one",
+            "type": "op",
+            "op": "text",
+            "rngKey": "crass/line-one",
+            "args": {
+              "text": "FIGHT   WAR",
+              "font": "grotesque",
+              "size": 96,
+              "x": 48,
+              "y": 716,
+              "align": "left",
+              "color": "ink",
+              "tracking": 6
+            }
+          },
+          {
+            "id": "line-two-bar",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "crass/line-two-bar",
+            "args": {
+              "region": { "type": "rect", "x": 48, "y": 736, "w": 704, "h": 84 },
+              "style": { "kind": "solid", "color": "blood", "opacity": 255 }
+            }
+          },
+          {
+            "id": "line-two",
+            "type": "op",
+            "op": "text",
+            "rngKey": "crass/line-two",
+            "args": {
+              "text": "NOT   WARS",
+              "font": "grotesque",
+              "size": 96,
+              "x": 736,
+              "y": 806,
+              "align": "right",
+              "color": "paper",
+              "tracking": 6
+            }
+          }
+        ]
+      },
+      {
+        "id": "sponsors",
+        "type": "group",
+        "label": "who paid for it, laid out like a programme",
+        "children": [
+          {
+            "id": "sponsor-rule",
+            "type": "op",
+            "op": "rule",
+            "rngKey": "crass/sponsor-rule",
+            "args": { "from": [48, 852], "to": [752, 852], "brush": "rotring", "color": "ink", "weight": 1.5 }
+          },
+          {
+            "id": "sponsor-line",
+            "type": "op",
+            "op": "text",
+            "rngKey": "crass/sponsor-line",
+            "args": {
+              "text": "WITH   THE   KIND   SUPPORT   OF",
+              "font": "grotesque",
+              "size": 13,
+              "x": 48,
+              "y": 876,
+              "align": "left",
+              "color": "ink",
+              "tracking": 3
+            }
+          },
+          {
+            "id": "sponsor-a",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "crass/sponsor-a",
+            "args": { "name": "mark.sponsor-a", "x": 132, "y": 954, "span": 110, "style": { "kind": "solid", "color": "ink", "opacity": 255 } }
+          },
+          {
+            "id": "sponsor-b",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "crass/sponsor-b",
+            "args": { "name": "mark.sponsor-b", "x": 292, "y": 954, "span": 110, "style": { "kind": "solid", "color": "ink", "opacity": 255 } }
+          },
+          {
+            "id": "sponsor-c",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "crass/sponsor-c",
+            "args": { "name": "mark.sponsor-c", "x": 452, "y": 954, "span": 110, "style": { "kind": "solid", "color": "ink", "opacity": 255 } }
+          },
+          {
+            "id": "pointer",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "crass/pointer",
+            "label": "the recruiting hand, aimed at the sponsors instead of at you",
+            "args": {
+              "name": "hand.pointing",
+              "x": 646,
+              "y": 950,
+              "span": 200,
+              "rotate": 188,
+              "style": { "kind": "solid", "color": "blood", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "notice",
+        "type": "macro",
+        "macro": "quarantine",
+        "rngKey": "crass/notice",
+        "label": "the official caption, fenced off from the argument",
+        "args": {
+          "x": 48,
+          "y": 1024,
+          "w": 704,
+          "h": 76,
+          "style": { "kind": "hatch", "brush": "2H", "color": "grey", "spacing": 4, "angle": 45, "rand": 0.3, "layers": 1, "continuous": false },
+          "boxBrush": "rotring",
+          "boxColor": "ink",
+          "boxWeight": 1.5,
+          "label": "SUPPLIED   BY   THE   MINISTRY   /   NOT   TO   BE   REPRODUCED   /   REPRODUCED",
+          "labelFont": "grotesque",
+          "labelSize": 13,
+          "labelTracking": 2.5
+        }
+      }
+    ]
+  }
+}

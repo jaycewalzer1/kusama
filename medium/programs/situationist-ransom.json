@@ -1,0 +1,188 @@
+{
+  "version": "1.0",
+  "id": "situationist-ransom",
+  "name": "Ransom / Detournement",
+  "lineage": [
+    {
+      "ref": "Jamie Reid, sleeve and inserts for the Sex Pistols' \"God Save the Queen\" (Virgin, 1977)",
+      "why": "The letters are cut from the newspapers that were attacking the band, so the attack supplies the typeface. Authorship is refused twice: nobody drew the letters and nobody owns them."
+    },
+    {
+      "ref": "Jamie Reid, \"Never Mind the Bollocks\" sleeve (Virgin, 1977)",
+      "why": "Flat unmodulated yellow and pink with no rendering, no depth and no craft alibi. The sleeve is a poster that happens to be square."
+    },
+    {
+      "ref": "King Mob, London street posters and interventions, 1968-70",
+      "why": "The slogan is pasted where it will be read by people who did not choose to read it. The site is half the work."
+    },
+    {
+      "ref": "Guy Debord and Gil Wolman, \"A User's Guide to Detournement\" (Les Levres Nues, 1956)",
+      "why": "Meaning is taken from an existing image by placing it, not by making it. Detournement is a use of material, not a style applied to material."
+    },
+    {
+      "ref": "Internationale Situationniste, detourned comic strips, 1958-69",
+      "why": "The frames are left completely untouched and only the speech is rewritten. The minimum possible intervention is the strongest one."
+    },
+    {
+      "ref": "Suburban Press, Croydon, 1970-75 (Reid's own press)",
+      "why": "Letraset, stencil, one plate and whatever paper was cheap. The look is the budget, and the budget was a political fact before it was an aesthetic."
+    }
+  ],
+  "worldview": "A poster is not designed, it is assembled from things that were already lying around, and the assembly should be visible. Every mark that looks like skill is a mark that says a professional was paid, which is the opposite of the claim being made. The ransom note is the honest form: it admits that the words were taken, it refuses to speak in a designed voice, and it cannot be traced back to a hand. Flat colour, hard edges, nothing modelled, nothing shaded, nothing that took an afternoon. The picture should look like it was made in twenty minutes by someone who was angry and had access to a photocopier, because the alternative reads as an institution talking, and institutions are the subject rather than the author.",
+  "tensions": [
+    {
+      "between": "the cut letter as a genuine refusal of authorship",
+      "and": "the cut letter as a font you can now download",
+      "claim": "The move was legible in 1977 because it cost something and looked like it. Forty years of imitation have made it a signal for punk rather than an instance of it. The position survives only if each poster re-earns the crudeness rather than quoting it, which means the crudeness has to be real: actually few colours, actually no rendering, actually one afternoon."
+    },
+    {
+      "between": "detournement requires the original to stay recognisable",
+      "and": "this medium has no found images at all",
+      "claim": "Debord's rule is that you take something with meaning and re-site it. A drawn silhouette has no prior life to redirect, so anything made here is at best a picture about detournement. That gap should be admitted in the work, not papered over by making the drawn marks look photographic."
+    },
+    {
+      "between": "cheapness as a political position",
+      "and": "cheapness as an expensive effect",
+      "claim": "Deliberately degrading an image is a luxury: you have to have the clean version first. The honest version of this position is to spend the budget on nothing rather than to spend it on looking like nothing was spent."
+    },
+    {
+      "between": "the poster must be read from across a road",
+      "and": "the poster must reward standing in front of it",
+      "claim": "Reid's sleeves do both, and they do it by putting the shout and the small print in the same picture at wildly different scales. A poster that is only a shout is advertising; a poster that is only small print is a pamphlet."
+    }
+  ],
+  "commitments": [
+    {
+      "id": "c-cut-letters",
+      "kind": "requireNode",
+      "params": { "op": "text", "min": 3 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "The message arrives in separate pieces at separate scales, because it was cut out and stuck down rather than set. One text op is a headline; three or more is an assembly."
+    },
+    {
+      "id": "c-flat-blocks",
+      "kind": "requireMark",
+      "params": { "styles": ["solid"], "min": 2 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Flat unmodulated colour with a hard edge is the whole vocabulary of a one-plate print. Two blocks minimum, so the picture has ground it did not paint."
+    },
+    {
+      "id": "c-shout",
+      "kind": "textCase",
+      "params": { "case": "upper" },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "Cut newspaper capitals. Lowercase implies a considered typographic voice, which is the voice being refused."
+    },
+    {
+      "id": "b-detourned-image",
+      "kind": "requireNode",
+      "params": { "op": "fragment", "min": 1 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Detournement needs a found image whose original meaning is still legible while it is being redirected. This constraint asks for one and cannot get it.",
+      "blocked_by": "a halftone or photograph primitive: the core pack's fifteen fragments are hand-drawn silhouettes with no prior life, so there is nothing in this medium to detourn"
+    },
+    {
+      "id": "j-detournement",
+      "kind": "rubric",
+      "params": {
+        "text": "Does this picture redirect something, or does it only look like the pictures that did? Ask: is there material here that carries a meaning from outside the poster, and has that meaning been turned against itself? A poster that is merely crude, loud and cheap has adopted the costume of detournement without performing it. Answer no if the only thing being subverted is good taste. Answer yes only if you can name what was taken and what it now says instead."
+      },
+      "scope": "judge",
+      "severity": "hard",
+      "why": "Whether an image detournes anything is a question about meaning outside the frame. No count of nodes or pixels can reach it, and a checker that pretended otherwise would be scoring crudeness as politics."
+    },
+    {
+      "id": "j-twenty-minutes",
+      "kind": "rubric",
+      "params": {
+        "text": "Does this look like it was made quickly by someone who was angry, or like it was made slowly by someone imitating that? Look for: elements that collide because nobody moved them, sizes that were chosen by what fitted rather than by a scale, and at least one decision that a designer would have corrected. Then look for the opposite: even margins, consistent optical weight, deliberate 'imperfection' that is evenly distributed. Evenly distributed roughness is the signature of a filter, not a hurry."
+      },
+      "scope": "judge",
+      "severity": "soft",
+      "why": "The difference between real haste and simulated haste is visible to a person and invisible to every measurement in this layer. Roughness has statistics; hurry does not."
+    }
+  ],
+  "prohibitions": [
+    {
+      "id": "p-no-painterly",
+      "kind": "forbidMark",
+      "params": { "styles": ["wash", "field"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "A watercolour bleed or a scatter of drifting marks is evidence of a hand that had time. Scissors and a photocopier do not produce either."
+    },
+    {
+      "id": "p-no-furniture",
+      "kind": "forbidNode",
+      "params": { "macros": ["frame", "motif"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "A border or an ornament says a layout was planned. Nothing here is framed; things are stuck over the edge of other things."
+    },
+    {
+      "id": "p-few-colours",
+      "kind": "maxDistinctColors",
+      "params": { "max": 4, "includeGround": true },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "One or two plates on cheap stock. Four including the paper is already generous; the fifth colour is a printer's invoice nobody could pay."
+    },
+    {
+      "id": "r-loud",
+      "kind": "inkDensityRange",
+      "params": { "min": 0.2, "max": 0.85 },
+      "scope": "render",
+      "severity": "hard",
+      "why": "A ransom note is not a quiet object. Below a fifth of the sheet marked it reads as a tasteful announcement; above four fifths it is a solid block and the shape of the cutting is lost."
+    },
+    {
+      "id": "r-off-axis",
+      "kind": "symmetryMax",
+      "params": { "axis": "vertical", "max": 0.55 },
+      "scope": "render",
+      "severity": "soft",
+      "why": "Things stuck down by hand do not land on a centre line. Vertical symmetry is the tell that a grid was used."
+    }
+  ],
+  "generative_rules": [
+    {
+      "rule": "Add by sticking something over what is already there, never by making room for it. If a new element would require moving an existing one, put it on top instead and let the collision stand."
+    },
+    {
+      "rule": "When a picture starts to look resolved, cut one element out of the middle of it and leave the hole. The hole is more informative than the element was."
+    },
+    {
+      "rule": "Set every piece of text at a different size, and let at least one of them be far too big for its box. Uniform sizing is the signature of a template.",
+      "constraint": {
+        "id": "g-no-grid",
+        "kind": "maxRepeatDepth",
+        "params": { "max": 0 },
+        "scope": "tree",
+        "severity": "soft",
+        "why": "A repeat node is a machine laying things out on a lattice. Nothing in this position is laid out on a lattice; every placement was a separate decision made quickly."
+      }
+    },
+    {
+      "rule": "Colour is applied to whole shapes, never to parts of them, and never to make one shape sit behind another. Depth is a thing this position does not have."
+    },
+    {
+      "rule": "Prefer the word that would get the poster taken down over the word that would get it approved, and then set that word largest."
+    }
+  ],
+  "cliches": [
+    "ransom-note lettering used to say 'punk' about something that is not being refused",
+    "a safety pin, a Union Jack, or a crown with the eyes blacked out",
+    "the word RIOT or REVOLT set very large with no referent",
+    "torn paper edges rendered as a decorative texture rather than produced by cutting",
+    "hot pink on acid yellow as a palette rather than as the two cheapest inks",
+    "a photocopier degradation filter applied to a clean file",
+    "Situationist slogans quoted as slogans, which is exactly the recuperation Debord described",
+    "anarchy symbols as ornament in the corner of an otherwise tidy grid",
+    "spray-paint textures produced by a brush preset",
+    "collage where every fragment is the same size and evenly spaced"
+  ]
+}
