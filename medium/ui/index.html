@@ -229,7 +229,7 @@
         frame.height = m.height;
         status.className = '';
         status.textContent = `drawn in ${m.elapsedMs} ms`;
-        show([
+        const rows = [
           ['size', `${m.width}x${m.height}`],
           ['nodes', m.nodes],
           ['marks', `~${m.budget.marks}`],
@@ -238,7 +238,14 @@
           ['settled', `${m.timings.settleFrames} frames`],
           ['program', m.programHash.slice(0, 12)],
           ['gl', m.gl.unmaskedRenderer ?? m.gl.renderer],
-        ]);
+        ];
+        // The print pass runs in Node after the render is proven (NOTES R10), so the preview cannot
+        // perform it. Say so on the sheets that declare one: dropping a stage in silence is the same
+        // fault as a blend mode accepted and ignored (R11) or a font that draws nothing (O6).
+        if (m.printStages?.length) {
+          rows.push(['print', `${m.printStages.join(' -> ')} — NOT applied here, use npm run render`]);
+        }
+        show(rows);
       });
 
       go.addEventListener('click', render);

@@ -62,6 +62,10 @@
           budget: data.budget,
           programHash: data.programHash,
           nodes: data.resolved.nodes.length,
+          // Named, not applied. The print pass is a CPU pass that runs in Node after a render has
+          // been proven to repeat (NOTES R10), so nothing here can perform it -- and a stage that
+          // is silently dropped is exactly the failure R11 and O6 are about.
+          printStages: (data.resolved.print ?? []).map((s) => s.stage),
         });
       } catch (e) {
         fail(e && e.stack ? e.stack : String(e));

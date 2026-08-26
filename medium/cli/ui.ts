@@ -61,7 +61,7 @@ const DRAFT = 'draft';
 /** Programs the UI will offer: the worked examples, the batch variants, then anything saved here. */
 function programs(): string[] {
   const found: string[] = [];
-  for (const dir of ['examples', 'examples/batch', USER_DIR]) {
+  for (const dir of ['examples', 'examples/v1', 'examples/batch', USER_DIR]) {
     const abs = path.join(ROOT, dir);
     if (!existsSync(abs)) continue;
     for (const entry of readdirSync(abs).sort()) {
