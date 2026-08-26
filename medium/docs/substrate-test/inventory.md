@@ -49,6 +49,26 @@ scatters `density * area / 1000` marks (`density` 0.05-20, step 0.05) as `dots`,
 `scribble`. With `outline` it is a single brush contour at `weight` 0.1-12. **Cannot** do a
 gradient, a non-uniform scale, a rounded rect, a bezier region, or a region with a hole.
 
+**A `solid` circle is a 25-gon, and this is visible.** `drawRegion` (`renderer/ops.js:58-62`) sends
+an unclipped native circle to `p.ellipse`, and p5's WEBGL ellipse tessellates at a **fixed** 25
+segments (`ellipseDetail`'s default; the medium never calls `ellipseDetail`, and p5.brush does not
+patch `ellipse` — the string does not occur in `vendor/p5.brush.js`). The segment count does not
+scale with radius, so with antialiasing off a circle of r 180 is a hard-edged polygon whose flats
+are about 45px long. Verified with a minimal one-circle program: `out/substrate-test/circle-detail/circ/`
+(pixels `f635d3dc3ac2`).
+
+Every **other** circle path in the renderer uses `CLIP_CIRCLE_SEGMENTS = 64`
+(`renderer/resolve.js:192`): `cover` circles (`ops.js:245`), `field`-style circles (`ops.js:132`),
+and any circle inside a **clipped** group (`ops.js:66`). So the workaround is to wrap the circle in
+a `group` with a `clip` rect that fully contains it — the clip removes nothing and the circle is
+re-routed through `regionPolygon` at 64 segments. Verified side by side in
+`out/substrate-test/circle-detail/circ2/` (pixels `07529fc84cf5`): same radius, left plain and faceted, right
+clipped and round. The cost is that `text` is refused inside a clipped group, so the clip must wrap
+the circles only.
+
+This qualifies fact 1 above: `solid`'s hard edge is *exact* for rects and authored polygons, and for
+circles it is exactly a 25-gon rather than exactly a circle.
+
 ### `stroke`
 2-120 points, one brush from the eleven (`pen rotring 2B HB 2H cpencil pastel crayon charcoal
 spray marker`), `weight` 0.1-12, `closed`, and `curve` 0-1 fed to `brush.beginShape`. It is the

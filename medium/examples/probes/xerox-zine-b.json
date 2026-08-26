@@ -1,0 +1,314 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 8802,
+  "canvas": { "width": 800, "height": 1200, "ground": "#e6e2d8", "brushScale": 1 },
+  "palette": {
+    "paper": "#e6e2d8",
+    "toner": "#131313",
+    "grey": "#8d8b84"
+  },
+  "meta": {
+    "probe": "xerox-zine-b",
+    "target": "same target as xerox-zine, opposite construction: a full-bleed black handbill with everything reversed out of the toner, rather than black marks on white paper",
+    "method": "the page is one black plate and every mark on it is a hole. `cover` paints the ground colour, so on a full-bleed plate `cover` becomes a real knockout rather than a trick that only works over blank paper -- this is the one configuration in which the substrate's only subtractive op behaves like a subtractive op",
+    "notDone": "the toner flecks are still clean rectangles lying on top of clean type. Nothing here is a degraded copy of anything, because the pipeline has no stage after drawing"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "stock",
+        "type": "op",
+        "op": "wash",
+        "rngKey": "xzb/stock",
+        "args": {
+          "region": { "type": "rect", "x": -20, "y": -20, "w": 840, "h": 1240 },
+          "style": { "kind": "wash", "color": "grey", "opacity": 30, "bleed": 0.2, "texture": [0.6, 0.35] }
+        }
+      },
+      {
+        "id": "plate",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "xzb/plate",
+        "label": "the whole handbill is toner; the paper only shows where something is cut out of it",
+        "args": {
+          "region": { "type": "rect", "x": 32, "y": 32, "w": 736, "h": 1136 },
+          "style": { "kind": "solid", "color": "toner", "opacity": 255 }
+        }
+      },
+      {
+        "id": "bite-top",
+        "type": "op",
+        "op": "cover",
+        "rngKey": "xzb/bite-top",
+        "label": "a torn corner: a real knockout, because underneath is ground and not another mark",
+        "args": {
+          "region": {
+            "type": "polygon",
+            "points": [[32, 32], [268, 32], [244, 58], [212, 40], [180, 66], [148, 46], [116, 72], [84, 50], [56, 78], [32, 60]]
+          },
+          "softness": 0
+        }
+      },
+      {
+        "id": "bite-right",
+        "type": "op",
+        "op": "cover",
+        "rngKey": "xzb/bite-right",
+        "args": {
+          "region": {
+            "type": "polygon",
+            "points": [[768, 640], [736, 664], [758, 700], [730, 736], [756, 772], [732, 806], [768, 830]]
+          },
+          "softness": 0
+        }
+      },
+      {
+        "id": "head-one",
+        "type": "op",
+        "op": "text",
+        "rngKey": "xzb/head-one",
+        "args": {
+          "text": "SECOND",
+          "font": "grotesque",
+          "size": 128,
+          "x": 400,
+          "y": 216,
+          "align": "center",
+          "color": "paper",
+          "tracking": 4
+        }
+      },
+      {
+        "id": "head-two",
+        "type": "op",
+        "op": "text",
+        "rngKey": "xzb/head-two",
+        "args": {
+          "text": "GENERATION",
+          "font": "grotesque",
+          "size": 82,
+          "x": 400,
+          "y": 300,
+          "align": "center",
+          "color": "paper",
+          "tracking": 4
+        }
+      },
+      {
+        "id": "head-rule",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "xzb/head-rule",
+        "args": {
+          "region": { "type": "rect", "x": 80, "y": 336, "w": 640, "h": 3 },
+          "style": { "kind": "solid", "color": "paper", "opacity": 255 }
+        }
+      },
+      {
+        "id": "column-left",
+        "type": "repeat",
+        "rngKey": "xzb/column-left",
+        "label": "a column of copy at a size where copy stops being legible and becomes texture",
+        "count": 46,
+        "layout": { "type": "line", "origin": [88, 388], "dx": 0, "dy": 13 },
+        "children": [
+          {
+            "id": "line-l",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "xzb/line-l",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 0, "w": 288, "h": 4 },
+              "style": { "kind": "solid", "color": "paper", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "column-left-ragged",
+        "type": "repeat",
+        "rngKey": "xzb/column-left-ragged",
+        "label": "ground-coloured bars scattered back over the column give it a ragged right edge and word gaps",
+        "count": 62,
+        "layout": { "type": "scatter", "origin": [88, 384], "w": 292, "h": 604 },
+        "children": [
+          {
+            "id": "gap-l",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "xzb/gap-l",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 0, "w": 26, "h": 5 },
+              "style": { "kind": "solid", "color": "toner", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "block",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "xzb/block",
+        "args": {
+          "region": { "type": "rect", "x": 416, "y": 388, "w": 296, "h": 296 },
+          "style": { "kind": "solid", "color": "paper", "opacity": 255 }
+        }
+      },
+      {
+        "id": "block-figure",
+        "type": "op",
+        "op": "fragment",
+        "rngKey": "xzb/block-figure",
+        "label": "the one picture, printed as a silhouette because a silhouette is what survives a photocopier",
+        "args": {
+          "name": "figure.standing",
+          "x": 564,
+          "y": 528,
+          "span": 250,
+          "style": { "kind": "solid", "color": "toner", "opacity": 255 }
+        }
+      },
+      {
+        "id": "block-caption",
+        "type": "op",
+        "op": "text",
+        "rngKey": "xzb/block-caption",
+        "args": {
+          "text": "FIG.   1   ANY   OF   US",
+          "font": "serif",
+          "size": 14,
+          "x": 416,
+          "y": 706,
+          "align": "left",
+          "color": "paper",
+          "tracking": 2
+        }
+      },
+      {
+        "id": "column-right",
+        "type": "repeat",
+        "rngKey": "xzb/column-right",
+        "count": 20,
+        "layout": { "type": "line", "origin": [416, 738], "dx": 0, "dy": 13 },
+        "children": [
+          {
+            "id": "line-r",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "xzb/line-r",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 0, "w": 296, "h": 4 },
+              "style": { "kind": "solid", "color": "paper", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "column-right-ragged",
+        "type": "repeat",
+        "rngKey": "xzb/column-right-ragged",
+        "count": 34,
+        "layout": { "type": "scatter", "origin": [416, 734], "w": 300, "h": 268 },
+        "children": [
+          {
+            "id": "gap-r",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "xzb/gap-r",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 0, "w": 26, "h": 5 },
+              "style": { "kind": "solid", "color": "toner", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "dropout",
+        "type": "repeat",
+        "rngKey": "xzb/dropout",
+        "label": "toner that did not transfer",
+        "count": 150,
+        "layout": { "type": "scatter", "origin": [40, 40], "w": 720, "h": 1120 },
+        "children": [
+          {
+            "id": "fleck",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "xzb/fleck",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 0, "w": 3, "h": 2 },
+              "style": { "kind": "solid", "color": "paper", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "foot-bar",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "xzb/foot-bar",
+        "args": {
+          "region": { "type": "rect", "x": 80, "y": 1044, "w": 640, "h": 44 },
+          "style": { "kind": "solid", "color": "paper", "opacity": 255 }
+        }
+      },
+      {
+        "id": "foot-text",
+        "type": "op",
+        "op": "text",
+        "rngKey": "xzb/foot-text",
+        "args": {
+          "text": "COPY   THIS   AND   PASS   IT   ON",
+          "font": "grotesque",
+          "size": 24,
+          "x": 400,
+          "y": 1076,
+          "align": "center",
+          "color": "toner",
+          "tracking": 4
+        }
+      },
+      {
+        "id": "staple-a",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "xzb/staple-a",
+        "args": {
+          "region": { "type": "rect", "x": 46, "y": 300, "w": 8, "h": 24 },
+          "style": { "kind": "solid", "color": "paper", "opacity": 255 }
+        }
+      },
+      {
+        "id": "staple-b",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "xzb/staple-b",
+        "args": {
+          "region": { "type": "rect", "x": 46, "y": 880, "w": 8, "h": 24 },
+          "style": { "kind": "solid", "color": "paper", "opacity": 255 }
+        }
+      },
+      {
+        "id": "issue",
+        "type": "op",
+        "op": "text",
+        "rngKey": "xzb/issue",
+        "args": {
+          "text": "ISSUE   FOUR   FREE",
+          "font": "grotesque",
+          "size": 13,
+          "x": 400,
+          "y": 1136,
+          "align": "center",
+          "color": "paper",
+          "tracking": 3
+        }
+      }
+    ]
+  }
+}

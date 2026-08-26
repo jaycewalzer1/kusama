@@ -1,0 +1,229 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 6606,
+  "canvas": { "width": 800, "height": 1200, "ground": "#0e0e10", "brushScale": 1 },
+  "palette": {
+    "dark": "#0e0e10",
+    "paper": "#ece7db",
+    "news": "#bdb7a8",
+    "blood": "#b21b1b",
+    "ink": "#111111"
+  },
+  "meta": {
+    "probe": "ransom-note-b",
+    "target": "same target as ransom-note, different object: one word stacked down a whole page on cut strips, rather than a slogan hand-set across the middle",
+    "method": "each row is a group with its own translate and rotate, so the strips are cut and laid down independently. Because each strip is a full-width torn polygon rather than a per-letter patch, the letters can be much larger and the tear is a page-width event instead of a decorative edge",
+    "notDone": "the tears are still hand-authored polygons -- straight segments, no fibre, no white core. And the two available faces are both Regular, so mismatched weight is faked with size and rotation"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "grime",
+        "type": "op",
+        "op": "wash",
+        "rngKey": "rnb/grime",
+        "args": {
+          "region": { "type": "rect", "x": -20, "y": -20, "w": 840, "h": 1240 },
+          "style": { "kind": "wash", "color": "news", "opacity": 22, "bleed": 0.25, "texture": [0.65, 0.4] }
+        }
+      },
+      {
+        "id": "masthead",
+        "type": "op",
+        "op": "text",
+        "rngKey": "rnb/masthead",
+        "args": {
+          "text": "A   DEMAND   IS   NOT   A   REQUEST",
+          "font": "grotesque",
+          "size": 15,
+          "x": 400,
+          "y": 66,
+          "align": "center",
+          "color": "news",
+          "tracking": 3
+        }
+      },
+      {
+        "id": "row-n",
+        "type": "group",
+        "transform": { "translate": [398, 202], "rotate": -2 },
+        "children": [
+          {
+            "id": "patch-n",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "rnb/patch-n",
+            "args": {
+              "region": {
+                "type": "polygon",
+                "points": [[-312, -66], [-248, -76], [-186, -60], [-124, -74], [-62, -58], [0, -72], [62, -63], [124, -76], [186, -59], [248, -71], [312, -64], [304, 0], [312, 67], [248, 75], [186, 59], [124, 72], [62, 61], [0, 76], [-62, 62], [-124, 74], [-186, 58], [-248, 70], [-312, 66], [-304, 0]]
+              },
+              "style": { "kind": "solid", "color": "paper", "opacity": 255 }
+            }
+          },
+          {
+            "id": "letter-n",
+            "type": "op",
+            "op": "text",
+            "rngKey": "rnb/letter-n",
+            "args": { "text": "N", "font": "grotesque", "size": 150, "x": 0, "y": 52, "align": "center", "color": "ink", "tracking": 0 }
+          }
+        ]
+      },
+      {
+        "id": "row-o",
+        "type": "group",
+        "transform": { "translate": [404, 382], "rotate": 2 },
+        "children": [
+          {
+            "id": "patch-o",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "rnb/patch-o",
+            "args": {
+              "region": {
+                "type": "polygon",
+                "points": [[-300, -70], [-236, -58], [-172, -74], [-108, -60], [-44, -75], [20, -61], [84, -73], [148, -57], [212, -72], [276, -62], [300, -70], [292, 0], [300, 62], [236, 74], [172, 58], [108, 71], [44, 60], [-20, 75], [-84, 61], [-148, 73], [-212, 57], [-276, 69], [-300, 62], [-292, 0]]
+              },
+              "style": { "kind": "solid", "color": "news", "opacity": 255 }
+            }
+          },
+          {
+            "id": "letter-o",
+            "type": "op",
+            "op": "text",
+            "rngKey": "rnb/letter-o",
+            "args": { "text": "O", "font": "serif", "size": 142, "x": 0, "y": 50, "align": "center", "color": "ink", "tracking": 0 }
+          }
+        ]
+      },
+      {
+        "id": "row-i",
+        "type": "group",
+        "transform": { "translate": [396, 562], "rotate": -1 },
+        "children": [
+          {
+            "id": "patch-i",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "rnb/patch-i",
+            "label": "the one strip torn from a red page",
+            "args": {
+              "region": {
+                "type": "polygon",
+                "points": [[-316, -62], [-252, -74], [-188, -57], [-124, -70], [-60, -60], [4, -75], [68, -58], [132, -72], [196, -61], [260, -73], [316, -60], [308, 0], [316, 70], [252, 58], [188, 73], [124, 60], [60, 75], [-4, 59], [-68, 72], [-132, 61], [-196, 74], [-260, 60], [-316, 68], [-308, 0]]
+              },
+              "style": { "kind": "solid", "color": "blood", "opacity": 255 }
+            }
+          },
+          {
+            "id": "letter-i",
+            "type": "op",
+            "op": "text",
+            "rngKey": "rnb/letter-i",
+            "args": { "text": "I", "font": "grotesque", "size": 158, "x": 0, "y": 55, "align": "center", "color": "paper", "tracking": 0 }
+          }
+        ]
+      },
+      {
+        "id": "row-s",
+        "type": "group",
+        "transform": { "translate": [402, 742], "rotate": 2 },
+        "children": [
+          {
+            "id": "patch-s",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "rnb/patch-s",
+            "args": {
+              "region": {
+                "type": "polygon",
+                "points": [[-296, -58], [-232, -72], [-168, -60], [-104, -75], [-40, -59], [24, -71], [88, -57], [152, -74], [216, -61], [280, -70], [296, -58], [288, 0], [296, 66], [232, 75], [168, 59], [104, 74], [40, 58], [-24, 72], [-88, 60], [-152, 73], [-216, 57], [-280, 71], [-296, 64], [-288, 0]]
+              },
+              "style": { "kind": "solid", "color": "paper", "opacity": 255 }
+            }
+          },
+          {
+            "id": "letter-s",
+            "type": "op",
+            "op": "text",
+            "rngKey": "rnb/letter-s",
+            "args": { "text": "S", "font": "serif", "size": 146, "x": 0, "y": 51, "align": "center", "color": "ink", "tracking": 0 }
+          }
+        ]
+      },
+      {
+        "id": "row-e",
+        "type": "group",
+        "transform": { "translate": [400, 922], "rotate": -2 },
+        "children": [
+          {
+            "id": "patch-e",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "rnb/patch-e",
+            "args": {
+              "region": {
+                "type": "polygon",
+                "points": [[-308, -70], [-244, -57], [-180, -73], [-116, -59], [-52, -74], [12, -60], [76, -72], [140, -58], [204, -71], [268, -60], [308, -68], [300, 0], [308, 60], [244, 73], [180, 58], [116, 72], [52, 61], [-12, 74], [-76, 59], [-140, 71], [-204, 58], [-268, 70], [-308, 62], [-300, 0]]
+              },
+              "style": { "kind": "solid", "color": "paper", "opacity": 255 }
+            }
+          },
+          {
+            "id": "letter-e",
+            "type": "op",
+            "op": "text",
+            "rngKey": "rnb/letter-e",
+            "args": { "text": "E", "font": "grotesque", "size": 152, "x": 0, "y": 53, "align": "center", "color": "ink", "tracking": 0 }
+          }
+        ]
+      },
+      {
+        "id": "pin",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "rnb/pin",
+        "label": "the only visible hand on the sheet",
+        "args": {
+          "points": [[104, 1006], [188, 1042], [262, 1004], [352, 1048], [438, 1002], [530, 1046], [614, 1008], [700, 1044]],
+          "brush": "marker",
+          "color": "blood",
+          "weight": 5,
+          "closed": false,
+          "curve": 0.4
+        }
+      },
+      {
+        "id": "foot-bar",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "rnb/foot-bar",
+        "args": {
+          "region": { "type": "rect", "x": 96, "y": 1092, "w": 608, "h": 40 },
+          "style": { "kind": "solid", "color": "news", "opacity": 255 }
+        }
+      },
+      {
+        "id": "foot-text",
+        "type": "op",
+        "op": "text",
+        "rngKey": "rnb/foot-text",
+        "args": {
+          "text": "WE   HAVE   YOUR   SILENCE",
+          "font": "grotesque",
+          "size": 21,
+          "x": 400,
+          "y": 1120,
+          "align": "center",
+          "color": "ink",
+          "tracking": 4
+        }
+      }
+    ]
+  }
+}

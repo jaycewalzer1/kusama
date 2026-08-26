@@ -5,18 +5,29 @@
 
 ## Ranked by how many probes each unblocks
 
-Counted from `trait-table.md`: a capability "unblocks" a probe if it moves at least one row of that
-probe's table out of the **faked** or **impossible** column.
+Counted from `trait-table.md` over all **twelve** probes: a capability "unblocks" a probe if it moves
+at least one row of that probe's table out of the **faked** or **impossible** column.
 
 | # | capability | probes unblocked | rows moved | kind | risk |
 | ---: | --- | ---: | ---: | --- | --- |
-| 1 | **`degrade`** — a per-pixel post-process pass (threshold, spread, dropout, generations) | 4 — xerox-zine, ransom-note, rave-flyer, crass-collage | 5 | new pipeline stage, Node-side | very low |
-| 2 | more faces and weights in the asset pack (bold grotesque, condensed grotesque, monospace) | 4 — xerox-zine, ransom-note, rave-flyer, ikeda-austerity | 4 | **asset pack only — not a primitive** | none |
-| 3 | **`stencil`** — a hard-edge per-pixel mask on a group | 4 — xerox-zine, ur-stencil, ransom-note, crass-collage | 4 | new node property, GPU | **high** |
-| 4 | raster/photographic material in the pack, placeable by `fragment` | 2 — crass-collage (decisively), xerox-zine | 3 | asset pack + one op arg | medium |
-| 5 | non-uniform `transform` (`scale: [sx, sy]`, `skew`) | 2 — rave-flyer, ransom-note | 2 | schema + resolve | low |
-| 6 | `multiply` blend for true ink overprint | 2 — ransom-note, crass-collage | 2 | renderer + profile `blendModes` | high |
-| 7 | tonal / gradient fill style | 1 — crass-collage | 1 | new PaintStyle | medium |
+| 1 | more faces and weights in the asset pack (bold grotesque, condensed grotesque, monospace) | **7** — xerox-zine, ransom-note x2, rave-flyer x2, ikeda-austerity x2 | 7 | **asset pack only — not a primitive** | none |
+| 2 | **`degrade`** — a per-pixel post-process pass (threshold, spread, dropout, generations) | 6 — xerox-zine x2, ransom-note x2, rave-flyer x2 | **8** | new pipeline stage, Node-side | very low |
+| 3 | **`stencil`** — a hard-edge per-pixel mask on a group | 6 — xerox-zine x2, ur-stencil, ransom-note, crass-collage x2 | 6 | new node property, GPU | **high** |
+| 4 | non-uniform `transform` (`scale: [sx, sy]`, `skew`) | 4 — rave-flyer x2, ransom-note x2 | 4 | schema + resolve | low |
+| 5 | raster/photographic material in the pack, placeable by `fragment` | 3 — crass-collage x2 (decisively), xerox-zine | 3 | asset pack + one op arg | medium |
+| 6 | `multiply` blend for true ink overprint | 2 — ransom-note x2 | 2 | renderer + profile `blendModes` | high |
+| 7 | tonal / gradient fill style | 2 — crass-collage x2 | 2 | new PaintStyle | medium |
+| 8 | text on a path | 1 — ur-stencil-b | 1 | new `text` arg | low |
+
+Doubling the probe set from six to twelve **changed the order**. Row 1 was second on the six-probe
+count and is first on the twelve-probe count, because the second attempt at each target ran into the
+two-faces-one-weight limit again in a differently-built program — which is exactly the evidence a
+second attempt was meant to produce. Row 6 dropped from three probes to two: on re-reading,
+`multiply` does not move any row of `crass-collage`, whose two impossibles are photographic material
+and continuous tone. That was an error in the first count and is corrected here.
+
+Row 8 is new, from `ur-stencil-b`. It is listed for completeness and is not worth doing: it unblocks
+one row of one probe.
 
 Two things the brief expected to find missing are **already present** and need no work:
 
@@ -26,10 +37,18 @@ Two things the brief expected to find missing are **already present** and need n
   `transform.translate`, already give a real second impression. `ur-stencil` and `ransom-note` both
   do it, and it survives any crop.
 
-**Row 2 should be done before either specced item below.** Three more font files change the pack
+**Row 1 should be done before either specced item below.** Three more font files change the pack
 hash and nothing else — no new primitive, no schema change, no determinism surface at all — and it
-moves four "faked" rows on four different probes. It is not specced here because the brief asked
-for primitives, but it is the cheapest change in this document by a very large margin.
+moves seven "faked" rows on seven of the twelve probes. It is not specced here because the brief
+asked for primitives, but it is the cheapest change in this document by a very large margin, and the
+twelve-probe count moved it from second place to first.
+
+**One thing that is not a missing capability but should be written down.** An unclipped `solid`
+circle goes to p5's WEBGL `ellipse`, which tessellates at a fixed 25 segments regardless of radius;
+every other circle path in the renderer uses `CLIP_CIRCLE_SEGMENTS = 64`. So a circle above about
+r 60 looks broken until the author discovers that wrapping it in a `clip` rect which contains it
+fixes it. That is a documentation and possibly a default-value problem, not a new primitive. See
+`inventory.md` under `paint`, and `out/substrate-test/circle-detail/circ2/` for the side-by-side.
 
 ---
 
