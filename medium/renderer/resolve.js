@@ -318,14 +318,20 @@ export function leafBounds(node, pack, brushScale) {
       const size = a.size;
       const est = a.maxWidth ?? a.text.length * size * 0.62 + a.text.length * (a.tracking ?? 0);
       const half = a.align === 'center' ? est / 2 : a.align === 'right' ? est : 0;
+      const leading = a.leading ?? DEFAULT_LEADING;
       const lines = a.maxWidth ? Math.max(1, Math.ceil((a.text.length * size * 0.62) / a.maxWidth)) : 1;
-      localPts = [
+      const box = [
         [a.x - half, a.y - size],
         [a.x - half + est, a.y - size],
-        [a.x - half + est, a.y + size * 0.35 + (lines - 1) * size * 1.25],
-        [a.x - half, a.y + size * 0.35 + (lines - 1) * size * 1.25],
+        [a.x - half + est, a.y + size * 0.35 + (lines - 1) * size * leading],
+        [a.x - half, a.y + size * 0.35 + (lines - 1) * size * leading],
       ];
-      margin = 3;
+      // The glyph transform happens about the anchor, so the box goes through it too. Without this a
+      // rotated headline reports bounds it does not occupy, and `diff` reads its spillover as
+      // somebody else's.
+      localPts = box.map(([x, y]) => textAnchorTransform(a, x, y));
+      const j = a.jitter ?? {};
+      margin = 3 + (j.translate ?? 0) + (j.scale ?? 0) * size;
       break;
     }
     default:
@@ -333,6 +339,35 @@ export function leafBounds(node, pack, brushScale) {
   }
   const worldPts = localPts.map(([x, y]) => matApply(world, x, y));
   return boundsOfPoints(worldPts, margin * ws);
+}
+
+// --- text ------------------------------------------------------------------------------------------
+
+/** Line advance as a multiple of size when a program says nothing. V0 hard-coded this number. */
+export const DEFAULT_LEADING = 1.25;
+
+/**
+ * Where a point near a text op ends up once the op's own skew / rotate / stretch have been applied
+ * about its anchor. Shared by the bounds estimate here and by the p5 transform in ops.js, because
+ * the two disagreeing is exactly how a node's declared bounds stop describing its marks.
+ *
+ * Order is skew, then rotate, then stretch -- which is the order p5 replays it in when the
+ * equivalent translate / scale / rotate / shearX stack is pushed before drawing.
+ */
+export function textAnchorTransform(a, x, y) {
+  let u = x - a.x;
+  let v = y - a.y;
+  const skew = a.skew ?? 0;
+  if (skew) u -= Math.tan((skew * Math.PI) / 180) * v;
+  const deg = a.rotate ?? 0;
+  if (deg) {
+    const r = (deg * Math.PI) / 180;
+    const c = Math.cos(r);
+    const s = Math.sin(r);
+    [u, v] = [u * c - v * s, u * s + v * c];
+  }
+  const [sx, sy] = a.stretch ?? [1, 1];
+  return [a.x + u * sx, a.y + v * sy];
 }
 
 // --- repeat layouts --------------------------------------------------------------------------------
@@ -381,6 +416,19 @@ function resolveArgColors(op, args, palette) {
   if (out.style) out.style = resolveStyleColors(out.style, palette);
   if (out.color) out.color = resolveColor(out.color, palette);
   return out;
+}
+
+/** Colour-bearing fields of a print stage. The pass never invents a colour of its own. */
+const PRINT_COLORS = ['dark', 'light', 'ink', 'paper', 'tint'];
+
+function resolvePrint(print, palette) {
+  return (print ?? []).map((stage) => {
+    const out = { ...stage };
+    for (const key of PRINT_COLORS) {
+      if (out[key] !== undefined) out[key] = resolveColor(out[key], palette);
+    }
+    return out;
+  });
 }
 
 // --- the resolver ----------------------------------------------------------------------------------
@@ -560,6 +608,7 @@ export function resolveProgram(program, pack, limits = {}) {
     palette,
     seed: program.seed,
     meta: program.meta ?? {},
+    print: resolvePrint(program.print, palette),
     nodes,
     groups,
     warnings,

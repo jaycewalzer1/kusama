@@ -27,11 +27,108 @@
       "propertyNames": { "pattern": "^[a-z][a-z0-9_-]*$" },
       "additionalProperties": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
     },
+    "print": {
+      "description": "The print pass: an ordered list of post-process stages run once, on the finished canvas, in Node, after the render has been proven to repeat. Never inside the settle loop and never instead of it -- a threshold is a machine for making two different images agree, so putting one inside a self-consistency check would certify nondeterminism as determinism.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/printStage" }
+    },
     "meta": { "$ref": "#/$defs/meta" },
     "root": { "$ref": "#/$defs/group" }
   },
 
   "$defs": {
+    "printStage": {
+      "oneOf": [
+        {
+          "description": "Hard two-tone cut at a luminance. The photocopier's only opinion.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["stage", "cut", "dark", "light"],
+          "properties": {
+            "stage": { "const": "threshold" },
+            "cut": { "type": "number", "minimum": 0.05, "maximum": 0.95 },
+            "dark": { "$ref": "#/$defs/color" },
+            "light": { "$ref": "#/$defs/color" }
+          }
+        },
+        {
+          "description": "Quantise each channel to N evenly spaced levels.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["stage", "levels"],
+          "properties": {
+            "stage": { "const": "posterize" },
+            "levels": { "type": "integer", "minimum": 2, "maximum": 8 }
+          }
+        },
+        {
+          "description": "Screen the image as dots or lines on a rotated grid.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["stage", "shape", "cell", "angle", "ink", "paper"],
+          "properties": {
+            "stage": { "const": "halftone" },
+            "shape": { "enum": ["dot", "line"] },
+            "cell": { "type": "number", "minimum": 2, "maximum": 32 },
+            "angle": { "type": "number", "minimum": 0, "maximum": 180 },
+            "ink": { "$ref": "#/$defs/color" },
+            "paper": { "$ref": "#/$defs/color" }
+          }
+        },
+        {
+          "description": "Seeded per-pixel luminance noise.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["stage", "amount"],
+          "properties": {
+            "stage": { "const": "grain" },
+            "amount": { "type": "number", "minimum": 0, "maximum": 1 },
+            "mono": { "description": "One offset for all three channels, rather than one each. Default true.", "type": "boolean" }
+          }
+        },
+        {
+          "description": "Pull the colour plates apart by whole pixels, each plate's offset drawn from the print stream.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["stage", "amount"],
+          "properties": {
+            "stage": { "const": "misregister" },
+            "amount": { "description": "Maximum plate displacement in pixels; the actual offsets are seeded.", "type": "number", "minimum": 0, "maximum": 1 },
+            "spread": { "description": "Scales `amount` into pixels. amount 1 with spread 3 means plates move up to 3px.", "type": "number", "minimum": 0, "maximum": 3 }
+          }
+        },
+        {
+          "description": "Tint the whole sheet toward a stock colour and darken the corners.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["stage", "tint", "amount"],
+          "properties": {
+            "stage": { "const": "paper" },
+            "tint": { "$ref": "#/$defs/color" },
+            "amount": { "type": "number", "minimum": 0, "maximum": 1 },
+            "vignette": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        {
+          "description": "Generation loss: blur, cut, spread and drop out, N times over, each pass on the last pass's result. This is a photocopy of a photocopy, and iteration is the whole point of it.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["stage", "passes", "cut", "dark", "light"],
+          "properties": {
+            "stage": { "const": "generation" },
+            "passes": { "type": "integer", "minimum": 1, "maximum": 6 },
+            "cut": { "type": "number", "minimum": 0.05, "maximum": 0.95 },
+            "dark": { "$ref": "#/$defs/color" },
+            "light": { "$ref": "#/$defs/color" },
+            "blur": { "description": "Radius of a box blur run before each cut, in pixels.", "type": "integer", "minimum": 0, "maximum": 3 },
+            "spread": { "description": "Dilate the dark set by this many pixels after each cut: toner thickening.", "type": "integer", "minimum": 0, "maximum": 3 },
+            "dropout": { "description": "Fraction of dark pixels that fail to transfer, per pass.", "type": "number", "minimum": 0, "maximum": 0.5 },
+            "speck": { "description": "Fraction of light pixels dirtied, per pass.", "type": "number", "minimum": 0, "maximum": 0.5 }
+          }
+        }
+      ]
+    },
+
     "color": { "$ref": "paintstyle.schema.json#/$defs/color" },
     "style": { "$ref": "paintstyle.schema.json#/$defs/paintStyle" },
 
@@ -400,6 +497,7 @@
     },
 
     "textArgs": {
+      "description": "`font` names a face the profile allows and the asset pack declares. The pack carries every face's SHA256, so the pack hash covers the type as well as the shapes, and the renderer refuses a face whose bytes on disk do not match.",
       "type": "object",
       "additionalProperties": false,
       "required": ["text", "font", "size", "x", "y", "color"],
@@ -412,7 +510,22 @@
         "color": { "$ref": "#/$defs/color" },
         "align": { "enum": ["left", "center", "right"] },
         "tracking": { "type": "number", "minimum": -5, "maximum": 40 },
-        "maxWidth": { "type": "number", "exclusiveMinimum": 0 }
+        "leading": { "description": "Line advance as a multiple of size. Default 1.25, which is the number V0 hard-coded.", "type": "number", "minimum": 0.5, "maximum": 3 },
+        "maxWidth": { "type": "number", "exclusiveMinimum": 0 },
+        "rotate": { "description": "Degrees about the anchor (x, y), clockwise on screen.", "type": "number", "minimum": -360, "maximum": 360 },
+        "skew": { "description": "Horizontal shear in degrees about the anchor: positive leans the tops of the glyphs right.", "type": "number", "minimum": -60, "maximum": 60 },
+        "stretch": { "description": "Non-uniform scale [sx, sy] about the anchor, applied after rotate and skew.", "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number", "exclusiveMinimum": 0, "maximum": 8 } },
+        "case": { "description": "Force the case of the string before it is measured or drawn.", "enum": ["upper", "lower"] },
+        "jitter": {
+          "description": "Per-glyph displacement drawn from this node's own `glyph` stream. Ransom notes and zines: every letter set slightly wrong, and wrong the same way every time.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "translate": { "type": "number", "minimum": 0, "maximum": 200 },
+            "rotate": { "type": "number", "minimum": 0, "maximum": 90 },
+            "scale": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        }
       }
     },
 

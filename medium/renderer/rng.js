@@ -35,8 +35,8 @@ export function nodeSeed(masterSeed, rngKey, repeatInstance, seedOffset) {
   return deriveSeed(masterSeed, rngKey, repeatInstance, 'node', seedOffset);
 }
 
-/** The four named substreams. Documented per operator in ops.js. */
-export const STREAMS = ['placement', 'geometry', 'texture', 'misc'];
+/** The named substreams. Documented per operator in ops.js. */
+export const STREAMS = ['placement', 'geometry', 'texture', 'glyph', 'misc'];
 
 /**
  * sfc32, a small fast counter PRNG. Used for randomness we generate ourselves (repeat jitter, point

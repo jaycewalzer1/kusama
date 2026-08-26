@@ -114,6 +114,7 @@ interface ProgramShape {
   canvas: Record<string, number | string>;
   palette?: Record<string, string>;
   root: NodeShape;
+  print?: Record<string, unknown>[];
   meta?: unknown;
 }
 
@@ -285,15 +286,37 @@ function walkAndCheck(prog: ProgramShape, profile: MediumProfile, pack: AssetPac
     }
   };
 
+  // A face has to clear two gates: the profile says which faces this medium may speak in at all, and
+  // the pack is the only artefact whose hash covers the bytes those glyphs are drawn from.
   function checkFont(name: string, at: string) {
     if (!profile.fonts.includes(name)) {
       issues.push({ code: 'font.notAllowed', path: at, message: `the profile does not allow font "${name}"` });
+    }
+    if (pack.faces && !(name in pack.faces)) {
+      issues.push({ code: 'font.unknown', path: at, message: `font "${name}" is not a face in asset pack "${pack.id}"` });
     }
   }
 
   numbers(prog.canvas, 'canvas', '/canvas');
   numbers(prog.seed, 'seed', '/seed');
   walk(prog.root, '/root', false, 1);
+
+  const stages = prog.print ?? [];
+  const allowedStages = profile.print ?? [];
+  const maxStages = profile.limits.maxPrintStages ?? 0;
+  if (stages.length > maxStages) {
+    issues.push({ code: 'limit.printStages', path: '/print', message: `${stages.length} print stages exceeds the profile's limit of ${maxStages}` });
+  }
+  stages.forEach((stage, i) => {
+    const name = String(stage['stage']);
+    if (!allowedStages.includes(name)) {
+      issues.push({ code: 'print.notAllowed', path: `/print/${i}`, message: `the profile does not allow the "${name}" print stage` });
+    }
+    numbers(stage, 'print', `/print/${i}`);
+    for (const key of ['dark', 'light', 'ink', 'paper', 'tint']) {
+      if (stage[key] !== undefined) color(stage[key], `/print/${i}/${key}`);
+    }
+  });
 
   if (counts.source > profile.limits.maxSourceNodes) {
     issues.push({ code: 'limit.sourceNodes', path: '/root', message: `${counts.source} source nodes exceeds the profile's limit of ${profile.limits.maxSourceNodes}` });

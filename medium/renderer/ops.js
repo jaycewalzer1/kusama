@@ -8,6 +8,8 @@
 //              currently used only by `paint` with a `field` style, for per-mark angles.
 //   texture    everything p5.brush randomises internally once we hand it a shape: watercolour bleed,
 //              hatch `rand`, brush stamp scatter and pressure.
+//   glyph      per-glyph text jitter, kept apart from `texture` so that giving a line of type a shake
+//              cannot move a single mark anywhere else in the program.
 //   misc       seeded once per leaf before the operator runs, so an operator that uses no randomness
 //              still leaves the generators in a node-determined state.
 //
@@ -259,7 +261,16 @@ function opCover(p, brush, node, ctx) {
 
 // --- text ------------------------------------------------------------------------------------------------
 
-function opText(p, brush, node, ctx) {
+/**
+ * Type. Everything past `tracking` is a transform of the same measured lines, applied around the
+ * anchor (a.x, a.y) rather than around the canvas, so moving a text op moves its skew and rotation
+ * with it. The stack is pushed scale, rotate, shear and therefore applies shear first, then rotate,
+ * then stretch -- the order `textAnchorTransform` in resolve.js uses to bound the same box in Node.
+ *
+ * Glyph jitter draws its four numbers per glyph unconditionally, even when an amount is zero, so
+ * that turning the rotation down does not reshuffle the offsets of every glyph after it.
+ */
+function opText(p, brush, node, ctx, stream) {
   const a = node.args;
   const font = ctx.fonts[a.font];
   if (!font) throw new Error(`font "${a.font}" is not loaded`);
@@ -268,30 +279,82 @@ function opText(p, brush, node, ctx) {
   p.fill(a.color);
   p.noStroke();
   p.textAlign(p.LEFT, p.BASELINE);
-  const lines = a.maxWidth ? wrapLines(p, a.text, a.maxWidth, a.tracking ?? 0) : [a.text];
+  const tracking = a.tracking ?? 0;
+  const body = a.case === 'upper' ? a.text.toUpperCase() : a.case === 'lower' ? a.text.toLowerCase() : a.text;
+  const lines = a.maxWidth ? wrapLines(p, body, a.maxWidth, tracking) : [body];
+  const jitter = a.jitter && (a.jitter.translate || a.jitter.rotate || a.jitter.scale) ? a.jitter : null;
+  const rng = jitter ? stream('glyph') : null;
+  const [sx, sy] = a.stretch ?? [1, 1];
+
+  p.push();
+  p.translate(a.x, a.y);
+  if (sx !== 1 || sy !== 1) p.scale(sx, sy);
+  // Degrees, not radians: the sketch runs under angleMode(DEGREES) (renderer/page.js). Converting
+  // first turned a nine-degree rotation into a sixth of a degree, which looks exactly like a
+  // transform that was never applied at all.
+  if (a.rotate) p.rotate(a.rotate);
+  // p5's shearX is x += tan(k) * y, and y is down, so the sign is flipped to make a positive skew
+  // lean the tops of the letters to the right the way an italic does.
+  if (a.skew) p.shearX(-a.skew);
   lines.forEach((line, i) => {
-    const y = a.y + i * a.size * 1.25;
-    const w = lineWidth(p, line, a.tracking ?? 0);
-    const x = a.align === 'center' ? a.x - w / 2 : a.align === 'right' ? a.x - w : a.x;
-    drawTracked(p, line, x, y, a.tracking ?? 0);
+    const y = i * a.size * (a.leading ?? 1.25);
+    const w = lineWidth(p, line, tracking);
+    const x = a.align === 'center' ? -w / 2 : a.align === 'right' ? -w : 0;
+    drawTracked(p, line, x, y, tracking, jitter, rng);
   });
+  p.pop();
+}
+
+/**
+ * How wide a space is, measured the only way that works here. `textWidth(' ')` returns exactly 0 in
+ * this p5/WEBGL build -- a whitespace-only string is trimmed to nothing -- but a space *inside* a
+ * string measures fine, so the advance is the difference between a string with one and a string
+ * without. Measured at size 40 with anton: textWidth(' ') = 0, textWidth('n n') - textWidth('nn')
+ * = 9.375, and textWidth('hello world') - textWidth('helloworld') = 9.375 exactly.
+ *
+ * Without this, every per-glyph path -- which is every tracked line, every jittered line, and the
+ * measurement `maxWidth` wraps on -- silently deleted all word spacing, so `SET AND SETTING` set
+ * itself as `SETANDSETTING` and a wrapped paragraph measured far narrower than it drew.
+ */
+function spaceWidth(p) {
+  return p.textWidth('n n') - p.textWidth('nn');
+}
+
+function advance(p, ch, space) {
+  return ch === ' ' ? space : p.textWidth(ch);
 }
 
 function lineWidth(p, text, tracking) {
+  const space = spaceWidth(p);
   let w = 0;
-  for (const ch of text) w += p.textWidth(ch) + tracking;
+  for (const ch of text) w += advance(p, ch, space) + tracking;
   return w - (text.length ? tracking : 0);
 }
 
-function drawTracked(p, text, x, y, tracking) {
-  if (!tracking) {
+function drawTracked(p, text, x, y, tracking, jitter, rng) {
+  if (!tracking && !jitter) {
     p.text(text, x, y);
     return;
   }
+  const space = spaceWidth(p);
   let cx = x;
   for (const ch of text) {
-    p.text(ch, cx, y);
-    cx += p.textWidth(ch) + tracking;
+    const w = advance(p, ch, space);
+    if (!jitter) {
+      p.text(ch, cx, y);
+    } else {
+      const dx = (rng.next() * 2 - 1) * (jitter.translate ?? 0);
+      const dy = (rng.next() * 2 - 1) * (jitter.translate ?? 0);
+      const rot = (rng.next() * 2 - 1) * (jitter.rotate ?? 0);
+      const scale = 1 + (rng.next() * 2 - 1) * (jitter.scale ?? 0);
+      p.push();
+      p.translate(cx + w / 2 + dx, y + dy);
+      if (rot) p.rotate(rot);
+      if (scale !== 1) p.scale(scale);
+      p.text(ch, -w / 2, 0);
+      p.pop();
+    }
+    cx += w + tracking;
   }
 }
 

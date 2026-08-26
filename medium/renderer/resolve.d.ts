@@ -57,6 +57,12 @@ export interface Canvas {
   brushScale: number;
 }
 
+/** One stage of the print pass, with its colours already resolved out of the palette. */
+export interface PrintStage {
+  stage: string;
+  [key: string]: unknown;
+}
+
 export interface ResolvedProgram {
   version: string;
   profile: string;
@@ -65,6 +71,7 @@ export interface ResolvedProgram {
   palette: Record<string, string>;
   seed: number;
   meta: Record<string, unknown>;
+  print: PrintStage[];
   nodes: ResolvedLeaf[];
   groups: ResolvedGroup[];
   warnings: string[];

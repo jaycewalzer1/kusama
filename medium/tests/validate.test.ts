@@ -16,7 +16,7 @@ function codes(prog: Record<string, unknown>): string[] {
 }
 
 test('the shipped profile validates against the profile schema', () => {
-  assert.deepEqual(validateProfile(loadProfile('default').profile), []);
+  assert.deepEqual(validateProfile(loadProfile('default-v0').profile), []);
 });
 
 test('a well-formed program passes and reports its budget', () => {
