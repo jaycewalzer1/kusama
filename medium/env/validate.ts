@@ -11,7 +11,7 @@ import type { ValidateFunction } from 'ajv';
 import { ROOT } from './browser.js';
 import { contentHash, estimateBudget, type Budget, type MediumProfile } from './profile.js';
 import { packHash, type AssetPack } from './pack.js';
-import { ResolveError, resolveProgram, type ResolvedProgram } from '../renderer/resolve.js';
+import { ResolveError, resolveProgram, fragmentPolygon, tearPointCount, type ResolvedProgram } from '../renderer/resolve.js';
 import { MacroError } from '../renderer/macros.js';
 
 const Ajv = _Ajv2020 as unknown as typeof _Ajv2020.default;
@@ -312,6 +312,21 @@ function walkAndCheck(prog: ProgramShape, profile: MediumProfile, pack: AssetPac
       const name = String((op === 'fragment' ? a['name'] : region?.['name']) ?? '');
       if (!(name in pack.fragments)) {
         issues.push({ code: 'fragment.unknown', path: `${at}/args/name`, message: `fragment "${name}" is not in asset pack "${pack.id}"` });
+      }
+      // A tear resamples the outline, so its cost is set by the fragment's perimeter and the tear's
+      // segment length rather than by anything visible in the JSON. A `span` of 400 torn at
+      // `segment: 1` is thousands of vertices, and that is refused here, not found in a browser.
+      const tear = a['tear'] as { roughness: number; segment: number } | undefined;
+      if (op === 'fragment' && tear) {
+        const cap = profile.limits.maxTearPoints;
+        if (cap === undefined) {
+          issues.push({ code: 'tear.notAllowed', path: `${at}/args/tear`, message: 'this profile does not allow a torn fragment edge' });
+        } else if (name in pack.fragments) {
+          const n = tearPointCount(fragmentPolygon(a, pack), tear);
+          if (n > cap) {
+            issues.push({ code: 'limit.tearPoints', path: `${at}/args/tear`, message: `tearing this fragment at segment ${tear.segment} needs ${n} vertices, which exceeds the profile's limit of ${cap}` });
+          }
+        }
       }
     }
     if (op === 'text') {

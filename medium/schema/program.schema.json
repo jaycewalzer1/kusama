@@ -516,7 +516,19 @@
         "span": { "description": "Size of the fragment's unit box in local units.", "type": "number", "exclusiveMinimum": 0, "maximum": 4000 },
         "rotate": { "type": "number", "minimum": -360, "maximum": 360 },
         "flipX": { "type": "boolean" },
+        "tear": { "$ref": "#/$defs/tear" },
         "style": { "$ref": "#/$defs/style" }
+      }
+    },
+
+    "tear": {
+      "description": "A torn paper edge. The fragment outline is resampled into segments of roughly `segment` units and every resampled vertex is displaced along the outline's normal by up to `roughness * segment`, drawn from the node's own geometry substream. Purely geometric and computed in Node, so it costs no extra marks and the same node tears the same way every time. Absent means the outline is used as authored. Gated on the profile carrying limits.maxTearPoints, so v0 refuses it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["roughness", "segment"],
+      "properties": {
+        "roughness": { "description": "Displacement as a fraction of `segment`. 0 is a clean edge.", "type": "number", "minimum": 0, "maximum": 1 },
+        "segment": { "description": "Segment length in local units. Small is a fine deckle, large is a coarse rip.", "type": "number", "minimum": 1, "maximum": 60 }
       }
     },
 

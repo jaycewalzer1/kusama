@@ -23,6 +23,11 @@ export interface ProfileLimits {
   maxEstimatedMarks: number;
   maxRenderCost: number;
   maxPrintStages?: number;
+  /**
+   * Vertices one torn fragment edge may resample to. Absent means a fragment may not be torn at all,
+   * which is V0's answer and is how `default-v0` keeps its hash without being edited to say so.
+   */
+  maxTearPoints?: number;
 }
 
 export interface MediumProfile {

@@ -7,6 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { validateProgram, validateEditAction, validateProfile } from '../env/validate.js';
 import { loadProfile, type MediumProfile } from '../env/profile.js';
+import { tearPointCount, tearPolygon } from '../renderer/resolve.js';
 import { EMPTY_PACK, group, hatchNode, program, resolve, strokeNode, testProfile, washNode } from './helpers.js';
 
 const PROFILE = testProfile();
@@ -141,6 +142,52 @@ test('a polygon clip actually clips, and nested clips intersect', () => {
   // The 0..200 square met the 100..300 rect, so the leaf sees 100..200 in both axes.
   assert.deepEqual([Math.min(...xs), Math.max(...xs)], [100, 200]);
   assert.deepEqual([Math.min(...ys), Math.max(...ys)], [100, 200]);
+});
+
+test('a torn fragment edge is gated, budgeted, and the same tear every time', () => {
+  const torn = (tear: Record<string, number>) => ({
+    id: 'f1', type: 'op', op: 'fragment', rngKey: 'key-f1',
+    args: { name: 'blob', x: 200, y: 200, span: 120, rotate: 0, tear, style: { kind: 'solid', color: 'ink', opacity: 255 } },
+  });
+  const check = (p: MediumProfile, node: Record<string, unknown>) =>
+    validateProgram(program([node]), p, EMPTY_PACK).issues.map((i) => i.code);
+
+  // `maxTearPoints` is absent from default-v0, so V0 fragments have clean edges and say so. V0 also
+  // declares no quantize step for either field, and an undeclared step is itself an error, so a v0
+  // profile refuses a tear on two independent grounds rather than one.
+  assert.deepEqual(check(PROFILE, torn({ roughness: 0.4, segment: 8 })).sort(), [
+    'quantize.undeclared', 'quantize.undeclared', 'tear.notAllowed',
+  ]);
+
+  const wide = {
+    ...PROFILE,
+    limits: { ...PROFILE.limits, maxTearPoints: 600 },
+    ranges: { ...PROFILE.ranges, roughness: [0, 1] as [number, number], segment: [1, 60] as [number, number] },
+    quantize: { ...PROFILE.quantize, roughness: 0.01, segment: 0.5 },
+  };
+  assert.deepEqual(check(wide, torn({ roughness: 0.4, segment: 8 })), []);
+  // The cost of a tear is set by the outline's perimeter over the segment length, neither of which
+  // is a number anybody typed. A fine deckle on a big fragment is thousands of vertices.
+  const tight = { ...wide, limits: { ...wide.limits, maxTearPoints: 100 } };
+  assert.ok(check(tight, torn({ roughness: 0.4, segment: 1 })).includes('limit.tearPoints'));
+  assert.deepEqual(check(tight, torn({ roughness: 0.4, segment: 20 })), []);
+
+  // The geometry itself: as many vertices as promised, displaced no further than promised, and the
+  // same answer from the same stream, because the tear is what makes the fragment's shape.
+  const square: [number, number][] = [[0, 0], [80, 0], [80, 80], [0, 80]];
+  const tear = { roughness: 0.5, segment: 10 };
+  assert.equal(tearPointCount(square, tear), 32);
+  const rng = () => 1; // the extreme: every vertex pushed the full displacement outward
+  const out = tearPolygon(square, tear, rng);
+  assert.equal(out.length, 32);
+  for (const [x, y] of out) {
+    assert.ok(x >= -5.001 && x <= 85.001 && y >= -5.001 && y <= 85.001, `${x},${y} escaped roughness * segment`);
+  }
+  const seeded = () => {
+    let s = 7;
+    return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+  };
+  assert.deepEqual(tearPolygon(square, tear, seeded()), tearPolygon(square, tear, seeded()));
 });
 
 test('a program may only name fragments and motifs that are in its pack', () => {

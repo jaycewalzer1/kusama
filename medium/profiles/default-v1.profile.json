@@ -101,7 +101,8 @@
     "maxTextLength": 240,
     "maxEstimatedMarks": 60000,
     "maxRenderCost": 240000,
-    "maxPrintStages": 6
+    "maxPrintStages": 6,
+    "maxTearPoints": 600
   },
   "ranges": {
     "x": [
@@ -215,6 +216,14 @@
     "passes": [
       1,
       6
+    ],
+    "roughness": [
+      0,
+      1
+    ],
+    "segment": [
+      1,
+      60
     ]
   },
   "quantize": {
@@ -277,7 +286,9 @@
     "dropout": 0.005,
     "speck": 0.005,
     "vignette": 0.01,
-    "passes": 1
+    "passes": 1,
+    "roughness": 0.01,
+    "segment": 0.5
   },
   "print": [
     "threshold",

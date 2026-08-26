@@ -4,8 +4,8 @@
 // draws each kind of randomness from, and reseeds at the start of that use:
 //
 //   placement  positions we choose ourselves: field-mark sample points.
-//   geometry   shape geometry we generate ourselves: clip intersection is deterministic, so this is
-//              currently used only by `paint` with a `field` style, for per-mark angles.
+//   geometry   shape geometry we generate ourselves: per-mark angles for `paint` with a `field`
+//              style, and the deckle of a torn fragment edge.
 //   texture    everything p5.brush randomises internally once we hand it a shape: watercolour bleed,
 //              hatch `rand`, brush stamp scatter and pressure.
 //   glyph      per-glyph text jitter, kept apart from `texture` so that giving a line of type a shake
@@ -17,7 +17,7 @@
 // changing a placement argument cannot reshuffle the texture, and moving a node cannot change its
 // marks at all.
 
-import { regionPolygon, fragmentPolygon, clipPolygon, clipPolyline, pointInPolygon, CLIP_CIRCLE_SEGMENTS } from './resolve.js';
+import { regionPolygon, fragmentPolygon, tearPolygon, clipPolygon, clipPolyline, pointInPolygon, CLIP_CIRCLE_SEGMENTS } from './resolve.js';
 
 /** Hand-drawn wobble handed to brush.circle. Fixed on purpose: not a program-level decision. */
 export const CIRCLE_IRREGULARITY = 0.12;
@@ -182,7 +182,13 @@ function polyBounds(pts) {
 
 function opFragment(p, brush, node, ctx, stream) {
   const a = node.args;
-  const pts = fragmentPolygon(a, ctx.pack);
+  let pts = fragmentPolygon(a, ctx.pack);
+  // Tear before clipping, so a torn fragment inside a clip is a torn edge cropped by the clip, not a
+  // clean edge that grew teeth after the crop. The tear draws from this node's own geometry stream.
+  if (a.tear) {
+    const geo = stream('geometry');
+    pts = tearPolygon(pts, a.tear, () => geo.next());
+  }
   const region = { type: 'polygon', points: ctx.clip ? clipPolygon(pts, ctx.clip) : pts };
   if (region.points.length < 3) return;
   if (a.style.kind === 'field') return paintField(p, brush, region, a.style, { ...ctx, clip: null }, stream);

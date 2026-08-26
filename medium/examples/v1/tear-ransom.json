@@ -1,0 +1,161 @@
+{
+  "version": "0.2",
+  "profile": "default-v1",
+  "assetPack": "core-v1",
+  "canvas": {
+    "width": 520,
+    "height": 700,
+    "ground": "#ddd8c8",
+    "brushScale": 1.5
+  },
+  "seed": 33907,
+  "palette": {
+    "ink": "#0d0d0d",
+    "paper": "#f4f0e2",
+    "red": "#c02418"
+  },
+  "print": [
+    {
+      "stage": "grain",
+      "amount": 0.12
+    }
+  ],
+  "meta": {
+    "note": "Author one on tear: the ransom note. Every element is a piece of paper someone ripped out of something else, so the roughness is coarse and inconsistent between pieces, and the same fragment appears twice torn two different ways to prove the tear is per-node."
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "slab",
+        "type": "op",
+        "op": "fragment",
+        "rngKey": "slab",
+        "args": {
+          "name": "arch.arch",
+          "x": 260,
+          "y": 210,
+          "span": 420,
+          "rotate": 3,
+          "tear": {
+            "roughness": 0.85,
+            "segment": 13
+          },
+          "style": {
+            "kind": "solid",
+            "color": "paper",
+            "opacity": 255
+          }
+        }
+      },
+      {
+        "id": "bird-a",
+        "type": "op",
+        "op": "fragment",
+        "rngKey": "bird-a",
+        "note": "Same fragment, same span, same tear parameters as bird-b. Different rngKey, so a different rip.",
+        "args": {
+          "name": "animal.bird",
+          "x": 150,
+          "y": 200,
+          "span": 170,
+          "rotate": -14,
+          "tear": {
+            "roughness": 0.7,
+            "segment": 8
+          },
+          "style": {
+            "kind": "solid",
+            "color": "ink",
+            "opacity": 255
+          }
+        }
+      },
+      {
+        "id": "bird-b",
+        "type": "op",
+        "op": "fragment",
+        "rngKey": "bird-b",
+        "args": {
+          "name": "animal.bird",
+          "x": 360,
+          "y": 250,
+          "span": 170,
+          "rotate": 11,
+          "tear": {
+            "roughness": 0.7,
+            "segment": 8
+          },
+          "style": {
+            "kind": "solid",
+            "color": "red",
+            "opacity": 255
+          }
+        }
+      },
+      {
+        "id": "strip",
+        "type": "op",
+        "op": "fragment",
+        "rngKey": "strip",
+        "note": "A fine deckle rather than a rip: low roughness, short segments. Same mechanism, different hand.",
+        "args": {
+          "name": "debris.shard",
+          "x": 260,
+          "y": 440,
+          "span": 300,
+          "rotate": -2,
+          "tear": {
+            "roughness": 0.35,
+            "segment": 5
+          },
+          "style": {
+            "kind": "hatch",
+            "brush": "charcoal",
+            "color": "ink",
+            "spacing": 5,
+            "angle": 76,
+            "rand": 0.25,
+            "layers": 1
+          }
+        }
+      },
+      {
+        "id": "clean",
+        "type": "op",
+        "op": "fragment",
+        "rngKey": "clean",
+        "note": "The control. No tear key at all, so this edge is the outline as authored.",
+        "args": {
+          "name": "debris.shard",
+          "x": 260,
+          "y": 580,
+          "span": 300,
+          "rotate": 2,
+          "style": {
+            "kind": "solid",
+            "color": "ink",
+            "opacity": 255
+          }
+        }
+      },
+      {
+        "id": "caption",
+        "type": "op",
+        "op": "text",
+        "rngKey": "caption",
+        "args": {
+          "x": 40,
+          "y": 668,
+          "size": 22,
+          "text": "torn above, cut below",
+          "font": "special-elite",
+          "color": "ink",
+          "align": "left",
+          "tracking": 1
+        }
+      }
+    ]
+  }
+}

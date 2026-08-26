@@ -1,0 +1,90 @@
+{
+  "version": "0.2",
+  "profile": "default-v1",
+  "assetPack": "core-v1",
+  "canvas": { "width": 520, "height": 700, "ground": "#1a1a1c", "brushScale": 1.5 },
+  "seed": 8812,
+  "palette": { "bone": "#e6e1d3", "rust": "#a24b1e", "slate": "#5c6b73", "ink": "#101012" },
+  "meta": {
+    "note": "Author two on tear, reading it as geology rather than collage: a repeat of the same shard down the page, each instance torn from its own repeat-instance seed, so one authored edge becomes a stratum of edges. The tear is inside a polygon clip to show that a torn edge is cropped, not re-cut."
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "seam",
+        "type": "group",
+        "clip": { "type": "polygon", "points": [[30, 60], [490, 100], [470, 600], [50, 560]] },
+        "children": [
+          {
+            "id": "beds",
+            "type": "repeat",
+            "rngKey": "beds",
+            "count": 7,
+            "layout": { "type": "line", "origin": [0, 0], "dx": 0, "dy": 76 },
+            "note": "One authored shard, seven rips. Each repeat instance draws from its own seed, so the strata do not stack into a pattern.",
+            "children": [
+              {
+                "id": "bed",
+                "type": "op",
+                "op": "fragment",
+                "rngKey": "bed",
+                "args": {
+                  "name": "debris.shard",
+                  "x": 260,
+                  "y": 120,
+                  "span": 460,
+                  "rotate": -3,
+                  "tear": { "roughness": 0.6, "segment": 7 },
+                  "style": { "kind": "solid", "color": "bone", "opacity": 255 }
+                }
+              }
+            ]
+          },
+          {
+            "id": "intrusion",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "intrusion",
+            "note": "Maximum roughness at a coarse segment: the edge stops reading as paper and starts reading as a fracture.",
+            "args": {
+              "name": "light.beam",
+              "x": 300,
+              "y": 340,
+              "span": 320,
+              "rotate": 24,
+              "tear": { "roughness": 0.9, "segment": 14 },
+              "style": { "kind": "solid", "color": "rust", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "hairline",
+        "type": "op",
+        "op": "rule",
+        "rngKey": "hairline",
+        "args": { "from": [30, 620], "to": [490, 620], "brush": "pen", "color": "slate", "weight": 1.5 }
+      },
+      {
+        "id": "label",
+        "type": "op",
+        "op": "text",
+        "rngKey": "label",
+        "args": {
+          "x": 490,
+          "y": 664,
+          "size": 26,
+          "text": "one edge, seven rips",
+          "font": "saira-stencil",
+          "color": "bone",
+          "align": "right",
+          "tracking": 2,
+          "case": "upper",
+          "skew": 6
+        }
+      }
+    ]
+  }
+}

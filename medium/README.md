@@ -38,7 +38,7 @@ The pinned configuration is:
 | antialiasing | off — the page calls `setAttributes('antialias', false)` and `pixelDensity(1)` |
 | fonts | `fonts/grotesque.ttf` (PT Sans) `9cc83149…6d0f10a`, `fonts/serif.ttf` (PT Serif) `a4951fad…a2557a`, plus the 34 faces vendored under `assets/fonts/`, each hashed in the pack |
 | asset pack | content-hashed; `core@003e484d9602` (15 fragments, 1 motif) or `core-v1@dd47bb1c2e34` (the same shapes plus 36 faces) |
-| profile | content-hashed; `default-v0@15ad87c16095` or `default-v1@2738ad37acce` |
+| profile | content-hashed; `default-v0@15ad87c16095` or `default-v1@05b532015232` |
 | OS / arch | the same one; recorded per render as e.g. `darwin` / `arm64` |
 
 Every one of those, plus the Node version and the GL renderer string, is written into `trace.json`
@@ -170,6 +170,38 @@ Two structural rules matter:
 | `solid` | plain p5 fill, no brush texture at all |
 
 Colours are either a `palette` name or a literal `#rrggbb`.
+
+### Clipping
+
+A group's `clip` may be a `rect`, a `circle` or a convex `polygon`, and nested clips intersect. It is
+not a p5.brush feature — `brush.clip()` is a no-op (NOTES L1) — so clipping is geometric, done on the
+CPU by intersecting each op's polygon against the clip with Sutherland–Hodgman. Two consequences
+follow from that and neither is negotiable:
+
+- **A clip polygon must be convex.** Sutherland–Hodgman clips against a sequence of half-planes; give
+  it a concave clip and it does not fail, it returns a wrong shape. Convexity is therefore checked in
+  Node and refused as `clip.concave`. Collinear points are allowed, so a rectangle with a redundant
+  midpoint on one side still passes.
+- **Text inside a clipped group is still refused** (`text.clipped`). A glyph has no polygon here to
+  intersect. Widening the clip did not change that.
+
+Which shapes a profile permits is the `clipShapes` list; absent means `["rect"]`, which is v0.
+
+### Torn fragments
+
+A `fragment` may carry `tear: { roughness, segment }`. The outline is resampled into segments of
+roughly `segment` local units, and each resampled vertex is pushed along the edge normal by up to
+`roughness * segment`, drawn from that node's own `geometry` substream. It is pure geometry computed
+before the shape reaches p5.brush, so it costs no extra marks, it composes with any style and with a
+clip, and the same node tears the same way in every render of the program.
+
+The displacement is deliberately unsmoothed. A deckle is a high-frequency edge; smoothing it gives a
+wobble, which reads as a hand-drawn line rather than a rip. Corners are displaced too — a corner that
+never moves is a corner the eye reads as a cut.
+
+The cost is the outline's perimeter over `segment`, which is not a number anyone typed, so the
+validator computes the resampled vertex count in Node and refuses it against `limits.maxTearPoints`.
+A profile without that limit refuses `tear` outright.
 
 ## Type
 
@@ -305,7 +337,12 @@ Two are shipped, and a program says which it means:
 | profile | pack | what it is |
 | --- | --- | --- |
 | `default-v0@15ad87c16095` | `core@003e484d9602` | V0 unchanged: 2 faces, no print pass. The four committed goldens are rendered against it. |
-| `default-v1@2738ad37acce` | `core-v1@dd47bb1c2e34` | v0 widened: 36 faces, the `print` allow-list, `limits.maxPrintStages: 6`, and ranges and quantize steps for the new text and print fields. |
+| `default-v1@05b532015232` | `core-v1@dd47bb1c2e34` | v0 widened: 36 faces, the `print` allow-list, `clipShapes: ["rect","circle","polygon"]`, `limits.maxPrintStages: 6`, `limits.maxTearPoints: 600`, and ranges and quantize steps for the new text, print and tear fields. |
+
+Three of those are absences in v0 rather than negations: `print`, `clipShapes` and
+`limits.maxTearPoints` are all keys `default-v0.profile.json` does not have, and the validator reads
+a missing key as V0's answer — no post-process, rect clips only, no torn edges. That is why v0 still
+hashes to `15ad87c16095` after gaining three capabilities it does not have.
 
 `default-v0.profile.json` is the file V0 shipped as `default.profile.json`; only the filename
 changed, because profiles are looked up by name and the name should be the `id`. Its hash is

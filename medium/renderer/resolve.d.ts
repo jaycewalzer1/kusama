@@ -102,7 +102,14 @@ export declare function pointInPolygon(pt: Point, poly: Point[]): boolean;
 export declare function clipPolyline(points: Point[], clip: Point[] | null): Point[][];
 export declare function clipSegment(p: Point, q: Point, clip: Point[]): [Point, Point] | null;
 
+export interface Tear {
+  roughness: number;
+  segment: number;
+}
+
 export declare function fragmentPolygon(args: Record<string, never> | any, pack: any): Point[];
+export declare function tearPointCount(points: Point[], tear: Tear): number;
+export declare function tearPolygon(points: Point[], tear: Tear, rng: () => number): Point[];
 export declare function regionPolygon(region: any, pack: any, segments?: number): Point[];
 export declare function styleMargin(style: any, brushScale?: number): number;
 export declare function leafBounds(node: any, pack: any, brushScale?: number): Bounds;

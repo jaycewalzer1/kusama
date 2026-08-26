@@ -210,6 +210,54 @@ export function fragmentPolygon(args, pack) {
   });
 }
 
+/**
+ * How many vertices `tearPolygon` will produce for this outline, without producing them. The
+ * validator needs the count before a browser exists, and the count is a pure function of the
+ * outline's perimeter and the tear's scale, so it can be answered in Node.
+ */
+export function tearPointCount(points, tear) {
+  let n = 0;
+  for (let i = 0; i < points.length; i++) {
+    const [ax, ay] = points[i];
+    const [bx, by] = points[(i + 1) % points.length];
+    n += Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / tear.segment));
+  }
+  return n;
+}
+
+/**
+ * A torn paper edge: resample the outline into segments of roughly `tear.segment` and push each
+ * resampled vertex off the edge along its normal.
+ *
+ * The displacement is per-vertex and unsmoothed, which is the whole effect -- a deckle is a
+ * high-frequency edge, and smoothing it would give a wobble, which reads as a hand-drawn line
+ * instead. `rng` is the node's own geometry substream, so a torn fragment tears the same way in
+ * every render of the program and moving the node in the tree cannot change its tear.
+ *
+ * The first and last vertex of each original edge are displaced too, so corners move. That is
+ * deliberate: a corner that never moves is a corner the eye reads as a cut.
+ */
+export function tearPolygon(points, tear, rng) {
+  const out = [];
+  for (let i = 0; i < points.length; i++) {
+    const [ax, ay] = points[i];
+    const [bx, by] = points[(i + 1) % points.length];
+    const dx = bx - ax;
+    const dy = by - ay;
+    const len = Math.hypot(dx, dy);
+    const steps = Math.max(1, Math.ceil(len / tear.segment));
+    // Degenerate edge: no direction to displace along, so leave the vertex where it is.
+    const nx = len === 0 ? 0 : -dy / len;
+    const ny = len === 0 ? 0 : dx / len;
+    for (let s = 0; s < steps; s++) {
+      const t = s / steps;
+      const d = (rng() * 2 - 1) * tear.roughness * tear.segment;
+      out.push([ax + dx * t + nx * d, ay + dy * t + ny * d]);
+    }
+  }
+  return out;
+}
+
 /** Region as a polygon in the node's local space. */
 export function regionPolygon(region, pack, segments = CLIP_CIRCLE_SEGMENTS) {
   switch (region.type) {
@@ -303,8 +351,11 @@ export function leafBounds(node, pack, brushScale) {
       break;
     }
     case 'fragment':
+      // The untorn outline plus the tear's maximum displacement. Generating the actual tear here
+      // would need the node's RNG, and bounds are allowed to be conservative but must not depend on
+      // anything the validator cannot see before a browser starts.
       localPts = fragmentPolygon(a, pack);
-      margin = styleMargin(a.style, brushScale);
+      margin = styleMargin(a.style, brushScale) + (a.tear ? a.tear.roughness * a.tear.segment : 0);
       break;
     case 'stroke':
       localPts = a.points.map((p) => [p[0], p[1]]);
