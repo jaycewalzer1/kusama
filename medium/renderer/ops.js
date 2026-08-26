@@ -355,8 +355,10 @@ function opText(p, brush, node, ctx, stream) {
   p.textAlign(p.LEFT, p.BASELINE);
   const tracking = a.tracking ?? 0;
   const body = a.case === 'upper' ? a.text.toUpperCase() : a.case === 'lower' ? a.text.toLowerCase() : a.text;
-  const lines = a.maxWidth ? wrapLines(p, body, a.maxWidth, tracking) : [body];
+  // `jitter` is decided before the text is measured because it selects which of `drawTracked`'s two
+  // paths will run, and the two do not measure the same (see `drawnWidth`).
   const jitter = a.jitter && (a.jitter.translate || a.jitter.rotate || a.jitter.scale) ? a.jitter : null;
+  const lines = a.maxWidth ? wrapLines(p, body, a.maxWidth, tracking, jitter) : [body];
   const rng = jitter ? stream('glyph') : null;
   const [sx, sy] = a.stretch ?? [1, 1];
 
@@ -372,7 +374,7 @@ function opText(p, brush, node, ctx, stream) {
   if (a.skew) p.shearX(-a.skew);
   lines.forEach((line, i) => {
     const y = i * a.size * (a.leading ?? 1.25);
-    const w = lineWidth(p, line, tracking);
+    const w = drawnWidth(p, line, tracking, jitter);
     const x = a.align === 'center' ? -w / 2 : a.align === 'right' ? -w : 0;
     drawTracked(p, line, x, y, tracking, jitter, rng);
   });
@@ -405,6 +407,41 @@ function lineWidth(p, text, tracking) {
   return w - (text.length ? tracking : 0);
 }
 
+/**
+ * How wide a line will be *as drawn*, which is not one question but two.
+ *
+ * `drawTracked` has two paths. An untracked, unjittered line is handed to p5 whole, so its width is
+ * p5's own advance for the whole string. Any other line is placed glyph by glyph, so its width is
+ * the sum of the parts plus the tracking between them. Those are not the same number, because
+ * `textWidth` is not additive over a string -- E7 already found `textWidth('nn')` is not
+ * `2 * textWidth('n')` in this build.
+ *
+ * The old code always used the per-glyph sum, which is right for a tracked or jittered line and
+ * wrong for every other one. E7 fixed this class of mistake for spaces; this is the other half of
+ * it, and the rule is E7's: measure the way you are about to draw.
+ *
+ * It has two symptoms, and the second is the one that cost the goldens. Both were measured rather
+ * than argued, over the 14 committed programs that hold an untracked, unjittered text node:
+ *
+ *   Alignment -- one program. `x` is derived from the width only when `align` is not `left`, and
+ *   for a single glyph the sum *is* the advance, so of the seven candidates six were byte-identical
+ *   either way. The one real case, `examples/batch/v15.json`'s centred "pen 2B charcoal cpencil
+ *   marker", moved dbef195f7ebb -> 8c405b761cf0: 2310 pixels, 0.241% of the sheet, one 319x14 band
+ *   displaced 17px. Centred, so the width was wrong by 34px in 319 -- about 11%, roughly the
+ *   kerning of a 28-character line.
+ *
+ *   Wrapping -- 31 nodes across 13 programs, and it does not need `align` at all. `wrapLines`
+ *   breaks on this measurement, so an overestimate broke lines earlier than the drawn text needed,
+ *   leaving `maxWidth` paragraphs narrower than they asked to be. This is why three left-aligned
+ *   v1 goldens moved when a fix "about alignment" landed.
+ *
+ * None of the four v0 goldens moved, and that is not luck: all four track their centred lines, so
+ * both sides of the comparison were already taking the per-glyph path.
+ */
+function drawnWidth(p, text, tracking, jitter) {
+  return !tracking && !jitter ? p.textWidth(text) : lineWidth(p, text, tracking);
+}
+
 function drawTracked(p, text, x, y, tracking, jitter, rng) {
   if (!tracking && !jitter) {
     p.text(text, x, y);
@@ -432,13 +469,13 @@ function drawTracked(p, text, x, y, tracking, jitter, rng) {
   }
 }
 
-function wrapLines(p, text, maxWidth, tracking) {
+function wrapLines(p, text, maxWidth, tracking, jitter) {
   const words = text.split(' ');
   const lines = [];
   let cur = '';
   for (const w of words) {
     const next = cur ? `${cur} ${w}` : w;
-    if (lineWidth(p, next, tracking) > maxWidth && cur) {
+    if (drawnWidth(p, next, tracking, jitter) > maxWidth && cur) {
       lines.push(cur);
       cur = w;
     } else {
