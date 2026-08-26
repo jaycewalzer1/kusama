@@ -3,9 +3,13 @@
 //
 // Four artefacts, and the order they are produced in is the point:
 //
-//   canonical.png  the causal image. No cosmetic pass ever runs on it; every diff, every hash and
-//                  every downstream evaluation reads this file. It is written to disk before this
-//                  command so much as inspects a presentation option.
+//   canonical.png  the causal image: the render with the program's own `print` stages applied. No
+//                  cosmetic pass ever runs on it; every diff, every hash and every downstream
+//                  evaluation reads this file. It is written to disk before this command so much as
+//                  inspects a presentation option. `print` is not cosmetic -- it is declared in the
+//                  program, covered by the program hash, and validated against the profile -- so it
+//                  belongs on this side of the line, and the trace records the plate's hash as well
+//                  so what the print pass did stays visible.
 //   display.png    canonical put through env/present.ts, and only when a presentation option was
 //                  asked for. Nothing reads it back.
 //   resolved.json  the resolved program, serialized with canonicalJson key ordering, so its sha256
@@ -18,8 +22,9 @@ import { Command } from 'commander';
 import { Renderer, type RendererManifest, type RenderResult } from '../env/browser.js';
 import { loadPack, PackError, type AssetPack } from '../env/pack.js';
 import { encodePng, pixelHash } from '../env/png.js';
-import { canonicalJson, contentHash, loadProfile } from '../env/profile.js';
+import { canonicalJson, contentHash, loadProfileFor, ProfileError } from '../env/profile.js';
 import { validateProgram } from '../env/validate.js';
+import { runPrint } from '../env/print.js';
 import { grain, misregister } from '../env/present.js';
 import type { ResolvedProgram } from '../renderer/resolve.js';
 import { fontsUsed } from '../renderer/resolve.js';
@@ -83,7 +88,7 @@ const cli = new Command()
   .name('render')
   .argument('<program.json>', 'the program to render')
   .option('-o, --out <dir>', 'output directory', 'out')
-  .option('-p, --profile <id|path>', 'medium profile', 'default')
+  .option('-p, --profile <id|path>', 'override the profile the program names')
   .option('-a, --pack <id|path>', 'asset pack (defaults to the pack the program names)')
   .option('--grain <amount>', 'display only: per-pixel luminance noise, as a fraction of full scale')
   .option('--misregister <dx,dy>', 'display only: pull the colour plates apart by whole pixels')
@@ -91,7 +96,7 @@ const cli = new Command()
 
 interface Options {
   out: string;
-  profile: string;
+  profile?: string;
   pack?: string;
   grain?: string;
   misregister?: string;
@@ -101,10 +106,18 @@ interface Options {
 cli.action(async (file: string, opts: Options) => {
   const started = Date.now();
   const program = JSON.parse(readFileSync(file, 'utf8')) as { assetPack?: string; meta?: { provenance?: unknown } };
-  const { profile, hash: profileHash } = loadProfile(opts.profile);
-  let pack: AssetPack;
+  let profile, profileHash: string;
   try {
-    pack = loadPack(opts.pack ?? program.assetPack ?? 'core');
+    ({ profile, hash: profileHash } = loadProfileFor(program, opts.profile));
+  } catch (e) {
+    if (!(e instanceof ProfileError)) throw e;
+    return die(`/profile: ${e.message} [profile.missing]`);
+  }
+  let pack: AssetPack;
+  const packName = opts.pack ?? program.assetPack;
+  if (!packName) return die('/assetPack: this program names no asset pack [pack.missing]');
+  try {
+    pack = loadPack(packName);
   } catch (e) {
     // A tampered pack is a refusal like any other, not a crash.
     if (!(e instanceof PackError)) throw e;
@@ -138,9 +151,22 @@ cli.action(async (file: string, opts: Options) => {
   const renderer = await Renderer.launch();
   let manifest: RendererManifest;
   let canonical: RenderResult;
+  let plateHash = '';
+  let printStages: { stage: string; ms: number }[] = [];
   const masks: { id: string; file: string; changedPixels: number }[] = [];
   try {
-    canonical = await renderer.render(resolved, pack, fonts);
+    const plate = await renderer.render(resolved, pack, fonts);
+    // The print pass runs here, on the far side of the loop that proved this render repeats, and
+    // never inside it. A threshold collapses small differences, so a print pass run inside the
+    // self-consistency check would be a machine for making a nondeterministic render agree with
+    // itself (docs/substrate-test/proposed-primitives.md).
+    plateHash = pixelHash(plate.rgba);
+    canonical = plate;
+    if (resolved.print.length > 0) {
+      const out = runPrint(plate.rgba, plate.width, plate.height, resolved.print, resolved.seed);
+      canonical = { ...plate, rgba: out.rgba };
+      printStages = out.stages;
+    }
     // On disk before anything cosmetic is even reachable.
     writeFileSync(path.join(outDir, 'canonical.png'), encodePng(canonical.rgba, canonical.width, canonical.height));
 
@@ -149,9 +175,11 @@ cli.action(async (file: string, opts: Options) => {
       for (const [index, leaf] of leaves.entries()) {
         // Only `canvas`, `seed` and `nodes` are read at render time (renderer/draw.js), so dropping
         // one leaf from the flat list is exactly "this program without this node".
+        // Masks compare plates, not prints: a threshold turns "this leaf moved four pixels" into
+        // either nothing at all or a whole region, so a printed mask measures the print, not the leaf.
         const without = { ...resolved, nodes: leaves.filter((n) => n !== leaf) };
         const out = await renderer.render(without, pack, fonts);
-        const mask = diffMask(canonical.rgba, out.rgba, canonical.width, canonical.height);
+        const mask = diffMask(plate.rgba, out.rgba, canonical.width, canonical.height);
         const name = maskFile(index, leaf.id);
         writeFileSync(path.join(outDir, MASK_DIR, name), encodePng(mask.rgba, canonical.width, canonical.height));
         masks.push({ id: leaf.id, file: `${MASK_DIR}/${name}`, changedPixels: mask.changed });
@@ -190,6 +218,9 @@ cli.action(async (file: string, opts: Options) => {
       height: canonical.height,
       pixelHash: pixelHash(canonical.rgba),
     },
+    // What the browser produced, before `print`. Equal to canonical.pixelHash when there are no
+    // stages, and the only way to tell a changed render from a changed print when there are.
+    plate: { pixelHash: plateHash, stages: printStages },
     display,
     masks: opts.traceMasks ? masks : null,
     budget: check.budget,
