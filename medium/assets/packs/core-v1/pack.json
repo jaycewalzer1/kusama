@@ -3259,6 +3259,12 @@
     }
   },
   "licenses": {
+    "OFL": {
+      "spdx": "OFL-1.1",
+      "file": "fonts/OFL.txt",
+      "sha256": "2758cf7a872827f39661cf8cc24188113c030447aefb5ca7145993650076ca8c",
+      "source": "vendored in V0 with no recorded origin; the text is SIL OFL 1.1 as published by ParaType for the PT family"
+    },
     "ofl-anton": {
       "spdx": "OFL-1.1",
       "file": "assets/fonts/licenses/ofl-anton.txt",
@@ -3446,5 +3452,5 @@
       "source": "https://github.com/google/fonts/blob/main/ofl/bungee/OFL.txt"
     }
   },
-  "hash": "dd47bb1c2e34530b551e90cf092e6f8a8a98a1490c4098a25920bc728c74ce44"
+  "hash": "366521cbb036efb87cadc62224d7641e8edf7947aa5acf18dbb39c55308d2fd7"
 }

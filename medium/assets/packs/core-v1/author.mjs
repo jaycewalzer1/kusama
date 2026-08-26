@@ -51,12 +51,32 @@ for (const [name, f] of Object.entries(LEGACY)) {
 }
 for (const [name, f] of Object.entries(manifest.faces)) faces[name] = f;
 
+/**
+ * The legacy faces' licence, which the manifest cannot supply for the same reason it cannot supply
+ * the faces: it did not exist when they were vendored. Keyed `OFL` because the key is the licence
+ * file's basename everywhere else, and a pack that carries a face pointing at `fonts/OFL.txt` with
+ * no entry under `OFL` is a pack shipping type whose terms it does not itself carry.
+ *
+ * `source` is not a URL and is not going to become one by guessing. The text names ParaType and the
+ * Reserved Font Names "PT Sans", which is a real fact about what these two files are; where the
+ * bytes were fetched from in V0 is not recorded anywhere, and writing a plausible Google Fonts URL
+ * here would be inventing provenance rather than citing it.
+ */
+const LEGACY_LICENSE = {
+  OFL: {
+    spdx: 'OFL-1.1',
+    file: 'fonts/OFL.txt',
+    sha256: sha256('fonts/OFL.txt'),
+    source: 'vendored in V0 with no recorded origin; the text is SIL OFL 1.1 as published by ParaType for the PT family',
+  },
+};
+
 const pack = {
   id: 'core-v1',
   fragments: core.fragments,
   motifs: core.motifs,
   faces,
-  licenses: manifest.licenses,
+  licenses: { ...LEGACY_LICENSE, ...manifest.licenses },
 };
 pack.hash = contentHash(pack);
 
