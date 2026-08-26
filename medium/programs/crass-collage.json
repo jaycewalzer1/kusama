@@ -144,11 +144,11 @@
     },
     {
       "id": "r-off-axis",
-      "kind": "symmetryMax",
-      "params": { "axis": "vertical", "max": 0.6 },
+      "kind": "inkOffsetRange",
+      "params": { "min": 0.08 },
       "scope": "render",
       "severity": "soft",
-      "why": "A symmetrical montage is a composition, and composing the material is a way of settling it."
+      "why": "The weight of the page sits off the middle. A montage balanced about its centre is a composition, and composing the material is a way of settling it. This was a vertical symmetryMax <= 0.6 and that measured nothing here: r-no-rest demands ink >= 0.35 and this position fills the sheet corner to corner, and a full sheet is mirror-symmetric by construction, so the two could not both hold. It failed for a fact about the measure, not about the picture. Centre of ink is what off-axis was reaching for and it survives a full bleed."
     }
   ],
   "generative_rules": [

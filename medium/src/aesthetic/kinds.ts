@@ -1,7 +1,7 @@
-// The constraint language: fifteen kinds, one pure checker each.
+// The constraint language: sixteen kinds, one pure checker each.
 //
 // Closed on purpose. Every kind here is something the program tree or the canonical image actually
-// exposes, and a position that needs a sixteenth has to give one up. The three render kinds read a
+// exposes, and a position that needs a seventeenth has to give one up. The four render kinds read a
 // RenderMetrics and nothing else; the one judge kind decides nothing at all and says so.
 //
 // A checker returns a status and its evidence. Evidence is the point: "violated" with no node ids
@@ -181,6 +181,12 @@ const renderCheckers: Record<string, (m: RenderMetrics, p: Record<string, unknow
     const got = m.symmetry[axis];
     return verdict(got <= max, `${axis} symmetry ${got.toFixed(4)}, at most ${max}`);
   },
+
+  inkOffsetRange(m, p) {
+    const min = num(p, 'min');
+    const max = num(p, 'max');
+    return verdict(within(m.inkOffset, min, max), `ink offset ${m.inkOffset.toFixed(4)}, wanted ${rangeLabel(min, max)}`);
+  },
 };
 
 /**
@@ -206,5 +212,5 @@ export function checkConstraintWithFacts(constraint: Constraint, facts: TreeFact
   return { status: 'unverified', evidence: `no checker for kind "${constraint.kind}"` };
 }
 
-/** The closed set, as data, so a test can assert nobody added a sixteenth quietly. */
+/** The closed set, as data, so a test can assert nobody added a seventeenth quietly. */
 export const CONSTRAINT_KINDS = [...Object.keys(treeCheckers), ...Object.keys(renderCheckers), 'rubric'] as const;

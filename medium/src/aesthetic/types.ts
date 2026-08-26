@@ -14,7 +14,7 @@ export type OpName = 'wash' | 'paint' | 'stroke' | 'fragment' | 'text' | 'rule' 
 export type MacroName = 'frame' | 'motif' | 'quarantine';
 export type StyleKind = 'wash' | 'hatch' | 'field' | 'outline' | 'solid';
 
-/** The closed set. Fifteen, and it stays fifteen: a sixteenth costs one of these. */
+/** The closed set. Sixteen, and it stays sixteen: a seventeenth costs one of these. */
 export type ConstraintKind =
   | 'maxDistinctColors'
   | 'palette'
@@ -29,6 +29,7 @@ export type ConstraintKind =
   | 'requireMark'
   | 'inkDensityRange'
   | 'symmetryMax'
+  | 'inkOffsetRange'
   | 'coverageRange'
   | 'rubric';
 
@@ -114,14 +115,22 @@ export interface CheckReport {
 
 /**
  * Everything the render scope is allowed to know. Computed once per program hash from the canonical
- * RGBA and cached; see src/aesthetic/measure.ts. Deliberately three numbers and not a feature vector
+ * RGBA and cached; see src/aesthetic/measure.ts. Deliberately four numbers and not a feature vector
  * — a render-scope constraint that needs more than this is a judge-scope constraint wearing a hat.
+ *
+ * Adding or redefining a field here means bumping METRICS_VERSION in measure.ts, or a cache entry
+ * written before the field existed will parse and read as undefined.
  */
 export interface RenderMetrics {
   /** Fraction of pixels that are not the ground colour. */
   inkDensity: number;
   /** Fraction of a fixed 16x16 grid of cells that contain any ink at all. */
   coverage: number;
+  /**
+   * Distance of the tone-weighted ink centroid from the sheet centre, over centre-to-corner. 0 is
+   * dead centre, 0 for a blank sheet. Unlike `symmetry` it survives a full bleed.
+   */
+  inkOffset: number;
   /** Ink-mask agreement with its own mirror, as intersection over union. 0 when there is no ink. */
   symmetry: { vertical: number; horizontal: number };
   /** The pixel hash the metrics were taken over, so a report can say which image it means. */

@@ -98,7 +98,7 @@
       "properties": {
         "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
         "kind": {
-          "description": "The closed set. Fifteen kinds, each with one pure checker.",
+          "description": "The closed set. Sixteen kinds, each with one pure checker.",
           "enum": [
             "maxDistinctColors",
             "palette",
@@ -113,6 +113,7 @@
             "requireMark",
             "inkDensityRange",
             "symmetryMax",
+            "inkOffsetRange",
             "coverageRange",
             "rubric"
           ]
@@ -150,6 +151,7 @@
         { "if": { "properties": { "kind": { "const": "requireMark" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/requireMarkParams" } } } },
         { "if": { "properties": { "kind": { "const": "inkDensityRange" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "render" }, "params": { "$ref": "#/$defs/rangeParams" } } } },
         { "if": { "properties": { "kind": { "const": "symmetryMax" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "render" }, "params": { "$ref": "#/$defs/symmetryMaxParams" } } } },
+        { "if": { "properties": { "kind": { "const": "inkOffsetRange" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "render" }, "params": { "$ref": "#/$defs/rangeParams" } } } },
         { "if": { "properties": { "kind": { "const": "coverageRange" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "render" }, "params": { "$ref": "#/$defs/rangeParams" } } } },
         { "if": { "properties": { "kind": { "const": "rubric" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "judge" }, "params": { "$ref": "#/$defs/rubricParams" } } } }
       ]

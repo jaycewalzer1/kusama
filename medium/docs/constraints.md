@@ -1,7 +1,7 @@
 # The constraint language
 
-Fifteen kinds, closed. Eleven decide from the program tree alone, three from the canonical PNG, one
-decides nothing and says so. A sixteenth kind costs one of these.
+Sixteen kinds, closed. Eleven decide from the program tree alone, four from the canonical PNG, one
+decides nothing and says so. A seventeenth kind costs one of these.
 
 Every kind is a pure function. Tree-scope checkers read `treeFacts()` — one walk over the **source**
 JSON — and return `{status, evidence}`. Render-scope checkers read a `RenderMetrics` and nothing
@@ -120,7 +120,7 @@ no solid — a shape the positions here deliberately do not use.
 
 ## Render scope
 
-All three read a `RenderMetrics` produced by `src/aesthetic/measure.ts` from the **canonical** RGBA:
+All four read a `RenderMetrics` produced by `src/aesthetic/measure.ts` from the **canonical** RGBA:
 the deterministic path, hermetic Chromium, antialiasing off, cached by program hash. With no metrics
 they are `unverified`. They never launch a browser themselves.
 
@@ -149,6 +149,23 @@ symmetric in silhouette and wildly asymmetric in colour scores as symmetric. It 
 about the exact centre line and nothing else — near-symmetry offset by ten pixels reads as
 asymmetric. On a sparse page (Ikeda) the IoU is dominated by a handful of marks and is jumpy.
 
+**It is unusable above roughly 0.8 ink.** The IoU of a mask with its own mirror rises mechanically
+with the mask's area, and at full bleed it is 1 by construction, whatever the picture is. Any
+position that also demands a filled sheet has written a contradiction — which is exactly what
+crass-collage had, and why `inkOffsetRange` exists.
+
+### `inkOffsetRange`
+`{ min?: number, max?: number }` — distance of the tone-weighted ink centroid from the sheet centre,
+over the distance from centre to corner. 0 is dead centre, 0 for a blank sheet, and 1 is the
+unreachable limit of one corner pixel. Each pixel is weighted by the same distance-from-ground that
+decides whether it is ink at all, so a black half against a pale half reads as off-centre and a full
+bleed still has an answer.
+
+*Blind spots.* One point summarises the whole sheet, so it cannot tell a single heavy corner from
+two balanced heavy corners — both average back to the middle. Tone weighting means a large pale area
+counts less than a small black one, which is right for "where is the weight" and wrong if you wanted
+"where are the marks". It says nothing about which direction the weight went.
+
 ---
 
 ## Judge scope
@@ -167,7 +184,7 @@ fields for what specifically was pushed here and why.
 ## What was dropped, merged or renamed
 
 The task's suggested list had thirteen tree kinds, three render kinds and `rubric`. It came out at
-fifteen by these moves:
+fifteen by these moves, and later at sixteen when `inkOffsetRange` was added:
 
 | Suggested | Became | Why |
 |---|---|---|
@@ -176,6 +193,7 @@ fifteen by these moves:
 | `maxNodes`, `minNodes` | `nodeCount` | One kind with optional `min` and `max`, matching `inkDensityRange` and `coverageRange`, which already had that shape. |
 | `requireCover` | *dropped* | It is `requireNode {op: 'cover'}`. A kind whose whole content is one argument value is not a kind. |
 | — | **`forbidMark`, `requireMark`** *(new)* | Style kind and brush are the strongest aesthetic levers this substrate has — `solid` versus `wash` is the whole difference between a printed block and a painted one (probes: xerox-zine, ikeda-austerity), and `rotring` versus `charcoal` decides whether a hand was in the room. The suggested list had no way to reach either. Four freed slots bought these two. |
+| — | **`inkOffsetRange`** *(new, sixteenth)* | `symmetryMax` is the only asymmetry measure the set had and it degenerates to 1 as the sheet fills, so a position holding both `inkDensityRange {min}` and `symmetryMax {max}` had written a contradiction with no picture in it. Nothing was given up for this one, because `symmetryMax` is still the right measure on a sparse page and two positions use it that way. The count went to sixteen and the language is closed there. |
 
 Kinds considered and **not** added, because the tree cannot support them:
 

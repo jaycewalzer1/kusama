@@ -74,7 +74,7 @@ test('each program states a position: lineage, tensions, rules, cliches, and at 
 });
 
 test('all twelve fixtures are programs the medium accepts', () => {
-  const { profile } = loadProfile('default');
+  const { profile } = loadProfile('default-v0');
   const pack = loadPack('core');
   for (const id of AESTHETICS) {
     for (const kind of ['pass', 'fail'] as const) {

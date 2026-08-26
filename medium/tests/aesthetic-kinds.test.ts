@@ -56,7 +56,7 @@ function constraint(kind: ConstraintKind, params: Record<string, unknown>, scope
 }
 
 function metrics(over: Partial<RenderMetrics> = {}): RenderMetrics {
-  return { inkDensity: 0.3, coverage: 0.5, symmetry: { vertical: 0.2, horizontal: 0.2 }, pixelHash: 'deadbeef', ...over };
+  return { inkDensity: 0.3, coverage: 0.5, inkOffset: 0.2, symmetry: { vertical: 0.2, horizontal: 0.2 }, pixelHash: 'deadbeef', ...over };
 }
 
 /** Every kind is asserted both ways in one call, so a kind that always returns the same verdict fails. */
@@ -76,9 +76,9 @@ function bothWays(
   assert.ok(bad.evidence.length > 0, `${kind} must say why`);
 }
 
-test('the constraint language is closed at fifteen kinds', () => {
-  assert.equal(CONSTRAINT_KINDS.length, 15);
-  assert.equal(new Set(CONSTRAINT_KINDS).size, 15);
+test('the constraint language is closed at sixteen kinds', () => {
+  assert.equal(CONSTRAINT_KINDS.length, 16);
+  assert.equal(new Set(CONSTRAINT_KINDS).size, 16);
 });
 
 test('maxDistinctColors counts palette-resolved hexes and the ground', () => {
@@ -180,7 +180,7 @@ test('requireMark counts styles and brushes together against one floor', () => {
   bothWays('requireMark', { brushes: ['rotring'], min: 2 }, prog([pen('r1'), pen('r2')]), prog([pen('r1'), solid('a')]));
 });
 
-test('inkDensityRange, coverageRange and symmetryMax read the metrics and nothing else', () => {
+test('inkDensityRange, coverageRange, symmetryMax and inkOffsetRange read the metrics and nothing else', () => {
   const tree = prog([solid('a')]);
   assert.equal(
     checkConstraint(constraint('inkDensityRange', { min: 0.2, max: 0.4 }, 'render'), tree, metrics({ inkDensity: 0.3 })).status,
@@ -206,10 +206,18 @@ test('inkDensityRange, coverageRange and symmetryMax read the metrics and nothin
     checkConstraint(constraint('symmetryMax', { axis: 'vertical', max: 0.5 }, 'render'), tree, metrics({ symmetry: { vertical: 0.9, horizontal: 0 } })).status,
     'violated',
   );
+  assert.equal(
+    checkConstraint(constraint('inkOffsetRange', { min: 0.1 }, 'render'), tree, metrics({ inkOffset: 0.3 })).status,
+    'satisfied',
+  );
+  assert.equal(
+    checkConstraint(constraint('inkOffsetRange', { min: 0.1 }, 'render'), tree, metrics({ inkOffset: 0.02 })).status,
+    'violated',
+  );
 });
 
 test('render kinds come back unverified without metrics, never assumed', () => {
-  for (const kind of ['inkDensityRange', 'coverageRange', 'symmetryMax'] as const) {
+  for (const kind of ['inkDensityRange', 'coverageRange', 'symmetryMax', 'inkOffsetRange'] as const) {
     const v = checkConstraint(constraint(kind, { min: 0, max: 1 }, 'render'), prog([solid('a')]), null);
     assert.equal(v.status, 'unverified', `${kind} must not guess`);
     assert.match(v.evidence, /no render metrics/);
