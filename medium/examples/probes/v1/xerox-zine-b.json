@@ -12,6 +12,7 @@
   "print": [
     {
       "stage": "generation",
+      "rngKey": "generation",
       "passes": 2,
       "cut": 0.48,
       "dark": "toner",
@@ -22,7 +23,7 @@
       "speck": 0.02
     },
     { "stage": "paper", "tint": "grey", "amount": 0.14, "vignette": 0.2 },
-    { "stage": "grain", "amount": 0.05, "mono": true }
+    { "stage": "grain", "rngKey": "grain", "amount": 0.05, "mono": true }
   ],
   "meta": {
     "probe": "xerox-zine-b",

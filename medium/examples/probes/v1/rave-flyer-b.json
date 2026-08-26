@@ -12,6 +12,7 @@
   "print": [
     {
       "stage": "generation",
+      "rngKey": "generation",
       "passes": 3,
       "cut": 0.52,
       "dark": "ink",
@@ -29,6 +30,7 @@
     },
     {
       "stage": "grain",
+      "rngKey": "grain",
       "amount": 0.09,
       "mono": true
     }

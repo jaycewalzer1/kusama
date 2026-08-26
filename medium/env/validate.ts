@@ -377,10 +377,21 @@ function walkAndCheck(prog: ProgramShape, profile: MediumProfile, pack: AssetPac
   if (stages.length > maxStages) {
     issues.push({ code: 'limit.printStages', path: '/print', message: `${stages.length} print stages exceeds the profile's limit of ${maxStages}` });
   }
+  // A print rngKey buys reorderability only if it identifies one stage. Two stages sharing a key
+  // draw the same noise, which is not an error the pixels would report -- two grain stages agreeing
+  // looks exactly like one grain stage applied twice.
+  const printKeys = new Set<string>();
   stages.forEach((stage, i) => {
     const name = String(stage['stage']);
     if (!allowedStages.includes(name)) {
       issues.push({ code: 'print.notAllowed', path: `/print/${i}`, message: `the profile does not allow the "${name}" print stage` });
+    }
+    const key = stage['rngKey'];
+    if (typeof key === 'string') {
+      if (printKeys.has(key)) {
+        issues.push({ code: 'print.rngKey.duplicate', path: `/print/${i}`, message: `print rngKey "${key}" is used more than once` });
+      }
+      printKeys.add(key);
     }
     numbers(stage, 'print', `/print/${i}`);
     for (const key of ['dark', 'light', 'ink', 'paper', 'tint']) {

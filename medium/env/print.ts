@@ -19,9 +19,15 @@
 //  * **The pass invents no colour.** Every colour a stage uses is named in the program's palette and
 //    resolved before it gets here, so `print` cannot introduce a colour the program never declared.
 //
-// Randomness comes from a `print` stream seeded off the master seed and the stage's index, through
-// the same fnv1a/sfc32 path every node uses. It never touches a node seed, so adding, removing or
-// reordering a print stage cannot change a single mark.
+// Randomness comes from a `print` stream seeded off the master seed and the stage's own `rngKey`,
+// through the same fnv1a/sfc32 path every node uses. It never touches a node seed, so adding,
+// removing or reordering a print stage cannot change a single mark.
+//
+// The key used to be the stage's index, which made this the one place in the medium that seeded
+// from position -- exactly what `renderer/rng.js` opens by forbidding ("not its path, not its
+// parent, not its index among siblings"). Nothing drew wrongly, because the pass is downstream of
+// every mark, but inserting a stage at the front renumbered the ones behind it and re-grained them:
+// the same picture, differently dirty. An opaque key fixes that for the three stages that draw.
 
 import { deriveSeed, makeRng } from '../renderer/rng.js';
 import type { PrintStage } from '../renderer/resolve.js';
@@ -67,9 +73,12 @@ export function runPrint(
 ): PrintResult {
   let pixels: Buffer = Buffer.from(rgba);
   const log: { stage: string; ms: number }[] = [];
-  stages.forEach((stage, index) => {
+  stages.forEach((stage) => {
     const started = Date.now();
-    const rng = makeRng(deriveSeed(seed, `${PRINT_RNG_KEY}/${index}`, 0, 'print', 0));
+    // `rngKey` where the stage draws, and the stage's own name where it does not. The four
+    // deterministic stages are handed an rng they never call, so the string only has to be stable.
+    const key = stage['rngKey'] === undefined ? String(stage['stage']) : String(stage['rngKey']);
+    const rng = makeRng(deriveSeed(seed, `${PRINT_RNG_KEY}/${key}`, 0, 'print', 0));
     pixels = applyStage(pixels, width, height, stage, rng);
     log.push({ stage: String(stage['stage']), ms: Date.now() - started });
   });

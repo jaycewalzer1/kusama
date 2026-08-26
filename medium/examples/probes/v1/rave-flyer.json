@@ -14,11 +14,13 @@
   "print": [
     {
       "stage": "misregister",
+      "rngKey": "misregister",
       "amount": 0.6,
       "spread": 2
     },
     {
       "stage": "grain",
+      "rngKey": "grain",
       "amount": 0.12,
       "mono": true
     },

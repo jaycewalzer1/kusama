@@ -47,11 +47,12 @@ const STAGES: PrintStage[] = [
   { stage: 'threshold', cut: 0.5, dark: '#101014', light: '#f2f0e8' },
   { stage: 'posterize', levels: 3 },
   { stage: 'halftone', shape: 'dot', cell: 4, angle: 15, ink: '#101014', paper: '#f2f0e8' },
-  { stage: 'grain', amount: 0.3, mono: true },
-  { stage: 'misregister', amount: 0.8, spread: 3 },
+  { stage: 'grain', rngKey: 'grain', amount: 0.3, mono: true },
+  { stage: 'misregister', rngKey: 'misregister', amount: 0.8, spread: 3 },
   { stage: 'paper', tint: '#f2e6c8', amount: 0.25, vignette: 0.4 },
   {
     stage: 'generation',
+    rngKey: 'generation',
     passes: 2,
     cut: 0.5,
     dark: '#101014',
@@ -102,16 +103,29 @@ for (const name of SEEDED) {
  */
 const PADDING: PrintStage[] = [
   { stage: 'paper', tint: '#000000', amount: 0, vignette: 0 },
-  { stage: 'misregister', amount: 0, spread: 0 },
+  { stage: 'misregister', rngKey: 'pad', amount: 0, spread: 0 },
 ];
 
-test('a stage seeds off its own index, so the same grain at index 2 is not the grain at index 0', () => {
-  // Deliberate design property, not a bug: `deriveSeed(seed, "print/<index>", ...)`. It means
-  // inserting a stage reshuffles the noise of every stage after it, and it is what stops two grain
-  // stages in one chain from laying down the identical field twice.
+test('a stage seeds off its rngKey, not its position, so padding it forward does not re-grain it', () => {
+  // This used to assert the opposite, because the key used to be the stage's index. That made the
+  // print pass the one place in the medium that seeded from position -- the thing `renderer/rng.js`
+  // opens by forbidding -- and it meant inserting any stage at the front silently re-grained every
+  // stage behind it. The padding is exact identities, so the grain sees identical pixels either way
+  // and the only thing under test is where its seed came from.
   const first = runPrint(image(), W, H, [stageNamed('grain')], SEED);
   const third = runPrint(image(), W, H, [...PADDING, stageNamed('grain')], SEED);
-  assert.notEqual(sha(first.rgba), sha(third.rgba));
+  assert.equal(sha(first.rgba), sha(third.rgba));
+});
+
+test('two grain stages in one chain still differ, because their rngKeys do', () => {
+  // The property the index used to provide for free, and the reason `rngKey` has to be unique: two
+  // stages sharing a key would lay the identical field down twice, which is not something the
+  // pixels would report as wrong. `env/validate.ts` refuses the duplicate; this pins that distinct
+  // keys really do reach the seed.
+  const grain = stageNamed('grain');
+  const a = runPrint(image(), W, H, [{ ...grain, rngKey: 'first' }], SEED);
+  const b = runPrint(image(), W, H, [{ ...grain, rngKey: 'second' }], SEED);
+  assert.notEqual(sha(a.rgba), sha(b.rgba));
 });
 
 test("runPrint leaves the caller's buffer untouched, because render.ts hashes it as the plate", () => {

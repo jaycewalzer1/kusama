@@ -11,8 +11,8 @@
     "dim": "#4a4a46"
   },
   "print": [
-    { "stage": "misregister", "amount": 0.6, "spread": 2 },
-    { "stage": "grain", "amount": 0.05, "mono": true }
+    { "stage": "misregister", "rngKey": "misregister", "amount": 0.6, "spread": 2 },
+    { "stage": "grain", "rngKey": "grain", "amount": 0.05, "mono": true }
   ],
   "meta": {
     "probe": "ur-stencil",

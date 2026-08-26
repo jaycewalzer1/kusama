@@ -160,5 +160,5 @@
       }
     ]
   },
-  "print": [{ "stage": "grain", "amount": 0.1 }]
+  "print": [{ "stage": "grain", "rngKey": "grain", "amount": 0.1 }]
 }

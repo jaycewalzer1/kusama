@@ -12,7 +12,7 @@
     "ink": "#111111"
   },
   "print": [
-    { "stage": "grain", "amount": 0.05, "mono": true },
+    { "stage": "grain", "rngKey": "grain", "amount": 0.05, "mono": true },
     { "stage": "halftone", "shape": "dot", "cell": 4, "angle": 15, "ink": "ink", "paper": "paper" },
     { "stage": "paper", "tint": "news", "amount": 0.06, "vignette": 0.14 }
   ],

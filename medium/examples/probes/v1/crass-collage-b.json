@@ -12,8 +12,8 @@
   },
   "print": [
     { "stage": "posterize", "levels": 6 },
-    { "stage": "misregister", "amount": 0.6, "spread": 2 },
-    { "stage": "grain", "amount": 0.1 },
+    { "stage": "misregister", "rngKey": "misregister", "amount": 0.6, "spread": 2 },
+    { "stage": "grain", "rngKey": "grain", "amount": 0.1 },
     { "stage": "paper", "tint": "ash", "amount": 0.08, "vignette": 0.3 }
   ],
   "meta": {

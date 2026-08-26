@@ -79,9 +79,10 @@
           "description": "Seeded per-pixel luminance noise.",
           "type": "object",
           "additionalProperties": false,
-          "required": ["stage", "amount"],
+          "required": ["stage", "rngKey", "amount"],
           "properties": {
             "stage": { "const": "grain" },
+            "rngKey": { "$ref": "#/$defs/printRngKey" },
             "amount": { "type": "number", "minimum": 0, "maximum": 1 },
             "mono": { "description": "One offset for all three channels, rather than one each. Default true.", "type": "boolean" }
           }
@@ -90,9 +91,10 @@
           "description": "Pull the colour plates apart by whole pixels, each plate's offset drawn from the print stream.",
           "type": "object",
           "additionalProperties": false,
-          "required": ["stage", "amount"],
+          "required": ["stage", "rngKey", "amount"],
           "properties": {
             "stage": { "const": "misregister" },
+            "rngKey": { "$ref": "#/$defs/printRngKey" },
             "amount": { "description": "Maximum plate displacement in pixels; the actual offsets are seeded.", "type": "number", "minimum": 0, "maximum": 1 },
             "spread": { "description": "Scales `amount` into pixels. amount 1 with spread 3 means plates move up to 3px.", "type": "number", "minimum": 0, "maximum": 3 }
           }
@@ -113,9 +115,10 @@
           "description": "Generation loss: blur, cut, spread and drop out, N times over, each pass on the last pass's result. This is a photocopy of a photocopy, and iteration is the whole point of it.",
           "type": "object",
           "additionalProperties": false,
-          "required": ["stage", "passes", "cut", "dark", "light"],
+          "required": ["stage", "rngKey", "passes", "cut", "dark", "light"],
           "properties": {
             "stage": { "const": "generation" },
+            "rngKey": { "$ref": "#/$defs/printRngKey" },
             "passes": { "type": "integer", "minimum": 1, "maximum": 6 },
             "cut": { "type": "number", "minimum": 0.05, "maximum": 0.95 },
             "dark": { "$ref": "#/$defs/color" },
@@ -135,6 +138,12 @@
     "id": { "type": "string", "pattern": "^[a-zA-Z][a-zA-Z0-9._-]*$", "maxLength": 64 },
     "rngKey": {
       "description": "Opaque and permanent. A node's randomness derives from this and nothing else, which is why moving or reordering a node cannot change its marks. Edits never change it.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "printRngKey": {
+      "description": "The same promise as a node's rngKey, kept for a print stage: this stage's noise derives from this string and nothing else, so inserting a stage ahead of it cannot re-grain it. Required on exactly the three stages that draw from the print stream -- grain, misregister and generation -- and absent from the four that do not, because a key on a stage that never draws would advertise a sensitivity it does not have. Must be unique within a program's print list. Edits never change it.",
       "type": "string",
       "minLength": 1,
       "maxLength": 64

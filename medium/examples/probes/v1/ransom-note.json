@@ -13,8 +13,8 @@
     "screen": "#8f8878"
   },
   "print": [
-    { "stage": "misregister", "amount": 0.75, "spread": 2 },
-    { "stage": "grain", "amount": 0.06, "mono": true },
+    { "stage": "misregister", "rngKey": "misregister", "amount": 0.75, "spread": 2 },
+    { "stage": "grain", "rngKey": "grain", "amount": 0.06, "mono": true },
     { "stage": "paper", "tint": "screen", "amount": 0.05, "vignette": 0.1 }
   ],
   "meta": {
