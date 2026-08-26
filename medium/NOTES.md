@@ -239,9 +239,10 @@ installed.
 its own colour mixing through a blend-source framebuffer and a custom shader
 (`src/core/color.js`, `src/stroke/shader.frag`), so "it changed the pixels" is not evidence that it
 composited *correctly*. The build document says to support group blend only if correctness can be
-verified, otherwise reject at validation. `profiles/default.profile.json` therefore ships
-`"blendModes": []` and `env/validate.ts` rejects any `blend` on a group. The schema keeps the field
-so a future profile can enable it without a format change.
+verified, otherwise reject at validation. `profiles/default-v0.profile.json` therefore ships
+`"blendModes": []` — and so does `default-v1`, since nothing about that correctness question was
+settled by widening the type library — and `env/validate.ts` rejects any `blend` on a group. The
+schema keeps the field so a future profile can enable it without a format change.
 
 Group opacity is not supported at all, per the build document. The path to it, if it is ever wanted,
 is `brush.load(buffer)` with a WEBGL `p5.Graphics` (`src/core/target.js:131`), which the library does
@@ -339,6 +340,48 @@ run and then refuses to produce an answer at all. It is also the one case where 
 concurrency damage rather than certifying it, which is luck, not coverage: R7 fails only when the
 perturbation happens to differ between attempts, and R8's whole point is that often it does not.
 
+## R10. The print pass runs after the render is proven, never inside the proof
+
+`env/print.ts` is a CPU post-process over the finished RGBA buffer: seven stages (`threshold`,
+`posterize`, `halftone`, `grain`, `misregister`, `paper`, `generation`), declared as an ordered
+`print` array on the program, allow-listed by the profile and capped by `limits.maxPrintStages`.
+Where it sits in the pipeline is not a matter of taste, and the reasoning is copied here from
+`docs/substrate-test/proposed-primitives.md` because it is the one thing about this pass that must
+not be got wrong:
+
+> A threshold quantises small differences away. If the settle loop, or R7's repeat-until-agreement
+> loop, compared *printed* buffers, a genuinely nondeterministic render could converge because the
+> threshold flattened the difference — and the substrate would then certify as deterministic an
+> image that is not.
+
+That is R8's meta-lesson in one sentence: a self-consistency check cannot detect a shared-cause
+error, and a threshold is a machine for manufacturing shared-cause agreement. So the order in
+`cli/render.ts` is render, then hash, then print. `Renderer.render()` returns only once two whole
+renders agreed; `pixelHash(plate.rgba)` is taken at that moment; `runPrint` runs after. `batch.ts`,
+`golden.ts` and `src/aesthetic/measure.ts` all do the same thing in the same order, and nothing
+anywhere calls a print stage from inside a loop that is deciding whether a render is real.
+
+Three consequences worth stating, because they are not the obvious ones:
+
+- **`canonical.png` is the printed image.** `print` is declared in the program, covered by the
+  program hash and validated against the profile, so it is causal, not cosmetic, and it belongs on
+  the same side of the line as every other thing the program says. This is the opposite of
+  `env/present.ts`, whose `--grain` and `--misregister` are render *options*, are not hashed, and
+  only ever reach `display.png`. The two words now exist in both places on purpose, and which one is
+  meant is decided by whether it came from the program or from the command line.
+- **The trace carries a `plate` field**: the pre-print `pixelHash` plus one line per stage with its
+  wall clock. It is equal to `canonical.pixelHash` when a program declares no stages, and when a
+  program does declare them it is the only way to tell a changed render from a changed print. A
+  moved `canonical.pixelHash` with a steady `plate.pixelHash` is a print edit; both moving is a
+  render change.
+- **`--trace-masks` diffs plates, not prints.** A threshold turns "this leaf moved four pixels" into
+  either nothing at all or an entire region, so a printed mask measures the print and not the leaf.
+  `cli/render.ts` compares `plate.rgba` against each leaf-omitted render for that reason.
+
+Randomness for `grain`, `misregister`, `generation`'s dropout and speck comes from a `print` stream
+seeded by `deriveSeed(seed, "print/<index>", 0, "print", 0)` — the stage's index in the chain, never
+a node's `rngKey` — so adding, removing or reordering a print stage cannot move a single mark.
+
 ## O1. Operator/library mapping, and where the fixed constants are
 
 - Our `PaintStyle.kind: "wash"` uses `brush.fill` + `fillBleed` + `fillTexture`. It does **not** use
@@ -365,8 +408,11 @@ program actually uses are loaded, so an unused face cannot influence a render.
 `renderer/page.js` is an ES module and a `file://` document cannot load one (opaque origin, blocked by
 CORS), nor can it `fetch` a sibling font. Instead of bundling, `env/browser.ts` intercepts every
 request the page makes with `page.route()` and fulfils it from `medium/` on disk, under the origin
-`http://medium.invalid`. Only `vendor/`, `renderer/` and `fonts/` are served; nothing else can be
-reached and no request ever leaves the machine, so the render stays hermetic and works offline.
+`http://medium.invalid`. Only `vendor/`, `renderer/`, `fonts/` and `assets/fonts/` are served;
+nothing else can be reached and no request ever leaves the machine, so the render stays hermetic and
+works offline. The vendored type library was added to `SERVED_PREFIXES` rather than fetched from
+Google Fonts for exactly that reason: `assets/fonts/fetch.mjs` is the only thing in the repo that
+touches the network, it is a build-time tool, and it is never run at render time.
 
 ## O4. The `core` pack is derived from control polygons, not drawn vertex by vertex
 
@@ -390,6 +436,35 @@ consequences worth knowing:
 builds the sheet a row at a time — one small program and one render per fragment, pasted together in
 Node — because a single program holding 135 cells plus a caption per row would blow the profile's
 `maxTextOps` and resolved-node limits purely to be a contact sheet.
+
+`assets/packs/core-v1/author.mjs` follows the same rule from one step further back: it does **not**
+re-author a single shape. It reads `fragments` and `motifs` out of `assets/packs/core/pack.json` and
+`faces`/`licenses` out of `assets/fonts/manifest.json`, so there is exactly one definition of
+`figure.standing` in the repo and the two packs cannot drift. `core-v1@3a2f66a052c0` is therefore
+`core@003e484d9602`'s 15 fragments and 1 motif plus a 36-face `faces` map and a 31-entry `licenses`
+map, and the only reason its hash differs is the type. Each face carries the `sha256` of its file,
+which is what makes the pack hash cover the bytes the glyphs are drawn from and not merely their
+names; `env/browser.ts` re-checks that hash the first time a face is used in a process and refuses
+the render if the file on disk has moved.
+
+## O5. `angleMode(DEGREES)` is a trap for new transform code
+
+`renderer/page.js:116` calls `p.angleMode(p.DEGREES)`, so every p5 angle in this medium is in
+degrees. The first implementation of the text `rotate` and `skew` arguments converted degrees to
+radians before calling `p.rotate` / `p.shearX`, which turned a 9-degree rotation into 0.157 degrees.
+
+The failure mode is the reason this is written down. 0.157 degrees is not a *wrong* rotation, it is
+a rotation nobody can see — so the symptom was "the new argument does nothing at all", which is
+exactly what an argument that was never wired through the schema, the resolver and the op would look
+like. The natural first move is to check the plumbing, and the plumbing was fine, so the natural
+first move led away from the bug. `compositing.js:applyWorld` was the evidence that settled it: it
+had been passing group `transform.rotate` to `p.rotate` in degrees, unconverted, since V0.
+
+The trap is that the conversion is not simply wrong everywhere. `textAnchorTransform` in
+`resolve.js` bounds the same transform in Node with `Math.tan`, `Math.cos` and `Math.sin`, which do
+take radians, so the two files are correct in opposite ways over the same numbers. Anything new that
+computes a text or group bound in Node and then replays it in p5 has to convert on one side and not
+the other.
 
 ## Proposed operators and macros that were wanted but NOT added
 
@@ -454,6 +529,10 @@ canvas, which validates and renders happily. Worth knowing before blaming the ji
 
 ## E3. A space has zero advance width in the WEBGL text path, so tracked text loses its word gaps
 
+> **Fixed. See E7**, which measures the same thing properly and records the fix and the four goldens
+> it moved. What follows is the original entry, kept because the workaround it describes is still
+> written into `examples/batch` and explains why those strings look the way they do.
+
 `ops.js:drawTracked` steps `cx += p.textWidth(ch) + tracking` per character whenever `tracking` is
 non-zero. Measured: `p.textWidth(' ')` contributes nothing, so `"A SINGLE OPENING"` at `tracking: 2`
 renders as `A SINGLEOPENING` — the word gap collapses to one letter gap. At `tracking: 0` the branch
@@ -514,3 +593,57 @@ Three of them are the cheapest useful checks in the repo:
   `COVER_LAYERS = 6` as visible banding on the window's edge, which is the honest picture of what
   `softness` buys.
 - `v12` is the slow one (E4) and is the program to reach for when measuring wash throughput.
+
+## E7. `textWidth(' ')` returns exactly 0, and fixing that moved all four goldens
+
+E3 recorded that a space "contributes nothing" and left it, on the grounds that `renderer/` was not
+ours to edit. It is worth more than that. Measured in this vendored p5 2.2.0 under WEBGL and
+SwiftShader, with `anton` at size 40:
+
+| call | result |
+| --- | --- |
+| `textWidth(' ')` | 0 |
+| `textWidth('n')` | 17.20703125 |
+| `textWidth('nn')` | 37.1484375 |
+| `textWidth('n n')` | 46.5234375 |
+| `textWidth('helloworld')` | 168.18359375 |
+| `textWidth('hello world')` | 177.55859375 |
+
+A whitespace-only string is trimmed away to nothing before it is measured. A space *inside* a string
+is not: `'n n' - 'nn'` is 9.375 and `'hello world' - 'helloworld'` is 9.375, exactly, on two
+different strings of two different lengths. So the advance is measurable after all, and
+`ops.js:spaceWidth` now measures it as `textWidth('n n') - textWidth('nn')` and `advance()` hands it
+back for `' '`.
+
+What was wrong before the fix is larger than "tracked text looks odd". Every path that measures or
+draws one glyph at a time was silently deleting word spaces: all tracked text, all jittered text,
+and `lineWidth`, which is what `maxWidth` wraps on and what `align: center`/`right` offset from. So
+`SET AND SETTING` set itself as `SETANDSETTING`, and a wrapped paragraph measured far narrower than
+it drew and therefore did not break where it should have. This was present in V0 and is on disk in
+the committed golden `goldens/poster-less-is-more.png`, in the lines `ON SETTING TYPE` and
+`SET IN THE MEDIUM`.
+
+**A second-order observation that is not fixed and is not a bug.** `textWidth('nn')` is 37.148 while
+`textWidth('n')` is 17.207 — the second `n` adds 19.94, not 17.21 — so summing per-glyph advances
+does not reproduce p5's own whole-string layout, and cannot be made to. That is acceptable where
+tracking or jitter is deliberately re-spacing the glyphs anyway, which is the only case the
+per-glyph path exists for; `drawTracked` takes the whole-string `p.text()` path whenever there is
+neither. The consequence to remember is that the two paths are **not** interchangeable, so a line
+drawn one way and measured the other will not agree with itself.
+
+**Four goldens moved, and they were re-pinned deliberately.** All four examples set tracked text, so
+all four changed the instant word spacing came back:
+
+| example | before | after |
+| --- | --- | --- |
+| `event-picture` | `626df27b0945` | `dca4125bd3ec` |
+| `event-picture-edited` | `43ab77142371` | `7428a3c1efeb` |
+| `hill-feast` | `5e278e1c86ee` | `d06eb1f14840` |
+| `poster-less-is-more` | `61982d731298` | `aca457b2491c` |
+
+`docs/substrate-test/proposed-primitives.md` predicted that none of this work would force a golden
+rewrite, and was right about the part it was reasoning about: the examples name `default-v0`, so
+adding `default-v1` and `core-v1` left them alone. What it did not anticipate is that the same
+change set also touched `renderer/ops.js`, which every profile shares. A profile is versioned; the
+renderer is not. The old PNGs remain in git history, which is where a picture of the defect lives
+now.
