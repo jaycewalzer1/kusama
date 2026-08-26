@@ -382,6 +382,16 @@ Randomness for `grain`, `misregister`, `generation`'s dropout and speck comes fr
 seeded by `deriveSeed(seed, "print/<index>", 0, "print", 0)` — the stage's index in the chain, never
 a node's `rngKey` — so adding, removing or reordering a print stage cannot move a single mark.
 
+Say the other half of that plainly, because it is the one place the medium seeds from position and
+`renderer/rng.js` opens by forbidding exactly that ("not its path, not its parent, not its index
+among siblings"). The rule holds where it was written to hold — nodes — and the print pass is
+downstream of every mark, so no drawing depends on it. But **the stages are not reorderable the way
+nodes are**: inserting a stage at the front renumbers the ones behind it, and each gets different
+noise. Same picture, differently grained. The property bought by indexing is isolation — a stage's
+draw count cannot leak, so `grain` at `amount: 0` still consuming one draw per pixel perturbs
+nothing after it. An author-supplied opaque key per stage, matching `rngKey`, would buy both; it is
+not implemented, and the tests pin today's behaviour rather than the behaviour we might prefer.
+
 ## R11. Two of the four blend modes are accepted, ignored, and never mentioned again
 
 R3 refused group blend because "it changed the pixels" is not evidence of a correct composite. That
