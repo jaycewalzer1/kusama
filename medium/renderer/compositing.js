@@ -7,6 +7,22 @@
 import { matInvert, matApply, matScale } from './resolve.js';
 import { deriveSeed, makeRng } from './rng.js';
 
+/**
+ * Blend names the profile may allow, mapped to p5's constants lazily -- `p` is only available at
+ * draw time, and naming them as strings here keeps the profile, the schema and the renderer talking
+ * about the same words.
+ *
+ * These three and no others. p5 2.2.0's WEBGL `blendMode` accepts a shortlist and, for anything off
+ * it, does nothing at all -- OVERLAY and DIFFERENCE leave the previous mode in place and paint the
+ * source unchanged, with no warning for DIFFERENCE (NOTES R11). A mode that silently no-ops is worse
+ * than one that throws, so the profile may not name one.
+ */
+const BLEND_MODES = {
+  multiply: (p) => p.MULTIPLY,
+  screen: (p) => p.SCREEN,
+  exclusion: (p) => p.EXCLUSION,
+};
+
 /** Clear every piece of p5.brush state that an operator could have set. */
 export function resetBrushState(p, brush) {
   brush.noFill();
@@ -61,6 +77,10 @@ export function makeStreams(p, masterSeed, node) {
 export function withLeaf(p, brush, node, masterSeed, fn) {
   p.push();
   resetBrushState(p, brush);
+  // After the reset, never before it: resetBrushState sets BLEND, so a blend applied earlier would
+  // be wiped. The leaf carries the blend down from the nearest enclosing group (resolve.js), which
+  // is the only way to express it -- the tree is flattened and there is no group left to draw into.
+  if (node.blend && node.blend !== 'normal') p.blendMode(BLEND_MODES[node.blend](p));
   applyWorld(p, node.world);
   const stream = makeStreams(p, masterSeed, node);
   // Every leaf starts from the same default stream so an operator that uses no randomness still

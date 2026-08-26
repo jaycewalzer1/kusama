@@ -536,7 +536,12 @@ export function resolveProgram(program, pack, limits = {}) {
         note: node.note,
         expandedFrom: ctx.expandedFrom,
       });
-      const child = { ...ctx, world, clip, depth: ctx.depth + 1 };
+      // Blend is carried down to the leaves rather than applied to the group, because there is no
+      // group to apply it to: the tree is flattened to a list of leaves and every leaf is drawn
+      // straight onto the one canvas. The nearest enclosing `blend` wins, so a group inside a
+      // multiply group can opt back out with `blend: "normal"`.
+      const blend = node.blend ?? ctx.blend;
+      const child = { ...ctx, world, clip, blend, depth: ctx.depth + 1 };
       for (const c of node.children ?? []) walk(c, child);
       return;
     }
@@ -636,6 +641,7 @@ export function resolveProgram(program, pack, limits = {}) {
       instance,
       seed: nodeSeed(program.seed, node.rngKey, instance, seedOffset),
       clip: ctx.clip ? ctx.clip.map(([x, y]) => [round4(x), round4(y)]) : null,
+      blend: ctx.blend ?? null,
       decisions: node.decisions ?? [],
       label: node.label,
       note: node.note,
@@ -651,6 +657,7 @@ export function resolveProgram(program, pack, limits = {}) {
   walk(program.root, {
     world: IDENTITY,
     clip: null,
+    blend: undefined,
     depth: 0,
     instancePath: [],
     repeatNesting: 0,

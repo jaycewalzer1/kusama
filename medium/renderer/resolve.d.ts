@@ -28,6 +28,8 @@ export interface ResolvedLeaf {
   instance: number;
   seed: number;
   clip: Point[] | null;
+  /** From the nearest enclosing group that named one; null if no ancestor did. */
+  blend: string | null;
   decisions: string[];
   label?: string;
   note?: string;

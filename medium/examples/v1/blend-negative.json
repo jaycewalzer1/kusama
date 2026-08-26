@@ -1,0 +1,164 @@
+{
+  "version": "0.2",
+  "profile": "default-v1",
+  "assetPack": "core-v1",
+  "canvas": { "width": 520, "height": 700, "ground": "#111014", "brushScale": 1.5 },
+  "seed": 5583,
+  "palette": { "bone": "#e8e4d8", "acid": "#9ee83c", "blood": "#8c1410", "ash": "#4a4a52" },
+  "meta": {
+    "note": "Author two on group blend: light on a dark sheet. `screen` makes marks add up towards white the way exposure does, and `exclusion` inverts whatever it lands on, so the same shard reads as a hole in one place and a highlight in another. Nested `blend: normal` is used once, to prove a subtree can opt back out."
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "ground-hatch",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "ground-hatch",
+        "args": {
+          "region": { "type": "rect", "x": 0, "y": 0, "w": 520, "h": 700 },
+          "style": { "kind": "hatch", "brush": "2H", "color": "ash", "spacing": 11, "angle": 76, "rand": 0.3, "layers": 1 }
+        }
+      },
+      {
+        "id": "exposure",
+        "type": "group",
+        "blend": "screen",
+        "note": "Light adds. Where two beams cross, the sheet goes to paper-white without any colour saying so.",
+        "children": [
+          {
+            "id": "beam-a",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "beam-a",
+            "args": {
+              "name": "light.beam",
+              "x": 180,
+              "y": 230,
+              "span": 420,
+              "rotate": -24,
+              "style": { "kind": "solid", "color": "bone", "opacity": 190 }
+            }
+          },
+          {
+            "id": "beam-b",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "beam-b",
+            "args": {
+              "name": "light.beam",
+              "x": 330,
+              "y": 250,
+              "span": 380,
+              "rotate": 31,
+              "style": { "kind": "solid", "color": "acid", "opacity": 190 }
+            }
+          },
+          {
+            "id": "flare",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "flare",
+            "args": {
+              "region": { "type": "circle", "cx": 260, "cy": 250, "r": 70 },
+              "style": { "kind": "hatch", "brush": "spray", "color": "bone", "spacing": 3, "angle": 0, "rand": 0.6, "layers": 2 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "inversion",
+        "type": "group",
+        "blend": "exclusion",
+        "note": "The same shard twice. Over the dark sheet it comes up bright; where it crosses the exposed area it comes up dark. Nothing about the shard changed.",
+        "children": [
+          {
+            "id": "shard-a",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "shard-a",
+            "args": {
+              "name": "debris.shard",
+              "x": 150,
+              "y": 300,
+              "span": 300,
+              "rotate": 8,
+              "tear": { "roughness": 0.5, "segment": 9 },
+              "style": { "kind": "solid", "color": "blood", "opacity": 255 }
+            }
+          },
+          {
+            "id": "shard-b",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "shard-b",
+            "args": {
+              "name": "debris.shard",
+              "x": 360,
+              "y": 380,
+              "span": 300,
+              "rotate": -14,
+              "tear": { "roughness": 0.5, "segment": 9 },
+              "style": { "kind": "solid", "color": "blood", "opacity": 255 }
+            }
+          },
+          {
+            "id": "opted-out",
+            "type": "group",
+            "blend": "normal",
+            "note": "Inside an exclusion group and unaffected by it: the nearest enclosing blend wins.",
+            "children": [
+              {
+                "id": "bar",
+                "type": "op",
+                "op": "paint",
+                "rngKey": "bar",
+                "args": {
+                  "region": { "type": "rect", "x": 40, "y": 452, "w": 440, "h": 22 },
+                  "style": { "kind": "solid", "color": "acid", "opacity": 255 }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "title",
+        "type": "op",
+        "op": "text",
+        "rngKey": "title",
+        "args": {
+          "x": 40,
+          "y": 560,
+          "size": 58,
+          "text": "negative",
+          "font": "six-caps",
+          "color": "bone",
+          "align": "left",
+          "tracking": 6,
+          "case": "upper"
+        }
+      },
+      {
+        "id": "sub",
+        "type": "op",
+        "op": "text",
+        "rngKey": "sub",
+        "args": {
+          "x": 40,
+          "y": 600,
+          "size": 14,
+          "text": "screen is exposure and exclusion is inversion. the acid bar sits inside the inverting group and is not inverted, because it says normal.",
+          "font": "share-tech-mono",
+          "color": "bone",
+          "align": "left",
+          "maxWidth": 420,
+          "leading": 1.5
+        }
+      }
+    ]
+  },
+  "print": [{ "stage": "grain", "amount": 0.1 }]
+}

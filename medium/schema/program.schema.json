@@ -275,8 +275,9 @@
         "transform": { "$ref": "#/$defs/transform" },
         "clip": { "$ref": "#/$defs/clip" },
         "blend": {
-          "description": "Only values the profile allows, which is none in V0 (NOTES R3).",
-          "type": "string"
+          "description": "How this subtree's marks composite onto what is already down. Carried to the leaves, so it is per mark rather than per layer: two overlapping stamps of one hatch multiply with each other as well as with the ink beneath, which is what overprinting ink does (NOTES R11). The nearest enclosing group wins, and `normal` opts back out. Only values the profile allows, which is none in V0 (NOTES R3). `overlay` and `difference` are absent on purpose: p5's WEBGL path silently ignores them.",
+          "type": "string",
+          "enum": ["normal", "multiply", "screen", "exclusion"]
         },
         "children": { "type": "array", "items": { "$ref": "#/$defs/node" } },
         "label": { "$ref": "#/$defs/label" },

@@ -1,0 +1,127 @@
+{
+  "version": "0.2",
+  "profile": "default-v1",
+  "assetPack": "core-v1",
+  "canvas": { "width": 520, "height": 700, "ground": "#f2ede0", "brushScale": 1.5 },
+  "seed": 41127,
+  "palette": { "ink": "#141210", "red": "#d8342a", "cyan": "#1f8fa8", "yellow": "#e8b820" },
+  "meta": {
+    "note": "Author one on group blend: two-colour riso. Every ink is a flat opaque hatch and the overlaps are made by multiply, so the third and fourth colours on the sheet were never named in the palette. Under default-v0 the only way to get an overlap colour was to name it."
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "yellow-plate",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "yellow-plate",
+        "args": {
+          "region": { "type": "rect", "x": 40, "y": 60, "w": 300, "h": 300 },
+          "style": { "kind": "hatch", "brush": "marker", "color": "yellow", "spacing": 4, "angle": 0, "rand": 0.1, "layers": 2 }
+        }
+      },
+      {
+        "id": "cyan-plate",
+        "type": "group",
+        "blend": "multiply",
+        "note": "Registered deliberately off the yellow. The green in the overlap is the whole point: it is not in the palette.",
+        "children": [
+          {
+            "id": "cyan-field",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "cyan-field",
+            "args": {
+              "region": { "type": "rect", "x": 180, "y": 140, "w": 300, "h": 300 },
+              "style": { "kind": "hatch", "brush": "marker", "color": "cyan", "spacing": 4, "angle": 90, "rand": 0.1, "layers": 2 }
+            }
+          },
+          {
+            "id": "cyan-disc",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "cyan-disc",
+            "args": {
+              "region": { "type": "circle", "cx": 150, "cy": 400, "r": 90 },
+              "style": { "kind": "solid", "color": "cyan", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "red-plate",
+        "type": "group",
+        "blend": "multiply",
+        "children": [
+          {
+            "id": "red-band",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "red-band",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 300, "w": 520, "h": 90 },
+              "style": { "kind": "solid", "color": "red", "opacity": 255 }
+            }
+          },
+          {
+            "id": "figure",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "figure",
+            "args": {
+              "name": "figure.standing",
+              "x": 330,
+              "y": 300,
+              "span": 230,
+              "rotate": 0,
+              "style": { "kind": "solid", "color": "red", "opacity": 255 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "rule-1",
+        "type": "op",
+        "op": "rule",
+        "rngKey": "rule-1",
+        "args": { "from": [40, 500], "to": [480, 500], "brush": "marker", "color": "ink", "weight": 4 }
+      },
+      {
+        "id": "title",
+        "type": "op",
+        "op": "text",
+        "rngKey": "title",
+        "args": {
+          "x": 40,
+          "y": 560,
+          "size": 62,
+          "text": "overprint",
+          "font": "archivo-black",
+          "color": "ink",
+          "align": "left",
+          "tracking": -1,
+          "case": "upper"
+        }
+      },
+      {
+        "id": "sub",
+        "type": "op",
+        "op": "text",
+        "rngKey": "sub",
+        "args": {
+          "x": 40,
+          "y": 600,
+          "size": 14,
+          "text": "three inks, six colours. the ones that were not named are the ones where the plates overlap.",
+          "font": "ibm-plex-mono",
+          "color": "ink",
+          "align": "left",
+          "maxWidth": 420,
+          "leading": 1.5
+        }
+      }
+    ]
+  }
+}

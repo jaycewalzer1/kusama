@@ -240,13 +240,13 @@ its own colour mixing through a blend-source framebuffer and a custom shader
 (`src/core/color.js`, `src/stroke/shader.frag`), so "it changed the pixels" is not evidence that it
 composited *correctly*. The build document says to support group blend only if correctness can be
 verified, otherwise reject at validation. `profiles/default-v0.profile.json` therefore ships
-`"blendModes": []` — and so does `default-v1`, since nothing about that correctness question was
-settled by widening the type library — and `env/validate.ts` rejects any `blend` on a group. The
-schema keeps the field so a future profile can enable it without a format change.
+`"blendModes": []` and `env/validate.ts` rejects any `blend` on a group. The schema keeps the field
+so a future profile can enable it without a format change.
 
-Group opacity is not supported at all, per the build document. The path to it, if it is ever wanted,
-is `brush.load(buffer)` with a WEBGL `p5.Graphics` (`src/core/target.js:131`), which the library does
-support; the offscreen probe rendered correctly. It is not built.
+**Since settled: see R11.** The correctness question turned out to be answerable arithmetically, and
+`default-v1` ships three modes. `default-v0` still ships `"blendModes": []` and still hashes to
+`15ad87c16095`. Group *opacity* is still not supported and was still not built; the reasoning and the
+measurement are in R11 and in `docs/substrate-test/proposed-primitives.md`.
 
 ## R5. Pages are never recycled
 
@@ -381,6 +381,61 @@ Three consequences worth stating, because they are not the obvious ones:
 Randomness for `grain`, `misregister`, `generation`'s dropout and speck comes from a `print` stream
 seeded by `deriveSeed(seed, "print/<index>", 0, "print", 0)` — the stage's index in the chain, never
 a node's `rngKey` — so adding, removing or reordering a print stage cannot move a single mark.
+
+## R11. Two of the four blend modes are accepted, ignored, and never mentioned again
+
+R3 refused group blend because "it changed the pixels" is not evidence of a correct composite. That
+was the right refusal and the wrong stopping point: correctness here is arithmetic, and arithmetic
+can be checked. Paint a base of exactly `#404040` and a source of exactly `#c02418` over it, one
+blend mode per column, and every mode predicts a different triple. A mode that is silently doing
+nothing predicts the source unchanged, which is a prediction like any other.
+
+| mode | expected | measured | |
+| --- | --- | --- | --- |
+| `multiply` | 48,9,6 | 48,9,6 | exact |
+| `screen` | 208,91,82 | 208,91,82 | exact |
+| `exclusion` | 160,82,76 | 160,82,76 | exact |
+| `overlay` | 96,18,12 | **192,36,24** | source unchanged |
+| `difference` | 128,28,40 | **192,36,24** | source unchanged |
+
+Three are exact to the last bit. The other two are not wrong, they are *absent*: p5 2.2.0's WEBGL
+`blendMode` matches the argument against a shortlist and, for anything off it, leaves the previous
+mode in place. `OVERLAY` at least prints a console warning — "BURN, OVERLAY, HARD_LIGHT, SOFT_LIGHT,
+and DODGE only work for blend mode in P2D" — but `DIFFERENCE` is in neither the accepted list nor the
+warned list, so it falls through both branches and says nothing at all. A blend mode that is accepted
+by the API, ignored by the renderer, and silent about it is the same failure shape as the variable
+fonts in O6: the call succeeds, the effect never happens, and no gate that checks agreement can see
+it. Both were caught by predicting a number and comparing, which is the only kind of check that can.
+
+So `overlay` and `difference` are refused by `schema/program.schema.json`, one layer *below* the
+profile, and stay refused even for a profile that names them. Whether a mode is allowed is policy and
+belongs to the profile; whether a mode exists is not, and no profile should be able to promise a
+composite the renderer never performs. `default-v1` ships `multiply`, `screen`, `exclusion`, and
+`normal` — which is the opt-out, not a mode, and never reaches `blendMode` at all.
+
+**Blend is per mark, not per layer.** There is no group at draw time: the tree is flattened to a list
+of leaves and each is drawn straight onto the one canvas, so `blend` is carried down `ctx` exactly
+like `clip` and applied in `withLeaf` *after* `resetBrushState`, which sets `BLEND` and would
+otherwise wipe it. The consequence is visible and worth stating. Rendering a red hatch alone, a blue
+hatch alone, and then both with the blue multiplying, 91.9% of channels land exactly on
+`multiply(red, blue)` and the worst disagreement is 20/255 — all of it where two stamps of the *same*
+hatch overlap. R3's mechanism was real: p5.brush mixes its own marks in its own framebuffer, so
+under `MULTIPLY` a brush's overlapping stamps multiply with each other as well as with the ink
+beneath. A layer-based compositor would flatten the hatch first and multiply once. This one does not,
+and that is the better answer for what it is for — a second pass of real ink darkens where it crosses
+itself too. It is not Photoshop's multiply and the note exists so nobody expects it to be.
+
+Determinism was never actually the risk, and R1 did not bite: six v1 examples, two of them changing
+blend mid-tree and one of them nesting `blend: "normal"` inside `blend: "exclusion"` to opt back out,
+came back byte-identical across two independent Node processes. No restriction to top-level groups
+was needed.
+
+Group **opacity** is still not built. It cannot ride on `blendMode` — it needs the subtree composited
+offscreen first, which means `brush.load(buffer)` against a WEBGL `p5.Graphics` (`src/core/target.js:131`),
+a second brush target, and a decision about what a clip means across a buffer boundary. That is a
+larger change than the rest of blend put together, and the leaf-level `opacity` on every style
+already covers most of what it would be reached for. It is written up in
+`docs/substrate-test/proposed-primitives.md` instead of half-built here.
 
 ## O1. Operator/library mapping, and where the fixed constants are
 

@@ -144,6 +144,47 @@ test('a polygon clip actually clips, and nested clips intersect', () => {
   assert.deepEqual([Math.min(...ys), Math.max(...ys)], [100, 200]);
 });
 
+test('group blend is gated by the profile and reaches the leaves, nearest group winning', () => {
+  const blended = (blend: string, children: Record<string, unknown>[]) => {
+    const g = group(`g-${blend}`, children);
+    g['blend'] = blend;
+    return g;
+  };
+
+  // V0 allows none, and says so rather than drawing something that looks composited (NOTES R3).
+  assert.deepEqual(codes(program([blended('multiply', [hatchNode('h1', 0, 0)])])), ['blend.notAllowed']);
+
+  // The three p5's WEBGL path actually honours.
+  const wide = { ...PROFILE, blendModes: ['normal', 'multiply', 'screen', 'exclusion', 'overlay', 'difference'] };
+  const check = (blend: string) =>
+    validateProgram(program([blended(blend, [hatchNode('h1', 0, 0)])]), wide, EMPTY_PACK).issues.map((i) => i.code);
+  for (const ok of ['normal', 'multiply', 'screen', 'exclusion']) assert.deepEqual(check(ok), [], ok);
+
+  // `overlay` and `difference` are refused one layer lower, by the schema, and so stay refused even
+  // for a profile that names them -- which the profile above deliberately does. p5 2.2.0 accepts
+  // both, ignores both, and paints the source unchanged (NOTES R11). Whether a mode is *allowed* is
+  // policy and belongs to the profile; whether a mode *exists* is not, and no profile should be able
+  // to promise a composite the renderer never performs.
+  for (const no of ['overlay', 'difference']) {
+    assert.deepEqual([...new Set(check(no))], ['schema.program'], no);
+  }
+
+  // There is no group at draw time -- the tree is flattened to leaves and each is drawn onto the one
+  // canvas -- so blend has to arrive on the leaf. The nearest enclosing group wins, which is what
+  // lets a subtree opt back out with `normal`.
+  const resolved = resolve(
+    program([
+      hatchNode('plain', 0, 0),
+      blended('multiply', [
+        hatchNode('under-multiply', 10, 10),
+        blended('normal', [hatchNode('opted-out', 20, 20)]),
+      ]),
+    ])
+  );
+  const blendOf = Object.fromEntries(resolved.nodes.map((n) => [n.id, n.blend]));
+  assert.deepEqual(blendOf, { plain: null, 'under-multiply': 'multiply', 'opted-out': 'normal' });
+});
+
 test('a torn fragment edge is gated, budgeted, and the same tear every time', () => {
   const torn = (tear: Record<string, number>) => ({
     id: 'f1', type: 'op', op: 'fragment', rngKey: 'key-f1',

@@ -232,3 +232,65 @@ undone, because a nondeterministic mask would cost more than every trait it unbl
 `program.schema.json` gains `stencil` on `group` alongside `clip`. Same hash consequence as
 Spec 1 — **`default-v0@15ad87c16095` → `default-v1@<new>`**, `default-v0` left on disk untouched so
 the four committed goldens keep passing unchanged.
+
+---
+
+## Spec (not built): group `opacity`
+
+Written up rather than shipped, 2026-08-26, alongside group `blend`. Blend landed in `default-v1`
+(`multiply`, `screen`, `exclusion` — NOTES R11). Opacity did not, and this records why and what was
+measured, so the next person does not have to find it out again.
+
+### What was asked for
+
+`group` gains `opacity`, so a whole subtree can be laid down at less than full strength — a ghosted
+under-layer, a second impression that did not take, a photocopy of a photocopy sitting behind the
+sharp copy.
+
+### Why it did not ride along with `blend`
+
+Because `blend` turned out not to need a group and `opacity` does. There is no group at draw time:
+`resolve.js` flattens the tree to a list of leaves and `page.js` draws each one straight onto the one
+canvas. `blend` therefore reduces to a per-leaf `p.blendMode()` call, carried down `ctx` exactly like
+`clip` — about fifteen lines. `opacity` does not reduce that way. Fading each leaf to 60%
+individually is not the same picture as fading the composited subtree to 60%: wherever two leaves in
+the group overlap, the first is twice-attenuated. The difference is not subtle and it is largest
+exactly where a group is doing something worth grouping.
+
+Doing it properly means compositing the subtree offscreen and drawing the result once. p5.brush
+supports that — `brush.load(buffer)` against a WEBGL `p5.Graphics` (`src/core/target.js:131`), and
+R3 records that the offscreen probe rendered correctly. But it drags in:
+
+- a second brush target, which means `resetBrushState` and the leaf-isolation contract in
+  `compositing.js` now have to be correct across a target switch as well as across a leaf;
+- a decision about what a `clip` means across a buffer boundary, since our clip is geometric and
+  computed in world coordinates (NOTES L1) and the buffer has its own origin;
+- interaction with `blend`, because a group that is both blended and faded has to composite first
+  and blend second, which is the one ordering the current per-leaf design cannot express;
+- the whole of the framebuffer determinism risk already itemised for `stencil` above — R6, R1, R8 —
+  on a path that has never been measured under SwiftShader.
+
+### What is already there instead
+
+Every style carries `opacity` at the leaf, and it is honoured. `examples/v1/blend-negative.json` uses
+`opacity: 190` on two `light.beam` fragments inside a `screen` group and gets exactly the ghosted
+second-impression reading the feature was wanted for. For a subtree with no self-overlap — which is
+most of them — per-leaf opacity *is* group opacity. The gap is real but it is narrower than it looks.
+
+### If it is built
+
+The gate is the one written for `stencil` above, unchanged and for the same three reasons: 50
+programs including faded groups, two independent OS processes, zero differing hashes; the settle
+loop's iteration count recorded and compared against unfaded programs, because a composite that is
+nondeterministic and merely slow to converge would otherwise be hidden by the loop rather than caught
+by it; and a structure-only comparison against a real GPU. Plus one more that is specific to this
+feature: a numerical check, in the manner of R11 — a group of two known overlapping solids at a known
+opacity has one right answer per channel, and if the implementation cannot hit it exactly then it is
+not compositing, it is just dimming.
+
+### Profile change, when it happens
+
+`limits.maxOpacityGroups` alongside `maxStencilGroups`; `opacity` on `group` in
+`program.schema.json`; `ranges.opacity` and `quantize.opacity` already exist and already mean the
+same thing, so no new field name is needed. Hash consequence: `default-v1` moves, `default-v0`
+untouched.

@@ -84,7 +84,12 @@
     "spray",
     "marker"
   ],
-  "blendModes": [],
+  "blendModes": [
+    "normal",
+    "multiply",
+    "screen",
+    "exclusion"
+  ],
   "assetPacks": [
     "core-v1"
   ],

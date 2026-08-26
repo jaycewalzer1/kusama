@@ -38,7 +38,7 @@ The pinned configuration is:
 | antialiasing | off — the page calls `setAttributes('antialias', false)` and `pixelDensity(1)` |
 | fonts | `fonts/grotesque.ttf` (PT Sans) `9cc83149…6d0f10a`, `fonts/serif.ttf` (PT Serif) `a4951fad…a2557a`, plus the 34 faces vendored under `assets/fonts/`, each hashed in the pack |
 | asset pack | content-hashed; `core@003e484d9602` (15 fragments, 1 motif) or `core-v1@dd47bb1c2e34` (the same shapes plus 36 faces) |
-| profile | content-hashed; `default-v0@15ad87c16095` or `default-v1@05b532015232` |
+| profile | content-hashed; `default-v0@15ad87c16095` or `default-v1@2bb06aaaf316` |
 | OS / arch | the same one; recorded per render as e.g. `darwin` / `arm64` |
 
 Every one of those, plus the Node version and the GL renderer string, is written into `trace.json`
@@ -136,9 +136,8 @@ that omits one is refused, rather than rendered against whatever happened to be 
 
 `root` is a tree of four node types:
 
-- **`group`** — children, plus an optional `transform` (translate, then rotate, then scale) and an
-  optional rect `clip`. `blend` exists in the schema but both shipped profiles allow no blend modes,
-  so it is rejected (NOTES R3).
+- **`group`** — children, plus an optional `transform` (translate, then rotate, then scale), an
+  optional `clip` and an optional `blend`.
 - **`repeat`** — a subtree instanced `count` times over a `grid`, `line`, `ring` or `scatter` layout,
   with optional `jitter` on translate/rotate/scale.
 - **`macro`** — one of 3: `frame` (corners / full / dots border), `motif` (a named multi-part shape
@@ -202,6 +201,29 @@ never moves is a corner the eye reads as a cut.
 The cost is the outline's perimeter over `segment`, which is not a number anyone typed, so the
 validator computes the resampled vertex count in Node and refuses it against `limits.maxTearPoints`.
 A profile without that limit refuses `tear` outright.
+
+### Blend
+
+A group's `blend` is one of `normal`, `multiply`, `screen`, `exclusion`, subject to the profile's
+`blendModes` list. `default-v0` allows none. The nearest enclosing group wins, so a subtree can opt
+back out with `blend: "normal"`.
+
+Two things about it are not what a layer-based tool would lead you to expect.
+
+- **It is per mark, not per layer.** There is no group at draw time — the tree is flattened to leaves
+  and each is drawn onto the one canvas — so under `multiply` a brush's own overlapping stamps
+  multiply with each other as well as with the ink beneath. Measured against a flat-layer multiply,
+  91.9% of channels agree exactly and the rest disagree by up to 20/255, all of it in
+  stamp-on-stamp overlap. That is what a second pass of real ink does, so it was kept; NOTES R11 says
+  so out loud in case anyone expects Photoshop.
+- **`overlay` and `difference` do not exist**, and the schema refuses them even to a profile that
+  names them. p5 2.2.0's WEBGL `blendMode` accepts both, ignores both, and paints the source
+  unchanged — `DIFFERENCE` without even a console warning. Whether a mode is allowed is policy and
+  belongs to the profile; whether a mode exists is not.
+
+Group *opacity* is not supported. It cannot ride on `blendMode` — fading each leaf is not fading the
+composited subtree — and the leaf-level `opacity` on every style covers most of what it is reached
+for. The full write-up is in `docs/substrate-test/proposed-primitives.md`.
 
 ## Type
 
@@ -337,7 +359,7 @@ Two are shipped, and a program says which it means:
 | profile | pack | what it is |
 | --- | --- | --- |
 | `default-v0@15ad87c16095` | `core@003e484d9602` | V0 unchanged: 2 faces, no print pass. The four committed goldens are rendered against it. |
-| `default-v1@05b532015232` | `core-v1@dd47bb1c2e34` | v0 widened: 36 faces, the `print` allow-list, `clipShapes: ["rect","circle","polygon"]`, `limits.maxPrintStages: 6`, `limits.maxTearPoints: 600`, and ranges and quantize steps for the new text, print and tear fields. |
+| `default-v1@2bb06aaaf316` | `core-v1@dd47bb1c2e34` | v0 widened: 36 faces, the `print` allow-list, `clipShapes: ["rect","circle","polygon"]`, `limits.maxPrintStages: 6`, `limits.maxTearPoints: 600`, `blendModes: ["normal","multiply","screen","exclusion"]`, and ranges and quantize steps for the new text, print and tear fields. |
 
 Three of those are absences in v0 rather than negations: `print`, `clipShapes` and
 `limits.maxTearPoints` are all keys `default-v0.profile.json` does not have, and the validator reads
