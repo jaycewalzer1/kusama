@@ -1,0 +1,121 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 19207,
+  "canvas": {
+    "width": 800,
+    "height": 1200,
+    "ground": "#f2e8d4",
+    "brushScale": 1.25
+  },
+  "palette": {
+    "ink": "#2b241f",
+    "plum": "#6d3b52",
+    "ochre": "#d19a3c",
+    "grass": "#7c9048",
+    "cloth": "#f2e8d4",
+    "rust": "#a8452f"
+  },
+  "meta": {
+    "title": "One plate",
+    "reads_as": "a single large flower centred on a washed plate inside a ring of dots"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "plate",
+        "type": "op",
+        "op": "wash",
+        "rngKey": "plate/plate",
+        "args": {
+          "region": {
+            "type": "circle",
+            "cx": 400,
+            "cy": 560,
+            "r": 300
+          },
+          "style": {
+            "kind": "wash",
+            "color": "ochre",
+            "opacity": 120,
+            "bleed": 0.3,
+            "texture": [
+              0.5,
+              0.4
+            ]
+          }
+        }
+      },
+      {
+        "id": "bloom",
+        "type": "macro",
+        "macro": "motif",
+        "rngKey": "plate/bloom",
+        "args": {
+          "name": "hibiscus",
+          "x": 400,
+          "y": 560,
+          "size": 300,
+          "color": "plum"
+        }
+      },
+      {
+        "id": "dots",
+        "type": "macro",
+        "macro": "frame",
+        "rngKey": "plate/dots",
+        "args": {
+          "x": 90,
+          "y": 250,
+          "w": 620,
+          "h": 620,
+          "style": "dots",
+          "brush": "rotring",
+          "color": "ink",
+          "weight": 1,
+          "count": 44,
+          "dotRadius": 5,
+          "opacity": 235
+        }
+      },
+      {
+        "id": "rule",
+        "type": "op",
+        "op": "rule",
+        "rngKey": "plate/rule",
+        "args": {
+          "from": [
+            200,
+            990
+          ],
+          "to": [
+            600,
+            990
+          ],
+          "brush": "rotring",
+          "color": "ink",
+          "weight": 1
+        }
+      },
+      {
+        "id": "cap",
+        "type": "op",
+        "op": "text",
+        "rngKey": "plate/cap",
+        "args": {
+          "text": "HIBISCUS   ROSA-SINENSIS",
+          "font": "serif",
+          "size": 19,
+          "x": 400,
+          "y": 1036,
+          "align": "center",
+          "color": "ink",
+          "tracking": 2
+        }
+      }
+    ]
+  }
+}

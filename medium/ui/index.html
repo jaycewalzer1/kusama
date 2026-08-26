@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>medium preview</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+        background: #1b1b1b;
+        color: #ddd;
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        height: 100vh;
+      }
+      aside {
+        border-right: 1px solid #333;
+        padding: 16px;
+        overflow-y: auto;
+      }
+      main {
+        overflow: auto;
+        display: grid;
+        place-items: center;
+        background: #111;
+      }
+      h1 {
+        font-size: 13px;
+        margin: 0 0 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #999;
+      }
+      select,
+      button,
+      input {
+        width: 100%;
+        font: inherit;
+        padding: 6px 8px;
+        background: #262626;
+        color: #ddd;
+        border: 1px solid #3a3a3a;
+        border-radius: 3px;
+        box-sizing: border-box;
+      }
+      input {
+        margin-top: 8px;
+      }
+      button {
+        margin-top: 8px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #303030;
+      }
+      button[disabled] {
+        opacity: 0.5;
+        cursor: default;
+      }
+      .warn {
+        margin: 16px 0;
+        padding: 10px 12px;
+        border-left: 3px solid #a8741a;
+        background: #241d10;
+        color: #d8b878;
+      }
+      dl {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 2px 10px;
+        margin: 16px 0 0;
+      }
+      dt {
+        color: #888;
+      }
+      dd {
+        margin: 0;
+        overflow-wrap: anywhere;
+      }
+      iframe {
+        border: 0;
+        background: #fff;
+        box-shadow: 0 4px 24px #0008;
+      }
+      #code {
+        display: none;
+        align-self: stretch;
+        justify-self: stretch;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 20px;
+        border: 0;
+        resize: none;
+        background: #111;
+        overflow: auto;
+        font: 12px/1.6 ui-monospace, monospace;
+        color: #cfcfcf;
+        tab-size: 2;
+      }
+      #code:focus {
+        outline: 0;
+      }
+      body.showing-code #code {
+        display: block;
+      }
+      body.showing-code iframe {
+        display: none;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .row button {
+        margin-top: 8px;
+      }
+      #status {
+        margin-top: 12px;
+        color: #888;
+      }
+      #status.error {
+        color: #e2725b;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <aside>
+      <h1>medium preview</h1>
+
+      <select id="pick"></select>
+      <div class="row">
+        <button id="go">Render</button>
+        <button id="toggle">Show code</button>
+      </div>
+      <div class="row">
+        <input id="name" placeholder="save as (lowercase-dashes)" />
+        <button id="save">Save</button>
+      </div>
+
+      <div class="warn">
+        Preview only. This draws in <em>your</em> browser on <em>your</em> GPU, so these pixels are
+        not the medium's pixels and will not match a golden. Determinism holds only for the pinned
+        Chromium under SwiftShader. For evidence, use <code>npm run render</code> or
+        <code>npm run golden -- --check</code>.
+      </div>
+
+      <div id="status">pick a program and press Render</div>
+      <dl id="facts"></dl>
+    </aside>
+
+    <main>
+      <iframe id="frame" width="0" height="0"></iframe>
+      <textarea id="code" spellcheck="false"></textarea>
+    </main>
+
+    <script type="module">
+      const pick = document.getElementById('pick');
+      const go = document.getElementById('go');
+      const frame = document.getElementById('frame');
+      const status = document.getElementById('status');
+      const facts = document.getElementById('facts');
+      const toggle = document.getElementById('toggle');
+      const code = document.getElementById('code');
+      const save = document.getElementById('save');
+      const name = document.getElementById('name');
+
+      for (const file of await (await fetch('/api/programs')).json()) {
+        pick.append(new Option(file, file));
+      }
+
+      // True when the editor holds something that is not on disk. Such a program can still be
+      // rendered -- through the draft -- but it is not one of the files `pick` offers, so choosing
+      // another program would throw it away, and `selected` is what we put back if you say no.
+      let dirty = false;
+      let selected = pick.value;
+
+      function setDirty(on) {
+        dirty = on;
+        save.disabled = !on;
+      }
+      setDirty(false);
+
+      const show = (rows) => {
+        facts.innerHTML = '';
+        for (const [k, v] of rows) {
+          const dt = document.createElement('dt');
+          dt.textContent = k;
+          const dd = document.createElement('dd');
+          dd.textContent = v;
+          facts.append(dt, dd);
+        }
+      };
+
+      async function render() {
+        go.disabled = true;
+        status.className = '';
+        facts.innerHTML = '';
+        // An edited program is sent up first and drawn as the draft, so Render always draws what
+        // is in front of you rather than the file it started from.
+        let file = pick.value;
+        if (dirty) {
+          await fetch('/api/draft', { method: 'POST', body: code.value });
+          file = 'draft';
+          status.textContent = 'rendering the editor...';
+        } else {
+          status.textContent = `rendering ${file}...`;
+        }
+        // A fresh frame every time: one render per page (NOTES R1).
+        frame.src = `/ui/frame.html?file=${encodeURIComponent(file)}&t=${Date.now()}`;
+      }
+
+      window.addEventListener('message', (e) => {
+        const m = e.data;
+        if (!m || !m.kind) return;
+        go.disabled = false;
+        if (m.kind === 'error') {
+          status.className = 'error';
+          status.textContent = m.message;
+          frame.width = 0;
+          frame.height = 0;
+          return;
+        }
+        frame.width = m.width;
+        frame.height = m.height;
+        status.className = '';
+        status.textContent = `drawn in ${m.elapsedMs} ms`;
+        show([
+          ['size', `${m.width}x${m.height}`],
+          ['nodes', m.nodes],
+          ['marks', `~${m.budget.marks}`],
+          ['cost', m.budget.cost],
+          ['draw', `${m.timings.drawMs} ms`],
+          ['settled', `${m.timings.settleFrames} frames`],
+          ['program', m.programHash.slice(0, 12)],
+          ['gl', m.gl.unmaskedRenderer ?? m.gl.renderer],
+        ]);
+      });
+
+      go.addEventListener('click', render);
+
+      function showEditor() {
+        document.body.classList.add('showing-code');
+        toggle.textContent = 'Show image';
+      }
+
+      // The program as it is on disk. Fetched fresh each time it is shown, so editing the file and
+      // pressing this again shows the edit without restarting the server -- but never over the top
+      // of unsaved work, which is what is already in the editor.
+      async function showCode() {
+        if (!dirty) {
+          const res = await fetch(`/api/source?file=${encodeURIComponent(pick.value)}`);
+          code.value = res.ok ? await res.text() : `could not read ${pick.value}`;
+        }
+        showEditor();
+      }
+
+      toggle.addEventListener('click', () => {
+        if (document.body.classList.contains('showing-code')) {
+          document.body.classList.remove('showing-code');
+          toggle.textContent = 'Show code';
+        } else {
+          showCode();
+        }
+      });
+
+      code.addEventListener('input', () => setDirty(true));
+
+      save.addEventListener('click', async () => {
+        const res = await fetch(`/api/save?name=${encodeURIComponent(name.value)}`, {
+          method: 'POST',
+          body: code.value,
+        });
+        const data = await res.json();
+        if (data.error) {
+          status.className = 'error';
+          status.textContent = data.error;
+          return;
+        }
+        if (![...pick.options].some((o) => o.value === data.file)) pick.append(new Option(data.file, data.file));
+        pick.value = data.file;
+        selected = data.file;
+        setDirty(false);
+        status.className = '';
+        status.textContent = `saved ${data.file} -- render it for real with: npm run render -- ${data.file}`;
+      });
+
+      // Picking a different program while the code is up should show that program's code. Doing it
+      // with unsaved work in the editor would lose it, so that is asked about rather than assumed.
+      pick.addEventListener('change', () => {
+        if (dirty && !confirm('Discard the unsaved program in the editor?')) {
+          pick.value = selected;
+          return;
+        }
+        selected = pick.value;
+        setDirty(false);
+        if (document.body.classList.contains('showing-code')) showCode();
+      });
+    </script>
+  </body>
+</html>

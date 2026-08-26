@@ -1,0 +1,393 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 18119,
+  "canvas": {
+    "width": 800,
+    "height": 1200,
+    "ground": "#f6f1e4",
+    "brushScale": 1
+  },
+  "palette": {
+    "ink": "#2e211a",
+    "terracotta": "#b45f3c",
+    "sand": "#dcbb8a",
+    "olive": "#7b7a44",
+    "chalk": "#f6f1e4"
+  },
+  "meta": {
+    "title": "On the bias",
+    "reads_as": "nine flat diagonal stripes with one word cleared out of the middle of them"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "bias",
+        "type": "group",
+        "children": [
+          {
+            "id": "stripe-0",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "stripes/stripe-0",
+            "args": {
+              "region": {
+                "type": "polygon",
+                "points": [
+                  [
+                    -200,
+                    0
+                  ],
+                  [
+                    -110,
+                    0
+                  ],
+                  [
+                    290,
+                    1200
+                  ],
+                  [
+                    200,
+                    1200
+                  ]
+                ]
+              },
+              "style": {
+                "kind": "solid",
+                "color": "terracotta",
+                "opacity": 215
+              }
+            }
+          },
+          {
+            "id": "stripe-1",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "stripes/stripe-1",
+            "args": {
+              "region": {
+                "type": "polygon",
+                "points": [
+                  [
+                    -50,
+                    0
+                  ],
+                  [
+                    40,
+                    0
+                  ],
+                  [
+                    440,
+                    1200
+                  ],
+                  [
+                    350,
+                    1200
+                  ]
+                ]
+              },
+              "style": {
+                "kind": "solid",
+                "color": "olive",
+                "opacity": 190
+              }
+            }
+          },
+          {
+            "id": "stripe-2",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "stripes/stripe-2",
+            "args": {
+              "region": {
+                "type": "polygon",
+                "points": [
+                  [
+                    100,
+                    0
+                  ],
+                  [
+                    190,
+                    0
+                  ],
+                  [
+                    590,
+                    1200
+                  ],
+                  [
+                    500,
+                    1200
+                  ]
+                ]
+              },
+              "style": {
+                "kind": "solid",
+                "color": "sand",
+                "opacity": 235
+              }
+            }
+          },
+          {
+            "id": "stripe-3",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "stripes/stripe-3",
+            "args": {
+              "region": {
+                "type": "polygon",
+                "points": [
+                  [
+                    250,
+                    0
+                  ],
+                  [
+                    340,
+                    0
+                  ],
+                  [
+                    740,
+                    1200
+                  ],
+                  [
+                    650,
+                    1200
+                  ]
+                ]
+              },
+              "style": {
+                "kind": "solid",
+                "color": "terracotta",
+                "opacity": 215
+              }
+            }
+          },
+          {
+            "id": "stripe-4",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "stripes/stripe-4",
+            "args": {
+              "region": {
+                "type": "polygon",
+                "points": [
+                  [
+                    400,
+                    0
+                  ],
+                  [
+                    490,
+                    0
+                  ],
+                  [
+                    890,
+                    1200
+                  ],
+                  [
+                    800,
+                    1200
+                  ]
+                ]
+              },
+              "style": {
+                "kind": "solid",
+                "color": "olive",
+                "opacity": 190
+              }
+            }
+          },
+          {
+            "id": "stripe-5",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "stripes/stripe-5",
+            "args": {
+              "region": {
+                "type": "polygon",
+                "points": [
+                  [
+                    550,
+                    0
+                  ],
+                  [
+                    640,
+                    0
+                  ],
+                  [
+                    1040,
+                    1200
+                  ],
+                  [
+                    950,
+                    1200
+                  ]
+                ]
+              },
+              "style": {
+                "kind": "solid",
+                "color": "sand",
+                "opacity": 235
+              }
+            }
+          },
+          {
+            "id": "stripe-6",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "stripes/stripe-6",
+            "args": {
+              "region": {
+                "type": "polygon",
+                "points": [
+                  [
+                    700,
+                    0
+                  ],
+                  [
+                    790,
+                    0
+                  ],
+                  [
+                    1190,
+                    1200
+                  ],
+                  [
+                    1100,
+                    1200
+                  ]
+                ]
+              },
+              "style": {
+                "kind": "solid",
+                "color": "terracotta",
+                "opacity": 215
+              }
+            }
+          },
+          {
+            "id": "stripe-7",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "stripes/stripe-7",
+            "args": {
+              "region": {
+                "type": "polygon",
+                "points": [
+                  [
+                    850,
+                    0
+                  ],
+                  [
+                    940,
+                    0
+                  ],
+                  [
+                    1340,
+                    1200
+                  ],
+                  [
+                    1250,
+                    1200
+                  ]
+                ]
+              },
+              "style": {
+                "kind": "solid",
+                "color": "olive",
+                "opacity": 190
+              }
+            }
+          },
+          {
+            "id": "stripe-8",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "stripes/stripe-8",
+            "args": {
+              "region": {
+                "type": "polygon",
+                "points": [
+                  [
+                    1000,
+                    0
+                  ],
+                  [
+                    1090,
+                    0
+                  ],
+                  [
+                    1490,
+                    1200
+                  ],
+                  [
+                    1400,
+                    1200
+                  ]
+                ]
+              },
+              "style": {
+                "kind": "solid",
+                "color": "sand",
+                "opacity": 235
+              }
+            }
+          }
+        ],
+        "label": "the nine stripes"
+      },
+      {
+        "id": "clear",
+        "type": "op",
+        "op": "cover",
+        "rngKey": "stripes/clear",
+        "args": {
+          "region": {
+            "type": "rect",
+            "x": 120,
+            "y": 520,
+            "w": 560,
+            "h": 170
+          },
+          "softness": 0.24
+        }
+      },
+      {
+        "id": "word",
+        "type": "op",
+        "op": "text",
+        "rngKey": "stripes/word",
+        "args": {
+          "text": "BIAS",
+          "font": "grotesque",
+          "size": 92,
+          "x": 400,
+          "y": 636,
+          "align": "center",
+          "color": "ink",
+          "tracking": 6
+        }
+      },
+      {
+        "id": "under",
+        "type": "op",
+        "op": "rule",
+        "rngKey": "stripes/under",
+        "args": {
+          "from": [
+            140,
+            668
+          ],
+          "to": [
+            660,
+            668
+          ],
+          "brush": "charcoal",
+          "color": "terracotta",
+          "weight": 2.5
+        }
+      }
+    ]
+  }
+}

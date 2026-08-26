@@ -1,0 +1,69 @@
+{
+  "runtime": {
+    "p5": {
+      "version": "2.2.0",
+      "sha256": "994ad50423ab4190681ba0f7539fe3f65d22011d065fdba50a5150654747522c"
+    },
+    "p5brush": {
+      "version": "2.1.0-beta",
+      "sha256": "05584f6275af53d80ca6b3e8c1daa02c6c899145fd006a31add9d9efb2761190"
+    },
+    "browser": {
+      "name": "chromium",
+      "version": "140.0.7339.16",
+      "revision": "chromium-1187",
+      "launchArgs": [
+        "--use-gl=angle",
+        "--use-angle=swiftshader",
+        "--enable-unsafe-swiftshader"
+      ]
+    },
+    "gl": {
+      "webglVersion": "webgl2",
+      "renderer": "WebKit WebGL",
+      "vendor": "WebKit",
+      "unmaskedRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)",
+      "shadingLanguage": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)"
+    },
+    "fonts": {
+      "grotesque": "9cc831490532009bae2b3ce0d39c62adfc889060beb421593bfd9d2396d0f10a",
+      "serif": "a4951fade06ff8f09b7673aa81ffb65a8cd409e24d3289a6dc670bc4dda2557a"
+    },
+    "node": "v22.18.0",
+    "os": {
+      "platform": "darwin",
+      "release": "25.5.0",
+      "arch": "arm64"
+    },
+    "settlePolicy": "read until two consecutive frames are identical",
+    "renderPolicy": "render until two consecutive renders are identical",
+    "pagesPerRender": 1,
+    "warmupRenders": 3
+  },
+  "entries": {
+    "event-picture-edited": {
+      "programHash": "0a88cec580c94950dcf82aaeb18eaaa006921b6f2396cef81cdf4b3297f15930",
+      "packHash": "003e484d960298af1224039902549768b57a0ff10fbbb448848d40fe450fb540",
+      "profileHash": "15ad87c1609564fe1af10f476406504bb59d94f6467ea143be34786c43f72832",
+      "pixels": "43ab771423715f12138aa6293f6099eb3221a5c8b38209fa621a0faef7821f50"
+    },
+    "event-picture": {
+      "programHash": "9e8c2fd4b2b94de64b8649630082ea61cd4f912e1a88ed723b8ea25c32be9a39",
+      "packHash": "003e484d960298af1224039902549768b57a0ff10fbbb448848d40fe450fb540",
+      "profileHash": "15ad87c1609564fe1af10f476406504bb59d94f6467ea143be34786c43f72832",
+      "pixels": "626df27b094522422f1a22c97ed5c0a266f69866f46059e5f936381b9f44c446"
+    },
+    "hill-feast": {
+      "programHash": "6d20162578517c60d919177dc4575c241f5b6a41cd196b7847538f7009b4a7c7",
+      "packHash": "003e484d960298af1224039902549768b57a0ff10fbbb448848d40fe450fb540",
+      "profileHash": "15ad87c1609564fe1af10f476406504bb59d94f6467ea143be34786c43f72832",
+      "pixels": "5e278e1c86eebbb97a798e99669f825a25e1404efa7db2ce09cc2f35a02b2c9c"
+    },
+    "poster-less-is-more": {
+      "programHash": "16922584565374fb692f66b414d0810cef404b6e2090838e721f87c9406a04b7",
+      "packHash": "003e484d960298af1224039902549768b57a0ff10fbbb448848d40fe450fb540",
+      "profileHash": "15ad87c1609564fe1af10f476406504bb59d94f6467ea143be34786c43f72832",
+      "pixels": "61982d731298cf977f7e6ed59cbd2f64fc453a3cf40798e65a02a885594faf17"
+    }
+  }
+}

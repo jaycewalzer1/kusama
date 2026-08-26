@@ -1,0 +1,299 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 8837,
+  "canvas": {
+    "width": 800,
+    "height": 1200,
+    "ground": "#0f1220",
+    "brushScale": 1.5
+  },
+  "palette": {
+    "ink": "#0f1220",
+    "violet": "#4b3f72",
+    "magenta": "#a13d6d",
+    "amber": "#e0a33e",
+    "mist": "#e8e6ef"
+  },
+  "meta": {
+    "title": "Seven lights",
+    "reads_as": "seven pale beams fanned across a dark page, brightest where they cross"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "dark",
+        "type": "op",
+        "op": "wash",
+        "rngKey": "beams/dark",
+        "args": {
+          "region": {
+            "type": "rect",
+            "x": 0,
+            "y": 0,
+            "w": 800,
+            "h": 1200
+          },
+          "style": {
+            "kind": "wash",
+            "color": "violet",
+            "opacity": 130,
+            "bleed": 0.32,
+            "texture": [
+              0.6,
+              0.4
+            ]
+          }
+        }
+      },
+      {
+        "id": "fan",
+        "type": "group",
+        "children": [
+          {
+            "id": "beam-0",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "beams/beam-0",
+            "args": {
+              "name": "light.beam",
+              "x": 112,
+              "y": 540,
+              "span": 720,
+              "style": {
+                "kind": "wash",
+                "color": "amber",
+                "opacity": 96,
+                "bleed": 0.3,
+                "texture": [
+                  0.35,
+                  0.35
+                ]
+              },
+              "rotate": -42
+            }
+          },
+          {
+            "id": "beam-1",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "beams/beam-1",
+            "args": {
+              "name": "light.beam",
+              "x": 208,
+              "y": 540,
+              "span": 720,
+              "style": {
+                "kind": "wash",
+                "color": "amber",
+                "opacity": 114,
+                "bleed": 0.3,
+                "texture": [
+                  0.35,
+                  0.35
+                ]
+              },
+              "rotate": -28
+            }
+          },
+          {
+            "id": "beam-2",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "beams/beam-2",
+            "args": {
+              "name": "light.beam",
+              "x": 304,
+              "y": 540,
+              "span": 720,
+              "style": {
+                "kind": "wash",
+                "color": "amber",
+                "opacity": 132,
+                "bleed": 0.3,
+                "texture": [
+                  0.35,
+                  0.35
+                ]
+              },
+              "rotate": -14
+            }
+          },
+          {
+            "id": "beam-3",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "beams/beam-3",
+            "args": {
+              "name": "light.beam",
+              "x": 400,
+              "y": 540,
+              "span": 720,
+              "style": {
+                "kind": "wash",
+                "color": "amber",
+                "opacity": 96,
+                "bleed": 0.3,
+                "texture": [
+                  0.35,
+                  0.35
+                ]
+              },
+              "rotate": 0
+            }
+          },
+          {
+            "id": "beam-4",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "beams/beam-4",
+            "args": {
+              "name": "light.beam",
+              "x": 496,
+              "y": 540,
+              "span": 720,
+              "style": {
+                "kind": "wash",
+                "color": "amber",
+                "opacity": 114,
+                "bleed": 0.3,
+                "texture": [
+                  0.35,
+                  0.35
+                ]
+              },
+              "rotate": 14
+            }
+          },
+          {
+            "id": "beam-5",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "beams/beam-5",
+            "args": {
+              "name": "light.beam",
+              "x": 592,
+              "y": 540,
+              "span": 720,
+              "style": {
+                "kind": "wash",
+                "color": "amber",
+                "opacity": 132,
+                "bleed": 0.3,
+                "texture": [
+                  0.35,
+                  0.35
+                ]
+              },
+              "rotate": 28
+            }
+          },
+          {
+            "id": "beam-6",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "beams/beam-6",
+            "args": {
+              "name": "light.beam",
+              "x": 688,
+              "y": 540,
+              "span": 720,
+              "style": {
+                "kind": "wash",
+                "color": "amber",
+                "opacity": 96,
+                "bleed": 0.3,
+                "texture": [
+                  0.35,
+                  0.35
+                ]
+              },
+              "rotate": 42
+            }
+          }
+        ],
+        "label": "one rotated beam each"
+      },
+      {
+        "id": "glow",
+        "type": "op",
+        "op": "wash",
+        "rngKey": "beams/glow",
+        "args": {
+          "region": {
+            "type": "circle",
+            "cx": 400,
+            "cy": 540,
+            "r": 150
+          },
+          "style": {
+            "kind": "wash",
+            "color": "mist",
+            "opacity": 120,
+            "bleed": 0.34,
+            "texture": [
+              0.5,
+              0.45
+            ]
+          }
+        }
+      },
+      {
+        "id": "horizon",
+        "type": "op",
+        "op": "rule",
+        "rngKey": "beams/horizon",
+        "args": {
+          "from": [
+            0,
+            1060
+          ],
+          "to": [
+            800,
+            1060
+          ],
+          "brush": "marker",
+          "color": "magenta",
+          "weight": 5
+        }
+      },
+      {
+        "id": "wire",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "beams/wire",
+        "args": {
+          "points": [
+            [
+              0,
+              180
+            ],
+            [
+              200,
+              240
+            ],
+            [
+              400,
+              190
+            ],
+            [
+              600,
+              250
+            ],
+            [
+              800,
+              200
+            ]
+          ],
+          "brush": "charcoal",
+          "color": "mist",
+          "weight": 2,
+          "curve": 0.7
+        }
+      }
+    ]
+  }
+}

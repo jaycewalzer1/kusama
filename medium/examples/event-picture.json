@@ -1,0 +1,415 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 7719,
+  "canvas": { "width": 800, "height": 1200, "ground": "#fdf9f0", "brushScale": 1.25 },
+  "palette": {
+    "ink": "#2b2733",
+    "indigo": "#3f4a78",
+    "teal": "#2f6f6b",
+    "gold": "#d8a13c",
+    "rose": "#b8455f",
+    "rust": "#c0503a",
+    "cream": "#f5ecda",
+    "grey": "#8e8a84"
+  },
+  "meta": {
+    "title": "The annual flower parade",
+    "reads_as": "a lit stage under bunting with a crowd in front of it, and a fenced strip along the bottom where the sponsors are kept"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "hall",
+        "type": "group",
+        "label": "the dark of the hall, and the lit floor under the crowd",
+        "children": [
+          {
+            "id": "dark",
+            "type": "op",
+            "op": "wash",
+            "rngKey": "event/dark",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 0, "w": 800, "h": 830 },
+              "style": { "kind": "wash", "color": "indigo", "opacity": 205, "bleed": 0.22, "texture": [0.5, 0.35] }
+            }
+          },
+          {
+            "id": "floor",
+            "type": "op",
+            "op": "wash",
+            "rngKey": "event/floor",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 790, "w": 800, "h": 410 },
+              "style": { "kind": "wash", "color": "teal", "opacity": 90, "bleed": 0.25, "texture": [0.4, 0.3] }
+            }
+          },
+          {
+            "id": "floor-dust",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "event/floor-dust",
+            "label": "a sparse field of specks so the floor is not a flat plate of colour",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 800, "w": 800, "h": 400 },
+              "style": { "kind": "field", "brush": "spray", "color": "cream", "density": 1.2, "length": 5, "angle": 0, "jitter": 90, "marks": "dots" }
+            }
+          }
+        ]
+      },
+      {
+        "id": "bunting",
+        "type": "group",
+        "label": "two lines strung across the roof of the hall",
+        "children": [
+          {
+            "id": "string-a",
+            "type": "op",
+            "op": "stroke",
+            "rngKey": "event/string-a",
+            "args": {
+              "points": [[0, 74], [200, 148], [400, 106], [600, 156], [800, 92]],
+              "brush": "charcoal",
+              "color": "cream",
+              "weight": 2,
+              "curve": 0.7
+            }
+          },
+          {
+            "id": "string-b",
+            "type": "op",
+            "op": "stroke",
+            "rngKey": "event/string-b",
+            "args": {
+              "points": [[0, 140], [220, 206], [430, 168], [640, 214], [800, 158]],
+              "brush": "charcoal",
+              "color": "gold",
+              "weight": 2,
+              "curve": 0.7
+            }
+          },
+          {
+            "id": "flags",
+            "type": "repeat",
+            "rngKey": "event/flags",
+            "count": 11,
+            "layout": { "type": "line", "origin": [56, 128], "dx": 68, "dy": 4 },
+            "jitter": { "translate": 5, "rotate": 8 },
+            "children": [
+              {
+                "id": "flag",
+                "type": "op",
+                "op": "paint",
+                "rngKey": "event/flag",
+                "args": {
+                  "region": { "type": "polygon", "points": [[-15, 0], [15, 0], [0, 36]] },
+                  "style": { "kind": "solid", "color": "rose", "opacity": 215 }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "stage",
+        "type": "group",
+        "label": "the arch, its two columns, and three beams coming down onto it",
+        "children": [
+          {
+            "id": "beam-left",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "event/beam-left",
+            "args": {
+              "name": "light.beam",
+              "x": 262,
+              "y": 470,
+              "span": 430,
+              "rotate": 14,
+              "style": { "kind": "wash", "color": "gold", "opacity": 140, "bleed": 0.28, "texture": [0.35, 0.35] }
+            }
+          },
+          {
+            "id": "beam-mid",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "event/beam-mid",
+            "args": {
+              "name": "light.beam",
+              "x": 404,
+              "y": 440,
+              "span": 470,
+              "style": { "kind": "wash", "color": "cream", "opacity": 165, "bleed": 0.28, "texture": [0.35, 0.35] }
+            }
+          },
+          {
+            "id": "beam-right",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "event/beam-right",
+            "args": {
+              "name": "light.beam",
+              "x": 546,
+              "y": 470,
+              "span": 430,
+              "rotate": -14,
+              "style": { "kind": "wash", "color": "gold", "opacity": 140, "bleed": 0.28, "texture": [0.35, 0.35] }
+            }
+          },
+          {
+            "id": "arch",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "event/arch",
+            "args": {
+              "name": "arch.arch",
+              "x": 400,
+              "y": 566,
+              "span": 430,
+              "style": { "kind": "wash", "color": "cream", "opacity": 220, "bleed": 0.1, "texture": [0.4, 0.25] }
+            }
+          },
+          {
+            "id": "arch-line",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "event/arch-line",
+            "args": {
+              "name": "arch.arch",
+              "x": 400,
+              "y": 566,
+              "span": 430,
+              "style": { "kind": "outline", "brush": "2B", "color": "ink", "weight": 1 }
+            }
+          },
+          {
+            "id": "column-left",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "event/column-left",
+            "args": {
+              "name": "arch.column",
+              "x": 132,
+              "y": 606,
+              "span": 300,
+              "style": { "kind": "hatch", "brush": "crayon", "color": "cream", "spacing": 5, "angle": 88, "rand": 0.15, "layers": 1 }
+            }
+          },
+          {
+            "id": "column-right",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "event/column-right",
+            "args": {
+              "name": "arch.column",
+              "x": 668,
+              "y": 606,
+              "span": 300,
+              "flipX": true,
+              "style": { "kind": "hatch", "brush": "crayon", "color": "cream", "spacing": 5, "angle": 88, "rand": 0.15, "layers": 1 }
+            }
+          },
+          {
+            "id": "speaker",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "event/speaker",
+            "label": "whoever is doing the talking, small against the arch",
+            "args": {
+              "name": "figure.standing",
+              "x": 400,
+              "y": 690,
+              "span": 190,
+              "style": { "kind": "wash", "color": "ink", "opacity": 235, "bleed": 0.06, "texture": [0.5, 0.2] }
+            }
+          }
+        ]
+      },
+      {
+        "id": "garland",
+        "type": "repeat",
+        "rngKey": "event/garland",
+        "count": 12,
+        "layout": { "type": "ring", "origin": [400, 540], "r": 296, "startAngle": -90 },
+        "jitter": { "rotate": 20, "scale": 0.15 },
+        "label": "hibiscus hung right round the stage: the parade is the point of the evening",
+        "children": [
+          {
+            "id": "bloom",
+            "type": "macro",
+            "macro": "motif",
+            "rngKey": "event/bloom",
+            "args": { "name": "hibiscus", "x": 0, "y": 0, "size": 74 }
+          }
+        ]
+      },
+      {
+        "id": "title",
+        "type": "group",
+        "label": "the title, on ground cleared out of the dark",
+        "children": [
+          {
+            "id": "title-clear",
+            "type": "op",
+            "op": "cover",
+            "rngKey": "event/title-clear",
+            "note": "the hall wash and the bunting both run through here; cover is the only way to get the paper back",
+            "args": { "region": { "type": "rect", "x": 148, "y": 224, "w": 504, "h": 128 }, "softness": 0.35 }
+          },
+          {
+            "id": "title-rule",
+            "type": "op",
+            "op": "rule",
+            "rngKey": "event/title-rule",
+            "args": { "from": [186, 250], "to": [614, 250], "brush": "rotring", "color": "ink", "weight": 1 }
+          },
+          {
+            "id": "title-kicker",
+            "type": "op",
+            "op": "text",
+            "rngKey": "event/title-kicker",
+            "args": {
+              "text": "FRIDAY, EIGHT O'CLOCK",
+              "font": "grotesque",
+              "size": 16,
+              "x": 400,
+              "y": 278,
+              "align": "center",
+              "color": "rose",
+              "tracking": 5
+            }
+          },
+          {
+            "id": "title-text",
+            "type": "op",
+            "op": "text",
+            "rngKey": "event/title-text",
+            "args": {
+              "text": "THE FLOWER PARADE",
+              "font": "grotesque",
+              "size": 38,
+              "x": 400,
+              "y": 328,
+              "align": "center",
+              "color": "ink",
+              "tracking": 5
+            }
+          }
+        ]
+      },
+      {
+        "id": "crowd",
+        "type": "repeat",
+        "rngKey": "event/crowd",
+        "count": 18,
+        "layout": { "type": "grid", "origin": [92, 852], "cols": 6, "dx": 124, "dy": 80 },
+        "jitter": { "translate": 10, "rotate": 4, "scale": 0.14 },
+        "label": "three ranks of people, jittered so no two ranks line up",
+        "children": [
+          {
+            "id": "head",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "event/head",
+            "args": {
+              "name": "figure.crowd",
+              "x": 0,
+              "y": 0,
+              "span": 138,
+              "style": { "kind": "wash", "color": "ink", "opacity": 230, "bleed": 0.06, "texture": [0.45, 0.25] }
+            }
+          }
+        ]
+      },
+      {
+        "id": "sponsor-strip",
+        "type": "group",
+        "label": "the strip along the bottom that is contractually in the picture and is not part of the picture",
+        "children": [
+          {
+            "id": "pen",
+            "type": "macro",
+            "macro": "quarantine",
+            "rngKey": "event/pen",
+            "note": "the quarantine macro must stay outside the clipped group below it: its label is a text op, and text inside a clip is refused (NOTES L1)",
+            "args": {
+              "x": 62,
+              "y": 1074,
+              "w": 676,
+              "h": 66,
+              "style": { "kind": "wash", "color": "cream", "opacity": 220, "bleed": 0.06, "texture": [0.4, 0.2] },
+              "boxBrush": "rotring",
+              "boxColor": "ink",
+              "boxWeight": 0.5,
+              "label": "SPONSORS - NOT PART OF THE PICTURE",
+              "labelFont": "grotesque",
+              "labelSize": 13,
+              "labelTracking": 3
+            }
+          },
+          {
+            "id": "marks",
+            "type": "group",
+            "clip": { "type": "rect", "x": 62, "y": 1074, "w": 676, "h": 66 },
+            "label": "the sponsor marks, drawn bigger than the pen they are in, so the fence is visibly doing the work",
+            "children": [
+              {
+                "id": "halo",
+                "type": "op",
+                "op": "wash",
+                "rngKey": "event/halo",
+                "note": "a circle under a clip comes out as a 64-gon (NOTES L1); that flat-sided arc is what it looks like",
+                "args": {
+                  "region": { "type": "circle", "cx": 400, "cy": 1108, "r": 118 },
+                  "style": { "kind": "wash", "color": "gold", "opacity": 120, "bleed": 0.12, "texture": [0.4, 0.3] }
+                }
+              },
+              {
+                "id": "mark-a",
+                "type": "op",
+                "op": "fragment",
+                "rngKey": "event/mark-a",
+                "args": {
+                  "name": "mark.sponsor-a",
+                  "x": 186,
+                  "y": 1108,
+                  "span": 116,
+                  "style": { "kind": "solid", "color": "grey", "opacity": 235 }
+                }
+              },
+              {
+                "id": "mark-b",
+                "type": "op",
+                "op": "fragment",
+                "rngKey": "event/mark-b",
+                "args": {
+                  "name": "mark.sponsor-b",
+                  "x": 400,
+                  "y": 1108,
+                  "span": 116,
+                  "style": { "kind": "solid", "color": "grey", "opacity": 235 }
+                }
+              },
+              {
+                "id": "mark-c",
+                "type": "op",
+                "op": "fragment",
+                "rngKey": "event/mark-c",
+                "args": {
+                  "name": "mark.sponsor-c",
+                  "x": 614,
+                  "y": 1108,
+                  "span": 116,
+                  "style": { "kind": "solid", "color": "grey", "opacity": 235 }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "name": "medium",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Deterministic, edit-based p5.brush environment substrate",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test dist/tests/*.test.js && node dist/cli/golden.js --check",
+    "render": "npm run build && node dist/cli/render.js",
+    "validate": "npm run build && node dist/cli/validate.js",
+    "diff": "npm run build && node dist/cli/diff.js",
+    "batch": "npm run build && node dist/cli/batch.js",
+    "golden": "npm run build && node dist/cli/golden.js",
+    "apply-edit": "npm run build && node dist/cli/apply-edit.js",
+    "contact-sheet": "npm run build && node dist/cli/contact-sheet.js",
+    "fragments-sheet": "npm run build && node dist/cli/fragments-sheet.js",
+    "ui": "npm run build && node dist/cli/ui.js"
+  },
+  "dependencies": {
+    "ajv": "8.17.1",
+    "commander": "12.1.0",
+    "playwright": "1.55.0",
+    "pngjs": "7.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "@types/pngjs": "6.0.5",
+    "typescript": "5.7.2"
+  }
+}

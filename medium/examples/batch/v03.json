@@ -1,0 +1,183 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 4457,
+  "canvas": {
+    "width": 800,
+    "height": 1200,
+    "ground": "#fbf7ee",
+    "brushScale": 1
+  },
+  "palette": {
+    "ink": "#1a1a1a",
+    "grey": "#8c8c8c",
+    "pale": "#cfcfcf",
+    "red": "#b02a2a",
+    "paper": "#fbfaf7"
+  },
+  "meta": {
+    "title": "Arch, drawn",
+    "reads_as": "a large outlined arch between two hatched columns with a caption under it"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "ground",
+        "type": "op",
+        "op": "wash",
+        "rngKey": "arch/ground",
+        "args": {
+          "region": {
+            "type": "rect",
+            "x": 60,
+            "y": 120,
+            "w": 680,
+            "h": 760
+          },
+          "style": {
+            "kind": "wash",
+            "color": "pale",
+            "opacity": 120,
+            "bleed": 0.14,
+            "texture": [
+              0.35,
+              0.3
+            ]
+          }
+        }
+      },
+      {
+        "id": "arch-line",
+        "type": "op",
+        "op": "fragment",
+        "rngKey": "arch/arch-line",
+        "args": {
+          "name": "arch.arch",
+          "x": 400,
+          "y": 480,
+          "span": 520,
+          "style": {
+            "kind": "outline",
+            "brush": "2B",
+            "color": "ink",
+            "weight": 1.4
+          }
+        }
+      },
+      {
+        "id": "col-l",
+        "type": "op",
+        "op": "fragment",
+        "rngKey": "arch/col-l",
+        "args": {
+          "name": "arch.column",
+          "x": 150,
+          "y": 720,
+          "span": 340,
+          "style": {
+            "kind": "hatch",
+            "brush": "cpencil",
+            "color": "grey",
+            "spacing": 6,
+            "angle": 82,
+            "rand": 0.2,
+            "layers": 1
+          }
+        }
+      },
+      {
+        "id": "col-r",
+        "type": "op",
+        "op": "fragment",
+        "rngKey": "arch/col-r",
+        "args": {
+          "name": "arch.column",
+          "x": 650,
+          "y": 720,
+          "span": 340,
+          "style": {
+            "kind": "hatch",
+            "brush": "cpencil",
+            "color": "grey",
+            "spacing": 6,
+            "angle": 82,
+            "rand": 0.2,
+            "layers": 1
+          },
+          "flipX": true
+        }
+      },
+      {
+        "id": "base",
+        "type": "op",
+        "op": "rule",
+        "rngKey": "arch/base",
+        "args": {
+          "from": [
+            80,
+            900
+          ],
+          "to": [
+            720,
+            900
+          ],
+          "brush": "rotring",
+          "color": "ink",
+          "weight": 1.5
+        }
+      },
+      {
+        "id": "cap",
+        "type": "op",
+        "op": "text",
+        "rngKey": "arch/cap",
+        "args": {
+          "text": "A   SINGLE   OPENING",
+          "font": "serif",
+          "size": 30,
+          "x": 400,
+          "y": 960,
+          "align": "center",
+          "color": "ink",
+          "tracking": 2
+        }
+      },
+      {
+        "id": "sub",
+        "type": "op",
+        "op": "text",
+        "rngKey": "arch/sub",
+        "args": {
+          "text": "plate   iv",
+          "font": "serif",
+          "size": 16,
+          "x": 400,
+          "y": 1000,
+          "align": "center",
+          "color": "red",
+          "tracking": 4
+        }
+      },
+      {
+        "id": "trim",
+        "type": "macro",
+        "macro": "frame",
+        "rngKey": "arch/trim",
+        "args": {
+          "x": 48,
+          "y": 48,
+          "w": 704,
+          "h": 1104,
+          "style": "corners",
+          "brush": "rotring",
+          "color": "ink",
+          "weight": 1,
+          "arm": 60
+        }
+      }
+    ]
+  }
+}

@@ -28,6 +28,9 @@ apps/web/dist/
 packages/*/dist/
 .turbo/
 *.tsbuildinfo
+out/*.svg
+out/*.png
+!out/.gitkeep
 
 # Expo / React Native
 apps/mobile/.expo/

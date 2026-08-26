@@ -1,0 +1,451 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 16631,
+  "canvas": {
+    "width": 800,
+    "height": 1200,
+    "ground": "#f3ece0",
+    "brushScale": 1.25
+  },
+  "palette": {
+    "ink": "#2a1f1c",
+    "rust": "#a8452f",
+    "brass": "#c08a3e",
+    "slate": "#5a6b73",
+    "linen": "#f3ece0"
+  },
+  "meta": {
+    "title": "Eight sweeps",
+    "reads_as": "eight wavy lines down the page, each drawn with a different brush and a different weight"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "sweeps",
+        "type": "group",
+        "children": [
+          {
+            "id": "sweep-0",
+            "type": "op",
+            "op": "stroke",
+            "rngKey": "lines/sweep-0",
+            "args": {
+              "points": [
+                [
+                  80,
+                  160
+                ],
+                [
+                  160,
+                  178.5
+                ],
+                [
+                  240,
+                  186
+                ],
+                [
+                  320,
+                  177.5
+                ],
+                [
+                  400,
+                  158.5
+                ],
+                [
+                  480,
+                  140.5
+                ],
+                [
+                  560,
+                  134
+                ],
+                [
+                  640,
+                  143.5
+                ],
+                [
+                  720,
+                  163
+                ]
+              ],
+              "brush": "pen",
+              "color": "ink",
+              "weight": 0.8,
+              "curve": 0.8
+            }
+          },
+          {
+            "id": "sweep-1",
+            "type": "op",
+            "op": "stroke",
+            "rngKey": "lines/sweep-1",
+            "args": {
+              "points": [
+                [
+                  80,
+                  306
+                ],
+                [
+                  160,
+                  310
+                ],
+                [
+                  240,
+                  296
+                ],
+                [
+                  320,
+                  272
+                ],
+                [
+                  400,
+                  253
+                ],
+                [
+                  480,
+                  250.5
+                ],
+                [
+                  560,
+                  265.5
+                ],
+                [
+                  640,
+                  289.5
+                ],
+                [
+                  720,
+                  308
+                ]
+              ],
+              "brush": "2B",
+              "color": "rust",
+              "weight": 1.4000000000000001,
+              "curve": 0.8
+            }
+          },
+          {
+            "id": "sweep-2",
+            "type": "op",
+            "op": "stroke",
+            "rngKey": "lines/sweep-2",
+            "args": {
+              "points": [
+                [
+                  80,
+                  432.5
+                ],
+                [
+                  160,
+                  412
+                ],
+                [
+                  240,
+                  384
+                ],
+                [
+                  320,
+                  365.5
+                ],
+                [
+                  400,
+                  368
+                ],
+                [
+                  480,
+                  390
+                ],
+                [
+                  560,
+                  418
+                ],
+                [
+                  640,
+                  435
+                ],
+                [
+                  720,
+                  431
+                ]
+              ],
+              "brush": "charcoal",
+              "color": "brass",
+              "weight": 2,
+              "curve": 0.8
+            }
+          },
+          {
+            "id": "sweep-3",
+            "type": "op",
+            "op": "stroke",
+            "rngKey": "lines/sweep-3",
+            "args": {
+              "points": [
+                [
+                  80,
+                  526
+                ],
+                [
+                  160,
+                  495
+                ],
+                [
+                  240,
+                  479.5
+                ],
+                [
+                  320,
+                  488.5
+                ],
+                [
+                  400,
+                  516.5
+                ],
+                [
+                  480,
+                  547
+                ],
+                [
+                  560,
+                  561
+                ],
+                [
+                  640,
+                  550
+                ],
+                [
+                  720,
+                  521
+                ]
+              ],
+              "brush": "cpencil",
+              "color": "slate",
+              "weight": 2.6,
+              "curve": 0.8
+            }
+          },
+          {
+            "id": "sweep-4",
+            "type": "op",
+            "op": "stroke",
+            "rngKey": "lines/sweep-4",
+            "args": {
+              "points": [
+                [
+                  80,
+                  605
+                ],
+                [
+                  160,
+                  594
+                ],
+                [
+                  240,
+                  611
+                ],
+                [
+                  320,
+                  645.5
+                ],
+                [
+                  400,
+                  676.5
+                ],
+                [
+                  480,
+                  685.5
+                ],
+                [
+                  560,
+                  667
+                ],
+                [
+                  640,
+                  632
+                ],
+                [
+                  720,
+                  602
+                ]
+              ],
+              "brush": "marker",
+              "color": "ink",
+              "weight": 3.2,
+              "curve": 0.8
+            }
+          },
+          {
+            "id": "sweep-5",
+            "type": "op",
+            "op": "stroke",
+            "rngKey": "lines/sweep-5",
+            "args": {
+              "points": [
+                [
+                  80,
+                  711
+                ],
+                [
+                  160,
+                  736.5
+                ],
+                [
+                  240,
+                  776
+                ],
+                [
+                  320,
+                  806
+                ],
+                [
+                  400,
+                  808
+                ],
+                [
+                  480,
+                  781
+                ],
+                [
+                  560,
+                  741.5
+                ],
+                [
+                  640,
+                  713
+                ],
+                [
+                  720,
+                  713
+                ]
+              ],
+              "brush": "crayon",
+              "color": "rust",
+              "weight": 3.8000000000000003,
+              "curve": 0.8
+            }
+          },
+          {
+            "id": "sweep-6",
+            "type": "op",
+            "op": "stroke",
+            "rngKey": "lines/sweep-6",
+            "args": {
+              "points": [
+                [
+                  80,
+                  864.5
+                ],
+                [
+                  160,
+                  907.5
+                ],
+                [
+                  240,
+                  934
+                ],
+                [
+                  320,
+                  928
+                ],
+                [
+                  400,
+                  892.5
+                ],
+                [
+                  480,
+                  849.5
+                ],
+                [
+                  560,
+                  825
+                ],
+                [
+                  640,
+                  834
+                ],
+                [
+                  720,
+                  870.5
+                ]
+              ],
+              "brush": "pastel",
+              "color": "brass",
+              "weight": 4.4,
+              "curve": 0.8
+            }
+          },
+          {
+            "id": "sweep-7",
+            "type": "op",
+            "op": "stroke",
+            "rngKey": "lines/sweep-7",
+            "args": {
+              "points": [
+                [
+                  80,
+                  1040
+                ],
+                [
+                  160,
+                  1061
+                ],
+                [
+                  240,
+                  1045
+                ],
+                [
+                  320,
+                  1001.5
+                ],
+                [
+                  400,
+                  957.5
+                ],
+                [
+                  480,
+                  939
+                ],
+                [
+                  560,
+                  957.5
+                ],
+                [
+                  640,
+                  1002
+                ],
+                [
+                  720,
+                  1045
+                ]
+              ],
+              "brush": "2H",
+              "color": "slate",
+              "weight": 5,
+              "curve": 0.8
+            }
+          }
+        ],
+        "label": "one line per brush"
+      },
+      {
+        "id": "label",
+        "type": "op",
+        "op": "text",
+        "rngKey": "lines/label",
+        "args": {
+          "text": "pen 2B charcoal cpencil marker crayon pastel 2H",
+          "font": "serif",
+          "size": 14,
+          "x": 400,
+          "y": 1152,
+          "align": "center",
+          "color": "ink"
+        }
+      }
+    ]
+  }
+}

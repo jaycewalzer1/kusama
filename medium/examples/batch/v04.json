@@ -1,0 +1,168 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 5231,
+  "canvas": {
+    "width": 800,
+    "height": 1200,
+    "ground": "#f4efe2",
+    "brushScale": 1.25
+  },
+  "palette": {
+    "ink": "#14262e",
+    "deep": "#1f4a5c",
+    "aqua": "#4f9aa8",
+    "coral": "#d96a4f",
+    "shell": "#f4efe2"
+  },
+  "meta": {
+    "title": "Going over",
+    "reads_as": "a line of birds crossing a speckled sky above a flat sea"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "sky",
+        "type": "op",
+        "op": "wash",
+        "rngKey": "birds/sky",
+        "args": {
+          "region": {
+            "type": "rect",
+            "x": 0,
+            "y": 0,
+            "w": 800,
+            "h": 780
+          },
+          "style": {
+            "kind": "wash",
+            "color": "aqua",
+            "opacity": 105,
+            "bleed": 0.24,
+            "texture": [
+              0.45,
+              0.35
+            ]
+          }
+        }
+      },
+      {
+        "id": "speckle",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "birds/speckle",
+        "args": {
+          "region": {
+            "type": "rect",
+            "x": 0,
+            "y": 0,
+            "w": 800,
+            "h": 780
+          },
+          "style": {
+            "kind": "field",
+            "brush": "spray",
+            "color": "shell",
+            "density": 2.5,
+            "length": 6,
+            "angle": 12,
+            "jitter": 120,
+            "marks": "dots"
+          }
+        }
+      },
+      {
+        "id": "flight",
+        "type": "repeat",
+        "rngKey": "birds/flight",
+        "count": 9,
+        "layout": {
+          "type": "line",
+          "origin": [
+            110,
+            330
+          ],
+          "dx": 80,
+          "dy": -22
+        },
+        "children": [
+          {
+            "id": "bird",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "birds/bird",
+            "args": {
+              "name": "animal.bird",
+              "x": 0,
+              "y": 0,
+              "span": 86,
+              "style": {
+                "kind": "solid",
+                "color": "ink",
+                "opacity": 235
+              }
+            }
+          }
+        ],
+        "jitter": {
+          "translate": 22,
+          "rotate": 16,
+          "scale": 0.24
+        }
+      },
+      {
+        "id": "sea",
+        "type": "op",
+        "op": "wash",
+        "rngKey": "birds/sea",
+        "args": {
+          "region": {
+            "type": "rect",
+            "x": 0,
+            "y": 760,
+            "w": 800,
+            "h": 440
+          },
+          "style": {
+            "kind": "wash",
+            "color": "deep",
+            "opacity": 165,
+            "bleed": 0.2,
+            "texture": [
+              0.5,
+              0.3
+            ]
+          }
+        }
+      },
+      {
+        "id": "swell",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "birds/swell",
+        "args": {
+          "region": {
+            "type": "rect",
+            "x": 0,
+            "y": 780,
+            "w": 800,
+            "h": 400
+          },
+          "style": {
+            "kind": "field",
+            "brush": "pen",
+            "color": "shell",
+            "density": 1.4,
+            "length": 34,
+            "angle": 0,
+            "jitter": 14,
+            "marks": "dashes"
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://medium.invalid/schema/profile.schema.json",
+  "title": "MediumProfile",
+  "description": "What this medium can express at all, for one episode. Mandatory, hashed, and immutable while the episode runs: a program is only meaningful relative to the profile it was validated against.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "primitives",
+    "macros",
+    "layouts",
+    "fonts",
+    "brushes",
+    "blendModes",
+    "assetPacks",
+    "limits",
+    "ranges",
+    "quantize"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "primitives": {
+      "type": "array",
+      "items": { "enum": ["wash", "paint", "stroke", "fragment", "text", "rule", "cover"] },
+      "uniqueItems": true
+    },
+    "macros": { "type": "array", "items": { "enum": ["frame", "motif", "quarantine"] }, "uniqueItems": true },
+    "layouts": { "type": "array", "items": { "enum": ["grid", "ring", "line", "scatter"] }, "uniqueItems": true },
+    "styles": { "type": "array", "items": { "enum": ["wash", "hatch", "field", "outline", "solid"] }, "uniqueItems": true },
+    "fonts": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "brushes": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "blendModes": {
+      "description": "Empty in V0: p5.brush does its own colour mixing and group blend could not be verified correct (NOTES R3).",
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "assetPacks": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "maxSourceNodes",
+        "maxResolvedNodes",
+        "maxTreeDepth",
+        "maxRepeatInstances",
+        "maxRepeatNesting",
+        "maxPolygonPoints",
+        "maxStrokePoints",
+        "maxFragments",
+        "maxTextOps",
+        "maxTextLength",
+        "maxEstimatedMarks",
+        "maxRenderCost"
+      ],
+      "properties": {
+        "maxSourceNodes": { "type": "integer", "minimum": 1 },
+        "maxResolvedNodes": { "type": "integer", "minimum": 1 },
+        "maxTreeDepth": { "type": "integer", "minimum": 1 },
+        "maxRepeatInstances": { "type": "integer", "minimum": 1 },
+        "maxRepeatNesting": { "type": "integer", "minimum": 0 },
+        "maxPolygonPoints": { "type": "integer", "minimum": 3 },
+        "maxStrokePoints": { "type": "integer", "minimum": 2 },
+        "maxFragments": { "type": "integer", "minimum": 0 },
+        "maxTextOps": { "type": "integer", "minimum": 0 },
+        "maxTextLength": { "type": "integer", "minimum": 1 },
+        "maxEstimatedMarks": { "type": "integer", "minimum": 1 },
+        "maxRenderCost": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "ranges": {
+      "description": "Inclusive numeric ranges, checked per field name after the schema's own bounds.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "items": { "type": "number" }
+      }
+    },
+    "quantize": {
+      "description": "Step per numeric field name. Every number in a program must be an exact multiple of its field's step, so two programs that differ below the step cannot exist.",
+      "type": "object",
+      "additionalProperties": { "type": "number", "exclusiveMinimum": 0 }
+    }
+  }
+}

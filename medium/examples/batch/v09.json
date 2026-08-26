@@ -1,0 +1,180 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 10499,
+  "canvas": {
+    "width": 800,
+    "height": 1200,
+    "ground": "#f0ead6",
+    "brushScale": 1
+  },
+  "palette": {
+    "ink": "#1f2a1c",
+    "moss": "#4f6b3a",
+    "sage": "#93ab74",
+    "bark": "#6b4a2f",
+    "bone": "#f0ead6"
+  },
+  "meta": {
+    "title": "Six weaves",
+    "reads_as": "six overlapping hatched rectangles at different angles and spacings"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "patches",
+        "type": "group",
+        "children": [
+          {
+            "id": "patch-0",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "weave/patch-0",
+            "args": {
+              "region": {
+                "type": "rect",
+                "x": 80,
+                "y": 150,
+                "w": 300,
+                "h": 400
+              },
+              "style": {
+                "kind": "hatch",
+                "brush": "2H",
+                "color": "moss",
+                "spacing": 9,
+                "angle": 0,
+                "rand": 0,
+                "layers": 1
+              }
+            }
+          },
+          {
+            "id": "patch-1",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "weave/patch-1",
+            "args": {
+              "region": {
+                "type": "rect",
+                "x": 290,
+                "y": 150,
+                "w": 300,
+                "h": 400
+              },
+              "style": {
+                "kind": "hatch",
+                "brush": "HB",
+                "color": "bark",
+                "spacing": 11,
+                "angle": 45,
+                "rand": 0.1,
+                "layers": 2
+              }
+            }
+          },
+          {
+            "id": "patch-2",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "weave/patch-2",
+            "args": {
+              "region": {
+                "type": "rect",
+                "x": 500,
+                "y": 150,
+                "w": 300,
+                "h": 400
+              },
+              "style": {
+                "kind": "hatch",
+                "brush": "2B",
+                "color": "sage",
+                "spacing": 13,
+                "angle": 90,
+                "rand": 0.2,
+                "layers": 1
+              }
+            }
+          },
+          {
+            "id": "patch-3",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "weave/patch-3",
+            "args": {
+              "region": {
+                "type": "rect",
+                "x": 80,
+                "y": 580,
+                "w": 300,
+                "h": 400
+              },
+              "style": {
+                "kind": "hatch",
+                "brush": "crayon",
+                "color": "ink",
+                "spacing": 15,
+                "angle": 135,
+                "rand": 0.3,
+                "layers": 2
+              }
+            }
+          },
+          {
+            "id": "patch-4",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "weave/patch-4",
+            "args": {
+              "region": {
+                "type": "rect",
+                "x": 290,
+                "y": 580,
+                "w": 300,
+                "h": 400
+              },
+              "style": {
+                "kind": "hatch",
+                "brush": "cpencil",
+                "color": "moss",
+                "spacing": 17,
+                "angle": 22,
+                "rand": 0.4,
+                "layers": 1
+              }
+            }
+          },
+          {
+            "id": "patch-5",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "weave/patch-5",
+            "args": {
+              "region": {
+                "type": "rect",
+                "x": 500,
+                "y": 580,
+                "w": 300,
+                "h": 400
+              },
+              "style": {
+                "kind": "hatch",
+                "brush": "pen",
+                "color": "bark",
+                "spacing": 19,
+                "angle": 68,
+                "rand": 0.5,
+                "layers": 2
+              }
+            }
+          }
+        ],
+        "label": "the six patches"
+      }
+    ]
+  }
+}

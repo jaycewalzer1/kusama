@@ -1,0 +1,133 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 7717,
+  "canvas": {
+    "width": 800,
+    "height": 1200,
+    "ground": "#fdf9f0",
+    "brushScale": 1.25
+  },
+  "palette": {
+    "ink": "#2b241f",
+    "plum": "#6d3b52",
+    "ochre": "#d19a3c",
+    "grass": "#7c9048",
+    "cloth": "#f2e8d4",
+    "rust": "#a8452f"
+  },
+  "meta": {
+    "title": "Hands around",
+    "reads_as": "ten open hands turned outward in a ring around a plum disc"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "disc",
+        "type": "op",
+        "op": "wash",
+        "rngKey": "hands/disc",
+        "args": {
+          "region": {
+            "type": "circle",
+            "cx": 400,
+            "cy": 600,
+            "r": 210
+          },
+          "style": {
+            "kind": "wash",
+            "color": "plum",
+            "opacity": 185,
+            "bleed": 0.24,
+            "texture": [
+              0.5,
+              0.35
+            ]
+          }
+        }
+      },
+      {
+        "id": "ring",
+        "type": "repeat",
+        "rngKey": "hands/ring",
+        "count": 10,
+        "layout": {
+          "type": "ring",
+          "origin": [
+            400,
+            600
+          ],
+          "r": 330,
+          "startAngle": -90
+        },
+        "children": [
+          {
+            "id": "hand",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "hands/hand",
+            "args": {
+              "name": "hand.open",
+              "x": 0,
+              "y": 0,
+              "span": 160,
+              "style": {
+                "kind": "outline",
+                "brush": "2B",
+                "color": "ink",
+                "weight": 1.2
+              }
+            }
+          }
+        ],
+        "jitter": {
+          "rotate": 26,
+          "scale": 0.16
+        }
+      },
+      {
+        "id": "halo",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "hands/halo",
+        "args": {
+          "region": {
+            "type": "circle",
+            "cx": 400,
+            "cy": 600,
+            "r": 340
+          },
+          "style": {
+            "kind": "field",
+            "brush": "pastel",
+            "color": "ochre",
+            "density": 0.7,
+            "length": 18,
+            "angle": 90,
+            "jitter": 60,
+            "marks": "dashes"
+          }
+        }
+      },
+      {
+        "id": "name",
+        "type": "op",
+        "op": "text",
+        "rngKey": "hands/name",
+        "args": {
+          "text": "A   RING   OF   TEN",
+          "font": "grotesque",
+          "size": 18,
+          "x": 400,
+          "y": 1108,
+          "align": "center",
+          "color": "ink",
+          "tracking": 7
+        }
+      }
+    ]
+  }
+}

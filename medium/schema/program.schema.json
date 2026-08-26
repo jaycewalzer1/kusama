@@ -1,0 +1,443 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://medium.invalid/schema/program.schema.json",
+  "title": "Program",
+  "description": "The whole state of a picture. A finite tree of typed nodes; there is no free code anywhere in it. Unknown fields are rejected under every executable key. Inert commentary is allowed only under label, note, decisions and meta.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "profile", "assetPack", "canvas", "seed", "root"],
+  "properties": {
+    "version": { "const": "0.2" },
+    "profile": { "type": "string", "minLength": 1 },
+    "assetPack": { "type": "string", "minLength": 1 },
+    "seed": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+    "canvas": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height", "ground", "brushScale"],
+      "properties": {
+        "width": { "type": "integer", "minimum": 16, "maximum": 4096 },
+        "height": { "type": "integer", "minimum": 16, "maximum": 4096 },
+        "ground": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "brushScale": { "type": "number", "minimum": 0.25, "maximum": 8 }
+      }
+    },
+    "palette": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[a-z][a-z0-9_-]*$" },
+      "additionalProperties": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+    },
+    "meta": { "$ref": "#/$defs/meta" },
+    "root": { "$ref": "#/$defs/group" }
+  },
+
+  "$defs": {
+    "color": { "$ref": "paintstyle.schema.json#/$defs/color" },
+    "style": { "$ref": "paintstyle.schema.json#/$defs/paintStyle" },
+
+    "id": { "type": "string", "pattern": "^[a-zA-Z][a-zA-Z0-9._-]*$", "maxLength": 64 },
+    "rngKey": {
+      "description": "Opaque and permanent. A node's randomness derives from this and nothing else, which is why moving or reordering a node cannot change its marks. Edits never change it.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "point": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": { "type": "number", "minimum": -10000, "maximum": 10000 }
+    },
+
+    "meta": {
+      "description": "Inert. Never read by the renderer; carries provenance and commentary.",
+      "type": "object"
+    },
+    "label": { "type": "string", "maxLength": 200 },
+    "note": { "type": "string", "maxLength": 2000 },
+    "decisions": { "type": "array", "items": { "type": "string", "maxLength": 200 } },
+
+    "transform": {
+      "description": "Applied as translate, then rotate, then scale. Degrees, clockwise positive on screen.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "translate": { "$ref": "#/$defs/point" },
+        "rotate": { "type": "number", "minimum": -360, "maximum": 360 },
+        "scale": { "type": "number", "exclusiveMinimum": 0, "maximum": 20 }
+      }
+    },
+
+    "clip": {
+      "description": "Rect only in V0: p5.brush cannot clip, so clipping is done geometrically and only convex rects are supported (NOTES L1).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "x", "y", "w", "h"],
+      "properties": {
+        "type": { "const": "rect" },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "w": { "type": "number", "exclusiveMinimum": 0 },
+        "h": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+
+    "region": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "x", "y", "w", "h"],
+          "properties": {
+            "type": { "const": "rect" },
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "w": { "type": "number", "exclusiveMinimum": 0 },
+            "h": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "cx", "cy", "r"],
+          "properties": {
+            "type": { "const": "circle" },
+            "cx": { "type": "number" },
+            "cy": { "type": "number" },
+            "r": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "points"],
+          "properties": {
+            "type": { "const": "polygon" },
+            "points": { "type": "array", "minItems": 3, "items": { "$ref": "#/$defs/point" } }
+          }
+        },
+        { "$ref": "#/$defs/fragmentPlacement" }
+      ]
+    },
+
+    "fragmentPlacement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "name", "x", "y", "span"],
+      "properties": {
+        "type": { "const": "fragment" },
+        "name": { "type": "string", "minLength": 1 },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "span": { "description": "Size of the fragment's unit box in local units.", "type": "number", "exclusiveMinimum": 0, "maximum": 4000 },
+        "rotate": { "type": "number", "minimum": -360, "maximum": 360 },
+        "flipX": { "type": "boolean" }
+      }
+    },
+
+    "node": {
+      "oneOf": [
+        { "$ref": "#/$defs/group" },
+        { "$ref": "#/$defs/repeat" },
+        { "$ref": "#/$defs/macro" },
+        { "$ref": "#/$defs/op" }
+      ]
+    },
+
+    "group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "children"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "type": { "const": "group" },
+        "transform": { "$ref": "#/$defs/transform" },
+        "clip": { "$ref": "#/$defs/clip" },
+        "blend": {
+          "description": "Only values the profile allows, which is none in V0 (NOTES R3).",
+          "type": "string"
+        },
+        "children": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+        "label": { "$ref": "#/$defs/label" },
+        "note": { "$ref": "#/$defs/note" },
+        "decisions": { "$ref": "#/$defs/decisions" },
+        "meta": { "$ref": "#/$defs/meta" }
+      }
+    },
+
+    "repeat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "rngKey", "count", "layout", "children"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "type": { "const": "repeat" },
+        "rngKey": { "$ref": "#/$defs/rngKey" },
+        "seedOffset": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "count": { "type": "integer", "minimum": 1, "maximum": 4096 },
+        "layout": { "$ref": "#/$defs/layout" },
+        "jitter": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "translate": { "type": "number", "minimum": 0, "maximum": 2000 },
+            "rotate": { "type": "number", "minimum": 0, "maximum": 360 },
+            "scale": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "children": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+        "label": { "$ref": "#/$defs/label" },
+        "note": { "$ref": "#/$defs/note" },
+        "decisions": { "$ref": "#/$defs/decisions" },
+        "meta": { "$ref": "#/$defs/meta" }
+      }
+    },
+
+    "layout": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "origin", "cols", "dx", "dy"],
+          "properties": {
+            "type": { "const": "grid" },
+            "origin": { "$ref": "#/$defs/point" },
+            "cols": { "type": "integer", "minimum": 1, "maximum": 256 },
+            "dx": { "type": "number" },
+            "dy": { "type": "number" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "origin", "dx", "dy"],
+          "properties": {
+            "type": { "const": "line" },
+            "origin": { "$ref": "#/$defs/point" },
+            "dx": { "type": "number" },
+            "dy": { "type": "number" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "origin", "r"],
+          "properties": {
+            "type": { "const": "ring" },
+            "origin": { "$ref": "#/$defs/point" },
+            "r": { "type": "number", "exclusiveMinimum": 0 },
+            "startAngle": { "type": "number", "minimum": -360, "maximum": 360 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "origin", "w", "h"],
+          "properties": {
+            "type": { "const": "scatter" },
+            "origin": { "$ref": "#/$defs/point" },
+            "w": { "type": "number", "exclusiveMinimum": 0 },
+            "h": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        }
+      ]
+    },
+
+    "macro": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "macro", "rngKey", "args"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "type": { "const": "macro" },
+        "macro": { "enum": ["frame", "motif", "quarantine"] },
+        "rngKey": { "$ref": "#/$defs/rngKey" },
+        "seedOffset": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "args": { "type": "object" },
+        "label": { "$ref": "#/$defs/label" },
+        "note": { "$ref": "#/$defs/note" },
+        "decisions": { "$ref": "#/$defs/decisions" },
+        "meta": { "$ref": "#/$defs/meta" }
+      },
+      "allOf": [
+        { "if": { "properties": { "macro": { "const": "frame" } } }, "then": { "properties": { "args": { "$ref": "#/$defs/frameArgs" } } } },
+        { "if": { "properties": { "macro": { "const": "motif" } } }, "then": { "properties": { "args": { "$ref": "#/$defs/motifArgs" } } } },
+        { "if": { "properties": { "macro": { "const": "quarantine" } } }, "then": { "properties": { "args": { "$ref": "#/$defs/quarantineArgs" } } } }
+      ]
+    },
+
+    "frameArgs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "w", "h", "style", "color"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "w": { "type": "number", "exclusiveMinimum": 0 },
+        "h": { "type": "number", "exclusiveMinimum": 0 },
+        "inset": { "type": "number" },
+        "style": { "enum": ["corners", "full", "dots"] },
+        "brush": { "type": "string" },
+        "color": { "$ref": "#/$defs/color" },
+        "weight": { "type": "number", "minimum": 0.1, "maximum": 20 },
+        "arm": { "type": "number", "exclusiveMinimum": 0 },
+        "count": { "type": "integer", "minimum": 3, "maximum": 200 },
+        "dotRadius": { "type": "number", "exclusiveMinimum": 0 },
+        "opacity": { "type": "number", "minimum": 0, "maximum": 255 }
+      }
+    },
+
+    "motifArgs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "x", "y", "size"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "size": { "type": "number", "exclusiveMinimum": 0, "maximum": 4000 },
+        "rotate": { "type": "number", "minimum": -360, "maximum": 360 },
+        "brush": { "type": "string" },
+        "color": { "$ref": "#/$defs/color" }
+      }
+    },
+
+    "quarantineArgs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "w", "h", "style"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "w": { "type": "number", "exclusiveMinimum": 0 },
+        "h": { "type": "number", "exclusiveMinimum": 0 },
+        "style": { "$ref": "#/$defs/style" },
+        "boxBrush": { "type": "string" },
+        "boxColor": { "$ref": "#/$defs/color" },
+        "boxWeight": { "type": "number", "minimum": 0.1, "maximum": 20 },
+        "label": { "type": "string", "maxLength": 120 },
+        "labelFont": { "type": "string" },
+        "labelSize": { "type": "number", "minimum": 4, "maximum": 400 },
+        "labelTracking": { "type": "number", "minimum": -5, "maximum": 40 }
+      }
+    },
+
+    "op": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "op", "rngKey", "args"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "type": { "const": "op" },
+        "op": { "enum": ["wash", "paint", "stroke", "fragment", "text", "rule", "cover"] },
+        "rngKey": { "$ref": "#/$defs/rngKey" },
+        "seedOffset": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "args": { "type": "object" },
+        "label": { "$ref": "#/$defs/label" },
+        "note": { "$ref": "#/$defs/note" },
+        "decisions": { "$ref": "#/$defs/decisions" },
+        "meta": { "$ref": "#/$defs/meta" }
+      },
+      "allOf": [
+        { "if": { "properties": { "op": { "const": "wash" } } }, "then": { "properties": { "args": { "$ref": "#/$defs/washArgs" } } } },
+        { "if": { "properties": { "op": { "const": "paint" } } }, "then": { "properties": { "args": { "$ref": "#/$defs/paintArgs" } } } },
+        { "if": { "properties": { "op": { "const": "stroke" } } }, "then": { "properties": { "args": { "$ref": "#/$defs/strokeArgs" } } } },
+        { "if": { "properties": { "op": { "const": "fragment" } } }, "then": { "properties": { "args": { "$ref": "#/$defs/fragmentArgs" } } } },
+        { "if": { "properties": { "op": { "const": "text" } } }, "then": { "properties": { "args": { "$ref": "#/$defs/textArgs" } } } },
+        { "if": { "properties": { "op": { "const": "rule" } } }, "then": { "properties": { "args": { "$ref": "#/$defs/ruleArgs" } } } },
+        { "if": { "properties": { "op": { "const": "cover" } } }, "then": { "properties": { "args": { "$ref": "#/$defs/coverArgs" } } } }
+      ]
+    },
+
+    "paintArgs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["region", "style"],
+      "properties": {
+        "region": { "$ref": "#/$defs/region" },
+        "style": { "$ref": "#/$defs/style" }
+      }
+    },
+
+    "washArgs": {
+      "description": "wash is paint restricted to a wash style; it exists as its own operator because it is the one that reads as 'colour laid down' rather than 'shape filled'.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["region", "style"],
+      "properties": {
+        "region": { "$ref": "#/$defs/region" },
+        "style": { "$ref": "paintstyle.schema.json#/$defs/wash" }
+      }
+    },
+
+    "strokeArgs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["points", "brush", "color", "weight"],
+      "properties": {
+        "points": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/point" } },
+        "brush": { "type": "string" },
+        "color": { "$ref": "#/$defs/color" },
+        "weight": { "type": "number", "minimum": 0.1, "maximum": 20 },
+        "closed": { "type": "boolean" },
+        "curve": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+
+    "fragmentArgs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "x", "y", "span", "style"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "span": { "description": "Size of the fragment's unit box in local units.", "type": "number", "exclusiveMinimum": 0, "maximum": 4000 },
+        "rotate": { "type": "number", "minimum": -360, "maximum": 360 },
+        "flipX": { "type": "boolean" },
+        "style": { "$ref": "#/$defs/style" }
+      }
+    },
+
+    "textArgs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "font", "size", "x", "y", "color"],
+      "properties": {
+        "text": { "type": "string", "minLength": 1 },
+        "font": { "type": "string" },
+        "size": { "type": "number", "minimum": 4, "maximum": 400 },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "color": { "$ref": "#/$defs/color" },
+        "align": { "enum": ["left", "center", "right"] },
+        "tracking": { "type": "number", "minimum": -5, "maximum": 40 },
+        "maxWidth": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+
+    "ruleArgs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to", "brush", "color", "weight"],
+      "properties": {
+        "from": { "$ref": "#/$defs/point" },
+        "to": { "$ref": "#/$defs/point" },
+        "brush": { "type": "string" },
+        "color": { "$ref": "#/$defs/color" },
+        "weight": { "type": "number", "minimum": 0.1, "maximum": 20 }
+      }
+    },
+
+    "coverArgs": {
+      "description": "Paints the ground colour back over a region. The one way to take something away.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["region", "softness"],
+      "properties": {
+        "region": { "$ref": "#/$defs/region" },
+        "softness": { "type": "number", "minimum": 0, "maximum": 0.6 }
+      }
+    }
+  }
+}

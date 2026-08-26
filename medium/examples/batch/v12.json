@@ -1,0 +1,127 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 13417,
+  "canvas": {
+    "width": 800,
+    "height": 1200,
+    "ground": "#fdf9f0",
+    "brushScale": 1.25
+  },
+  "palette": {
+    "ink": "#2b241f",
+    "plum": "#6d3b52",
+    "ochre": "#d19a3c",
+    "grass": "#7c9048",
+    "cloth": "#f2e8d4",
+    "rust": "#a8452f"
+  },
+  "meta": {
+    "title": "Twelve blooms",
+    "reads_as": "a panel of cloth with twelve flowers laid out in a grid on it"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "cloth",
+        "type": "op",
+        "op": "wash",
+        "rngKey": "blooms/cloth",
+        "args": {
+          "region": {
+            "type": "rect",
+            "x": 70,
+            "y": 130,
+            "w": 660,
+            "h": 940
+          },
+          "style": {
+            "kind": "wash",
+            "color": "cloth",
+            "opacity": 210,
+            "bleed": 0.12,
+            "texture": [
+              0.4,
+              0.25
+            ]
+          }
+        }
+      },
+      {
+        "id": "cloth-edge",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "blooms/cloth-edge",
+        "args": {
+          "region": {
+            "type": "rect",
+            "x": 70,
+            "y": 130,
+            "w": 660,
+            "h": 940
+          },
+          "style": {
+            "kind": "outline",
+            "brush": "cpencil",
+            "color": "ink",
+            "weight": 1
+          }
+        }
+      },
+      {
+        "id": "bed",
+        "type": "repeat",
+        "rngKey": "blooms/bed",
+        "count": 12,
+        "layout": {
+          "type": "grid",
+          "origin": [
+            180,
+            280
+          ],
+          "cols": 3,
+          "dx": 220,
+          "dy": 240
+        },
+        "children": [
+          {
+            "id": "bloom",
+            "type": "macro",
+            "macro": "motif",
+            "rngKey": "blooms/bloom",
+            "args": {
+              "name": "hibiscus",
+              "x": 0,
+              "y": 0,
+              "size": 150
+            }
+          }
+        ],
+        "jitter": {
+          "translate": 14,
+          "rotate": 40,
+          "scale": 0.2
+        }
+      },
+      {
+        "id": "title",
+        "type": "op",
+        "op": "text",
+        "rngKey": "blooms/title",
+        "args": {
+          "text": "HIBISCUS,   TWELVE",
+          "font": "serif",
+          "size": 22,
+          "x": 400,
+          "y": 1128,
+          "align": "center",
+          "color": "ink",
+          "tracking": 3
+        }
+      }
+    ]
+  }
+}

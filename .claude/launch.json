@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "medium-ui",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "./medium", "run", "ui"],
+      "port": 4321
+    }
+  ]
+}

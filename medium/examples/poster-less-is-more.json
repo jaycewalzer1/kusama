@@ -1,0 +1,276 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 1301,
+  "canvas": { "width": 800, "height": 1200, "ground": "#fdf9f0", "brushScale": 1 },
+  "palette": {
+    "ink": "#23201c",
+    "grey": "#a9a294",
+    "rust": "#a8452f",
+    "paper": "#fdf9f0"
+  },
+  "meta": {
+    "title": "Less is more",
+    "reads_as": "a printed sheet: a ruled frame, three words down the page, one of them red, and a block of setting with a hole cleared in it"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "border",
+        "type": "macro",
+        "macro": "frame",
+        "rngKey": "poster/border",
+        "label": "the trim line",
+        "args": { "x": 48, "y": 48, "w": 704, "h": 1104, "style": "full", "brush": "rotring", "color": "ink", "weight": 1 }
+      },
+      {
+        "id": "head",
+        "type": "group",
+        "label": "the standfirst above the rule",
+        "children": [
+          {
+            "id": "eyebrow",
+            "type": "op",
+            "op": "text",
+            "rngKey": "poster/eyebrow",
+            "args": {
+              "text": "ON SETTING TYPE",
+              "font": "grotesque",
+              "size": 15,
+              "x": 110,
+              "y": 140,
+              "align": "left",
+              "color": "ink",
+              "tracking": 6
+            }
+          },
+          {
+            "id": "eyebrow-number",
+            "type": "op",
+            "op": "text",
+            "rngKey": "poster/eyebrow-number",
+            "args": {
+              "text": "NO. 1",
+              "font": "grotesque",
+              "size": 15,
+              "x": 690,
+              "y": 140,
+              "align": "right",
+              "color": "rust",
+              "tracking": 6
+            }
+          },
+          {
+            "id": "head-rule",
+            "type": "op",
+            "op": "rule",
+            "rngKey": "poster/head-rule",
+            "args": { "from": [110, 160], "to": [690, 160], "brush": "rotring", "color": "ink", "weight": 0.5 }
+          }
+        ]
+      },
+      {
+        "id": "words",
+        "type": "group",
+        "label": "the three words, one per line, the last one carrying the only colour on the sheet",
+        "children": [
+          {
+            "id": "less",
+            "type": "op",
+            "op": "text",
+            "rngKey": "poster/less",
+            "args": {
+              "text": "LESS",
+              "font": "grotesque",
+              "size": 168,
+              "x": 106,
+              "y": 380,
+              "align": "left",
+              "color": "ink",
+              "tracking": 2
+            }
+          },
+          {
+            "id": "is",
+            "type": "op",
+            "op": "text",
+            "rngKey": "poster/is",
+            "args": {
+              "text": "IS",
+              "font": "grotesque",
+              "size": 168,
+              "x": 106,
+              "y": 540,
+              "align": "left",
+              "color": "ink",
+              "tracking": 2
+            }
+          },
+          {
+            "id": "more",
+            "type": "op",
+            "op": "text",
+            "rngKey": "poster/more",
+            "args": {
+              "text": "MORE",
+              "font": "grotesque",
+              "size": 168,
+              "x": 106,
+              "y": 700,
+              "align": "left",
+              "color": "rust",
+              "tracking": 2
+            }
+          },
+          {
+            "id": "underline",
+            "type": "op",
+            "op": "rule",
+            "rngKey": "poster/underline",
+            "label": "the one rule allowed to be loud, and it is still only a rule",
+            "args": { "from": [110, 740], "to": [690, 740], "brush": "rotring", "color": "rust", "weight": 6 }
+          },
+          {
+            "id": "underline-shadow",
+            "type": "op",
+            "op": "stroke",
+            "rngKey": "poster/underline-shadow",
+            "args": {
+              "points": [[112, 752], [330, 754], [560, 751], [688, 754]],
+              "brush": "cpencil",
+              "color": "ink",
+              "weight": 1,
+              "curve": 0.4
+            }
+          }
+        ]
+      },
+      {
+        "id": "setting",
+        "type": "group",
+        "label": "a block of setting, stood in for by ruled lines, with a hole cleared in the middle of it",
+        "children": [
+          {
+            "id": "setting-tint",
+            "type": "op",
+            "op": "wash",
+            "rngKey": "poster/setting-tint",
+            "args": {
+              "region": { "type": "rect", "x": 106, "y": 800, "w": 470, "h": 210 },
+              "style": { "kind": "wash", "color": "grey", "opacity": 45, "bleed": 0.1, "texture": [0.4, 0.2] }
+            }
+          },
+          {
+            "id": "lines",
+            "type": "repeat",
+            "rngKey": "poster/lines",
+            "count": 12,
+            "layout": { "type": "line", "origin": [126, 828], "dx": 0, "dy": 15 },
+            "jitter": { "translate": 1 },
+            "children": [
+              {
+                "id": "line",
+                "type": "op",
+                "op": "rule",
+                "rngKey": "poster/line",
+                "args": { "from": [0, 0], "to": [440, 0], "brush": "2H", "color": "grey", "weight": 1 }
+              }
+            ]
+          },
+          {
+            "id": "hole",
+            "type": "op",
+            "op": "cover",
+            "rngKey": "poster/hole",
+            "note": "cover is the only way to take setting back off once it is down; the word below needs the paper clean",
+            "args": { "region": { "type": "rect", "x": 250, "y": 876, "w": 250, "h": 68 }, "softness": 0.5 }
+          },
+          {
+            "id": "enough",
+            "type": "op",
+            "op": "text",
+            "rngKey": "poster/enough",
+            "args": {
+              "text": "enough",
+              "font": "serif",
+              "size": 44,
+              "x": 376,
+              "y": 922,
+              "align": "center",
+              "color": "ink",
+              "tracking": 0.5
+            }
+          },
+          {
+            "id": "pointer",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "poster/pointer",
+            "label": "the only drawing on the sheet, and it is pointing at the gap",
+            "args": {
+              "name": "hand.pointing",
+              "x": 642,
+              "y": 898,
+              "span": 132,
+              "style": { "kind": "outline", "brush": "2B", "color": "ink", "weight": 1 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "colophon",
+        "type": "group",
+        "children": [
+          {
+            "id": "marks",
+            "type": "repeat",
+            "rngKey": "poster/marks",
+            "count": 20,
+            "layout": { "type": "grid", "origin": [116, 1046], "cols": 10, "dx": 30, "dy": 22 },
+            "children": [
+              {
+                "id": "mark",
+                "type": "op",
+                "op": "paint",
+                "rngKey": "poster/mark",
+                "args": {
+                  "region": { "type": "circle", "cx": 0, "cy": 0, "r": 3 },
+                  "style": { "kind": "solid", "color": "ink", "opacity": 210 }
+                }
+              }
+            ]
+          },
+          {
+            "id": "bar",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "poster/bar",
+            "args": {
+              "region": { "type": "rect", "x": 106, "y": 1092, "w": 584, "h": 44 },
+              "style": { "kind": "solid", "color": "ink", "opacity": 255 }
+            }
+          },
+          {
+            "id": "bar-text",
+            "type": "op",
+            "op": "text",
+            "rngKey": "poster/bar-text",
+            "args": {
+              "text": "SET IN THE MEDIUM",
+              "font": "grotesque",
+              "size": 20,
+              "x": 398,
+              "y": 1121,
+              "align": "center",
+              "color": "paper",
+              "tracking": 6
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

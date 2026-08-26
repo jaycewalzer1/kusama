@@ -1,0 +1,119 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 2131,
+  "canvas": {
+    "width": 800,
+    "height": 1200,
+    "ground": "#14262e",
+    "brushScale": 1.5
+  },
+  "palette": {
+    "ink": "#14262e",
+    "deep": "#1f4a5c",
+    "aqua": "#4f9aa8",
+    "coral": "#d96a4f",
+    "shell": "#f4efe2"
+  },
+  "meta": {
+    "title": "Everyone at once",
+    "reads_as": "a dark room packed with pale figures in ranks"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "haze",
+        "type": "op",
+        "op": "wash",
+        "rngKey": "crowd/haze",
+        "args": {
+          "region": {
+            "type": "rect",
+            "x": 0,
+            "y": 0,
+            "w": 800,
+            "h": 1200
+          },
+          "style": {
+            "kind": "wash",
+            "color": "deep",
+            "opacity": 150,
+            "bleed": 0.3,
+            "texture": [
+              0.55,
+              0.35
+            ]
+          }
+        }
+      },
+      {
+        "id": "ranks",
+        "type": "repeat",
+        "rngKey": "crowd/ranks",
+        "count": 24,
+        "layout": {
+          "type": "grid",
+          "origin": [
+            110,
+            260
+          ],
+          "cols": 4,
+          "dx": 194,
+          "dy": 216
+        },
+        "children": [
+          {
+            "id": "body",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "crowd/body",
+            "args": {
+              "name": "figure.crowd",
+              "x": 0,
+              "y": 0,
+              "span": 168,
+              "style": {
+                "kind": "wash",
+                "color": "shell",
+                "opacity": 215,
+                "bleed": 0.08,
+                "texture": [
+                  0.45,
+                  0.25
+                ]
+              }
+            }
+          }
+        ],
+        "jitter": {
+          "translate": 16,
+          "rotate": 6,
+          "scale": 0.18
+        },
+        "label": "six ranks of four"
+      },
+      {
+        "id": "sill",
+        "type": "op",
+        "op": "rule",
+        "rngKey": "crowd/sill",
+        "args": {
+          "from": [
+            0,
+            1136
+          ],
+          "to": [
+            800,
+            1136
+          ],
+          "brush": "charcoal",
+          "color": "coral",
+          "weight": 3
+        }
+      }
+    ]
+  }
+}

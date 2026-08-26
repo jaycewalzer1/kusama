@@ -1,0 +1,516 @@
+# NOTES
+
+Library surprises, deviations from the build document, and things a reader should not have to
+rediscover. Every entry cites the source line that explains it.
+
+Vendored: p5 2.2.0 (`vendor/p5.min.js`), p5.brush 2.1.0-beta (`vendor/p5.brush.js`). The p5.brush
+source referenced below is the `src/` tree of the published `p5.brush-2.1.0-beta.tgz` (the vendored
+file is that package's `dist/p5.brush.js`).
+
+## L1. `brush.clip()` is a no-op in 2.1.0-beta
+
+```js
+// src/stroke/stroke.js:306
+export function clip(region) {
+  isCanvasReady();
+  return region;      // <- returns the argument, sets no state
+}
+export function noClip() { return; }
+```
+
+The library documents a clipping API (`llms.txt`: "brush.clip([x1,y1,x2,y2])") but the 2.1.0-beta
+implementation stores nothing and no drawing code reads it. So the library provides **no** clipping.
+
+**What we do instead:** `clip` is implemented geometrically in `renderer/compositing.js`. A group's
+`clip.rect` is turned into a convex quad in world space, intersected with any enclosing clip, then
+transformed into each leaf's local space; each operator clips its own geometry against that convex
+polygon (Sutherland-Hodgman for areas, segment clipping for paths, point rejection for field marks)
+before handing it to p5.brush. Consequences, both intended and recorded here:
+
+- Clipping is **geometric, not per-pixel**. Brush marks are stamps with soft edges and watercolour
+  bleed, so ink may still land a few pixels outside the clip boundary. It bounds the *shape*, not the
+  *ink*. `resolve.js` therefore pads clipped node bounds by the same bleed margin as unclipped nodes.
+- Only `clip.type: "rect"` exists. Any other clip shape is rejected by the schema, as the build
+  document instructs when the library cannot clip arbitrarily.
+- `text` ops are **rejected by validation inside a clipped group** (`env/validate.ts`). Glyph
+  rasterisation happens in p5's text pipeline, which we cannot geometrically clip; refusing is
+  honest, refusing loudly is cheap, and silently ignoring the clip would not be.
+- Circles under an active clip are converted to a fixed 64-gon before clipping, so a clipped circle
+  is not byte-identical to the same circle unclipped. This is visible in `examples/event-picture`.
+
+## L2. `brush.fill()` throws unless `brush.load()` was called first
+
+`llms.txt` says "brush.load() is not needed for the main canvas - it initializes automatically on
+createCanvas()". That is true only for entry points that call `isCanvasReady()`. `fill()` does not:
+
+```js
+// src/fill/fill.js:81
+State.fill.color = arguments.length < 3 ? Renderer.color(a) : Renderer.color(a, b, c);
+```
+
+`Renderer` (`src/core/target.js:8`) is `undefined` until `load()` runs, so the first `brush.fill()`
+issued from `setup()` dies with `Cannot read properties of undefined (reading 'color')`. Stroke and
+hatch entry points do call `isCanvasReady()` and so self-initialise, which is why this only bites
+fills. We call `brush.load()` explicitly in `setup()`.
+
+## L3. `brush.scaleBrushes()` is cumulative, not absolute
+
+`scaleBrushes(s)` multiplies the currently registered brush parameters by `s`
+(`src/stroke/stroke.js`, `scaleBrushes`). Calling it once per p5 instance in a page that renders more
+than once gives brushes scaled by 3, then 9, then 27. Measured: a program containing only fills was
+stable across renders while a program with brush strokes changed on every render. We call it exactly
+once per page, in `setup()`, and there is exactly one render per page (see R1), so `brushScale` means
+what the program says it means.
+
+## L4. `brush.fill()` mixes pigment, so you cannot paint light over dark
+
+The fill path never touches the canvas directly. It draws into p5.brush's own blend buffer and then
+composites with a custom shader:
+
+```js
+// src/fill/fill.js:512
+Mix.isBrush = false;
+Mix.blend(color);              // <- pigment mixing, not source-over
+```
+
+Measured: a full-opacity `brush.fill('#fdf9f0', 255)` over a solid teal rectangle moved the centre
+pixel from `[94,140,138]` to `[125,168,166]` — about an eighth of the way to the ground colour — and
+raising `softness` made it *worse*, because the same ink is spread further. Plain p5 `fill()` over the
+same rectangle restored `[253,249,240]` exactly, over both brush marks and native marks.
+
+**What this means for `cover`.** The build document calls `cover` "the one way to take something
+away", so an operator that only tints is not an implementation of it. `renderer/ops.js` therefore
+draws `cover` with plain p5, not with a brush, and gets `softness` from geometry instead: it paints
+`COVER_LAYERS = 6` nested copies of the region, scaled about the region's centre from `1 + s/2` down
+to `1 - s/2`, each more opaque than the last. Every layer covers the core, so the core is exactly the
+ground colour; only the faintest covers the outer band, so the edge fades. Consequences:
+
+- `cover` is the one operator with no brush character at all. Its edge is a stepped alpha ramp, not
+  a watercolour edge, and at large `softness` the six steps are visible on a flat field.
+- `brushScale` does not affect `cover`, and `leafBounds` pads it by `max(w,h) * softness / 4` — the
+  reach of that outermost layer — rather than by a brush bleed margin.
+- The same finding is why group opacity could not be faked by washing the ground over a group.
+
+## R1. Renderer protocol: one render per page, and how the frame is captured
+
+Three separate sources of non-determinism were measured before this settled. The protocol below is
+the configuration that is byte-stable; each clause is load-bearing.
+
+1. **One p5 instance per page, exactly one render per page.** p5.brush keeps its GL mask/composite
+   framebuffers on the renderer and blits the canvas into a blend-source framebuffer restricted to a
+   *dirty rect* (`src/core/color.js:313-351`, `src/fill/composite.js:142`). Pixels outside that rect
+   keep the previous render's content, so render N depends on render N-1. Measured: rendering the
+   same program as the 2nd vs the 4th render in one page differed on 2 pixels by 1/255. Rather than
+   depend on a fixed warm-up history, each render gets a fresh page (fresh JS context, fresh GL
+   context). This **deviates from the build document's "page recycled every 25 renders"**; the batch
+   runner discards each page after one render, and renders one at a time (R8).
+2. **Draw in `draw()`, never in `setup()`.** The addon composites brush marks in its `postdraw`
+   lifecycle hook (`src/index.js:156`). Marks issued from `setup()` are not flushed.
+3. **Capture by reading the frame until two consecutive reads agree**, then `gl.finish()` and
+   `gl.readPixels`. Capturing synchronously after `redraw()` returns an empty frame, and a fixed
+   number of `requestAnimationFrame`s was the original protocol here: 2 rAFs was stable for simple
+   programs but not for watercolour fills (1 of 5 fresh pages differed), and 5 rAFs was stable in
+   every configuration measured *at the time*. That fixed count is gone, for the reason set out in
+   R4 — `renderer/page.js` (`settledReadback`, `MIN_SETTLE_FRAMES = 3`, `MAX_SETTLE_FRAMES = 90`)
+   re-reads once a frame until two readbacks are byte-identical, and gives up loudly rather than
+   returning a half-composited frame. `manifest.settlePolicy` records the rule.
+   `toDataURL`/`toBlob` are not used at all: the canonical PNG is encoded in Node from the raw RGBA
+   readback, so the browser's PNG encoder is not part of the trusted path. `readPixels` returns
+   bottom-up rows; `env/browser.ts` flips them.
+
+Determinism claim proven under this protocol: 5 fresh pages x 3 different programs, byte-identical
+per program. See `tests/determinism.test.ts` for the standing version of that check.
+
+## R4. A fresh browser process is warmed up until it demonstrably settles
+
+Even with R1 in force, the *first* render after `chromium.launch()` disagrees with every later render
+of the same program: measured 32 differing bytes out of 640000, maximum delta 6/255, and renders 2..N
+were then byte-identical to each other and to renders 2..N of a separate browser launch. It is a
+warm-up effect in the browser process itself, not a settling problem in the page: raising the capture
+delay from 5 to 20 frames did not change the first render's pixels at all, while rendering any
+throwaway program first made the next render land on the converged value immediately.
+
+A **fixed** number of warm-up renders is not enough, which cost a day to learn. With exactly one
+discarded render, six fresh launches of the same program still produced two divergent first
+user-visible renders, and the two divergences did not agree with each other — so there is no single
+"cold" state to skip past. Renders 2..N were identical in every launch, including the divergent ones.
+
+`Renderer.warmUp()` therefore does not count warm-ups; it checks them. It renders the throwaway
+program (`WARMUP_PROGRAM`, a 128x128 wash) until two consecutive warm-up frames are byte-identical —
+exactly the property every later render depends on — and records how many that took in
+`manifest.warmupRenders`. Since R7 that is not a separate loop: `warmUp()` just calls `render()`,
+which already converges, so there is one convergence mechanism and the warm-up is simply the first
+program to go through it. Typically 2; measured 8 of 8 launches converged, all to the same pixels. If
+it does not converge within `MAX_RENDER_ATTEMPTS` it throws instead of rendering anything, because at
+that point the determinism claim is false on that machine and silence would be the worst outcome.
+The content of the warm-up does not matter — a 400x400 wash and the 128x128 one both converge the
+process — but it must actually exercise a brush.
+
+## R6. Multisampling was the real source of non-determinism, and it is now off
+
+R4 blamed a "cold browser". That was only half the story, and the other half was the expensive half.
+
+What kept happening after R4's warm-up was in place looked like two bugs and turned out to be one.
+
+**Symptom A: a render that drew text perturbed the *next* render.** Isolated by rendering the same
+wash four times with a text render spliced in between: the wash immediately after the text render came
+back with 4 pixels of 960000 wrong by up to 3/255, and wrong *differently* each time, while the wash
+before it and the second wash after it were identical to each other. `loadFont()` is innocent — a font
+loaded but never drawn produced a byte-identical wash — so it is drawing text that does it.
+
+**Symptom B: programs that were stable in isolation would not repeat.** The `b0` batch program (a
+wash, 12 hatched fragments, and a line of text at 800x1200) gave 5 distinct results over 8 renders,
+4-10 differing bytes out of 3840000, maximum delta 8/255, and **no two consecutive renders ever
+agreed** — while `wash` alone, the 12 fragments alone and `text` alone were each perfectly stable.
+
+B is A. A program that draws text poisons *its own* next render, so consecutive renders of `b0` could
+never agree. The same mistake made the operator bisection misleading: "wash + fragments" also looked
+unstable, but only because the `text`-only case had been rendered immediately before it. This is worth
+remembering as a method note — when a bug is carried from one render to the next, bisecting by
+rendering candidates in sequence produces a confident, wrong answer. Each case now gets a fresh
+browser, and the regression test in `tests/determinism.test.ts` keeps all three operators in one
+program for exactly this reason.
+
+The flickering pixels were the tell. There were only four of them — (55,666), (55,667), (57,678),
+(215,693) — and every one sits on the soft outer edge of the wash's bleed where it meets the edge of a
+hatch stroke, i.e. exactly where two nearly-transparent brush layers overlap. That is a multisample
+resolve, not a brush. p5 gives the WEBGL canvas an antialiased (multisampled) default framebuffer, and
+p5.brush's `blitToBlendSourceFramebuffer` blits *from that default framebuffer* into its blend source
+every blend flush; the MSAA resolve that blit performs is implementation-defined, and under ANGLE +
+SwiftShader it is not stable for pixels whose coverage lands on a rounding boundary.
+
+Turning it off — `p.setAttributes('antialias', false)`, which in p5 2.2.0 must be called *after*
+`createCanvas` or it throws `this._renderer._setAttributes is not a function` — made all of it go away
+at once: every case above went to STABLE, including `b0`, and including single renders taken straight
+after a text render with no convergence loop and no warm-up in between. Nothing else changed. Both
+regression tests were checked against the bug rather than merely written: with `antialias` back on
+they fail, and with it off they pass.
+
+Two things are worth saying plainly. First, this cost very little visually: p5.brush's marks are
+stamped textures rather than rasterised polygons, so there were almost no hard geometric edges for
+MSAA to be smoothing in the first place. Second, `WEBGL_lose_context` before closing the page was
+tried as a cheaper fix and does not help at all, so this was never leftover GPU state.
+
+R4's warm-up is still needed and still converges in 2-4 renders; the cold-process effect is real and
+separate from this one.
+
+## R7. Every render is repeated until it repeats itself
+
+Even after R6, a single render is not *checked*. R4 already established the house rule for this class
+of bug: when a fixed count is tempting, wait for the property you actually depend on instead. R6 is
+where that rule paid for itself, so `Renderer.render()` now applies it to real renders too
+— it renders the program repeatedly until two consecutive renders are byte-identical, and throws after
+`MAX_RENDER_ATTEMPTS` rather than returning a plausible-looking image.
+
+The rejected alternative is worth recording, because it looked much cheaper. Splicing one throwaway
+"barrier" render between real renders absorbs symptom A of R6 completely: 3/3 rounds recovered the
+true pixels. But it only works if the barrier is big enough — a 128x128 barrier absorbs, 64x64
+absorbs, **32x32 and 16x16 do not** — and the cost is flat at ~560-580ms regardless of size, because
+it is page setup rather than drawing. A threshold nobody can explain is R4's fixed warm-up count
+wearing a different hat, so it was not adopted. It would also not have helped with symptom B at all,
+where no two consecutive renders agreed in the first place.
+
+Keeping the convergence loop after R6 fixed the underlying cause is deliberate. It is what turned
+that bug from silent wrong pixels into a loud failure, and it is the difference between "the
+programs we happened to test were stable" and "this render was verified". `manifest.renderPolicy`
+records the rule so a trace says which guarantee produced it.
+
+## R2. Randomness sources are fully seedable; no `Math.random` shim is needed
+
+p5.brush seeds its own PRNG and simplex noise from `Math.random()` at module load
+(`src/core/utils.js:16,17,45,46`), which would be fatal, except that the addon overrides p5's seeding
+functions:
+
+```js
+// src/index.js:177
+fn.randomSeed = function (s) { _randomSeed.call(this, s); brushSeed(s); };
+fn.noiseSeed  = function (s) { _noiseSeed.call(this, s);  brushNoiseSeed(s); };
+```
+
+`brushSeed` also re-fills the library's gaussian pools through its `_onSeed` hook
+(`src/core/utils.js:33-39`, `src/fill/fill.js:127`), so no state survives a reseed. Those are the
+only `Math.random()` call sites in `src/`. Therefore `p.randomSeed(n); p.noiseSeed(n)` before every
+operator is sufficient and the `Math.random` shim contemplated by the build document is **not**
+installed.
+
+## R3. Group blend modes are rejected in V0
+
+`p5.blendMode(MULTIPLY)` measurably changes the output of subsequent brush fills, but p5.brush does
+its own colour mixing through a blend-source framebuffer and a custom shader
+(`src/core/color.js`, `src/stroke/shader.frag`), so "it changed the pixels" is not evidence that it
+composited *correctly*. The build document says to support group blend only if correctness can be
+verified, otherwise reject at validation. `profiles/default.profile.json` therefore ships
+`"blendModes": []` and `env/validate.ts` rejects any `blend` on a group. The schema keeps the field
+so a future profile can enable it without a format change.
+
+Group opacity is not supported at all, per the build document. The path to it, if it is ever wanted,
+is `brush.load(buffer)` with a WEBGL `p5.Graphics` (`src/core/target.js:131`), which the library does
+support; the offscreen probe rendered correctly. It is not built.
+
+## R5. Pages are never recycled
+
+`cli/batch.ts` does **not** recycle a page every 25 renders as the build document suggests. One fresh
+page per render is forced by R1: p5.brush keeps a blend-source framebuffer between draws, so a second
+render on a live page is not the same render. Pages are cheap and determinism is not, so the batch
+reuses only the browser. What the batch does instead is prove the reuse was harmless: it re-renders
+the first program again after every other program has been through that browser and refuses the batch
+if the two hashes disagree (`positionIndependent` in `batch.json`).
+
+This entry used to also claim that batch *concurrency* was byte-safe, on the strength of an 8-program
+400x400 batch whose renders were identical at concurrency 1 and 4. That claim was wrong twice over —
+first because of R6, and then, after R6 was fixed, on its own terms. See R8.
+
+## R8. Renders in flight together are not deterministic, and the convergence loop does not save them
+
+After R6 removed multisampling, a 20-program batch at 800x1200 still reported that three programs had
+needed more than the minimum two renders to repeat themselves, and a 50-program run of the same set
+aborted outright on `v12` — six renders, no two consecutive ones alike. Rendered one at a time, `v12`
+is perfectly stable. The whole difference is whether other renders are in flight beside it:
+
+```
+v12 serial     : 0117b3a7030b 0117b3a7030b 0117b3a7030b 0117b3a7030b  AGREE
+v12 parallel r1: b7061d17a0bb 0117b3a7030b b99121f326f9 ab8445534d5b  4 distinct
+v12 parallel r2: 2d45ffad2537 23cd9f4eac55 21a6427a3396 b10032037d58  5 distinct
+v12 parallel r3: cd30759696c8 8ac4ff345f4c 2d17b8fef511 0117b3a7030b  4 distinct
+```
+
+Four pages in one browser, the same resolved program on each, and almost every render came back
+different. Pages do not share p5 or p5.brush state — they share Chromium's GPU process, and one
+SwiftShader context's work is evidently not isolated from another's.
+
+The dangerous part is not that concurrency is wrong. It is that **every check built to catch this
+failed to.** In the concurrency-4 batch, `v12` converged: two consecutive renders agreed, R7's loop was
+satisfied, and the batch recorded `7a803a84ffaa` — while the true, serial render of that same program
+is `0117b3a7030b`. Two renders that are wrong in the same way are indistinguishable from two renders
+that are right, so a loop that waits for agreement will happily certify a wrong image. Re-rendering
+the whole set one at a time showed that **14 of the 20 images that batch wrote were wrong**, and that
+only 3 of those 14 had shown any sign of it by needing extra attempts.
+
+The batch's own `positionIndependent` guard reported `true` on that run, and the reason is worse than
+bad luck. `v00` was itself one of the 14. The control render happens after every worker has finished,
+so it really is alone — and it still returned `v00`'s *wrong* hash, matching the concurrent render and
+passing the check. Rendered in a browser that had never rendered concurrently, `v00` gives
+`dfa20785afc8` eight times out of eight across two processes; in run 1 both the batch render and the
+control agreed on `e2e167ed8066`. So the perturbation outlives the concurrency that caused it: once a
+browser has had pages in flight together, its later serial renders are contaminated too, which is
+precisely how a guard designed to detect batch contamination was defeated by batch contamination.
+
+So `--concurrency` is **removed**, not defaulted to 1 — a flag whose only safe value is its default is
+a footgun, and the build document's request for concurrency 4 is one of the places this medium
+knowingly does not do what it was asked. Nothing is lost: SwiftShader is a software rasteriser and the
+work serialises in the GPU process anyway, which is why the original 400x400 measurement showed
+concurrency 4 to be no faster (8.4s vs 8.6s) at the same time as it appeared to be safe.
+
+The general lesson is the one R6 taught in a different costume: a check that a render "agrees with
+itself" only means something if the two renders were produced independently. R7 is worth keeping for
+what it does catch, but it is not a licence to render however one likes.
+
+## R9. What a batch actually costs, and the one target that is missed
+
+All at 800x1200 on the pinned runtime, one render at a time, on an otherwise idle machine:
+
+| batch | wall clock | per render | result |
+| --- | --- | --- | --- |
+| 20 programs (`examples/batch/`) | 139.8s | 6.99s | position-independent, 20/20 distinct |
+| 50 programs | 306.5s | 6.13s | position-independent, 50/50 distinct |
+| 50 programs, repeated in a second process | 307.5s | 6.15s | **all 50 hashes identical to the run above** |
+
+Two things worth reading off this table. The second 50-program run is the strongest determinism
+evidence in the repo: fifty different programs, two separate browser processes, one hundred renders,
+zero differing bytes. And every render in both 50-program runs converged on its **second** attempt,
+which is the minimum R7 allows — so with R6 and R8 in force, nothing in that set is flaky any more.
+
+The cost of the guarantees is visible and was paid deliberately. R7 renders every program at least
+twice, so roughly half of the 6.1s is spent proving the other half; R1's fresh page per render adds
+about 0.6s of page setup that a recycled page would not.
+
+**The build document's target of "under 5 minutes for 50 at 800x1200" is missed, at 5m 06s.** It is
+missed by 6 seconds and it is missed reproducibly (306.5s and 307.5s on two runs). Every way to close
+that gap was a way of rendering less carefully — dropping the R7 second render would come in at about
+2m 40s, and concurrency 4 would have made it slower *and* wrong (R8: the same 20 programs took 237.6s
+concurrently versus 139.8s serially, and 14 of the 20 images were wrong). The target is reported as
+missed rather than met by loosening the thing the target exists to protect.
+
+For completeness, the 50-program set was also run at concurrency 4, and it never finished: it aborted
+with R7's `the render never repeated: 6 renders of the same program never produced two identical images
+in a row` after **5m 37s** of wall clock at 503% CPU. So at this size concurrency is not a trade of
+correctness for speed in either direction — it burns five cores to be 31 seconds slower than the serial
+run and then refuses to produce an answer at all. It is also the one case where R7 caught the
+concurrency damage rather than certifying it, which is luck, not coverage: R7 fails only when the
+perturbation happens to differ between attempts, and R8's whole point is that often it does not.
+
+## O1. Operator/library mapping, and where the fixed constants are
+
+- Our `PaintStyle.kind: "wash"` uses `brush.fill` + `fillBleed` + `fillTexture`. It does **not** use
+  `brush.wash()`, which in p5.brush means the *opposite* thing: a fast solid pass with no bleed and
+  no texture (`src/fill/wash.js`). Our `kind: "solid"` is the one that means "no brush texture", and
+  it uses plain p5 `fill()`, not `brush.wash()`.
+- Available brush presets, read from `src/stroke/stroke.js:801`: `pen`, `rotring`, `2B`, `HB`, `2H`,
+  `cpencil`, `pastel`, `crayon`, `charcoal`, `spray`, `marker`. The profile allows a subset.
+- Fixed constants that are deliberately not program-controllable, all in `renderer/ops.js`:
+  `CIRCLE_IRREGULARITY = 0.12` (hand-drawn wobble passed to `brush.circle`), `CLIP_CIRCLE_SEGMENTS =
+  64`, and the per-style bleed margins used for bounds padding in `resolve.js`.
+- `brush.polygon()` is avoided in favour of `beginShape/vertex/endShape`, per `llms.txt`: polygon
+  "bypasses the field-aware primitive generation ... and it can be a poor choice when fills are
+  involved."
+
+## O2. Text needs a font loaded before the WEBGL canvas will draw anything
+
+A `text()` call with no `textFont` produced zero marked pixels in WEBGL, silently. Fonts are loaded
+with `await p.loadFont(url)` inside an async `setup()`, before any drawing, and only the faces a
+program actually uses are loaded, so an unused face cannot influence a render.
+
+## O3. The page is served from disk over a fake origin, not from `file://`
+
+`renderer/page.js` is an ES module and a `file://` document cannot load one (opaque origin, blocked by
+CORS), nor can it `fetch` a sibling font. Instead of bundling, `env/browser.ts` intercepts every
+request the page makes with `page.route()` and fulfils it from `medium/` on disk, under the origin
+`http://medium.invalid`. Only `vendor/`, `renderer/` and `fonts/` are served; nothing else can be
+reached and no request ever leaves the machine, so the render stays hermetic and works offline.
+
+## O4. The `core` pack is derived from control polygons, not drawn vertex by vertex
+
+`assets/packs/core/author.mjs` is the source of truth for `pack.json`; the JSON is generated and must
+never be hand-edited, since its content hash is what a program's `assetPack` pins. Each fragment is
+written as a coarse control polygon in a convenient 0..100 box, then put through however many rounds
+of Chaikin corner cutting that shape wants, then normalised so its longer axis is exactly 1. Three
+consequences worth knowing:
+
+- Chaikin doubles the point count per round, so the count is chosen per shape to land in the profile's
+  20..80 window rather than by fiddling with vertices. Shapes that must stay crisp (`arch.arch`,
+  `arch.column`, `debris.shard`, `light.beam`, `mark.sponsor-a`) get zero rounds and therefore carry
+  every vertex explicitly.
+- Normalisation to a longest axis of exactly 1 is what makes `span` mean the same thing for every
+  fragment. `tests/pack.test.ts` asserts it, because a fragment that quietly normalised to 0.8 would
+  make every layout that mixes fragments subtly wrong.
+- Nothing here is traced. Every outline is a list of coordinates chosen by hand, which is also the
+  only defensible answer to "where did this artwork come from".
+
+`cli/fragments-sheet.ts` renders each fragment at 30/60/110px in a wash, a hatch and an outline. It
+builds the sheet a row at a time — one small program and one render per fragment, pasted together in
+Node — because a single program holding 135 cells plus a caption per row would blow the profile's
+`maxTextOps` and resolved-node limits purely to be a contact sheet.
+
+## Proposed operators and macros that were wanted but NOT added
+
+Kept here rather than built, per the build document's instruction:
+
+- `paint` with a `gradient` style (p5.brush exposes `{gradient: 0-1}` on both `hatch` and `mass`).
+  Wanted for skies in `event-picture`; not added because it is a sixth PaintStyle.
+- A `mass` style over `brush.mass()` (layered hand-filled value). This is the most obviously missing
+  expressive primitive in the medium as specified.
+- A `flow` op over `brush.field()` + `brush.flowLine()`. Vector fields are the library's signature
+  feature and are entirely unused by this medium.
+- `arc` as a stroke primitive (`brush.arc`), currently only expressible as a many-point `stroke`.
+- A `text.path` op (text along a curve), wanted for the poster example.
+
+## E1. Edit locality, measured: three typed edits to `event-picture` spill nothing
+
+`examples/event-picture-edited.json` is `examples/event-picture.json` after exactly three actions, each
+applied through `applyEdit` via `cli/apply-edit.ts` and chained (the output of one is the input of the
+next), so all three are appended to `meta.provenance` in order with their own `before`/`after`/
+`estimatedCost`:
+
+| action | kind | target | what it does |
+| --- | --- | --- | --- |
+| `ep-edit-1-mark-b-restyle` | `set_style` | `mark-b` | solid grey -> a rust wash, inside the clipped sponsor strip |
+| `ep-edit-2-speaker-smaller` | `set_arg` | `speaker` | `span` 190 -> 160 |
+| `ep-edit-3-bird-over-title` | `add_node` | into `title` | one `animal.bird` fragment at (688, 196), span 62 |
+
+`cli/diff.js` over the pair (committed at `examples/event-picture-diff/`):
+
+```
+1 added, 0 removed, 2 changed, 162 untouched
+21166 pixels differ, 0 of them outside the declared bounds
+spillover 0.0000
+```
+
+**Zero spilled pixels, not merely under the 0.05 threshold.** Three things had to hold at once for
+that, and they are the reasons to keep it that way:
+
+- Seeds are positional-free. `resolve.js` derives a leaf's seed from `nodeSeed(program.seed, rngKey,
+  instance, seedOffset)` only, so inserting `title-bird` in the middle of the tree did not reseed a
+  single other node. Had the seed depended on paint order, the add alone would have redrawn the page.
+- `leafBounds` never intersects with the clip. `mark-b` sits in a clipped group but its declared box
+  is the whole unclipped fragment plus the wash bleed margin, which is strictly larger than where the
+  ink can land. Conservative in the direction that makes spillover honest.
+- p5.brush's pigment mixing (L4) propagates a change into whatever is painted *over* it, so all three
+  edits were chosen late in paint order, or with nothing brush-filled above them. An edit under a
+  large later wash would still be local in the tree and could still show pixels moving outside its own
+  box.
+
+Two of the three actions record `estimatedCost: 0`, which is truthful rather than a bug:
+`estimateMarks` charges a `solid` fill 1 mark regardless of area, and a `wash` `40 + bleed*400` marks
+regardless of area, so neither adding a solid fragment nor shrinking a wash changes the estimate.
+
+## E2. `layout: "scatter"` measures its box from the origin as a corner, not a centre
+
+`resolve.js` does `px += rng.next() * layout.w` after `layoutPosition` returns `layout.origin`
+verbatim, so a scatter occupies `[ox, ox+w] x [oy, oy+h]`. `ring` treats `origin` as a centre and
+`grid`/`line` treat it as a first cell, so scatter reads like the odd one out and the schema says
+nothing either way. Two of the twenty batch programs were written with a centred box first; the result
+was not an error but a picture with two thirds of its instances off the bottom-right corner of the
+canvas, which validates and renders happily. Worth knowing before blaming the jitter.
+
+## E3. A space has zero advance width in the WEBGL text path, so tracked text loses its word gaps
+
+`ops.js:drawTracked` steps `cx += p.textWidth(ch) + tracking` per character whenever `tracking` is
+non-zero. Measured: `p.textWidth(' ')` contributes nothing, so `"A SINGLE OPENING"` at `tracking: 2`
+renders as `A SINGLEOPENING` — the word gap collapses to one letter gap. At `tracking: 0` the branch
+hands the whole string to `p.text()` and the spaces come back, but then `lineWidth` still sums
+per-character widths, so a centred multi-word line is off-centre by half the missing space width.
+
+Not fixed here (`renderer/` is not ours to edit). The workaround used across `examples/batch` is to
+write three spaces between words in any tracked display string: the gap becomes `3 * tracking` and
+reads as a word space. Small captions that want real spacing simply omit `tracking`.
+
+## E4. The profile's cost estimate does not predict render wall clock, and ranks programs backwards
+
+> **The absolute numbers in this entry are stale.** They were measured over `examples/batch/v00..v19`
+> before the R6 antialias fix, with a `-c 1` flag that no longer exists, and came to 191.9s wall /
+> 9.59s per render. The current figures are in **R9** (139.8s / 6.99s for the same 20 programs). What
+> survives is the *ranking*, which is what this entry is actually about — the relationship between
+> estimated cost and measured time, not the times themselves.
+
+Per-render `timings.totalMs` ranged from **1.0s (`v09`) to 96.0s (`v12`)**, a 96x spread, and the
+profile's own budget number ranks them almost backwards:
+
+| program | est. marks | est. cost | measured |
+| --- | --- | --- | --- |
+| `v09` six hatched patches | 16039 | 16039 | 1.0s |
+| `v11` five hatched columns | 4561 | 5073 | 3.3s |
+| `v12` twelve hibiscus motifs | 6500 | 17207 | 96.0s |
+
+`estimateBudget` prices a hatch stamp and a wash fill on the same scale (`costWeight` 1 vs 3), but a
+wash is a full `Mix.blend` pass through p5.brush's blend-source framebuffer and a shader, while
+hatching is thousands of cheap strokes. `v12` expands to 60 washes (five petals x twelve blooms) and
+pays for each; `v09`'s 16000 hatch marks are nearly free. So the profile's `maxRenderCost` is a
+guard against *unbounded* programs, not a time estimate — do not use it to schedule a batch. Counting
+resolved nodes whose style is `wash` is a far better predictor of wall clock than `cost` is.
+
+## E5. `cli/validate.ts` used to take one program and silently ignore the rest — fixed
+
+`validate` declared a single `<program.json>` argument, so `node dist/cli/validate.js
+examples/batch/*.json` exited 0 having checked `v00.json` only — commander accepts the excess
+arguments without complaint and nothing warned. That is the worst failure mode a gate can have: it
+does not err on the side of refusing, it passes while checking 5% of what it was handed, and the
+green exit code is indistinguishable from a real one.
+
+It is now `<programs...>`, matching `batch` and `diff`. All programs are checked even after one
+fails (so you get the whole list of problems, not just the first), the exit code reflects every
+program, and `--determinism` renders each of them in one browser, one at a time. `--json` still
+prints a single object for a single program and prints an array only when given several.
+
+## E6. What the twenty batch variants are for
+
+`examples/batch/v00..v19.json` exist to exercise the medium broadly rather than to be twenty pictures:
+all seven primitives, all three macros, all five `PaintStyle` kinds, all four layouts, both fonts,
+eleven brushes, eight palettes, grounds from `#fbfaf7` to `#0f1220`, and `brushScale` 0.75 to 1.5.
+Three of them are the cheapest useful checks in the repo:
+
+- `v08` (`cover` over the last word of a type specimen) shows the L4 consequence directly: the cover
+  leaves a faint ghost of the `J` where the outermost of the six alpha layers falls short.
+- `v17` (nine flat diagonal `solid` stripes with a `cover` window) shows the stepped alpha ramp of
+  `COVER_LAYERS = 6` as visible banding on the window's edge, which is the honest picture of what
+  `softness` buys.
+- `v12` is the slow one (E4) and is the program to reach for when measuring wash throughput.

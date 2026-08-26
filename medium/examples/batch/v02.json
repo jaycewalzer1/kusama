@@ -1,0 +1,128 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 3407,
+  "canvas": {
+    "width": 800,
+    "height": 1200,
+    "ground": "#f6f1e4",
+    "brushScale": 1
+  },
+  "palette": {
+    "ink": "#2e211a",
+    "terracotta": "#b45f3c",
+    "sand": "#dcbb8a",
+    "olive": "#7b7a44",
+    "chalk": "#f6f1e4"
+  },
+  "meta": {
+    "title": "Broken up",
+    "reads_as": "a terracotta disc with shards thrown across it and a soft hole punched out of the middle"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "disc",
+        "type": "op",
+        "op": "wash",
+        "rngKey": "shards/disc",
+        "args": {
+          "region": {
+            "type": "circle",
+            "cx": 400,
+            "cy": 520,
+            "r": 300
+          },
+          "style": {
+            "kind": "wash",
+            "color": "terracotta",
+            "opacity": 175,
+            "bleed": 0.26,
+            "texture": [
+              0.45,
+              0.4
+            ]
+          }
+        }
+      },
+      {
+        "id": "litter",
+        "type": "repeat",
+        "rngKey": "shards/litter",
+        "count": 22,
+        "layout": {
+          "type": "scatter",
+          "origin": [
+            60,
+            170
+          ],
+          "w": 680,
+          "h": 900
+        },
+        "children": [
+          {
+            "id": "shard",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "shards/shard",
+            "args": {
+              "name": "debris.shard",
+              "x": 0,
+              "y": 0,
+              "span": 92,
+              "style": {
+                "kind": "outline",
+                "brush": "2B",
+                "color": "ink",
+                "weight": 1.1
+              },
+              "rotate": 24
+            }
+          }
+        ],
+        "jitter": {
+          "translate": 34,
+          "rotate": 180,
+          "scale": 0.5
+        }
+      },
+      {
+        "id": "hole",
+        "type": "op",
+        "op": "cover",
+        "rngKey": "shards/hole",
+        "args": {
+          "region": {
+            "type": "circle",
+            "cx": 400,
+            "cy": 520,
+            "r": 108
+          },
+          "softness": 0.42
+        }
+      },
+      {
+        "id": "mark",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "shards/mark",
+        "args": {
+          "region": {
+            "type": "circle",
+            "cx": 400,
+            "cy": 520,
+            "r": 34
+          },
+          "style": {
+            "kind": "solid",
+            "color": "olive",
+            "opacity": 230
+          }
+        }
+      }
+    ]
+  }
+}

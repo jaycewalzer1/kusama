@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://medium.invalid/schema/paintstyle.schema.json",
+  "title": "PaintStyle",
+  "description": "The one style union. paint, wash, fragment and the region parts of macros all take exactly this; there is no second way to say 'how is this filled'.",
+  "$defs": {
+    "color": {
+      "description": "A palette name, or a literal #rrggbb.",
+      "type": "string",
+      "pattern": "^(#[0-9a-fA-F]{6}|[a-z][a-z0-9_-]*)$"
+    },
+    "wash": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "color", "opacity", "bleed", "texture"],
+      "properties": {
+        "kind": { "const": "wash" },
+        "color": { "$ref": "#/$defs/color" },
+        "opacity": { "type": "number", "minimum": 0, "maximum": 255 },
+        "bleed": { "type": "number", "minimum": 0, "maximum": 0.6 },
+        "texture": {
+          "description": "[strength, spread] handed to brush.fillTexture.",
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
+    },
+    "hatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "brush", "color", "spacing", "angle"],
+      "properties": {
+        "kind": { "const": "hatch" },
+        "brush": { "type": "string" },
+        "color": { "$ref": "#/$defs/color" },
+        "spacing": { "type": "number", "minimum": 1, "maximum": 60 },
+        "angle": { "type": "number", "minimum": -360, "maximum": 360 },
+        "rand": { "type": "number", "minimum": 0, "maximum": 1 },
+        "layers": { "enum": [1, 2] },
+        "continuous": { "type": "boolean" }
+      }
+    },
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "brush", "color", "density", "length", "angle"],
+      "properties": {
+        "kind": { "const": "field" },
+        "brush": { "type": "string" },
+        "color": { "$ref": "#/$defs/color" },
+        "density": { "description": "Marks per 1000 square units of the region's bounding box.", "type": "number", "minimum": 0.05, "maximum": 40 },
+        "length": { "type": "number", "minimum": 0, "maximum": 200 },
+        "angle": { "type": "number", "minimum": -360, "maximum": 360 },
+        "jitter": { "type": "number", "minimum": 0, "maximum": 180 },
+        "marks": { "enum": ["dots", "dashes", "scribble"] }
+      }
+    },
+    "outline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "brush", "color", "weight"],
+      "properties": {
+        "kind": { "const": "outline" },
+        "brush": { "type": "string" },
+        "color": { "$ref": "#/$defs/color" },
+        "weight": { "type": "number", "minimum": 0.1, "maximum": 20 }
+      }
+    },
+    "solid": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "color", "opacity"],
+      "properties": {
+        "kind": { "const": "solid" },
+        "color": { "$ref": "#/$defs/color" },
+        "opacity": { "type": "number", "minimum": 0, "maximum": 255 }
+      }
+    },
+    "paintStyle": {
+      "oneOf": [
+        { "$ref": "#/$defs/wash" },
+        { "$ref": "#/$defs/hatch" },
+        { "$ref": "#/$defs/field" },
+        { "$ref": "#/$defs/outline" },
+        { "$ref": "#/$defs/solid" }
+      ]
+    }
+  }
+}

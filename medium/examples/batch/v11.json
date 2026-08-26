@@ -1,0 +1,170 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 12157,
+  "canvas": {
+    "width": 800,
+    "height": 1200,
+    "ground": "#f6f1e4",
+    "brushScale": 1
+  },
+  "palette": {
+    "ink": "#2e211a",
+    "terracotta": "#b45f3c",
+    "sand": "#dcbb8a",
+    "olive": "#7b7a44",
+    "chalk": "#f6f1e4"
+  },
+  "meta": {
+    "title": "Colonnade",
+    "reads_as": "six columns in a row on a sand ground with a heavy base line"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "sky",
+        "type": "op",
+        "op": "wash",
+        "rngKey": "colonnade/sky",
+        "args": {
+          "region": {
+            "type": "rect",
+            "x": 0,
+            "y": 0,
+            "w": 800,
+            "h": 900
+          },
+          "style": {
+            "kind": "wash",
+            "color": "sand",
+            "opacity": 130,
+            "bleed": 0.2,
+            "texture": [
+              0.4,
+              0.3
+            ]
+          }
+        }
+      },
+      {
+        "id": "columns",
+        "type": "repeat",
+        "rngKey": "colonnade/columns",
+        "count": 5,
+        "layout": {
+          "type": "line",
+          "origin": [
+            100,
+            640
+          ],
+          "dx": 150,
+          "dy": 0
+        },
+        "children": [
+          {
+            "id": "col",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "colonnade/col",
+            "args": {
+              "name": "arch.column",
+              "x": 0,
+              "y": 0,
+              "span": 220,
+              "style": {
+                "kind": "hatch",
+                "brush": "crayon",
+                "color": "terracotta",
+                "spacing": 8,
+                "angle": 90,
+                "rand": 0.12,
+                "layers": 1
+              }
+            }
+          }
+        ],
+        "jitter": {
+          "scale": 0.08
+        }
+      },
+      {
+        "id": "entablature",
+        "type": "op",
+        "op": "wash",
+        "rngKey": "colonnade/entablature",
+        "args": {
+          "region": {
+            "type": "rect",
+            "x": 40,
+            "y": 470,
+            "w": 720,
+            "h": 54
+          },
+          "style": {
+            "kind": "wash",
+            "color": "olive",
+            "opacity": 190,
+            "bleed": 0.08,
+            "texture": [
+              0.4,
+              0.2
+            ]
+          }
+        }
+      },
+      {
+        "id": "stylobate",
+        "type": "op",
+        "op": "wash",
+        "rngKey": "colonnade/stylobate",
+        "args": {
+          "region": {
+            "type": "rect",
+            "x": 20,
+            "y": 754,
+            "w": 760,
+            "h": 36
+          },
+          "style": {
+            "kind": "wash",
+            "color": "ink",
+            "opacity": 200,
+            "bleed": 0.06,
+            "texture": [
+              0.45,
+              0.2
+            ]
+          }
+        }
+      },
+      {
+        "id": "shadow",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "colonnade/shadow",
+        "args": {
+          "region": {
+            "type": "rect",
+            "x": 20,
+            "y": 800,
+            "w": 760,
+            "h": 300
+          },
+          "style": {
+            "kind": "field",
+            "brush": "pastel",
+            "color": "ink",
+            "density": 1.1,
+            "length": 26,
+            "angle": 90,
+            "jitter": 20,
+            "marks": "dashes"
+          }
+        }
+      }
+    ]
+  }
+}

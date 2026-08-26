@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://medium.invalid/schema/edit.schema.json",
+  "title": "EditAction",
+  "description": "The only way a program changes after it is first written. Bounded and typed: no action can replace the program, and none carries code. Every action records what it touched and what it cost, and is appended to meta.provenance.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["actionId", "kind", "targets"],
+  "properties": {
+    "actionId": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "kind": {
+      "enum": [
+        "add_node",
+        "delete_node",
+        "set_arg",
+        "set_transform",
+        "set_style",
+        "reparent_node",
+        "wrap_group",
+        "duplicate_as_repeat"
+      ]
+    },
+    "targets": {
+      "description": "Source node ids the action addresses. Written by the caller; applyEdit checks it.",
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "decisionRefs": {
+      "description": "Inert: which stated decisions this action is meant to serve.",
+      "type": "array",
+      "items": { "type": "string", "maxLength": 200 }
+    },
+    "note": { "type": "string", "maxLength": 2000 },
+
+    "parent": { "type": "string", "description": "add_node, reparent_node: id of the receiving group." },
+    "index": { "type": "integer", "minimum": 0, "description": "Paint-order position among the parent's children." },
+    "node": { "type": "object", "description": "add_node: the subtree to insert. Validated as a program node." },
+    "path": {
+      "description": "set_arg: dotted path inside the node's args, e.g. \"region.x\" or \"points.2.0\".",
+      "type": "string",
+      "minLength": 1
+    },
+    "value": { "description": "set_arg: the replacement value. Must be the same shape as what it replaces." },
+    "transform": { "type": "object", "description": "set_transform: the whole new transform." },
+    "style": { "type": "object", "description": "set_style: the whole new PaintStyle." },
+    "groupId": { "type": "string", "description": "wrap_group: id for the new group." },
+    "count": { "type": "integer", "minimum": 2, "description": "duplicate_as_repeat: instance count." },
+    "layout": { "type": "object", "description": "duplicate_as_repeat: the new repeat's layout." },
+    "jitter": { "type": "object", "description": "duplicate_as_repeat: the new repeat's jitter." },
+    "rngKey": { "type": "string", "description": "duplicate_as_repeat: rngKey for the new repeat node." },
+
+    "before": { "description": "Recorded by applyEdit: the value as it was." },
+    "after": { "description": "Recorded by applyEdit: the value as it now is." },
+    "estimatedCost": { "type": "number", "description": "Recorded by applyEdit: change in estimated render cost." }
+  },
+  "allOf": [
+    { "if": { "properties": { "kind": { "const": "add_node" } } }, "then": { "required": ["parent", "node"] } },
+    { "if": { "properties": { "kind": { "const": "set_arg" } } }, "then": { "required": ["path", "value"] } },
+    { "if": { "properties": { "kind": { "const": "set_transform" } } }, "then": { "required": ["transform"] } },
+    { "if": { "properties": { "kind": { "const": "set_style" } } }, "then": { "required": ["style"] } },
+    { "if": { "properties": { "kind": { "const": "reparent_node" } } }, "then": { "required": ["parent"] } },
+    { "if": { "properties": { "kind": { "const": "wrap_group" } } }, "then": { "required": ["groupId"] } },
+    { "if": { "properties": { "kind": { "const": "duplicate_as_repeat" } } }, "then": { "required": ["count", "layout", "rngKey"] } }
+  ]
+}

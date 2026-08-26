@@ -1,0 +1,362 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 20482,
+  "canvas": { "width": 800, "height": 1200, "ground": "#fdf9f0", "brushScale": 1.5 },
+  "palette": {
+    "ink": "#332d26",
+    "sky": "#a8c4cc",
+    "teal": "#4f7f7c",
+    "grass": "#7c9048",
+    "shade": "#55622f",
+    "rust": "#a8452f",
+    "ochre": "#d19a3c",
+    "plum": "#6d3b52",
+    "cloth": "#f2e8d4"
+  },
+  "meta": {
+    "title": "A feast on the hill",
+    "reads_as": "eight o'clock light, a long cloth laid across the crest of a hill, people already sitting down"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "air",
+        "type": "group",
+        "label": "sky, sun, far ridge, birds",
+        "children": [
+          {
+            "id": "sky",
+            "type": "op",
+            "op": "wash",
+            "rngKey": "hill/sky",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 0, "w": 800, "h": 600 },
+              "style": { "kind": "wash", "color": "sky", "opacity": 130, "bleed": 0.25, "texture": [0.5, 0.3] }
+            }
+          },
+          {
+            "id": "sun",
+            "type": "op",
+            "op": "wash",
+            "rngKey": "hill/sun",
+            "args": {
+              "region": { "type": "circle", "cx": 606, "cy": 168, "r": 92 },
+              "style": { "kind": "wash", "color": "ochre", "opacity": 140, "bleed": 0.2, "texture": [0.4, 0.35] }
+            }
+          },
+          {
+            "id": "ridge",
+            "type": "op",
+            "op": "wash",
+            "rngKey": "hill/ridge",
+            "label": "the far ridge, kept flat so the near hill has all the weight",
+            "args": {
+              "region": {
+                "type": "polygon",
+                "points": [[0, 566], [180, 508], [366, 544], [540, 496], [800, 548], [800, 632], [0, 632]]
+              },
+              "style": { "kind": "wash", "color": "teal", "opacity": 85, "bleed": 0.15, "texture": [0.4, 0.25] }
+            }
+          },
+          {
+            "id": "birds",
+            "type": "repeat",
+            "rngKey": "hill/birds",
+            "count": 7,
+            "layout": { "type": "scatter", "origin": [90, 110], "w": 540, "h": 230 },
+            "jitter": { "rotate": 14, "scale": 0.3 },
+            "children": [
+              {
+                "id": "bird",
+                "type": "op",
+                "op": "fragment",
+                "rngKey": "hill/bird",
+                "args": {
+                  "name": "animal.bird",
+                  "x": 0,
+                  "y": 0,
+                  "span": 46,
+                  "style": { "kind": "solid", "color": "ink", "opacity": 190 }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "land",
+        "type": "group",
+        "label": "the hill itself",
+        "children": [
+          {
+            "id": "hill",
+            "type": "op",
+            "op": "wash",
+            "rngKey": "hill/hill",
+            "args": {
+              "region": {
+                "type": "polygon",
+                "points": [[0, 704], [122, 662], [262, 628], [420, 620], [580, 640], [720, 676], [800, 704], [800, 1200], [0, 1200]]
+              },
+              "style": { "kind": "wash", "color": "grass", "opacity": 205, "bleed": 0.18, "texture": [0.5, 0.35] }
+            }
+          },
+          {
+            "id": "foreslope",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "hill/foreslope",
+            "label": "the near slope, hatched so the foreground is the busiest surface",
+            "args": {
+              "region": { "type": "polygon", "points": [[0, 946], [800, 902], [800, 1200], [0, 1200]] },
+              "style": { "kind": "hatch", "brush": "cpencil", "color": "shade", "spacing": 5.5, "angle": 22, "rand": 0.2, "layers": 1 }
+            }
+          },
+          {
+            "id": "contour-a",
+            "type": "op",
+            "op": "stroke",
+            "rngKey": "hill/contour-a",
+            "args": {
+              "points": [[0, 808], [180, 780], [382, 772], [600, 788], [800, 814]],
+              "brush": "cpencil",
+              "color": "shade",
+              "weight": 2,
+              "curve": 0.6
+            }
+          },
+          {
+            "id": "contour-b",
+            "type": "op",
+            "op": "stroke",
+            "rngKey": "hill/contour-b",
+            "args": {
+              "points": [[0, 884], [206, 858], [430, 850], [662, 868], [800, 894]],
+              "brush": "cpencil",
+              "color": "shade",
+              "weight": 1.5,
+              "curve": 0.6
+            }
+          },
+          {
+            "id": "hill-flower",
+            "type": "macro",
+            "macro": "motif",
+            "rngKey": "hill/hill-flower",
+            "label": "one hibiscus out on the slope, away from the table",
+            "args": { "name": "hibiscus", "x": 646, "y": 968, "size": 88, "rotate": 22 }
+          }
+        ]
+      },
+      {
+        "id": "feast",
+        "type": "group",
+        "label": "the standing figures, the cloth, the bowls, the seated figures",
+        "children": [
+          {
+            "id": "stand-left",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "hill/stand-left",
+            "args": {
+              "name": "figure.standing",
+              "x": 300,
+              "y": 638,
+              "span": 224,
+              "style": { "kind": "wash", "color": "ink", "opacity": 150, "bleed": 0.08, "texture": [0.4, 0.3] }
+            }
+          },
+          {
+            "id": "stand-right",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "hill/stand-right",
+            "args": {
+              "name": "figure.standing",
+              "x": 476,
+              "y": 634,
+              "span": 232,
+              "flipX": true,
+              "style": { "kind": "wash", "color": "rust", "opacity": 160, "bleed": 0.08, "texture": [0.4, 0.3] }
+            }
+          },
+          {
+            "id": "cloth",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "hill/cloth",
+            "args": {
+              "region": { "type": "polygon", "points": [[88, 742], [712, 726], [726, 792], [74, 812]] },
+              "style": { "kind": "solid", "color": "cloth", "opacity": 245 }
+            }
+          },
+          {
+            "id": "cloth-weave",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "hill/cloth-weave",
+            "args": {
+              "region": { "type": "polygon", "points": [[88, 742], [712, 726], [726, 792], [74, 812]] },
+              "style": { "kind": "hatch", "brush": "2H", "color": "sky", "spacing": 6, "angle": 4, "rand": 0.1, "layers": 1 }
+            }
+          },
+          {
+            "id": "cloth-edge",
+            "type": "op",
+            "op": "rule",
+            "rngKey": "hill/cloth-edge",
+            "args": { "from": [74, 812], "to": [726, 792], "brush": "2B", "color": "ink", "weight": 1.5 }
+          },
+          {
+            "id": "leg-left",
+            "type": "op",
+            "op": "stroke",
+            "rngKey": "hill/leg-left",
+            "args": { "points": [[160, 808], [150, 872]], "brush": "cpencil", "color": "ink", "weight": 2, "curve": 0 }
+          },
+          {
+            "id": "leg-right",
+            "type": "op",
+            "op": "stroke",
+            "rngKey": "hill/leg-right",
+            "args": { "points": [[650, 796], [662, 858]], "brush": "cpencil", "color": "ink", "weight": 2, "curve": 0 }
+          },
+          {
+            "id": "bowls",
+            "type": "repeat",
+            "rngKey": "hill/bowls",
+            "count": 5,
+            "layout": { "type": "line", "origin": [186, 732], "dx": 88, "dy": -2.5 },
+            "jitter": { "translate": 3, "rotate": 4, "scale": 0.08 },
+            "children": [
+              {
+                "id": "bowl",
+                "type": "op",
+                "op": "fragment",
+                "rngKey": "hill/bowl",
+                "args": {
+                  "name": "object.bowl",
+                  "x": 0,
+                  "y": 0,
+                  "span": 78,
+                  "style": { "kind": "wash", "color": "rust", "opacity": 185, "bleed": 0.1, "texture": [0.4, 0.3] }
+                }
+              }
+            ]
+          },
+          {
+            "id": "posy",
+            "type": "macro",
+            "macro": "motif",
+            "rngKey": "hill/posy",
+            "label": "the hibiscus on the cloth: the one thing on the table nobody is going to eat",
+            "args": { "name": "hibiscus", "x": 628, "y": 714, "size": 74 }
+          },
+          {
+            "id": "sit-left",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "hill/sit-left",
+            "args": {
+              "name": "figure.seated",
+              "x": 128,
+              "y": 736,
+              "span": 196,
+              "style": { "kind": "wash", "color": "plum", "opacity": 245, "bleed": 0.05, "texture": [0.5, 0.2] }
+            }
+          },
+          {
+            "id": "sit-right",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "hill/sit-right",
+            "args": {
+              "name": "figure.seated",
+              "x": 682,
+              "y": 726,
+              "span": 196,
+              "flipX": true,
+              "style": { "kind": "wash", "color": "teal", "opacity": 245, "bleed": 0.05, "texture": [0.5, 0.2] }
+            }
+          }
+        ]
+      },
+      {
+        "id": "foreground",
+        "type": "group",
+        "children": [
+          {
+            "id": "dog",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "hill/dog",
+            "label": "waiting, as they do",
+            "args": {
+              "name": "animal.dog",
+              "x": 208,
+              "y": 1006,
+              "span": 250,
+              "style": { "kind": "wash", "color": "ink", "opacity": 250, "bleed": 0.04, "texture": [0.5, 0.15] }
+            }
+          },
+          {
+            "id": "dog-line",
+            "type": "op",
+            "op": "fragment",
+            "rngKey": "hill/dog-line",
+            "label": "a pencil outline over the wash, so the dog holds its shape against the hatched slope",
+            "args": {
+              "name": "animal.dog",
+              "x": 208,
+              "y": 1006,
+              "span": 250,
+              "style": { "kind": "outline", "brush": "2B", "color": "ink", "weight": 1 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "caption",
+        "type": "group",
+        "label": "the title, on ground cleared for it",
+        "children": [
+          {
+            "id": "caption-clear",
+            "type": "op",
+            "op": "cover",
+            "rngKey": "hill/caption-clear",
+            "note": "cover is the only way to take the hatched slope back off, and the title needs quiet under it",
+            "args": { "region": { "type": "rect", "x": 132, "y": 1092, "w": 536, "h": 74 }, "softness": 0.4 }
+          },
+          {
+            "id": "caption-rule",
+            "type": "op",
+            "op": "rule",
+            "rngKey": "hill/caption-rule",
+            "args": { "from": [236, 1106], "to": [564, 1106], "brush": "rotring", "color": "ink", "weight": 0.5 }
+          },
+          {
+            "id": "caption-text",
+            "type": "op",
+            "op": "text",
+            "rngKey": "hill/caption-text",
+            "args": {
+              "text": "A FEAST ON THE HILL",
+              "font": "grotesque",
+              "size": 28,
+              "x": 400,
+              "y": 1148,
+              "align": "center",
+              "color": "ink",
+              "tracking": 5
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
