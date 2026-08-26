@@ -33,7 +33,7 @@ const STYLES: { name: string; style: Record<string, unknown> }[] = [
   { name: 'outline', style: { kind: 'outline', brush: 'pen', color: 'ink', weight: 1 } },
 ];
 
-const { profile: PROFILE } = loadProfile('default');
+const { profile: PROFILE } = loadProfile('default-v0');
 
 function sheetProgram(packId: string, height: number, children: unknown[]): Record<string, unknown> {
   return {

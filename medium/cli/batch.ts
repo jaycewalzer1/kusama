@@ -19,10 +19,11 @@ import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'n
 import path from 'node:path';
 import { Command } from 'commander';
 import { Renderer } from '../env/browser.js';
-import { loadPack } from '../env/pack.js';
+import { loadPackFor } from '../env/pack.js';
 import type { AssetPack } from '../env/pack.js';
 import { encodePng, pixelHash } from '../env/png.js';
-import { contentHash, loadProfile } from '../env/profile.js';
+import { printRender } from '../env/print.js';
+import { contentHash, loadProfileFor } from '../env/profile.js';
 import { contactSheet } from '../env/sheet.js';
 import type { Image } from '../env/sheet.js';
 import { validateProgram } from '../env/validate.js';
@@ -52,10 +53,10 @@ function programFiles(inputs: string[]): string[] {
   return files;
 }
 
-function prepare(file: string, profileId: string, packId?: string): Job {
+function prepare(file: string, profileId: string | undefined, packId?: string): Job {
   const program = JSON.parse(readFileSync(file, 'utf8')) as { assetPack?: string };
-  const { profile } = loadProfile(profileId);
-  const pack = loadPack(packId ?? program.assetPack ?? 'core');
+  const { profile } = loadProfileFor(program, profileId);
+  const pack = loadPackFor(program, packId);
   const result = validateProgram(program, profile, pack);
   if (!result.valid) {
     for (const issue of result.issues) console.error(`${file}${issue.path}: ${issue.message} [${issue.code}]`);
@@ -69,12 +70,12 @@ function prepare(file: string, profileId: string, packId?: string): Job {
 const cli = new Command()
   .name('batch')
   .argument('<programs...>', 'program files, or directories of them')
-  .option('-p, --profile <id|path>', 'medium profile', 'default')
+  .option('-p, --profile <id|path>', 'override the profile each program names')
   .option('-a, --pack <id|path>', 'asset pack (defaults to the pack each program names)')
   .option('-o, --out <dir>', 'where to write the renders', 'batch-out')
   .option('--cell <px>', 'contact sheet cell size', '200');
 
-cli.action(async (inputs: string[], opts: { profile: string; pack?: string; out: string; cell: string }) => {
+cli.action(async (inputs: string[], opts: { profile?: string; pack?: string; out: string; cell: string }) => {
   const files = programFiles(inputs);
   if (files.length === 0) throw new Error('no programs to render');
   const jobs = files.map((f) => prepare(f, opts.profile, opts.pack));
@@ -87,7 +88,9 @@ cli.action(async (inputs: string[], opts: { profile: string; pack?: string; out:
   try {
     entries = [];
     for (const job of jobs) {
-      const out = await renderer.render(job.resolved, job.pack, job.fonts);
+      const plate = await renderer.render(job.resolved, job.pack, job.fonts);
+      // Print after the render has already been proven to repeat, never inside the proof.
+      const out = { ...plate, rgba: printRender(plate.rgba, plate.width, plate.height, job.resolved) };
       const dir = path.join(opts.out, job.name);
       mkdirSync(dir, { recursive: true });
       writeFileSync(path.join(dir, 'canonical.png'), encodePng(out.rgba, out.width, out.height));
@@ -105,7 +108,11 @@ cli.action(async (inputs: string[], opts: { profile: string; pack?: string; out:
       });
     }
     // The check: the first program again, alone, after everything else has been through this browser.
-    control = await renderer.render(jobs[0]!.resolved, jobs[0]!.pack, jobs[0]!.fonts);
+    const controlPlate = await renderer.render(jobs[0]!.resolved, jobs[0]!.pack, jobs[0]!.fonts);
+    control = {
+      ...controlPlate,
+      rgba: printRender(controlPlate.rgba, controlPlate.width, controlPlate.height, jobs[0]!.resolved),
+    };
   } finally {
     await renderer.close();
   }

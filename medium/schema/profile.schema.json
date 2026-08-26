@@ -38,6 +38,12 @@
       "uniqueItems": true
     },
     "assetPacks": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "print": {
+      "description": "Post-process stages this profile allows in a program's `print` list. Absent or empty means the medium has no 'after', which is what V0 was.",
+      "type": "array",
+      "items": { "enum": ["threshold", "posterize", "halftone", "grain", "misregister", "paper", "generation"] },
+      "uniqueItems": true
+    },
     "limits": {
       "type": "object",
       "additionalProperties": false,
@@ -67,7 +73,8 @@
         "maxTextOps": { "type": "integer", "minimum": 0 },
         "maxTextLength": { "type": "integer", "minimum": 1 },
         "maxEstimatedMarks": { "type": "integer", "minimum": 1 },
-        "maxRenderCost": { "type": "number", "exclusiveMinimum": 0 }
+        "maxRenderCost": { "type": "number", "exclusiveMinimum": 0 },
+        "maxPrintStages": { "type": "integer", "minimum": 0 }
       }
     },
     "ranges": {

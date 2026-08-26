@@ -7,24 +7,24 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { Command } from 'commander';
 import { applyEdit } from '../env/edits.js';
-import { loadPack, PackError } from '../env/pack.js';
-import { loadProfile } from '../env/profile.js';
+import { loadPackFor, PackError } from '../env/pack.js';
+import { loadProfileFor } from '../env/profile.js';
 
 const cli = new Command()
   .name('apply-edit')
   .argument('<program.json>', 'the program to edit')
   .argument('<action.json>', 'the edit action to apply')
-  .option('-p, --profile <id|path>', 'medium profile', 'default')
+  .option('-p, --profile <id|path>', 'override the profile the program names')
   .option('-a, --pack <id|path>', 'asset pack (defaults to the pack the program names)')
   .option('-o, --out <file>', 'where to write the edited program');
 
-cli.action((programFile: string, actionFile: string, opts: { profile: string; pack?: string; out?: string }) => {
+cli.action((programFile: string, actionFile: string, opts: { profile?: string; pack?: string; out?: string }) => {
   const program = JSON.parse(readFileSync(programFile, 'utf8')) as { assetPack?: string };
   const action = JSON.parse(readFileSync(actionFile, 'utf8')) as { actionId?: string; kind?: string };
-  const { profile } = loadProfile(opts.profile);
+  const { profile } = loadProfileFor(program, opts.profile);
   let pack;
   try {
-    pack = loadPack(opts.pack ?? program.assetPack ?? 'core');
+    pack = loadPackFor(program, opts.pack);
   } catch (e) {
     // A tampered pack is a refusal like any other, not a crash.
     if (!(e instanceof PackError)) throw e;

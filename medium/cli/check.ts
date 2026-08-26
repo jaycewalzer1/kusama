@@ -61,13 +61,13 @@ const cli = new Command()
   .option('--batch', 'treat the first argument as a directory of program trees')
   .option('--render', 'also measure the canonical image and decide the render-scope constraints')
   .option('-o, --out <file>', 'where the JSON report goes in batch mode', 'out/check-report.json')
-  .option('-p, --profile <id|path>', 'medium profile', 'default');
+  .option('-p, --profile <id|path>', 'override the profile each program names');
 
 interface Options {
   batch?: boolean;
   render?: boolean;
   out: string;
-  profile: string;
+  profile?: string;
 }
 
 cli.action(async (target: string, aestheticFile: string, opts: Options) => {

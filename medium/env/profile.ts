@@ -22,6 +22,7 @@ export interface ProfileLimits {
   maxTextLength: number;
   maxEstimatedMarks: number;
   maxRenderCost: number;
+  maxPrintStages?: number;
 }
 
 export interface MediumProfile {
@@ -35,10 +36,14 @@ export interface MediumProfile {
   brushes: string[];
   blendModes: string[];
   assetPacks: string[];
+  /** Post-process stages allowed in a program's `print` list. Absent means this medium has no "after". */
+  print?: string[];
   limits: ProfileLimits;
   ranges: Record<string, [number, number]>;
   quantize: Record<string, number>;
 }
+
+export class ProfileError extends Error {}
 
 /** Sorted-key JSON: the one serialization every hash in this repo is taken over. */
 export function canonicalJson(value: unknown): string {
@@ -58,6 +63,24 @@ export function loadProfile(idOrPath: string): { profile: MediumProfile; hash: s
   const file = idOrPath.endsWith('.json') ? idOrPath : path.join(ROOT, 'profiles', `${idOrPath}.profile.json`);
   const profile = JSON.parse(readFileSync(file, 'utf8')) as MediumProfile;
   return { profile, hash: contentHash(profile) };
+}
+
+/**
+ * The profile a program is to be read against: the one it names, unless a caller overrides it.
+ *
+ * There is deliberately no fallback. Every command used to default to `default`, which happened to
+ * be `default-v0`, so a program could name a profile that was never loaded and the mismatch was
+ * caught only by a later equality check. Now that there is more than one profile, a silent default
+ * would mean a program rendered against a medium it did not ask for, and the whole point of hashing
+ * the profile into the trace is that this cannot happen.
+ */
+export function loadProfileFor(program: unknown, override?: string): { profile: MediumProfile; hash: string } {
+  if (override) return loadProfile(override);
+  const named = (program as { profile?: unknown } | null)?.profile;
+  if (typeof named !== 'string' || named.length === 0) {
+    throw new ProfileError('this program names no profile, and a profile is not optional: add a "profile" key naming one of profiles/*.profile.json');
+  }
+  return loadProfile(named);
 }
 
 export interface Budget {

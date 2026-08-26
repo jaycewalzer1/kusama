@@ -7,7 +7,7 @@ import { loadPack, packHash } from '../env/pack.js';
 import { loadProfile } from '../env/profile.js';
 
 const pack = loadPack('core');
-const { profile } = loadProfile('default');
+const { profile } = loadProfile('default-v0');
 
 /** Spec §8 requires these names to exist, whatever else a pack chooses to carry. */
 const REQUIRED = ['light.beam', 'mark.sponsor-a', 'mark.sponsor-b', 'mark.sponsor-c'];

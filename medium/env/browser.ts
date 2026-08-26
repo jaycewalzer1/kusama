@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import os from 'node:os';
 import type { Browser, Page, Route } from 'playwright';
+import type { AssetPack } from './pack.js';
 import { resolveProgram } from '../renderer/resolve.js';
 
 /** Repo root (`medium/`): the nearest ancestor holding the vendored runtime, so `dist/` works too. */
@@ -28,14 +29,44 @@ export const ROOT = (() => {
 })();
 
 /** Everything the page is allowed to load, relative to ROOT. */
-const SERVED_PREFIXES = ['vendor/', 'renderer/', 'fonts/'];
+const SERVED_PREFIXES = ['vendor/', 'renderer/', 'fonts/', 'assets/fonts/'];
 
 const ORIGIN = 'http://medium.invalid';
 
+/**
+ * The two faces that existed before packs carried type, kept so core@003e484d9602 still renders.
+ * Everything else comes from the pack, which is the only thing whose hash covers the bytes.
+ */
 export const FONT_FILES: Record<string, string> = {
   grotesque: 'fonts/grotesque.ttf',
   serif: 'fonts/serif.ttf',
 };
+
+/** Faces already checked against their declared bytes, keyed by path: hashing 4MB per render is not free. */
+const verified = new Set<string>();
+
+/**
+ * Turn the face names a program uses into URLs the page may fetch, and refuse a face whose bytes on
+ * disk do not match what the pack declares. The pack hash is only a claim about the type until
+ * something reads the file, and the render is the last place that claim can still be checked.
+ */
+async function faceUrls(pack: AssetPack | undefined, fonts: string[]): Promise<Record<string, string>> {
+  const urls: Record<string, string> = {};
+  for (const name of fonts) {
+    const face = pack?.faces?.[name];
+    const rel = face?.file ?? FONT_FILES[name];
+    if (!rel) throw new Error(`font "${name}" is in no asset pack and is not one of the built-in faces`);
+    if (face && !verified.has(rel)) {
+      const actual = await sha256(path.join(ROOT, rel));
+      if (actual !== face.sha256) {
+        throw new Error(`font "${name}" (${rel}) hashes to ${actual}, but pack "${pack?.id}" declares ${face.sha256}`);
+      }
+      verified.add(rel);
+    }
+    urls[name] = `/${rel}`;
+  }
+  return urls;
+}
 
 const LAUNCH_ARGS = [
   '--use-gl=angle',
@@ -223,12 +254,7 @@ export class Renderer {
     const started = Date.now();
     const page = await this.newPage();
     try {
-      const fontUrls: Record<string, string> = {};
-      for (const name of fonts) {
-        const rel = FONT_FILES[name];
-        if (!rel) throw new Error(`font "${name}" is not vendored`);
-        fontUrls[name] = `/${rel}`;
-      }
+      const fontUrls = await faceUrls(pack as AssetPack | undefined, fonts);
       const consoleErrors: string[] = [];
       page.on('pageerror', (e) => consoleErrors.push(String(e)));
       const out = await page.evaluate(

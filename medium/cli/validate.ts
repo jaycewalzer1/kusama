@@ -10,21 +10,20 @@
 
 import { readFileSync } from 'node:fs';
 import { Command } from 'commander';
-import { loadProfile } from '../env/profile.js';
-import { loadPack, PackError } from '../env/pack.js';
+import { loadProfileFor, ProfileError } from '../env/profile.js';
+import { loadPackFor, PackError } from '../env/pack.js';
 import { validateProgram } from '../env/validate.js';
 import { fontsUsed } from '../renderer/resolve.js';
 
 const cli = new Command()
   .name('validate')
   .argument('<programs...>', 'the programs to check')
-  .option('-p, --profile <id|path>', 'medium profile', 'default')
+  .option('-p, --profile <id|path>', 'override the profile each program names')
   .option('-a, --pack <id|path>', 'asset pack (defaults to the pack the program names)')
   .option('--determinism', 'also render the program twice and compare the two canonical images')
   .option('--json', 'print the whole result as JSON instead of prose');
 
-cli.action(async (files: string[], opts: { profile: string; pack?: string; determinism?: boolean; json?: boolean }) => {
-  const { profile, hash: profileHash } = loadProfile(opts.profile);
+cli.action(async (files: string[], opts: { profile?: string; pack?: string; determinism?: boolean; json?: boolean }) => {
   const reports = [];
   const checkable = [];
   let failed = false;
@@ -32,13 +31,16 @@ cli.action(async (files: string[], opts: { profile: string; pack?: string; deter
   for (const file of files) {
     const program = JSON.parse(readFileSync(file, 'utf8')) as { assetPack?: string };
     let pack;
+    let profile;
+    let profileHash: string;
     try {
-      pack = loadPack(opts.pack ?? program.assetPack ?? 'core');
+      ({ profile, hash: profileHash } = loadProfileFor(program, opts.profile));
+      pack = loadPackFor(program, opts.pack);
     } catch (e) {
-      // A tampered pack is a validation failure like any other, not a crash. It fails this program
-      // and the run, but it does not stop the remaining programs from being checked.
-      if (!(e instanceof PackError)) throw e;
-      console.error(`${file}/assetPack: ${e.message} [pack.hash]`);
+      // A missing or tampered artefact is a validation failure like any other, not a crash. It fails
+      // this program and the run, but the remaining programs are still checked.
+      if (!(e instanceof PackError) && !(e instanceof ProfileError)) throw e;
+      console.error(`${file}: ${e.message}`);
       failed = true;
       continue;
     }

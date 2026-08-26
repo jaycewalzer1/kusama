@@ -25,13 +25,13 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import path from 'node:path';
 import { Command } from 'commander';
 import { ROOT } from '../env/browser.js';
-import { loadPack } from '../env/pack.js';
-import { loadProfile } from '../env/profile.js';
+import { loadPackFor } from '../env/pack.js';
+import { loadProfileFor } from '../env/profile.js';
 import { validateProgram } from '../env/validate.js';
 import { fontsUsed } from '../renderer/resolve.js';
 
 /** Exactly what the headless page may load, plus the UI's own two files. */
-const SERVED_PREFIXES = ['vendor/', 'renderer/', 'fonts/', 'ui/'];
+const SERVED_PREFIXES = ['vendor/', 'renderer/', 'fonts/', 'assets/fonts/', 'ui/'];
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -85,28 +85,28 @@ async function readBody(req: IncomingMessage): Promise<string> {
  * offers rather than being joined onto a path -- an allow-list, so no traversal is expressible.
  * The one name that is not a file is `draft`, the program currently in the editor.
  */
-function resolveForPage(file: string, profileId: string) {
+function resolveForPage(file: string, profileId: string | undefined) {
   const text =
     file === DRAFT ? draft : programs().includes(file) ? String(readFileSync(path.join(ROOT, file))) : null;
   if (text === null) return { error: `not a program this server offers: ${file}` };
   const raw = JSON.parse(text) as { assetPack?: string };
-  const { profile } = loadProfile(profileId);
-  const pack = loadPack(raw.assetPack ?? 'core');
+  const { profile } = loadProfileFor(raw, profileId);
+  const pack = loadPackFor(raw, undefined);
   const result = validateProgram(raw, profile, pack);
   if (!result.valid) return { error: 'invalid program', issues: result.issues };
   const resolved = result.resolved!;
   const fonts: Record<string, string> = {};
-  for (const name of fontsUsed(resolved)) fonts[name] = `/fonts/${name}.ttf`;
+  for (const name of fontsUsed(resolved)) fonts[name] = `/${pack.faces?.[name]?.file ?? `fonts/${name}.ttf`}`;
   return { resolved, pack, fonts, budget: result.budget, programHash: result.programHash };
 }
 
 const cli = new Command()
   .name('ui')
   .description('serve a local page for looking at programs (not an instrument -- see the header)')
-  .option('-p, --profile <id|path>', 'medium profile', 'default')
+  .option('-p, --profile <id|path>', 'override the profile each program names')
   .option('--port <n>', 'port to listen on', '4321');
 
-cli.action((opts: { profile: string; port: string }) => {
+cli.action((opts: { profile?: string; port: string }) => {
   const server = createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost');
     const send = (code: number, type: string, body: string | Buffer) => {

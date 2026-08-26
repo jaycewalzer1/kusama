@@ -46,7 +46,7 @@ export const EMPTY_PACK: AssetPack = { ...PACK_BODY, hash: contentHash(PACK_BODY
 
 /** The shipped profile, retargeted at the test pack. Everything else about it is the real thing. */
 export function testProfile(): MediumProfile {
-  const { profile } = loadProfile('default');
+  const { profile } = loadProfile('default-v0');
   return { ...profile, id: 'test', assetPacks: ['test-pack'] };
 }
 

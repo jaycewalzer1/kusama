@@ -23,11 +23,38 @@ export interface Motif {
   label?: string;
 }
 
+/**
+ * One typeface the pack carries. `sha256` is over the file's bytes, so the pack hash covers the type
+ * as well as the shapes, and a face whose bytes changed on disk cannot render under the old hash.
+ */
+export interface Face {
+  family: string;
+  role: string;
+  /** Path relative to ROOT, so the hermetic route can serve it without inventing a location. */
+  file: string;
+  bytes: number;
+  sha256: string;
+  license: string;
+  licenseFile?: string;
+  source: string;
+  variable?: boolean;
+}
+
+export interface License {
+  spdx: string;
+  file: string;
+  sha256: string;
+  source: string;
+}
+
 export interface AssetPack {
   id: string;
   hash: string;
   fragments: Record<string, Fragment>;
   motifs: Record<string, Motif>;
+  /** Absent in core@003e484d9602, which had two hard-coded faces in the renderer instead. */
+  faces?: Record<string, Face>;
+  licenses?: Record<string, License>;
 }
 
 export class PackError extends Error {}
@@ -45,6 +72,19 @@ export function loadPack(idOrPath: string): AssetPack {
     throw new PackError(`asset pack "${pack.id}" declares hash ${declared} but its contents hash to ${actual}`);
   }
   return pack;
+}
+
+/**
+ * The pack a program names, or the override. Same rule as the profile: there is no default pack,
+ * because a fragment name means nothing until you know which pack it was looked up in.
+ */
+export function loadPackFor(program: unknown, override?: string): AssetPack {
+  if (override) return loadPack(override);
+  const named = (program as { assetPack?: unknown } | null)?.assetPack;
+  if (typeof named !== 'string' || named.length === 0) {
+    throw new PackError('this program names no asset pack: add an "assetPack" key naming one of assets/packs/*');
+  }
+  return loadPack(named);
 }
 
 export function packHash(pack: AssetPack): string {
