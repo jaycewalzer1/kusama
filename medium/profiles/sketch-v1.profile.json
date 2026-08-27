@@ -1,0 +1,311 @@
+{
+  "id": "sketch-v1",
+  "description": "default-v1 with the budgets cut and the print pass removed, used only for the three sketches per problem in the artist loop. A sketch is a question about composition, not a finished plate: it has a fifth of the marks, a third of the nodes, four text ops instead of twelve, and no print stages, so a sketch costs a fraction of a render and can never be mistaken for a final piece. Nothing in this profile widens anything -- every limit is at or below default-v1, so a program that is legal here is legal there.",
+  "primitives": [
+    "wash",
+    "paint",
+    "stroke",
+    "fragment",
+    "text",
+    "rule",
+    "cover",
+    "spray"
+  ],
+  "macros": [
+    "frame",
+    "motif",
+    "quarantine"
+  ],
+  "layouts": [
+    "grid",
+    "ring",
+    "line",
+    "scatter"
+  ],
+  "styles": [
+    "wash",
+    "hatch",
+    "field",
+    "outline",
+    "solid"
+  ],
+  "clipShapes": [
+    "rect",
+    "circle",
+    "polygon"
+  ],
+  "fonts": [
+    "abel",
+    "allerta-stencil",
+    "anton",
+    "archivo-black",
+    "audiowide",
+    "barlow-condensed",
+    "barlow-condensed-black",
+    "bebas-neue",
+    "bungee",
+    "courier-prime",
+    "courier-prime-bold",
+    "cutive-mono",
+    "fjalla-one",
+    "grotesque",
+    "ibm-plex-mono",
+    "indie-flower",
+    "major-mono",
+    "michroma",
+    "pathway-gothic",
+    "permanent-marker",
+    "pirata-one",
+    "press-start",
+    "reenie-beanie",
+    "rock-salt",
+    "rubik-mono-one",
+    "saira-stencil",
+    "serif",
+    "share-tech-mono",
+    "silkscreen",
+    "six-caps",
+    "space-mono",
+    "space-mono-bold",
+    "special-elite",
+    "stardos-stencil",
+    "unifraktur",
+    "vt323"
+  ],
+  "brushes": [
+    "pen",
+    "rotring",
+    "2B",
+    "HB",
+    "2H",
+    "cpencil",
+    "pastel",
+    "crayon",
+    "charcoal",
+    "spray",
+    "marker"
+  ],
+  "blendModes": [
+    "normal",
+    "multiply",
+    "screen",
+    "exclusion"
+  ],
+  "assetPacks": [
+    "core-v1"
+  ],
+  "limits": {
+    "maxSourceNodes": 100,
+    "maxResolvedNodes": 400,
+    "maxTreeDepth": 6,
+    "maxRepeatInstances": 120,
+    "maxRepeatNesting": 2,
+    "maxPolygonPoints": 40,
+    "maxStrokePoints": 60,
+    "maxFragments": 12,
+    "maxTextOps": 4,
+    "maxTextLength": 120,
+    "maxEstimatedMarks": 12000,
+    "maxRenderCost": 48000,
+    "maxPrintStages": 0,
+    "maxTearPoints": 200,
+    "maxSprayParticles": 1000
+  },
+  "ranges": {
+    "x": [
+      -2000,
+      4000
+    ],
+    "y": [
+      -2000,
+      4000
+    ],
+    "cx": [
+      -2000,
+      4000
+    ],
+    "cy": [
+      -2000,
+      4000
+    ],
+    "w": [
+      0.5,
+      4000
+    ],
+    "h": [
+      0.5,
+      4000
+    ],
+    "r": [
+      0.5,
+      4000
+    ],
+    "size": [
+      6,
+      300
+    ],
+    "scale": [
+      0.05,
+      8
+    ],
+    "span": [
+      1,
+      4000
+    ],
+    "weight": [
+      0.1,
+      12
+    ],
+    "spacing": [
+      1.5,
+      40
+    ],
+    "density": [
+      0.05,
+      20
+    ],
+    "length": [
+      0,
+      120
+    ],
+    "maxWidth": [
+      20,
+      4000
+    ],
+    "leading": [
+      0.5,
+      3
+    ],
+    "skew": [
+      -60,
+      60
+    ],
+    "stretch": [
+      0.05,
+      8
+    ],
+    "levels": [
+      2,
+      8
+    ],
+    "cell": [
+      2,
+      32
+    ],
+    "cut": [
+      0.05,
+      0.95
+    ],
+    "amount": [
+      0,
+      1
+    ],
+    "blur": [
+      0,
+      3
+    ],
+    "spread": [
+      0,
+      3
+    ],
+    "dropout": [
+      0,
+      0.5
+    ],
+    "speck": [
+      0,
+      0.5
+    ],
+    "vignette": [
+      0,
+      1
+    ],
+    "passes": [
+      1,
+      6
+    ],
+    "roughness": [
+      0,
+      1
+    ],
+    "segment": [
+      1,
+      60
+    ],
+    "falloff": [
+      0.2,
+      6
+    ],
+    "wander": [
+      0,
+      12
+    ]
+  },
+  "quantize": {
+    "width": 1,
+    "height": 1,
+    "brushScale": 0.25,
+    "seed": 1,
+    "seedOffset": 1,
+    "x": 0.5,
+    "y": 0.5,
+    "w": 0.5,
+    "h": 0.5,
+    "cx": 0.5,
+    "cy": 0.5,
+    "r": 0.5,
+    "dx": 0.5,
+    "dy": 0.5,
+    "inset": 0.5,
+    "arm": 0.5,
+    "dotRadius": 0.5,
+    "origin": 0.5,
+    "translate": 0.5,
+    "points": 0.5,
+    "from": 0.5,
+    "to": 0.5,
+    "rotate": 1,
+    "angle": 1,
+    "startAngle": 1,
+    "scale": 0.01,
+    "span": 0.5,
+    "count": 1,
+    "cols": 1,
+    "layers": 1,
+    "opacity": 1,
+    "bleed": 0.01,
+    "softness": 0.01,
+    "rand": 0.01,
+    "curve": 0.01,
+    "texture": 0.05,
+    "spacing": 0.5,
+    "density": 0.05,
+    "length": 0.5,
+    "jitter": 0.5,
+    "weight": 0.1,
+    "boxWeight": 0.1,
+    "size": 0.5,
+    "labelSize": 0.5,
+    "tracking": 0.05,
+    "labelTracking": 0.05,
+    "maxWidth": 1,
+    "leading": 0.05,
+    "skew": 1,
+    "stretch": 0.01,
+    "levels": 1,
+    "cell": 1,
+    "cut": 0.01,
+    "amount": 0.01,
+    "blur": 1,
+    "spread": 1,
+    "dropout": 0.005,
+    "speck": 0.005,
+    "vignette": 0.01,
+    "passes": 1,
+    "roughness": 0.01,
+    "segment": 0.5,
+    "falloff": 0.1,
+    "wander": 0.5
+  },
+  "print": []
+}

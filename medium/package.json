@@ -20,9 +20,11 @@
     "fragments-sheet": "npm run build && node dist/cli/fragments-sheet.js",
     "ui": "npm run build && node dist/cli/ui.js",
     "check": "npm run build && node dist/cli/check.js",
+    "artist": "npm run build && node dist/cli/artist.js",
     "fonts": "node assets/fonts/fetch.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "0.65.0",
     "ajv": "8.17.1",
     "commander": "12.1.0",
     "playwright": "1.55.0",

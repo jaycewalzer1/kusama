@@ -1,0 +1,41 @@
+{
+  "version": "1.0",
+  "briefId": "transmission-four",
+  "whenAndWhere": "September 1992, in eleven specialist shops. A Detroit with no radio for this music, a Berlin still filling the empty buildings of the east, a Rotterdam that has just invented a harder version of it, and a London counting the cost of the summer's free festivals.",
+  "inTheAir": [
+    "The majors are cutting vinyl in favour of the compact disc, so a twelve-inch is becoming a refusal rather than the default format.",
+    "Detroit producers are watching European labels sell their own records back to them, and unpaid licensing is the standing subject of every conversation.",
+    "Rostock burned in August with a crowd standing by applauding, and nothing shipped into Germany this month arrives outside that.",
+    "The DJ is now billed above the record, and magazines want a photograph and a first name before they will write anything at all."
+  ],
+  "contested": [
+    "Some say anonymity protects the music from the star system; others answer that a black music from Detroit with its authors erased is exactly how it gets taken.",
+    "Some say five hundred and no repress keeps it out of the wrong hands; others answer that it only means Italian bootleggers press it and keep the money."
+  ],
+  "exhausted": [
+    "The smiley, dead since 1990 and still on half the flyers in the shop.",
+    "Fractals and Mandelbrot swirls, four years of the same screensaver.",
+    "Chrome lettering with a lens flare, house style of every hardcore night.",
+    "Cartoon aliens and borrowed cartoon characters over a bill of fifteen names."
+  ],
+  "whoIsWatching": {
+    "audience": "A man of twenty-three stands in a listening booth on a Saturday spending rent money. He already owns four records that sound like this one and can tell inside eight bars when he is being sold something. What holds him is a fact he cannot look up anywhere. What loses him is anything that reads like a press release.",
+    "adversary": "A licensing scout at a large label who would pay well for a name and a photograph, and who, refused, will have it repressed unlicensed in Italy within six weeks."
+  },
+  "transplants": [
+    {
+      "ref": "Pasquinades, anonymous verses posted on a Roman statue from 1501 onward",
+      "why": "Unsigned, fixed to one known place, and authoritative precisely because nobody could be credited."
+    },
+    {
+      "ref": "Atumpan talking-drum messages between Asante towns, eighteenth century",
+      "why": "It carries an announcement over distance to whoever was trained to hear it and to nobody else."
+    },
+    {
+      "ref": "Chalk marks left on gateposts by American hoboes in the 1930s",
+      "why": "A distributed code readable only inside the network it serves, invisible to everyone outside it."
+    }
+  ],
+  "stakesLevel": 0.45,
+  "stakesLevelWhy": "Five hundred copies and no second pressing makes it unrepeatable, but what is at stake is whether a record is read correctly, not what happens to anyone."
+}

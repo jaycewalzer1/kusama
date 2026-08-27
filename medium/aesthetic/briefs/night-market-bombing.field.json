@@ -1,0 +1,41 @@
+{
+  "version": "1.0",
+  "briefId": "night-market-bombing",
+  "whenAndWhere": "Peckham, south London, November 1997. A market street of butchers, fabric shops and a bingo hall in a dead cinema, six months into a government the street voted for, with the estates behind it half demolished.",
+  "inTheAir": [
+    "The Foreign Secretary promised an ethical dimension in May, then honoured export licences signed by the last government, Hawk aircraft to Indonesia among them.",
+    "The Scott report on arms sold to Iraq is eighteen months old and nobody has resigned, so 'the licence was legal' no longer answers anything.",
+    "North Peckham is being demolished around its remaining tenants, and much of this audience lives in a decant flat with a date on it.",
+    "The council has started fining venues for fly-posting rather than the people who paste, so paper on the lane is charged to the room."
+  ],
+  "contested": [
+    "Some say a medical fund is charity that leaves the licence untouched; others answer that the surgeons need money in December and eleven weeks of campaigning has moved nothing.",
+    "Some say printing the firm's name invites a writ that shuts the venue; others answer that an unnamed company is no company, and the nine hundred metres is the whole argument."
+  ],
+  "exhausted": [
+    "The jet silhouette above a running family, photocopied until nothing is left but black.",
+    "Ransom-note lettering, a genre now that punk's twentieth anniversary has been reissued all year.",
+    "The dove in barbed wire, on every peace stall since the Gulf.",
+    "An undated crying child standing in for a country."
+  ],
+  "whoIsWatching": {
+    "audience": "A woman of thirty-four comes up from the station with shopping, half an hour before she collects her son. She scans the shuttered cinema's wall out of habit. She believes the news from abroad and assumes none of it is made here. One checkable local address would stop her; another appeal to conscience would not.",
+    "adversary": "A facilities manager at the firm with a standing instruction to have anything naming it off the shutters by nine, and a solicitor who writes to the venue's licensee, not to the pasters."
+  },
+  "transplants": [
+    {
+      "ref": "Athenian casualty stelai, names cut by tribe in the Kerameikos, fifth century BCE",
+      "why": "It turns a count of the dead into named people, in a street their neighbours use daily."
+    },
+    {
+      "ref": "Pittura infamante, defamation portraits painted on Florentine public walls, fourteenth century",
+      "why": "It puts a nearby financier's name on a wall of the city where he does business."
+    },
+    {
+      "ref": "Bidding letters printed for Cardiganshire weddings, nineteenth-century Wales",
+      "why": "It asks a neighbourhood for small sums on a fixed day and says plainly what for."
+    }
+  ],
+  "stakesLevel": 0.75,
+  "stakesLevelWhy": "The harm has already happened and is irreversible; the fixed date is a benefit that either raises the medical fund that week or does not."
+}
