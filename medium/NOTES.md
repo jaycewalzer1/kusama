@@ -358,7 +358,7 @@ That is R8's meta-lesson in one sentence: a self-consistency check cannot detect
 error, and a threshold is a machine for manufacturing shared-cause agreement. So the order in
 `cli/render.ts` is render, then hash, then print. `Renderer.render()` returns only once two whole
 renders agreed; `pixelHash(plate.rgba)` is taken at that moment; `runPrint` runs after. `batch.ts`,
-`golden.ts` and `src/aesthetic/measure.ts` all do the same thing in the same order, and nothing
+`golden.ts` and `aesthetic/measure.ts` all do the same thing in the same order, and nothing
 anywhere calls a print stage from inside a loop that is deciding whether a render is real.
 
 Three consequences worth stating, because they are not the obvious ones:
@@ -515,7 +515,9 @@ full scale, and the share of pixels that differ at all.
 
 **The last two rows are a control nobody designed.** Both Ikeda probes refused every print stage on
 their own merits — their author's argument was that each stage writes values that are not palette
-colours and "absolute flatness" is the whole of that row. They are consequently the only two probes
+colours and "absolute flatness" is the whole of that row. Checked mechanically rather than taken on
+that argument: both have `print: null` and contain no `tear`, `blend` or `clip`, so they use none of
+v1's new pixel-touching capabilities at all. They are consequently the only two probes
 whose seed sensitivity is *identical to four decimal places* between v0 and v1, while every probe
 that takes a stage moves by 3x to 45x. That isolates the cause without an experiment being run for
 it: `grain`, `misregister` and `generation` draw from a seeded stream and touch every pixel, so they
@@ -585,8 +587,8 @@ Node — because a single program holding 135 cells plus a caption per row would
 `assets/packs/core-v1/author.mjs` follows the same rule from one step further back: it does **not**
 re-author a single shape. It reads `fragments` and `motifs` out of `assets/packs/core/pack.json` and
 `faces`/`licenses` out of `assets/fonts/manifest.json`, so there is exactly one definition of
-`figure.standing` in the repo and the two packs cannot drift. `core-v1@dd47bb1c2e34` is therefore
-`core@003e484d9602`'s 15 fragments and 1 motif plus a 36-face `faces` map and a 31-entry `licenses`
+`figure.standing` in the repo and the two packs cannot drift. `core-v1@366521cbb036` is therefore
+`core@003e484d9602`'s 15 fragments and 1 motif plus a 36-face `faces` map and a 32-entry `licenses`
 map, and the only reason its hash differs is the type. Each face carries the `sha256` of its file,
 which is what makes the pack hash cover the bytes the glyphs are drawn from and not merely their
 names; `env/browser.ts` re-checks that hash the first time a face is used in a process and refuses

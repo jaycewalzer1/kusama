@@ -37,7 +37,7 @@ The pinned configuration is:
 | GL | software WebGL2 through ANGLE + SwiftShader; no host GPU is used |
 | antialiasing | off — the page calls `setAttributes('antialias', false)` and `pixelDensity(1)` |
 | fonts | `fonts/grotesque.ttf` (PT Sans) `9cc83149…6d0f10a`, `fonts/serif.ttf` (PT Serif) `a4951fad…a2557a`, plus the 34 faces vendored under `assets/fonts/`, each hashed in the pack |
-| asset pack | content-hashed; `core@003e484d9602` (15 fragments, 1 motif) or `core-v1@dd47bb1c2e34` (the same shapes plus 36 faces) |
+| asset pack | content-hashed; `core@003e484d9602` (15 fragments, 1 motif) or `core-v1@366521cbb036` (the same shapes plus 36 faces) |
 | profile | content-hashed; `default-v0@15ad87c16095` or `default-v1@be50e7c6f0a6` |
 | OS / arch | the same one; recorded per render as e.g. `darwin` / `arm64` |
 
@@ -280,7 +280,9 @@ Google Fonts repo under `assets/fonts/`, in the roles `display`, `condensed`, `m
 `hand`, `stencil`, `blackletter`, `pixel` and `techno`. `assets/fonts/manifest.json` and the pack's
 `faces` map are the list; both record family, role, file, byte count, sha256, licence, licence file
 and the upstream URL. Licences are OFL-1.1 and Apache-2.0 (Special Elite, Permanent Marker, Rock
-Salt), with 31 licence texts vendored under `assets/fonts/licenses/`.
+Salt), with 31 licence texts vendored under `assets/fonts/licenses/` and a 32nd, `fonts/OFL.txt`,
+covering the two V0 faces. The pack's `licenses` map is the manifest's 31 plus that one, because the
+V0 pair predates the manifest and is declared by hand in `author.mjs` alongside it.
 
 **Every vendored face is a static `.ttf`, and that is enforced.** Seven families were vendored from
 their upstream variable fonts first and every one of them drew nothing at all: p5 2.2.0 loads a
@@ -384,7 +386,7 @@ Two are shipped, and a program says which it means:
 | profile | pack | what it is |
 | --- | --- | --- |
 | `default-v0@15ad87c16095` | `core@003e484d9602` | V0 unchanged: 2 faces, no print pass. The four committed goldens are rendered against it. |
-| `default-v1@be50e7c6f0a6` | `core-v1@dd47bb1c2e34` | v0 widened: 36 faces, the `print` allow-list, `clipShapes: ["rect","circle","polygon"]`, the 8th primitive `spray`, `limits.maxPrintStages: 6`, `limits.maxTearPoints: 600`, `limits.maxSprayParticles: 4000`, `blendModes: ["normal","multiply","screen","exclusion"]`, and ranges and quantize steps for the new text, print, tear and spray fields. |
+| `default-v1@be50e7c6f0a6` | `core-v1@366521cbb036` | v0 widened: 36 faces, the `print` allow-list, `clipShapes: ["rect","circle","polygon"]`, the 8th primitive `spray`, `limits.maxPrintStages: 6`, `limits.maxTearPoints: 600`, `limits.maxSprayParticles: 4000`, `blendModes: ["normal","multiply","screen","exclusion"]`, and ranges and quantize steps for the new text, print, tear and spray fields. |
 
 Four of those are absences in v0 rather than negations: `print`, `clipShapes`,
 `limits.maxTearPoints` and `limits.maxSprayParticles` are all keys `default-v0.profile.json` does not
@@ -495,10 +497,12 @@ reading the program against a medium other than the one it declares.
 
 ## Layout
 
+Two layers, and the import arrows only ever point one way:
+`renderer/` <- `env/` <- `aesthetic/` <- `cli/`. The substrate never imports the layer that has taste.
+
 ```
-cli/         the ten commands above
-env/         Node side: browser control, validation, profiles, packs, edits, diffing, PNG, print, presentation
 renderer/    plain ESM shared with the browser: resolve, draw, ops, macros, compositing, rng, page
+env/         Node side: browser control, validation, profiles, packs, edits, diffing, PNG, print, presentation
 schema/      program, paintstyle, edit and profile JSON Schemas
 profiles/    medium profiles; default-v0 and default-v1 are the shipped ones
 assets/packs/core/     the content-hashed asset pack (15 fragments, 1 motif) and the script that authors it
@@ -506,10 +510,27 @@ assets/packs/core-v1/  core's shapes read straight out of core, plus the 36-face
 assets/fonts/          34 vendored faces, their licence texts, manifest.json, and fetch.mjs
 vendor/      p5, p5.brush, and VERSIONS.md with the pinned versions and hashes
 fonts/       the two V0 faces and their OFL licence
-examples/    four worked programs, plus batch/ (20 variants) and the committed edit diff
+examples/    worked programs, plus batch/ (20 variants), v1/, probes/ and the committed edit diff
+goldens/     the committed evidence that this medium still renders what it used to
+
+aesthetic/   the layer above the medium: what a program is *for*, and whether it got there
+  check.ts facts.ts kinds.ts types.ts   pure, synchronous, no browser and no LLM, ever
+  measure.ts                            the one part that needs a browser
+  aesthetic-program.schema.json         the gate a position must pass
+  positions/   six aesthetic programs
+  briefs/      five commissions
+  fixtures/    twelve trees, a pass and a fail per position
+
+cli/         the ten commands above
 tests/       node:test suites, including the standing determinism and isolation checks
+docs/        constraints.md (the constraint language) and the substrate-test write-up
+ui/          the preview server's two pages; see cli/ui.ts
 ```
+
+`aesthetic/check.ts` and its pure siblings must never import `measure.ts` or `env/browser.ts`. That
+line is what keeps a constraint check cheap enough to run on every candidate edit instead of only at
+the end of a run; crossing it would drag Playwright into the search loop.
 
 `NOTES.md` records the library surprises, the measurements behind the determinism protocol, and the
 operators that were wanted but deliberately not built. Read it before changing anything in
-`renderer/` or `env/browser.ts`.
+`renderer/` or `env/browser.ts`. `docs/constraints.md` does the same for the constraint language.

@@ -12,8 +12,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { ROOT } from '../env/browser.js';
-import { checkProgram, constraintsOf, loadAestheticProgram, validateAestheticProgram } from '../src/aesthetic/check.js';
-import { CONSTRAINT_KINDS } from '../src/aesthetic/kinds.js';
+import { checkProgram, constraintsOf, loadAestheticProgram, validateAestheticProgram } from '../aesthetic/check.js';
+import { CONSTRAINT_KINDS } from '../aesthetic/kinds.js';
 import { validateProgram } from '../env/validate.js';
 import { loadPack } from '../env/pack.js';
 import { loadProfile } from '../env/profile.js';
@@ -28,11 +28,11 @@ const AESTHETICS = [
 ] as const;
 
 function programFile(id: string): string {
-  return path.join(ROOT, 'programs', `${id}.json`);
+  return path.join(ROOT, 'aesthetic', 'positions', `${id}.json`);
 }
 
 function fixture(id: string, kind: 'pass' | 'fail'): Record<string, unknown> {
-  return JSON.parse(readFileSync(path.join(ROOT, 'examples', 'aesthetic', `${id}-${kind}.json`), 'utf8')) as Record<string, unknown>;
+  return JSON.parse(readFileSync(path.join(ROOT, 'aesthetic', 'fixtures', `${id}-${kind}.json`), 'utf8')) as Record<string, unknown>;
 }
 
 function declaredViolations(tree: Record<string, unknown>): string[] {
@@ -40,6 +40,21 @@ function declaredViolations(tree: Record<string, unknown>): string[] {
   const list = meta?.['violates'];
   return Array.isArray(list) ? (list as string[]) : [];
 }
+
+test('the pure half of the layer imports no browser, so a search loop pays for no browser', () => {
+  // check/facts/kinds/types are the modules a search loop calls per candidate edit. measure.ts is
+  // the browser half and is deliberately not in this list. If this fails, someone reached for
+  // something in env/browser.ts (usually a path constant) and dragged Playwright in behind it.
+  for (const file of ['check.ts', 'facts.ts', 'kinds.ts', 'types.ts']) {
+    const source = readFileSync(path.join(ROOT, 'aesthetic', file), 'utf8');
+    const imports = source.match(/^\s*import[\s\S]*?from\s+'[^']+';/gm) ?? [];
+    for (const line of imports) {
+      assert.doesNotMatch(line, /env\/browser\.js/, `aesthetic/${file} must not import env/browser.js`);
+      assert.doesNotMatch(line, /\.\/measure\.js/, `aesthetic/${file} must not import ./measure.js`);
+      assert.doesNotMatch(line, /playwright/, `aesthetic/${file} must not import playwright`);
+    }
+  }
+});
 
 test('all six aesthetic programs are schema-valid and use only the closed kind set', () => {
   for (const id of AESTHETICS) {

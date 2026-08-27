@@ -120,7 +120,7 @@ no solid — a shape the positions here deliberately do not use.
 
 ## Render scope
 
-All four read a `RenderMetrics` produced by `src/aesthetic/measure.ts` from the **canonical** RGBA:
+All four read a `RenderMetrics` produced by `aesthetic/measure.ts` from the **canonical** RGBA:
 the deterministic path, hermetic Chromium, antialiasing off, cached by program hash. With no metrics
 they are `unverified`. They never launch a browser themselves.
 
@@ -173,8 +173,8 @@ position, `min: 0.08`:
 | tree | ink | `inkOffset` |
 |---|---|---|
 | `examples/probes/crass-collage.json` (v0) | 0.3978 | 0.1914 |
-| `examples/aesthetic/crass-collage-pass.json` | 0.9854 | 0.2011 |
-| `examples/aesthetic/crass-collage-fail.json` | 0.9854 | 0.2014 |
+| `aesthetic/fixtures/crass-collage-pass.json` | 0.9854 | 0.2011 |
+| `aesthetic/fixtures/crass-collage-fail.json` | 0.9854 | 0.2014 |
 | `examples/probes/v1/crass-collage.json` | **0.9967** | **0.0849** |
 
 The floor was calibrated against the pass fixture and has ~2.5x headroom there, which is the number
@@ -191,7 +191,7 @@ useful range. **If you raise an ink floor, re-measure this; the headroom does no
 `{ text: string }` — carried, never executed. Always `unverified`. `checkProgram` returns every
 rubric in `pendingRubrics`, verbatim, for a judge that is not part of this layer and never will be.
 
-The rubrics in `programs/` are where the positions put what the tree and the pixels cannot hold:
+The rubrics in `aesthetic/positions/` are where the positions put what the tree and the pixels cannot hold:
 mode of address, whether an image refers to anything outside itself, whether roughness was caused or
 applied, whether emptiness is signal or good taste. See the final section of each program's `why`
 fields for what specifically was pushed here and why.

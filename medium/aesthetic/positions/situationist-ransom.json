@@ -184,5 +184,9 @@
     "anarchy symbols as ornament in the corner of an otherwise tidy grid",
     "spray-paint textures produced by a brush preset",
     "collage where every fragment is the same size and evenly spaced"
-  ]
+  ],
+  "meta": {
+    "temperament": 0.3,
+    "temperamentWhy": "Detournement is a joke told at the expense of something powerful, and a joke needs the teller to be enjoying it; a sour version of this position just vandalises."
+  }
 }

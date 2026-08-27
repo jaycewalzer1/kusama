@@ -187,5 +187,9 @@
     "the word WAR set in the largest available size",
     "skulls substituted for the faces of politicians",
     "monochrome plus one colour treated as a palette decision rather than as a printing constraint"
-  ]
+  ],
+  "meta": {
+    "temperament": -0.6,
+    "temperamentWhy": "It holds that any relief offered to the viewer is a concession to the thing depicted, so it starts sour on purpose and reads its own successes as suspicious."
+  }
 }

@@ -1,24 +1,21 @@
 // Render-scope measurement: four numbers taken off the canonical image.
 //
-// The whole medium's determinism argument is inherited here and none of it is re-litigated. This
-// goes through env/browser.ts's Renderer, which renders one program at a time in a fresh page and
-// repeats each render until two consecutive renders are byte-identical (NOTES R1, R7, R8). Nothing
-// in this file counts frames, launches pages concurrently, or reads the display image.
+// The browser half of this layer, and the only part of it that cannot run in a search loop. The
+// medium's determinism argument is inherited whole from env/browser.ts and none of it is
+// re-litigated: nothing here counts frames, launches pages concurrently, or reads the display image.
 //
 // Because the canonical image is a pure function of (program, profile, pack, renderer), metrics are
-// cached on disk by program hash and by METRICS_VERSION. A cache entry records the pixel hash it was
-// taken over, so a stale entry is detectable rather than merely old.
+// cached on disk by program hash and by METRICS_VERSION.
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { Renderer } from '../../env/browser.js';
-import { loadPackFor, type AssetPack } from '../../env/pack.js';
-import { pixelHash } from '../../env/png.js';
-import { ROOT } from '../../env/browser.js';
-import { contentHash, loadProfileFor } from '../../env/profile.js';
-import { printRender } from '../../env/print.js';
-import { validateProgram } from '../../env/validate.js';
-import { fontsUsed } from '../../renderer/resolve.js';
+import { Renderer, ROOT } from '../env/browser.js';
+import { loadPackFor, type AssetPack } from '../env/pack.js';
+import { pixelHash } from '../env/png.js';
+import { contentHash, loadProfileFor } from '../env/profile.js';
+import { printRender } from '../env/print.js';
+import { validateProgram } from '../env/validate.js';
+import { fontsUsed } from '../renderer/resolve.js';
 import type { RenderMetrics } from './types.js';
 
 /** A pixel counts as ink when any channel is this far from the ground colour. */
@@ -30,12 +27,28 @@ const CELL_INK = 0.01;
 
 const CACHE_DIR = path.join(ROOT, '.cache', 'aesthetic-metrics');
 /**
- * Part of the cache file name, bumped whenever RenderMetrics gains, loses or redefines a field. An
- * entry written before a field existed would otherwise parse cleanly and hand a checker `undefined`,
- * which `within()` reads as "inside every bound". A version in the name makes that a miss instead.
+ * Part of the cache file name. Bump it whenever RenderMetrics gains, loses or redefines a field --
+ * an entry written before a field existed would otherwise parse cleanly and hand a checker
+ * `undefined`, which `within()` reads as "inside every bound" -- and, less obviously, whenever the
+ * renderer changes what the existing numbers measure.
+ *
+ * The second rule is here because the first one is not enough and that was found the hard way. The
+ * key is the *program* hash, and `contentHash` covers the program only: not the profile, not the
+ * pack, and not the renderer. So when 6b7601e changed how text is measured and moved real pixels,
+ * every cached entry stayed valid-looking and wrong -- the same four numbers, taken off an image
+ * that no longer existed. Nothing failed. A stale metric does not crash, it just quietly answers a
+ * question about a render nobody would get again.
+ *
  * 2: added inkOffset.
+ * 3: 6b7601e moved text, so inkOffset/coverage/symmetry for any program with an untracked,
+ *    unjittered text node were measured off superseded pixels.
+ *
+ * TODO: this is a human remembering, and the human did not. The cache key wants the renderer's
+ * identity folded into it -- a hash over `renderer/*.js` alongside the program hash -- so that a
+ * change like 6b7601e invalidates these entries whether or not anyone thinks to edit this line.
+ * Deliberately not done here: it is a second change riding along with the one that was asked for.
  */
-const METRICS_VERSION = 2;
+const METRICS_VERSION = 3;
 
 function hexToRgb(hex: string): [number, number, number] {
   return [
@@ -113,7 +126,7 @@ function inkOffset(ink: Uint8Array, width: number, height: number): number {
   return Math.hypot(dx, dy) / Math.hypot(width / 2, height / 2);
 }
 
-export function metricsFromRgba(rgba: Buffer, width: number, height: number, ground: string): RenderMetrics {
+function metricsFromRgba(rgba: Buffer, width: number, height: number, ground: string): RenderMetrics {
   const ink = inkDistance(rgba, width, height, ground);
   let inked = 0;
   for (let p = 0; p < ink.length; p++) if (ink[p]! !== 0) inked++;
@@ -148,7 +161,7 @@ function cacheFile(programHash: string): string {
   return path.join(CACHE_DIR, `${programHash}.v${METRICS_VERSION}.json`);
 }
 
-export function readCached(programHash: string): RenderMetrics | null {
+function readCached(programHash: string): RenderMetrics | null {
   try {
     return JSON.parse(readFileSync(cacheFile(programHash), 'utf8')) as RenderMetrics;
   } catch {

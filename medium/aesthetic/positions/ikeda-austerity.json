@@ -187,5 +187,9 @@
     "glitch artefacts produced deliberately in a file that never glitched",
     "a lowercase sans-serif treated as inherently rigorous",
     "white space claimed as content rather than as the thing content is measured against"
-  ]
+  ],
+  "meta": {
+    "temperament": 0,
+    "temperamentWhy": "It makes no claim about whether the situation is good or bad and treats affect in the maker as one more decoration to be stripped, so it starts at exactly neutral."
+  }
 }

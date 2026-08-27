@@ -2,21 +2,41 @@
 //
 // Pure and synchronous. Everything decidable from the JSON is decided here in microseconds, which is
 // what makes it usable inside a search loop rather than at the end of one. Render-scope constraints
-// need a RenderMetrics, produced separately by src/aesthetic/measure.ts, because that is the one part
-// that needs a browser; hand it null and those constraints come back `unverified`, never assumed.
+// need a RenderMetrics, produced separately by ./measure.ts, because that is the one part that needs
+// a browser; hand it null and those constraints come back `unverified`, never assumed.
+//
+// Nothing here may import ./measure.ts or env/browser.ts: this module stays free of Playwright so
+// the search loop pays for a checker and not for a browser.
 //
 // No LLM is called here and none ever will be. Judge-scope rubrics are returned as text.
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import _Ajv2020 from 'ajv/dist/2020.js';
 import type { ValidateFunction } from 'ajv';
-import { ROOT } from '../../env/browser.js';
 import { treeFacts } from './facts.js';
 import { checkConstraintWithFacts } from './kinds.js';
 import type { AestheticProgram, CheckReport, Constraint, ConstraintResult, RenderMetrics } from './types.js';
 
 const Ajv = _Ajv2020 as unknown as typeof _Ajv2020.default;
+
+/**
+ * The schema sits beside this file in the source tree but is not copied into `dist/`, so it is found
+ * from the package root rather than relative to the module. Works from `aesthetic/` and
+ * `dist/aesthetic/` alike, which is the same trick `env/browser.ts` uses for ROOT — repeated here
+ * rather than imported, because importing it would pull Playwright into the pure path.
+ */
+const SCHEMA_FILE = (() => {
+  let dir = path.dirname(fileURLToPath(import.meta.url));
+  for (let i = 0; i < 6; i++) {
+    if (existsSync(path.join(dir, 'package.json'))) {
+      return path.join(dir, 'aesthetic', 'aesthetic-program.schema.json');
+    }
+    dir = path.dirname(dir);
+  }
+  throw new Error('cannot locate the medium root (package.json not found above this file)');
+})();
 
 let compiled: ValidateFunction | null = null;
 
@@ -24,8 +44,7 @@ let compiled: ValidateFunction | null = null;
 export function validateAestheticProgram(value: unknown): string[] {
   if (!compiled) {
     const ajv = new Ajv({ allErrors: true, strict: true, strictRequired: false, allowUnionTypes: true });
-    const file = path.join(ROOT, 'spec', 'aesthetic-program.schema.json');
-    compiled = ajv.compile(JSON.parse(readFileSync(file, 'utf8')) as object);
+    compiled = ajv.compile(JSON.parse(readFileSync(SCHEMA_FILE, 'utf8')) as object);
   }
   if (compiled(value)) return [];
   return (compiled.errors ?? []).map((e) => `${e.instancePath || '/'}: ${e.message ?? 'invalid'}`);

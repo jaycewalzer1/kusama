@@ -184,5 +184,9 @@
     "'the personal is political' quoted rather than demonstrated",
     "a collaged eye or mouth from a fashion magazine",
     "coffee ring stains added to a file that never touched a table"
-  ]
+  ],
+  "meta": {
+    "temperament": 0.2,
+    "temperamentWhy": "The rage is real but the form is a gift passed hand to hand between people who are glad of each other, so it starts slightly warm and recovers quickly from a bad step."
+  }
 }

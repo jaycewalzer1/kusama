@@ -17,6 +17,13 @@
     "allowJs": true,
     "checkJs": false
   },
-  "include": ["env/**/*.ts", "src/**/*.ts", "cli/**/*.ts", "tests/**/*.ts", "renderer/**/*.js"],
+  "include": [
+    "env/**/*.ts",
+    "aesthetic/**/*.ts",
+    "artist/**/*.ts",
+    "cli/**/*.ts",
+    "tests/**/*.ts",
+    "renderer/**/*.js"
+  ],
   "exclude": ["node_modules", "dist", "vendor"]
 }

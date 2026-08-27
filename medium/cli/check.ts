@@ -11,9 +11,9 @@
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { Command } from 'commander';
-import { checkProgram, loadAestheticProgram } from '../src/aesthetic/check.js';
-import { Measurer } from '../src/aesthetic/measure.js';
-import type { CheckReport, RenderMetrics } from '../src/aesthetic/types.js';
+import { checkProgram, loadAestheticProgram } from '../aesthetic/check.js';
+import { Measurer } from '../aesthetic/measure.js';
+import type { CheckReport, RenderMetrics } from '../aesthetic/types.js';
 
 function pad(s: string, n: number): string {
   return s.length >= n ? s : s + ' '.repeat(n - s.length);

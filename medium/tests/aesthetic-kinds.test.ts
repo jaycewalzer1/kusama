@@ -7,8 +7,8 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CONSTRAINT_KINDS, checkConstraint } from '../src/aesthetic/kinds.js';
-import type { Constraint, ConstraintKind, RenderMetrics } from '../src/aesthetic/types.js';
+import { CONSTRAINT_KINDS, checkConstraint } from '../aesthetic/kinds.js';
+import type { Constraint, ConstraintKind, RenderMetrics } from '../aesthetic/types.js';
 
 type Node = Record<string, unknown>;
 

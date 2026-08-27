@@ -4,7 +4,7 @@
 // repo ever checks. Three of them carry constraints, and a constraint's `scope` says who can decide
 // it: the tree alone, the deterministic PNG, or a judge that does not exist yet.
 //
-// These types mirror spec/aesthetic-program.schema.json exactly. The schema is the gate; these are
+// These types mirror ./aesthetic-program.schema.json exactly. The schema is the gate; these are
 // what the checker reads after the gate has passed.
 
 export type Scope = 'tree' | 'render' | 'judge';
@@ -115,7 +115,7 @@ export interface CheckReport {
 
 /**
  * Everything the render scope is allowed to know. Computed once per program hash from the canonical
- * RGBA and cached; see src/aesthetic/measure.ts. Deliberately four numbers and not a feature vector
+ * RGBA and cached; see ./measure.ts. Deliberately four numbers and not a feature vector
  * — a render-scope constraint that needs more than this is a judge-scope constraint wearing a hat.
  *
  * Adding or redefining a field here means bumping METRICS_VERSION in measure.ts, or a cache entry

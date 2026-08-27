@@ -176,5 +176,9 @@
     "the word RAVE in a nineties display face used ironically",
     "an unnecessary drop shadow claimed as a period detail",
     "concrete texture photographs used as a wash behind the bill"
-  ]
+  ],
+  "meta": {
+    "temperament": 0.4,
+    "temperamentWhy": "The flyer exists because the night is worth going to; its severity is service to pleasure, not a verdict against it, so it works from a good mood and gets colder as it tightens."
+  }
 }

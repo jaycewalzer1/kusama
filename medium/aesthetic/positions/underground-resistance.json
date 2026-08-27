@@ -184,5 +184,9 @@
     "the raised fist, at any angle",
     "'ANALOG' or 'TRANSMISSION' set in a technical face as a mood",
     "redaction bars over text that was never sensitive"
-  ]
+  ],
+  "meta": {
+    "temperament": 0.1,
+    "temperamentWhy": "It is disciplined rather than cheerful, but it is addressed to a future it believes arrives, so it sits just above neutral and does not despair easily."
+  }
 }
