@@ -106,6 +106,37 @@ test('per-cell n is reported, so a zero spread from a single seed can be seen as
   assert.equal(drift.separates, true, 'and that is exactly why n must be read beside it');
 });
 
+test('an empty corpus says it is empty rather than reporting a clean sweep', () => {
+  // The regression, not a hypothetical: a batch whose nine runs all failed on a missing API key
+  // printed "Every score separated these cells by more than the spread within them" — with no
+  // scores there are no failing scores, so the vacuous case read as a pass.
+  const text = spreadText(scoreSpreads([]));
+  assert.match(text, /no finished runs/);
+  assert.doesNotMatch(text, /separated these cells/);
+});
+
+test('a single-cell corpus refuses to claim separation', () => {
+  const text = spreadText(
+    scoreSpreads([
+      { cell: 'only', scores: scores({ drift: 1 }) },
+      { cell: 'only', scores: scores({ drift: 2 }) },
+    ])
+  );
+  assert.match(text, /Only one cell/);
+  assert.match(text, /0 by construction/);
+});
+
+test('cells with one seed are named, because their zero spread is absence not agreement', () => {
+  const text = spreadText(
+    scoreSpreads([
+      { cell: 'a', scores: scores({ drift: 1 }) },
+      { cell: 'b', scores: scores({ drift: 2 }) },
+    ])
+  );
+  assert.match(text, /fewer than two seeds/);
+  assert.match(text, /unearned/);
+});
+
 test('a score that is null on some seeds is averaged over the seeds that have it', () => {
   const spreads = scoreSpreads([
     { cell: 'a', scores: scores({ tree: 1 }) },

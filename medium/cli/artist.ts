@@ -150,8 +150,11 @@ async function runCells(opts: Record<string, string | boolean>): Promise<void> {
 
       mkdirSync(dir, { recursive: true });
       console.log(`${label}: running`);
+      // Outside the try on purpose. A missing key is a fact about the machine, not about this seed,
+      // and catching it per-run turns one configuration error into k*cells identical failures and an
+      // empty corpus that then reports itself as having nothing wrong with it.
+      policy ??= await selectPolicy();
       try {
-        policy ??= await selectPolicy();
         const t = await runTrajectory({
           policy,
           positionId: c.positionId,

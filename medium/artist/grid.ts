@@ -236,22 +236,54 @@ export function scoreSpreads(runs: { cell: string; scores: Scores }[]): ScoreSpr
   });
 }
 
-/** The spread table, plainly, with the scores that measure nothing called out as such. */
+/**
+ * The spread table, plainly, with the scores that measure nothing called out as such.
+ *
+ * Three ways this could congratulate itself on nothing. All three are closed here, and the first
+ * one is closed because it actually happened: a batch that failed all nine runs printed "Every
+ * score separated these cells by more than the spread within them," because an empty corpus has no
+ * scores and so has no failing ones. A summary that reads as a pass when there is no data is the
+ * same defect this whole repair pass is about.
+ */
 export function spreadText(spreads: ScoreSpread[]): string {
+  if (spreads.length === 0) {
+    return 'No scores: this corpus has no finished runs in it, so there is nothing to compare.';
+  }
+
   const rows = spreads.map((s) => {
     const cells = s.perCell.map((p) => `${p.cell}=${p.stat.mean.toFixed(3)}+-${p.stat.sd.toFixed(3)}(n${p.stat.n})`);
     return `${s.separates ? '  ' : '! '}${s.score.padEnd(28)} between ${s.between.toFixed(3).padStart(8)}  within ${s.within
       .toFixed(3)
       .padStart(8)}  ${cells.join('  ')}`;
   });
+
+  // Read off any score: every score carries the same cell list and the same per-cell n.
+  const perCell = spreads[0]!.perCell;
+  const withRuns = perCell.filter((p) => p.stat.n > 0);
+  const unrepeated = withRuns.filter((p) => p.stat.n < 2).map((p) => p.cell);
   const dead = spreads.filter((s) => !s.separates);
-  return [
-    ...rows,
-    '',
+
+  const notes: string[] = [];
+  if (withRuns.length < 2) {
+    notes.push(
+      'Only one cell has runs in it, so every between-cell difference is 0 by construction and no score\n' +
+        'can separate anything. This table reports within-cell spread and nothing else.'
+    );
+  }
+  if (unrepeated.length > 0) {
+    notes.push(
+      `${unrepeated.length} cell(s) have fewer than two seeds, so their within-cell spread is 0 because nothing\n` +
+        'was repeated, not because the seeds agreed. Any "separates" verdict resting on them is unearned:\n  ' +
+        unrepeated.join('\n  ')
+    );
+  }
+  notes.push(
     dead.length === 0
       ? 'Every score separated these cells by more than the spread within them.'
       : `${dead.length} score(s) marked ! have a between-cell difference no larger than the spread within a cell.\n` +
-        'On this data they are not measuring anything:\n  ' +
-        dead.map((s) => s.score).join('\n  '),
-  ].join('\n');
+          'On this data they are not measuring anything:\n  ' +
+          dead.map((s) => s.score).join('\n  ')
+  );
+
+  return [...rows, '', ...notes].join('\n\n');
 }
