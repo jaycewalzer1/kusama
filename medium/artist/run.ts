@@ -20,27 +20,31 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { loadPackFor } from '../env/pack.js';
-import { canonicalJson, contentHash, loadProfileFor } from '../env/profile.js';
+import { canonicalJson, contentHash, loadProfile, loadProfileFor } from '../env/profile.js';
 import { affectSentence, initialAffect } from './affect.js';
 import { capabilitySheet } from './capability-sheet.js';
 import { Canvas, check } from './canvas.js';
 import { newSpend, type Spend } from './call.js';
-import { ArtistEnv } from './env.js';
+import { ArtistEnv, refusalTally } from './env.js';
 import { loadCommission, type Commission } from './field.js';
-import { carryNodeIds, declared, realization, totalDrift } from './intention.js';
-import { OBSERVATION_HASH, type MakeContext } from './observation.js';
+import { carryNodeIds, declared, purposeChurn, realization, terminationOf, totalDrift } from './intention.js';
+import { envVersionNow } from './env-version.js';
+import { type MakeContext } from './observation.js';
 import { seedProgram } from './seed.js';
-import { StudioLog } from './studio-log.js';
+import { readLog, StudioLog } from './studio-log.js';
+import { processOf } from './transition.js';
 import { act, replan } from './phases/act.js';
 import { choose } from './phases/choose.js';
 import { examine } from './phases/examine.js';
 import { find, grounded } from './phases/find.js';
-import { SKETCH_PROFILE, sheetNotes, sheetOf, sketch, type SketchResult } from './phases/sketch.js';
+import { assertTextBudget, SKETCH_PROFILE, sheetNotes, sheetOf, sketch, type SketchResult } from './phases/sketch.js';
 import type { Policy } from './policy/interface.js';
 import type {
   Affect,
   CheckReport,
   Cost,
+  EdgeEstimate,
+  Examine,
   Intention,
   Mode,
   Problem,
@@ -48,6 +52,7 @@ import type {
   Scores,
   Sketch,
   Step,
+  Termination,
   Trajectory,
 } from './types.js';
 
@@ -55,6 +60,8 @@ export interface RunOptions {
   policy: Policy;
   positionId: string;
   briefId: string;
+  /** L3, chosen here rather than read off the brief: the kind of object is its own axis. */
+  deliverableId: string;
   seed: number;
   /** Where studio.jsonl, final.png, sketches/ and the rest are written. Created if absent. */
   outDir: string;
@@ -72,15 +79,35 @@ export interface RunOptions {
    * are graded by the same checker, and only one of them was told what it was being graded on.
    */
   control?: boolean;
+  /**
+   * Whether the artist sees during MAKE. **On by default.** THINK+ACT and REPLAN are given the
+   * current plate and, after the first kept step, a second frame marking what that step moved.
+   *
+   * It costs no extra render — the canvas already produced these bytes for the describer — so the
+   * only difference between the arms is input tokens and whether the artist is looking. Off is the
+   * ablation: run one cell each way on the same position, brief and seed and compare the
+   * replan-reason distribution. If `description-disagrees` collapses when the canvas is attached,
+   * the blind making phase was mostly a negotiation with a narrator, which is a measurement rather
+   * than an opinion.
+   */
+  showCanvas?: boolean;
 }
 
-/** A position with the steering removed. The brief's hard constraints stay: a commission is a fact. */
+/**
+ * L1 removed, everything else intact. The brief's hard constraints stay, because a commission is a
+ * fact about the job rather than a part of the artist; L3 and L4 stay too, since the control arm is
+ * meant to isolate *having a practice* and an arm that also lost the protocol and the object would
+ * be measuring three things at once.
+ *
+ * The practice's refusals go with it. A control artist that kept them would refuse on grounds it was
+ * never given, which is the one thing the arm exists to show the real artist doing.
+ */
 function stripped(commission: Commission): Commission {
   const bare = {
     ...commission.position,
     id: `${commission.position.id}-control`,
     name: `${commission.position.name} (control)`,
-    worldview: 'You have no fixed position. Make the best poster you can for this commission.',
+    worldview: 'You have no fixed position. Make the best object you can for this commission.',
     lineage: [],
     tensions: [],
     commitments: [],
@@ -91,6 +118,13 @@ function stripped(commission: Commission): Commission {
   return {
     ...commission,
     position: bare,
+    practice: {
+      origin: 'You have no particular training and no inherited vocabulary. You have the job in front of you.',
+      doing: 'Serving the commission.',
+      period: 'Now.',
+      register: 'Whatever the job seems to want.',
+      refusals: [],
+    },
     effective: { ...bare, commitments: [...commission.brief.hard_constraints] },
   };
 }
@@ -100,11 +134,15 @@ function makeContext(
   sheet: string,
   env: ArtistEnv,
   steps: Step[],
-  stepsLeft: number
+  stepsLeft: number,
+  canvasAttached: boolean,
+  textOps: { used: number; max: number }
 ): MakeContext {
   return {
     capabilitySheet: sheet,
     position: commission.position,
+    practice: commission.practice,
+    deliverable: commission.deliverable,
     brief: commission.brief,
     program: env.program,
     report: env.look.checkReport,
@@ -115,7 +153,22 @@ function makeContext(
     steps,
     maxEdits: env.maxEdits,
     stepsLeft,
+    canvasAttached,
+    changeAttached: canvasAttached && env.change !== null,
+    textOps,
   };
+}
+
+/**
+ * Text ops standing in the tree, against the profile's cap.
+ *
+ * The capability sheet already states the cap. It does not state what is left, and the difference
+ * showed: in one measured run twenty-two edits were refused for `maxTextOps` by a policy that had
+ * been told the limit and could not see its own consumption of it. A budget the policy cannot
+ * condition on is not a budget, it is a trap that bills in refusals.
+ */
+function textOps(env: ArtistEnv, max: number): { used: number; max: number } {
+  return { used: env.texts().length, max };
 }
 
 /**
@@ -143,10 +196,12 @@ function scoresOf(
   steps: Step[],
   problems: Problem[],
   fieldText: string,
-  selfScore: number | null
+  seen: Examine | null,
+  stopped: Termination['kind']
 ): Scores {
   const real = realization(intention, program);
   const risk = steps.find((s) => s.accepted && s.isRiskMove);
+  const last = steps[steps.length - 1];
   return {
     tree: report.treeScore,
     render: report.renderScore,
@@ -157,18 +212,38 @@ function scoresOf(
       mechanical: real.mechanical,
       satisfied: real.satisfied,
       judgePending: real.judgePending,
+      elementsMade: real.elementsMade,
     },
     drift: totalDrift(intentions),
+    purposeChurn: purposeChurn(intentions),
     // Steps that changed the plan rather than the picture: the run's own cost of finding the problem
     // after it thought it had one. `problemsGrounded` is the FIND-phase half of the same question.
     problemFindingSteps: steps.filter((s) => s.replan !== null).length,
     problemsGrounded: grounded(problems, fieldText),
     destructionRate: destructionRate(steps),
     riskMoveTaken: risk !== undefined,
-    riskConvention: risk?.action.risk ?? intention.riskMove?.convention ?? null,
-    selfScore,
+    // No fallback to `intention.riskMove`. If no accepted step named a risk, the artist planned one
+    // and did not take it, and the honest report of that is null — not the plan's sentence dressed
+    // up as an outcome.
+    riskConvention: risk?.action.risk ?? null,
+    selfScore: seen?.selfScore ?? null,
+    examineEdges: seen ? tally(seen.edgeEstimates) : null,
+    refusals: refusalTally(steps),
+    // Against `realization`'s estimates, not EXAMINE's: EXAMINE is the artist grading its own
+    // picture, and a stopping rule scored off it would let the artist decide it had finished by
+    // saying so twice.
+    termination: terminationOf(real.estimates, stopped, last?.action.unrealizable ?? null),
     affectTrace: steps.map((s) => s.affect),
     judgePending: report.pendingRubrics.map((r) => `[${r.id}] ${r.text}`),
+  };
+}
+
+/** EXAMINE's verdicts counted. Kept beside realization's, never folded into them. */
+function tally(estimates: EdgeEstimate[]): { satisfied: number; violated: number; judgePending: number } {
+  return {
+    satisfied: estimates.filter((e) => e.status === 'satisfied').length,
+    violated: estimates.filter((e) => e.status === 'violated').length,
+    judgePending: estimates.filter((e) => e.status === 'judge-pending').length,
   };
 }
 
@@ -178,7 +253,7 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
   const maxSteps = o.maxSteps ?? 12;
   const hardStop = o.hardStop ?? 20;
 
-  const loaded = loadCommission(o.positionId, o.briefId);
+  const loaded = loadCommission(o.positionId, o.briefId, o.deliverableId);
   const commission = o.control ? stripped(loaded) : loaded;
   const fieldText = canonicalJson(loaded.field);
 
@@ -187,11 +262,14 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
   const spend: Spend = newSpend();
 
   const seed = seedProgram(o.seed);
-  const { profile, hash: profileHash } = loadProfileFor(seed);
+  const { profile } = loadProfileFor(seed);
   const pack = loadPackFor(seed);
   const sheet = capabilitySheet(profile, pack);
 
-  const id = contentHash([o.positionId, o.briefId, o.seed, o.control ?? false].join('|')).slice(0, 16);
+  const id = contentHash([o.positionId, o.briefId, o.deliverableId, o.seed, o.control ?? false].join('|')).slice(0, 16);
+  // The same eight hashes on the start line and on the finished trajectory, from one place. They
+  // used to be two object literals that happened to agree.
+  const envVersion = envVersionNow(o.positionId, o.briefId, o.deliverableId, o.seed);
   log.append('trajectory-start', {
     id,
     positionId: loaded.position.id,
@@ -205,12 +283,22 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
     // call order rather than approximate it.
     sketchesPerProblem: o.sketchesPerProblem ?? 3,
     useAudience: o.useAudience ?? true,
-    observationHash: OBSERVATION_HASH,
-    profileHash,
-    packHash: pack.hash,
-    positionHash: loaded.positionHash,
-    fieldHash: loaded.fieldHash,
+    // The ablation arm. It changes the observation text as well as the images, so a replay that
+    // did not carry it would rebuild every MAKE observation wrong and report the arm as a divergence.
+    showCanvas: o.showCanvas ?? true,
+    deliverableId: loaded.deliverable.id,
+    ...envVersion,
+    // Style words found in L2. Non-empty does not stop the run — it marks it non-comparable, which
+    // is a different and more useful thing than a crash on a brief somebody is still drafting.
+    contamination: loaded.contamination,
   });
+  if (loaded.contamination.length > 0) {
+    log.append('note', {
+      phase: 'start',
+      warning: 'the brief carries aesthetic direction; this run is not comparable with a clean one',
+      contamination: loaded.contamination,
+    });
+  }
 
   const canvas = new Canvas();
   const sketchCanvas = new Canvas(SKETCH_PROFILE);
@@ -218,14 +306,30 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
 
   try {
     // 1. FIND -------------------------------------------------------------------------------------
-    const problems = await find(o.policy, log, spend, commission);
-    log.append('note', { phase: 'find', found: problems.length, grounded: grounded(problems, fieldText) });
+    const { questions, problems } = await find(o.policy, log, spend, commission);
+    log.append('note', {
+      phase: 'find',
+      found: problems.length,
+      grounded: grounded(problems, fieldText),
+      questions: questions.length,
+    });
 
     // 2. SKETCH -----------------------------------------------------------------------------------
     // Under sketch-v1: every budget at or below default-v1 and no print pass, so a sketch costs a
     // fraction of a plate. Sketches are rendered serially like everything else (NOTES R8).
     const perProblem = o.sketchesPerProblem ?? 3;
-    log.append('phase', { phase: 'sketch', profile: SKETCH_PROFILE, problems: problems.length, per: perProblem });
+    const { profile: sketchProfile } = loadProfile(SKETCH_PROFILE);
+    const textNeeded = assertTextBudget(loaded.effective, sketchProfile.limits);
+    log.append('phase', {
+      phase: 'sketch',
+      profile: SKETCH_PROFILE,
+      problems: problems.length,
+      per: perProblem,
+      // The position's own floor, beside the budget it is being given. A run whose sketches all come
+      // back short on text can be read against these two numbers rather than guessed at.
+      textDemand: textNeeded,
+      maxTextOps: sketchProfile.limits.maxTextOps,
+    });
     const results: SketchResult[] = [];
     for (const problem of problems) {
       for (let i = 0; i < perProblem; i++) {
@@ -246,6 +350,9 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
 
     // 3. CHOOSE -----------------------------------------------------------------------------------
     const chosen = await choose(o.policy, log, spend, commission, problems, sketches, contact, sheetNotes(results));
+    // The collision, on its own line in the log. It is the cheapest read on whether both layers were
+    // actually taken in, so it goes where somebody tailing the run can see it without a diff.
+    log.append('note', { phase: 'choose', collision: chosen.collision, terms: chosen.terms });
     const intention0 = declared(chosen.intention);
     const intentions: Intention[] = [intention0];
 
@@ -259,15 +366,34 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
       useMetrics: true,
     });
     await env.reset(intention0, affect0);
-    log.append('phase', { phase: 'make', problemId: chosen.problemId, affect: affect0, said: affectSentence(affect0) });
+    // The ablation's only switch, logged so a trajectory says which arm it is without being diffed
+    // against another one.
+    const showCanvas = o.showCanvas ?? true;
+    log.append('phase', {
+      phase: 'make',
+      problemId: chosen.problemId,
+      affect: affect0,
+      said: affectSentence(affect0),
+      showCanvas,
+    });
 
     const steps: Step[] = [];
     let outcome: 'finished' | 'abandoned' = 'finished';
     let abandonReason: string | undefined;
+    // Defaults to the timer, and is only upgraded by the artist actually saying so. An artist that
+    // never chooses a control gets `out-of-steps`, which is what happened.
+    let stopped: Termination['kind'] = 'out-of-steps';
 
     for (let k = 1; k <= hardStop; k++) {
       const stepsLeft = Math.max(0, maxSteps - (k - 1));
-      const call = await act(o.policy, log, spend, makeContext(commission, sheet, env, steps, stepsLeft));
+      const call = await act(
+        o.policy,
+        log,
+        spend,
+        makeContext(commission, sheet, env, steps, stepsLeft, showCanvas, textOps(env, profile.limits.maxTextOps)),
+        env.plate,
+        env.change?.png ?? null
+      );
       const result = await env.step(call.action);
       result.step.observationHash = call.observationHash;
       steps.push(result.step);
@@ -275,9 +401,13 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
       if (call.action.control === 'abandon') {
         outcome = 'abandoned';
         abandonReason = call.action.think;
+        stopped = 'abandoned';
         break;
       }
-      if (call.action.control === 'finished') break;
+      if (call.action.control === 'finished') {
+        stopped = 'declared-finished';
+        break;
+      }
 
       // A replan happens for a named reason or not at all. `artist-declares` is the artist's own
       // control value; everything else was fired by the environment and is already logged.
@@ -290,9 +420,11 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
           o.policy,
           log,
           spend,
-          makeContext(commission, sheet, env, steps, stepsLeft),
+          makeContext(commission, sheet, env, steps, stepsLeft, showCanvas, textOps(env, profile.limits.maxTextOps)),
           fired.trigger,
-          fired.detail
+          fired.detail,
+          env.plate,
+          env.change?.png ?? null
         );
         const after = carryNodeIds(before, replanned);
         result.step.replan = { trigger: fired.trigger, before, after };
@@ -343,13 +475,19 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
       positionId: loaded.position.id,
       positionHash: loaded.positionHash,
       briefId: loaded.brief.id,
+      deliverableId: loaded.deliverable.id,
+      control: o.control ?? false,
       fieldHash: loaded.fieldHash,
       mode,
       seed: o.seed,
       seedProgram: seed,
+      contamination: loaded.contamination,
+      questions,
       problems,
       sketches,
-      chosen: { problemId: chosen.problemId, why: chosen.why },
+      collision: chosen.collision,
+      terms: chosen.terms,
+      chosen: { problemId: chosen.problemId, why: chosen.why, cost: chosen.cost },
       intention0,
       intentions,
       steps,
@@ -366,16 +504,11 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
         steps,
         problems,
         fieldText,
-        seen.selfScore
+        seen,
+        stopped
       ),
       cost,
-      envVersion: {
-        observationHash: OBSERVATION_HASH,
-        profileHash,
-        packHash: pack.hash,
-        positionHash: loaded.positionHash,
-        fieldHash: loaded.fieldHash,
-      },
+      envVersion,
     };
 
     log.append('trajectory-end', {
@@ -390,6 +523,14 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
 
     writeFileSync(path.join(o.outDir, 'final.json'), `${JSON.stringify(trajectory, null, 2)}\n`);
     writeFileSync(path.join(o.outDir, 'scores.json'), `${JSON.stringify(trajectory.scores, null, 2)}\n`);
+    // Folded back out of the log this run just wrote, rather than assembled from the variables in
+    // scope. It costs a file read and it buys the guarantee that matters: transitions.json is a
+    // view of studio.jsonl and cannot contain anything the log does not, so the same command run
+    // over an old trajectory produces the same artifact.
+    writeFileSync(
+      path.join(o.outDir, 'transitions.json'),
+      `${JSON.stringify(processOf(readLog(log.file)), null, 2)}\n`
+    );
     return trajectory;
   } finally {
     await canvas.close();

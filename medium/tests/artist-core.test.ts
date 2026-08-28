@@ -32,6 +32,7 @@ import {
   terminationOf,
   totalDrift,
 } from '../artist/intention.js';
+import { envDrift } from '../artist/env-version.js';
 import { refusalCause, refusalTally } from '../artist/env.js';
 import { StudioLog, readLog, verifyChain } from '../artist/studio-log.js';
 import { loadCommission, effectivePosition, temperamentOf } from '../artist/field.js';
@@ -590,4 +591,43 @@ test('observation: FIND sees the field, because that is where a problem has to c
   assert.ok(obs.includes(c.brief.hard_constraints[0]!.id));
   // The number it is told not to see: stakesLevel is the environment's, not the artist's.
   assert.ok(!obs.includes('stakesLevel'));
+});
+
+// --- environment version -------------------------------------------------------------------------
+//
+// The regression this is named after: `replay` on either studio run reported twenty-seven
+// observations that "did not rebuild", which reads as the driver leaking state between calls. The
+// serializer had changed. Comparing across that is refused now, and these are the arithmetic of the
+// refusal — the interesting half of which is what does NOT count as drift.
+
+const ENV = {
+  observationHash: 'a',
+  profileHash: 'b',
+  packHash: 'c',
+  protocolHash: 'd',
+  positionHash: 'e',
+  deliverableHash: 'f',
+  briefHash: 'g',
+  fieldHash: 'h',
+};
+
+test('env version: the same environment is no drift at all', () => {
+  assert.deepEqual(envDrift(ENV, ENV), []);
+});
+
+test('env version: each hash that moved is named, and only the ones that moved', () => {
+  const drift = envDrift({ ...ENV, observationHash: 'z', briefHash: 'y' }, ENV);
+  assert.deepEqual(drift.map((d) => d.field).sort(), ['briefHash', 'observationHash']);
+  assert.deepEqual(drift.find((d) => d.field === 'briefHash'), {
+    field: 'briefHash',
+    recorded: 'y',
+    current: 'g',
+  });
+});
+
+test('env version: a hash the record never carried is not drift', () => {
+  // Logs predate several of these fields. Reading absence as disagreement would refuse every old
+  // run for a reason that has nothing to do with whether its environment moved.
+  const { deliverableHash: _d, fieldHash: _f, ...older } = ENV;
+  assert.deepEqual(envDrift(older, ENV), []);
 });

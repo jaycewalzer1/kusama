@@ -14,10 +14,11 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { contentHash } from '../env/profile.js';
+import { envDrift, envVersionNow, type EnvDrift } from './env-version.js';
 import { readLog, verifyChain, type LogLine } from './studio-log.js';
 import { runTrajectory } from './run.js';
 import { PolicyError, type Policy, type PolicyRequest, type PolicyResponse } from './policy/interface.js';
-import type { Mode, Trajectory } from './types.js';
+import type { EnvVersion, Mode, Trajectory } from './types.js';
 
 interface RecordedCall {
   name: string;
@@ -89,20 +90,32 @@ export interface ReplayResult {
   finalHash: { original: string; replayed: string };
   scoresEqual: boolean;
   differences: string[];
+  /**
+   * Which of the eight environment hashes moved since the run was recorded. Non-empty means the
+   * replay did not happen: there is nothing to learn from rebuilding observations under a different
+   * serializer, and every other field here is empty rather than misleadingly zero.
+   */
+  envDrift: EnvDrift[];
 }
 
 interface StartLine {
   id: string;
   positionId: string;
   briefId: string;
+  deliverableId: string;
   control: boolean;
   seed: number;
   mode: Mode;
   maxSteps: number;
   hardStop: number;
   sketchesPerProblem: number;
+  /** Absent in logs written before the ablation existed; those runs were all blind. */
+  showCanvas?: boolean;
   useAudience: boolean;
 }
+
+/** The start line also carries the environment hashes, and has since before it carried all eight. */
+type StartEnv = StartLine & Partial<EnvVersion>;
 
 /**
  * Replays the trajectory in `dir` into `into`, and reports whether the two agree. Three things have
@@ -112,8 +125,26 @@ interface StartLine {
 export async function replay(dir: string, into: string): Promise<ReplayResult> {
   const lines = readLog(path.join(dir, 'studio.jsonl'));
   const chainProblems = verifyChain(lines);
-  const start = lines.find((l) => l.kind === 'trajectory-start')!.data as StartLine;
+  const start = lines.find((l) => l.kind === 'trajectory-start')!.data as StartEnv;
   const original = JSON.parse(readFileSync(path.join(dir, 'final.json'), 'utf8')) as Trajectory;
+
+  // Refused, not reported. A replay across a version bump rebuilds every observation under a
+  // serializer the run never saw and then calls the difference a mismatch — which is what happened
+  // to the two studio runs on disk, twenty-seven times each, and read as state leaking through the
+  // driver rather than as the environment having moved underneath them.
+  const drifted = envDrift(start, envVersionNow(start.positionId, start.briefId, start.deliverableId, start.seed));
+  if (drifted.length > 0) {
+    return {
+      id: original.id,
+      ok: false,
+      chainProblems,
+      observationMismatches: [],
+      finalHash: { original: original.finalHash, replayed: '' },
+      scoresEqual: false,
+      differences: [],
+      envDrift: drifted,
+    };
+  }
 
   // The position id in the log is the real one even in a control run, so it round-trips as written.
   const policy = new RecordedPolicy(recordedCalls(lines));
@@ -121,6 +152,7 @@ export async function replay(dir: string, into: string): Promise<ReplayResult> {
     policy,
     positionId: start.positionId,
     briefId: start.briefId,
+    deliverableId: start.deliverableId,
     seed: start.seed,
     outDir: into,
     control: start.control,
@@ -129,6 +161,7 @@ export async function replay(dir: string, into: string): Promise<ReplayResult> {
     hardStop: start.hardStop,
     sketchesPerProblem: start.sketchesPerProblem,
     useAudience: start.useAudience,
+    showCanvas: start.showCanvas ?? false,
   });
 
   const differences: string[] = [];
@@ -149,5 +182,6 @@ export async function replay(dir: string, into: string): Promise<ReplayResult> {
     finalHash: { original: original.finalHash, replayed: replayed.finalHash },
     scoresEqual: JSON.stringify(original.scores) === JSON.stringify(replayed.scores),
     differences,
+    envDrift: [],
   };
 }

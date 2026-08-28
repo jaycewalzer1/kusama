@@ -36,6 +36,7 @@ import {
 } from '../artist/grid.js';
 import { selectPolicy } from '../artist/policy/interface.js';
 import { recomputeMatches, scoresCsv } from '../artist/reward.js';
+import { driftText } from '../artist/env-version.js';
 import { replay } from '../artist/replay.js';
 import { runTrajectory } from '../artist/run.js';
 import { storyOf, storyText, summarise as summariseLine } from '../artist/story.js';
@@ -414,6 +415,14 @@ program
   .action(async (dir: string, opts: Record<string, string>) => {
     const into = opts['out'] || path.join(dir, 'replay');
     const r = await replay(dir, into);
+    if (r.envDrift.length > 0) {
+      console.log(`${r.id}: NOT COMPARABLE — the environment moved after this run was recorded`);
+      console.log(`  ${driftText(r.envDrift)}`);
+      console.log('  Nothing was replayed. Rebuilding this run\'s observations under a different');
+      console.log('  serializer would report differences that are not the run\'s to answer for.');
+      process.exitCode = 1;
+      return;
+    }
     console.log(`${r.id}: ${r.ok ? 'REPLAYED' : 'DIVERGED'}`);
     console.log(`  final hash  ${r.finalHash.original.slice(0, 16)} -> ${r.finalHash.replayed.slice(0, 16)}`);
     console.log(`  scores      ${r.scoresEqual ? 'identical' : 'DIFFERENT'}`);

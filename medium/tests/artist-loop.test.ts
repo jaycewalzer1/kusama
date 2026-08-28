@@ -34,8 +34,9 @@ test('the loop runs a whole trajectory: find, sketch, choose, make, examine, fin
   const policy = new StubPolicy(4);
   trajectory = await runTrajectory({
     policy,
-    positionId: 'riot-grrrl-zine',
-    briefId: 'rye-lane-evictions',
+    positionId: 'generation-loss',
+    briefId: 'arches-eviction',
+    deliverableId: 'poster',
     seed: 4242,
     outDir: CELL,
     maxSteps: 6,
@@ -70,6 +71,31 @@ test('an illegal edit is refused, costs the artist nothing else, and is on the r
   assert.deepEqual(step0.appliedActionIds, ['a0']);
 });
 
+// The scripted bad edit names a parent that is not in the tree, which is the artist's mistake and
+// not a cap. It has to land in `structural` and nowhere else, or the one distinction the split
+// exists to make is not being made.
+test('the refusal is filed under its cause, and the causes are not summed', () => {
+  assert.deepEqual(trajectory.scores.refusals, { budget: 0, capability: 0, structural: 1 });
+  const refused = trajectory.steps.flatMap((s) => s.refused);
+  assert.equal(refused.length, 1);
+  assert.equal(refused[0]!.actionId, 'a0-bad');
+  assert.equal(refused[0]!.cause, 'structural');
+  assert.match(refused[0]!.reason, /nowhere/);
+});
+
+test('the run stopped because the artist said so, and the record says whether that was earned', () => {
+  const t = trajectory.scores.termination;
+  assert.equal(t.kind, 'declared-finished');
+  assert.equal(trajectory.steps[trajectory.steps.length - 1]!.action.control, 'finished');
+  // Whatever this particular stub run realizes, the legitimacy of the stop is decidable from the
+  // two numbers beside it and nothing else — no model, no prose.
+  assert.equal(t.unrealizedEdges.length, t.edgesUnrealized);
+  assert.equal(
+    t.legitimate,
+    t.edgesUnrealized === 0 || (t.edgesUnrealized === 1 && t.declaredUnrealizable === t.unrealizedEdges[0])
+  );
+});
+
 test('the risk move is recorded once, where the artist declared it', () => {
   const risky = trajectory.steps.filter((s) => s.isRiskMove);
   assert.equal(risky.length, 1);
@@ -93,6 +119,7 @@ test('the log chain is whole and every policy call is in it with its observation
 test('gate 1: the trajectory replays exactly, with no model and no divergence', async () => {
   installStubEnvModel();
   const result = await replay(CELL, path.join(OUT, 'replayed'));
+  assert.deepEqual(result.envDrift, [], 'a run made moments ago is in the environment that made it');
   assert.deepEqual(result.chainProblems, []);
   assert.deepEqual(result.observationMismatches, [], 'every observation rebuilt byte for byte');
   assert.deepEqual(result.differences, []);
