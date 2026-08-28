@@ -27,8 +27,21 @@ import { canonicalJson } from '../env/profile.js';
 import { schemaErrors } from './policy/schema-check.js';
 import { usd } from './pricing.js';
 
-/** Frozen. Changing either of these is a new environment version, not a tweak. */
-export const ENV_MODEL = 'claude-haiku-4-5-20251001';
+/**
+ * Frozen. Changing either of these is a new environment version, not a tweak.
+ *
+ * Repointed from `claude-haiku-4-5-20251001` on 2026-08-28 because the Anthropic account has no
+ * credit and the environment cannot describe anything without one. That is a forced move, not an
+ * upgrade, and it is recorded here rather than in a config file so that reading this line tells you
+ * what eyes the reward signal was computed with. Every cache entry written before it is dead: the
+ * cache key hashes ENV_MODEL, so old entries can never be served to a run under the new one.
+ *
+ * The model has to hold three properties at once and this is the cheapest OpenAI model that does:
+ * it accepts `temperature: 0`, it reads images, and it honours a forced tool call. `gpt-5` and `o3`
+ * fail the first — they accept only their default temperature of 1 — which disqualifies them from
+ * being an environment at all, whatever else they are good at.
+ */
+export const ENV_MODEL = 'gpt-4o-2024-11-20';
 export const ENV_TEMPERATURE = 0;
 
 const CACHE_DIR = path.join(ROOT, '.cache', 'artist-env');
@@ -90,9 +103,9 @@ function cacheKey(request: EnvRequest): string {
     .digest('hex');
 }
 
-interface AnthropicResponse {
-  content: { type: string; name?: string; input?: unknown }[];
-  usage: { input_tokens: number; output_tokens: number };
+interface ChatResponse {
+  choices: { message: { tool_calls?: { function: { name: string; arguments: string } }[] } }[];
+  usage?: { prompt_tokens?: number; completion_tokens?: number };
 }
 
 /**
@@ -101,20 +114,16 @@ interface AnthropicResponse {
  * it behaves; the HTTP shape is the thing that is actually stable. It also keeps the rule that only
  * the two policy files import a model SDK literally true — see tests/artist-guards.test.ts.
  */
-async function post(body: unknown): Promise<AnthropicResponse> {
-  const key = process.env['ANTHROPIC_API_KEY'];
-  if (!key) throw new Error('ANTHROPIC_API_KEY is not set, so the environment has no describer');
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+async function post(body: unknown): Promise<ChatResponse> {
+  const key = process.env['OPENAI_API_KEY'];
+  if (!key) throw new Error('OPENAI_API_KEY is not set, so the environment has no describer');
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-api-key': key,
-      'anthropic-version': '2023-06-01',
-    },
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`the environment model answered ${res.status}: ${await res.text()}`);
-  return (await res.json()) as AnthropicResponse;
+  return (await res.json()) as ChatResponse;
 }
 
 /**
@@ -136,36 +145,47 @@ export async function envModel<T>(request: EnvRequest): Promise<EnvResponse<T>> 
 
   const content: unknown[] = [];
   if (request.imageBase64) {
-    content.push({ type: 'image', source: { type: 'base64', media_type: 'image/png', data: request.imageBase64 } });
+    content.push({ type: 'image_url', image_url: { url: `data:image/png;base64,${request.imageBase64}` } });
   }
   content.push({ type: 'text', text: request.text });
 
   const response = await post({
     model: ENV_MODEL,
-    max_tokens: 1024,
+    max_completion_tokens: 1024,
     temperature: ENV_TEMPERATURE,
-    system: request.system,
-    messages: [{ role: 'user', content }],
-    tools: [{ name: 'emit', description: 'Emit the answer.', input_schema: request.schema }],
-    tool_choice: { type: 'tool', name: 'emit' },
+    messages: [
+      { role: 'system', content: request.system },
+      { role: 'user', content },
+    ],
+    tools: [{ type: 'function', function: { name: 'emit', description: 'Emit the answer.', parameters: request.schema } }],
+    tool_choice: { type: 'function', function: { name: 'emit' } },
   });
 
-  const block = response.content.find((c) => c.type === 'tool_use' && c.name === 'emit');
-  if (!block) throw new Error(`env call "${request.name}" answered without calling the emit tool`);
-  const errors = schemaErrors(block.input, request.schema);
+  const call = response.choices[0]?.message.tool_calls?.find((c) => c.function.name === 'emit');
+  if (!call) throw new Error(`env call "${request.name}" answered without calling the emit tool`);
+  let value: unknown;
+  try {
+    value = JSON.parse(call.function.arguments);
+  } catch (e) {
+    throw new Error(`env call "${request.name}" emitted arguments that are not JSON: ${(e as Error).message}`);
+  }
+  const errors = schemaErrors(value, request.schema);
   // No retry. The environment is frozen: if it cannot answer its own fixed question in its own fixed
   // shape, that is a fact about the environment and the run should stop rather than paper over it.
   if (errors.length) throw new Error(`env call "${request.name}" broke its own schema: ${errors.join('; ')}`);
 
+  const inputTokens = response.usage?.prompt_tokens ?? 0;
+  const outputTokens = response.usage?.completion_tokens ?? 0;
+
   mkdirSync(CACHE_DIR, { recursive: true });
-  writeFileSync(file, `${JSON.stringify({ request: { name: request.name, system: request.system, text: request.text }, value: block.input }, null, 2)}\n`);
+  writeFileSync(file, `${JSON.stringify({ request: { name: request.name, system: request.system, text: request.text }, value }, null, 2)}\n`);
 
   return {
-    value: block.input as T,
+    value: value as T,
     cached: false,
-    inputTokens: response.usage.input_tokens,
-    outputTokens: response.usage.output_tokens,
-    usd: usd(ENV_MODEL, response.usage.input_tokens, response.usage.output_tokens),
+    inputTokens,
+    outputTokens,
+    usd: usd(ENV_MODEL, inputTokens, outputTokens),
     cacheKey: key,
   };
 }

@@ -47,8 +47,25 @@ import { schemaErrors } from './policy/schema-check.js';
 import { usd } from './pricing.js';
 import type { Trajectory } from './types.js';
 
-/** Frozen. Changing either is a new judge version, not a tweak. */
-export const JUDGE_MODEL = 'claude-opus-4-6';
+/**
+ * Frozen. Changing either is a new judge version, not a tweak — `judgeVersion()` hashes both, so
+ * judgments recorded under different values never join.
+ *
+ * Repointed from `claude-opus-4-6` on 2026-08-28: the Anthropic account has no credit, so the
+ * choice is between an OpenAI judge and no judge. Two constraints survive the move and one does not.
+ * `temperature: 0` survives, and it is the binding one — a judgment that changes when you rescore is
+ * not a measurement — which rules out `gpt-5` and `o3` entirely, since both accept only their
+ * default temperature of 1. What does not survive is "the judge is the strongest model available":
+ * the artist runs on `gpt-5` and the judge does not. That is the conservative direction for the one
+ * critic with a baseline — a weaker attributor pushes accuracy toward chance, so it can fail to find
+ * signal but cannot manufacture it — and it is a real limit on the other two, which have no baseline
+ * and are therefore only as good as the reader.
+ *
+ * It is deliberately a different model from the environment's describer, which a guard test checks
+ * by reading both files. The judge already shares no door and no cache with the environment;
+ * sharing its eyes would undo most of what that isolation buys.
+ */
+export const JUDGE_MODEL = 'gpt-4.1-2025-04-14';
 export const JUDGE_TEMPERATURE = 0;
 
 const CACHE_DIR = path.join(ROOT, '.cache', 'artist-judge');
@@ -163,9 +180,9 @@ interface JudgeRequest {
   schema: object;
 }
 
-interface AnthropicResponse {
-  content: { type: string; name?: string; input?: unknown }[];
-  usage: { input_tokens: number; output_tokens: number };
+interface ChatResponse {
+  choices: { message: { tool_calls?: { function: { name: string; arguments: string } }[] } }[];
+  usage?: { prompt_tokens?: number; completion_tokens?: number };
 }
 
 type JudgeModelFn = <T>(request: JudgeRequest) => Promise<{ value: T; cached: boolean; usd: number }>;
@@ -207,46 +224,52 @@ async function ask<T>(request: JudgeRequest): Promise<{ value: T; cached: boolea
     // A miss is the normal path the first time and is not an error.
   }
 
-  const apiKey = process.env['ANTHROPIC_API_KEY'];
-  if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set, so there is no judge');
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const apiKey = process.env['OPENAI_API_KEY'];
+  if (!apiKey) throw new Error('OPENAI_API_KEY is not set, so there is no judge');
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
       model: JUDGE_MODEL,
-      max_tokens: 2048,
+      max_completion_tokens: 2048,
       temperature: JUDGE_TEMPERATURE,
-      system: request.system,
       messages: [
+        { role: 'system', content: request.system },
         {
           role: 'user',
           content: [
-            { type: 'image', source: { type: 'base64', media_type: 'image/png', data: request.imageBase64 } },
+            { type: 'image_url', image_url: { url: `data:image/png;base64,${request.imageBase64}` } },
             { type: 'text', text: request.text },
           ],
         },
       ],
-      tools: [{ name: 'emit', description: 'Emit the answer.', input_schema: request.schema }],
-      tool_choice: { type: 'tool', name: 'emit' },
+      tools: [{ type: 'function', function: { name: 'emit', description: 'Emit the answer.', parameters: request.schema } }],
+      tool_choice: { type: 'function', function: { name: 'emit' } },
     }),
   });
   if (!res.ok) throw new Error(`the judge answered ${res.status}: ${await res.text()}`);
-  const response = (await res.json()) as AnthropicResponse;
+  const response = (await res.json()) as ChatResponse;
 
-  const block = response.content.find((c) => c.type === 'tool_use' && c.name === 'emit');
-  if (!block) throw new Error(`judge call "${request.name}" answered without calling the emit tool`);
-  const errors = schemaErrors(block.input, request.schema);
+  const call = response.choices[0]?.message.tool_calls?.find((c) => c.function.name === 'emit');
+  if (!call) throw new Error(`judge call "${request.name}" answered without calling the emit tool`);
+  let value: unknown;
+  try {
+    value = JSON.parse(call.function.arguments);
+  } catch (e) {
+    throw new Error(`judge call "${request.name}" emitted arguments that are not JSON: ${(e as Error).message}`);
+  }
+  const errors = schemaErrors(value, request.schema);
   // No retry, for the same reason the environment does not retry: if a frozen thing cannot answer
   // its own fixed question in its own fixed shape, that is a fact about it and not a hiccup.
   if (errors.length) throw new Error(`judge call "${request.name}" broke its own schema: ${errors.join('; ')}`);
 
   mkdirSync(CACHE_DIR, { recursive: true });
-  writeFileSync(file, `${JSON.stringify({ request: { name: request.name, text: request.text }, value: block.input }, null, 2)}\n`);
+  writeFileSync(file, `${JSON.stringify({ request: { name: request.name, text: request.text }, value }, null, 2)}\n`);
 
   return {
-    value: block.input as T,
+    value: value as T,
     cached: false,
-    usd: usd(JUDGE_MODEL, response.usage.input_tokens, response.usage.output_tokens),
+    usd: usd(JUDGE_MODEL, response.usage?.prompt_tokens ?? 0, response.usage?.completion_tokens ?? 0),
   };
 }
 

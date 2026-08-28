@@ -66,7 +66,7 @@ test('policy calls and environment calls do not share a path', () => {
 
 test('the environment model is frozen in one place and read nowhere else', () => {
   const source = read(path.join(ARTIST, 'env-model.ts'));
-  assert.match(source, /export const ENV_MODEL = 'claude-haiku-4-5-20251001'/);
+  assert.match(source, /export const ENV_MODEL = 'gpt-4o-2024-11-20'/);
   assert.match(source, /export const ENV_TEMPERATURE = 0/);
   const others = FILES.filter((f) => rel(f) !== 'env-model.ts' && /ENV_MODEL/.test(read(f)));
   assert.deepEqual(others.map(rel), [], 'nothing else names the environment model');
@@ -81,8 +81,14 @@ test('the judge shares no door with the artist or its environment', () => {
   assert.ok(!/policy\.call</.test(source), 'the judge reaches the policy');
   assert.ok(!/from '\.\/policy\/interface\.js'/.test(source), 'the judge imports the policy interface');
   assert.ok(!/\benvModel[<(]/.test(source), 'the judge reaches the environment model');
-  assert.match(source, /export const JUDGE_MODEL = 'claude-opus-4-6'/);
+  assert.match(source, /export const JUDGE_MODEL = 'gpt-4.1-2025-04-14'/);
   assert.match(source, /export const JUDGE_TEMPERATURE = 0/);
+  // And it does not see with the environment's eyes. Sharing a model id would leave the judge's
+  // isolation nominal: same weights, same blind spots, reading the same picture.
+  const envSource = read(path.join(ARTIST, 'env-model.ts'));
+  const judgeModel = /JUDGE_MODEL = '([^']+)'/.exec(source)?.[1];
+  const envModelId = /ENV_MODEL = '([^']+)'/.exec(envSource)?.[1];
+  assert.notEqual(judgeModel, envModelId, 'the judge and the environment are the same model');
   const others = FILES.filter((f) => rel(f) !== 'judge.ts' && /JUDGE_MODEL/.test(read(f)));
   assert.deepEqual(others.map(rel), [], 'nothing else names the judge model');
   // And nothing in the loop reads it back. A judgment that could reach a running trajectory would

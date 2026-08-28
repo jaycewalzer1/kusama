@@ -311,17 +311,38 @@ The layer is not a mechanism that works on a document nobody can commission — 
 catalogue its useful surface is one cell out of twelve, and any claim that lineage composition
 shapes a run has exactly that one place to be tested.
 
-## The largest gap is that none of this has finished a run
+## The first completed run, and what it says
 
-**No trajectory on the fine-art catalogue has ever reached `final.json`.** `out/first-withheld/`
-holds a partial: FIND, SKETCH, CHOOSE and three MAKE steps against
-`withheld / fifty-year-embargo / panel`, terminated mid-run by an Anthropic API credit exhaustion
-(`400 invalid_request_error`), not by anything in this repo. Its start line carries nine hashes and
-no `elementIds` because it launched from a `dist/` built before the composition change.
+`out/openai-withheld/` — `withheld / fifty-year-embargo / panel`, seed 1, twelve steps, 41 policy
+calls, 26 renders, $0.0985, 62 minutes. The first trajectory on the fine-art catalogue to reach
+`final.json`. Three things in this repo were exercised for the first time by something other than a
+fixture, and all three worked:
 
-Everything downstream inherits this. The finish gate has never refused a real finish. The judge has
-never scored a real plate — all three critics are exercised only against fixtures, so their prompts
-are tested for what they must *not* contain and not for what they return. The one interesting
-composition cell (`many-hands + ma-interval`) has never been run. The tests are green and the
-architecture is guarded, and neither of those is evidence that the thing makes pictures. The next
-change that matters is a completed run, not another layer.
+- **The finish gate refused a finish.** At k=12 the artist asked to stop; the gate came back
+  `accepted: false` with blocker `[audience-ignores] The person this is for said they would walk
+  past it`, and the run went to `replan`. `finishRefusals: 1`. It then ran out of steps, so the
+  refusal stood.
+- **The environment disagreed with the artist repeatedly.** `description-disagrees` fired on five
+  separate steps and drove eleven replans. `examineAgreement` records `comparable 5, agree 2,
+  treeNoEyeYes 3` — the tree claimed three edges the eye would not confirm.
+- **The judge scored a real plate.** It attributed the work to `many-hands` when the answer was
+  `withheld` (a miss, n=1, chance 1/3), scored necessity 3/7, and returned `quotes` rather than
+  `derives`, naming the cliché it took: "a rectangle of solid colour labelled as a removal in a
+  caption."
+
+**What that last line means, stated carefully.** One work is not a measurement. The attribution
+critic has a baseline and a single miss is entirely consistent with chance; nothing follows from it
+about the artist, and nothing follows about the judge either. What does follow is that the pipeline
+produces the number, in the shape it was designed to produce it, against a plate that exists.
+
+**The uncomfortable part is the part that is not statistical.** The judge's necessity answer —
+"the rectangles could be slid or resized without revealing or obscuring any evidence of what is
+beneath, so the withholding is a shape rather than a refusal" — is the criticism the whole stack was
+built to be able to receive, and it is the first time anything in this repo has said something like
+it. `realization` scored 0/6 decidable edges and `termination.legitimate` is `false`. The
+architecture is sound and the picture is weak, and those are now separately visible, which they were
+not before.
+
+**Still not exercised.** The one interesting composition cell (`many-hands + ma-interval`) has never
+been run, the `--control` arm has never been run against a live position, and n=1 means the ablation
+grid still has no data in it.
