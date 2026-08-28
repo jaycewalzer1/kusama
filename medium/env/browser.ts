@@ -29,7 +29,7 @@ export const ROOT = (() => {
 })();
 
 /** Everything the page is allowed to load, relative to ROOT. */
-const SERVED_PREFIXES = ['vendor/', 'renderer/', 'fonts/', 'assets/fonts/'];
+const SERVED_PREFIXES = ['vendor/', 'renderer/', 'assets/fonts/'];
 
 const ORIGIN = 'http://medium.invalid';
 
@@ -38,8 +38,8 @@ const ORIGIN = 'http://medium.invalid';
  * Everything else comes from the pack, which is the only thing whose hash covers the bytes.
  */
 export const FONT_FILES: Record<string, string> = {
-  grotesque: 'fonts/grotesque.ttf',
-  serif: 'fonts/serif.ttf',
+  grotesque: 'assets/fonts/grotesque.ttf',
+  serif: 'assets/fonts/serif.ttf',
 };
 
 /** Faces already checked against their declared bytes, keyed by path: hashing 4MB per render is not free. */

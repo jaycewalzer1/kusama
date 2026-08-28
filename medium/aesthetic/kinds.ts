@@ -4,8 +4,19 @@
 // exposes, and a position that needs a seventeenth has to give one up. The four render kinds read a
 // RenderMetrics and nothing else; the one judge kind decides nothing at all and says so.
 //
-// A checker returns a status and its evidence. Evidence is the point: "violated" with no node ids
-// and no measured number is an opinion, and this layer does not have opinions.
+// A checker returns a status, its evidence, and the node ids the verdict rests on. Evidence is the
+// point: "violated" with no node ids and no measured number is an opinion, and this layer does not
+// have opinions. `nodeIds` is the same claim in a form a caller can compute with, because reading
+// ids back out of prose by substring match is wrong in both directions — an id that is a prefix of
+// another matches, and a verdict that names no ids matches nothing.
+//
+// "Rests on" is narrow and deliberately so:
+//   violated   the offending nodes.
+//   satisfied  the nodes carrying it — the ones whose removal could turn it into a violation.
+//   otherwise  empty, and empty is a real answer.
+// A verdict that rests on an *absence* (nothing forbidden is present) or on an *aggregate* (the tree
+// has 12 nodes) names nobody, because no node is carrying it and pretending otherwise would make
+// every node in the tree look load-bearing.
 
 import type { Constraint, RenderMetrics, Status } from './types.js';
 import { distinctColors, treeFacts, type TreeFacts } from './facts.js';
@@ -13,11 +24,14 @@ import { distinctColors, treeFacts, type TreeFacts } from './facts.js';
 export interface Verdict {
   status: Status;
   evidence: string;
+  /** Deduplicated, in tree order. Empty when no node carries the verdict; never truncated. */
+  nodeIds: string[];
 }
 
 const UNVERIFIED_NO_METRICS: Verdict = {
   status: 'unverified',
   evidence: 'no render metrics supplied: pass --render to measure the canonical image',
+  nodeIds: [],
 };
 
 function num(params: Record<string, unknown>, key: string): number | undefined {
@@ -35,8 +49,13 @@ function flag(params: Record<string, unknown>, key: string, fallback: boolean): 
   return typeof v === 'boolean' ? v : fallback;
 }
 
-function verdict(ok: boolean, evidence: string): Verdict {
-  return { status: ok ? 'satisfied' : 'violated', evidence };
+function verdict(ok: boolean, evidence: string, nodeIds: string[] = []): Verdict {
+  return { status: ok ? 'satisfied' : 'violated', evidence, nodeIds: dedupe(nodeIds) };
+}
+
+/** First occurrence wins, so the order is tree order and two equal verdicts compare equal. */
+function dedupe(values: string[]): string[] {
+  return [...new Set(values)];
 }
 
 /** Ids in evidence are truncated so a 300-node tree does not print a paragraph. */
@@ -74,23 +93,43 @@ const treeCheckers: Record<string, (f: TreeFacts, p: Record<string, unknown>) =>
   maxDistinctColors(f, p) {
     const max = num(p, 'max') ?? 0;
     const used = distinctColors(f, flag(p, 'includeGround', true));
-    return verdict(used.length <= max, `${used.length} of at most ${max}: ${used.join(' ')}`);
+    // Satisfied rests on nobody: removing a node can only lower the count. Violated rests on every
+    // node that put a colour on the sheet, since which of them is the surplus one is not decidable.
+    const carrying = used.length <= max ? [] : f.colors.map((c) => c.nodeId);
+    return verdict(used.length <= max, `${used.length} of at most ${max}: ${used.join(' ')}`, carrying);
   },
 
   palette(f, p) {
     const allow = new Set((list(p, 'allow') ?? []).map((c) => c.toLowerCase()));
     const includeGround = flag(p, 'includeGround', true);
     const offenders: string[] = [];
-    for (const c of f.colors) if (!allow.has(c.hex)) offenders.push(`${c.nodeId} ${c.at}=${c.hex}`);
+    const offenderIds: string[] = [];
+    for (const c of f.colors) {
+      if (allow.has(c.hex)) continue;
+      offenders.push(`${c.nodeId} ${c.at}=${c.hex}`);
+      offenderIds.push(c.nodeId);
+    }
+    // The ground is the canvas, not a node, so it can offend without any node id to blame.
     if (includeGround && !allow.has(f.ground)) offenders.push(`canvas ground=${f.ground}`);
-    return verdict(offenders.length === 0, offenders.length === 0 ? `all colours inside the allowed list` : ids(offenders));
+    return verdict(offenders.length === 0, offenders.length === 0 ? `all colours inside the allowed list` : ids(offenders), offenderIds);
   },
 
   forbidNode(f, p) {
     const offenders: string[] = [];
-    for (const op of list(p, 'ops') ?? []) for (const id of f.ops[op] ?? []) offenders.push(`${id} (${op})`);
-    for (const m of list(p, 'macros') ?? []) for (const id of f.macros[m] ?? []) offenders.push(`${id} (${m})`);
-    return verdict(offenders.length === 0, offenders.length === 0 ? 'absent' : ids(offenders));
+    const offenderIds: string[] = [];
+    for (const op of list(p, 'ops') ?? []) {
+      for (const id of f.ops[op] ?? []) {
+        offenders.push(`${id} (${op})`);
+        offenderIds.push(id);
+      }
+    }
+    for (const m of list(p, 'macros') ?? []) {
+      for (const id of f.macros[m] ?? []) {
+        offenders.push(`${id} (${m})`);
+        offenderIds.push(id);
+      }
+    }
+    return verdict(offenders.length === 0, offenders.length === 0 ? 'absent' : ids(offenders), offenderIds);
   },
 
   requireNode(f, p) {
@@ -99,7 +138,8 @@ const treeCheckers: Record<string, (f: TreeFacts, p: Record<string, unknown>) =>
     const macro = typeof p['macro'] === 'string' ? p['macro'] : undefined;
     const found = op !== undefined ? (f.ops[op] ?? []) : macro !== undefined ? (f.macros[macro] ?? []) : [];
     const what = op ?? macro ?? '(nothing named)';
-    return verdict(found.length >= min, `${found.length} ${what} of at least ${min}: ${ids(found)}`);
+    // The clearest load-bearing case in the language: these nodes are the requirement.
+    return verdict(found.length >= min, `${found.length} ${what} of at least ${min}: ${ids(found)}`, found);
   },
 
   nodeCount(f, p) {
@@ -112,24 +152,44 @@ const treeCheckers: Record<string, (f: TreeFacts, p: Record<string, unknown>) =>
   textCase(f, p) {
     const want = p['case'] === 'lower' ? 'lower' : 'upper';
     const offenders: string[] = [];
+    const offenderIds: string[] = [];
     for (const t of f.texts) {
       const wanted = want === 'upper' ? t.text.toUpperCase() : t.text.toLowerCase();
-      if (t.text !== wanted) offenders.push(`${t.nodeId} "${t.text.slice(0, 40)}"`);
+      if (t.text === wanted) continue;
+      offenders.push(`${t.nodeId} "${t.text.slice(0, 40)}"`);
+      offenderIds.push(t.nodeId);
     }
-    return verdict(offenders.length === 0, offenders.length === 0 ? `${f.texts.length} strings all ${want}case` : ids(offenders));
+    return verdict(offenders.length === 0, offenders.length === 0 ? `${f.texts.length} strings all ${want}case` : ids(offenders), offenderIds);
   },
 
   textMaxWords(f, p) {
     const max = num(p, 'max') ?? 0;
-    const offenders = f.texts.filter((t) => words(t.text).length > max).map((t) => `${t.nodeId} ${words(t.text).length} words`);
+    const over = f.texts.filter((t) => words(t.text).length > max);
+    const offenders = over.map((t) => `${t.nodeId} ${words(t.text).length} words`);
     const longest = f.texts.reduce((n, t) => Math.max(n, words(t.text).length), 0);
-    return verdict(offenders.length === 0, offenders.length === 0 ? `longest string is ${longest} words, at most ${max}` : ids(offenders));
+    return verdict(
+      offenders.length === 0,
+      offenders.length === 0 ? `longest string is ${longest} words, at most ${max}` : ids(offenders),
+      over.map((t) => t.nodeId)
+    );
   },
 
   textRequired(f, p) {
+    const wanted = list(p, 'contains') ?? [];
     const all = normalizeText(f.texts.map((t) => t.text).join(' '));
-    const missing = (list(p, 'contains') ?? []).filter((s) => !all.includes(normalizeText(s)));
-    return verdict(missing.length === 0, missing.length === 0 ? 'every required string appears' : `missing: ${missing.map((s) => `"${s}"`).join(', ')}`);
+    const missing = wanted.filter((s) => !all.includes(normalizeText(s)));
+    // Suppliers are named per node, but the match above is made against the joined text, so a
+    // required string that only appears across two nodes is satisfied and names nobody. That is
+    // honest: neither node carries it alone, and which pair carries it is not a fact about a node.
+    const suppliers =
+      missing.length === 0
+        ? f.texts.filter((t) => wanted.some((s) => normalizeText(t.text).includes(normalizeText(s)))).map((t) => t.nodeId)
+        : [];
+    return verdict(
+      missing.length === 0,
+      missing.length === 0 ? 'every required string appears' : `missing: ${missing.map((s) => `"${s}"`).join(', ')}`,
+      suppliers
+    );
   },
 
   maxRepeatDepth(f, p) {
@@ -141,11 +201,18 @@ const treeCheckers: Record<string, (f: TreeFacts, p: Record<string, unknown>) =>
     const styles = new Set(list(p, 'styles') ?? []);
     const brushes = new Set(list(p, 'brushes') ?? []);
     const offenders: string[] = [];
+    const offenderIds: string[] = [];
     for (const m of f.marks) {
-      if (m.style !== undefined && styles.has(m.style)) offenders.push(`${m.nodeId} style=${m.style}`);
-      if (m.brush !== undefined && brushes.has(m.brush)) offenders.push(`${m.nodeId} brush=${m.brush}`);
+      if (m.style !== undefined && styles.has(m.style)) {
+        offenders.push(`${m.nodeId} style=${m.style}`);
+        offenderIds.push(m.nodeId);
+      }
+      if (m.brush !== undefined && brushes.has(m.brush)) {
+        offenders.push(`${m.nodeId} brush=${m.brush}`);
+        offenderIds.push(m.nodeId);
+      }
     }
-    return verdict(offenders.length === 0, offenders.length === 0 ? 'absent' : ids(offenders));
+    return verdict(offenders.length === 0, offenders.length === 0 ? 'absent' : ids(offenders), offenderIds);
   },
 
   requireMark(f, p) {
@@ -156,11 +223,15 @@ const treeCheckers: Record<string, (f: TreeFacts, p: Record<string, unknown>) =>
       .filter((m) => (m.style !== undefined && styles.has(m.style)) || (m.brush !== undefined && brushes.has(m.brush)))
       .map((m) => m.nodeId);
     const wanted = [...styles, ...brushes].join('/');
-    return verdict(found.length >= min, `${found.length} ${wanted} marks of at least ${min}: ${ids(found)}`);
+    return verdict(found.length >= min, `${found.length} ${wanted} marks of at least ${min}: ${ids(found)}`, found);
   },
 };
 
 // --- render scope ------------------------------------------------------------------------------
+//
+// Every one of these is a statement about the whole sheet, so none of them names a node. Attributing
+// a pixel to the node that laid it down would need the renderer to report per-node coverage, which
+// it does not; `nodeIds` is empty here and that is the truth, not a stub.
 
 const renderCheckers: Record<string, (m: RenderMetrics, p: Record<string, unknown>) => Verdict> = {
   inkDensityRange(m, p) {
@@ -200,16 +271,16 @@ export function checkConstraint(constraint: Constraint, program: unknown, metric
 
 export function checkConstraintWithFacts(constraint: Constraint, facts: TreeFacts, metrics: RenderMetrics | null): Verdict {
   if (constraint.blocked_by !== undefined) {
-    return { status: 'unverified', evidence: `blocked_by: ${constraint.blocked_by}` };
+    return { status: 'unverified', evidence: `blocked_by: ${constraint.blocked_by}`, nodeIds: [] };
   }
   if (constraint.kind === 'rubric') {
-    return { status: 'unverified', evidence: 'judge scope: no judge in this layer, returned unread' };
+    return { status: 'unverified', evidence: 'judge scope: no judge in this layer, returned unread', nodeIds: [] };
   }
   const tree = treeCheckers[constraint.kind];
   if (tree) return tree(facts, constraint.params);
   const render = renderCheckers[constraint.kind];
   if (render) return metrics === null ? UNVERIFIED_NO_METRICS : render(metrics, constraint.params);
-  return { status: 'unverified', evidence: `no checker for kind "${constraint.kind}"` };
+  return { status: 'unverified', evidence: `no checker for kind "${constraint.kind}"`, nodeIds: [] };
 }
 
 /** The closed set, as data, so a test can assert nobody added a seventeenth quietly. */

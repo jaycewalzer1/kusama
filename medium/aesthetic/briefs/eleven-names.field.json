@@ -1,0 +1,50 @@
+{
+  "version": "1.0",
+  "briefId": "eleven-names",
+  "whenAndWhere": "Four streets around a burnt converted warehouse, late September, a year after the fire. The hoarding round the site has been up for eleven months and is covered in laminated photographs, wilted flowers in cellophane and a council notice about asbestos.",
+  "inTheAir": [
+    "The company that owned the building was dissolved and re-registered under a new name in February, which is legal and takes about twenty minutes.",
+    "The inquest has been adjourned twice and the families have been told it may not report for another two years.",
+    "Everybody in the borough has now seen the eleven faces in the newspaper, in a row, in the same photograph treatment.",
+    "Two of the four buildings the same owner still lets are within a mile, and their tenants have not been contacted by anybody.",
+    "A national campaign about building safety has begun using the fire in its own material without asking the families."
+  ],
+  "contested": [
+    "Whether the names should be shown at all. Some of the families say the names are the whole point; others say they have watched the names become a logo elsewhere and will not hand them over again.",
+    "Whether to name the landlord. The solicitor says nothing that could be read as prejudicing the inquest; two of the relatives say the inquest is the reason nothing has happened.",
+    "Whether this should be a memorial or an accusation. Most of the group say it cannot be both and cannot decide which.",
+    "Whether accepting the free printing from the local firm makes the families a client of somebody who wants the association."
+  ],
+  "exhausted": [
+    "The candle, the dove and the single flower, which the council used on its own notice.",
+    "A grid of faces, which is how the newspaper ran it and how the families now cannot look at it.",
+    "The silhouette of a tower block against a coloured field.",
+    "A hashtag, which the national campaign has taken.",
+    "The phrase 'never again', which was used at the memorial service and again at the anniversary of a different fire.",
+    "Handwriting on a laminated sheet tied to railings."
+  ],
+  "whoIsWatching": {
+    "audience": "A woman of forty walks her son to school past the hoarding twice a day and has stopped seeing it. She gave money at the time and went to nothing. She believes she has already responded to this and would be genuinely surprised to be told there was something still to do. She is not callous; she is finished.",
+    "adversary": "The landlord's new company, whose solicitors have written twice to the families' solicitor about material 'liable to prejudice proceedings', and who would very much like something they can point to as a campaign rather than a memorial."
+  },
+  "transplants": [
+    {
+      "ref": "The reading of the names at a commemoration, unbroken, until it is finished",
+      "why": "A duration that cannot be summarised. Its force is that it takes as long as it takes and the listener has to stay."
+    },
+    {
+      "ref": "Stolpersteine, the brass cobbles set into pavements outside particular front doors",
+      "why": "A memorial fixed at the exact address, so that it is encountered by people going about their day and is about one specific building."
+    },
+    {
+      "ref": "Argentinian escrache: the demonstration held outside the home of the person responsible",
+      "why": "Grief and accusation performed as one act, at an address, without waiting for a court."
+    },
+    {
+      "ref": "The Names Project quilt, sewn by relatives and laid out so that it cannot be seen from one position",
+      "why": "Made by the bereaved rather than for them, and deliberately too large to be taken in as an image."
+    }
+  ],
+  "stakesLevel": 0.95,
+  "stakesLevelWhy": "Eleven people are dead, the responsible company is still trading and still letting, and this is the last year the surrounding public will be paying any attention at all."
+}

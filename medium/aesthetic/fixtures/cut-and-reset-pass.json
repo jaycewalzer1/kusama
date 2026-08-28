@@ -1,0 +1,176 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 4471,
+  "canvas": {
+    "width": 600,
+    "height": 900,
+    "ground": "#f2efe9",
+    "brushScale": 1
+  },
+  "palette": {
+    "ink": "#111111",
+    "hot": "#e8256f",
+    "acid": "#f5e400"
+  },
+  "meta": {
+    "aesthetic": "cut-and-reset",
+    "fixture": "pass",
+    "reads_as": "three cut blocks stuck down over each other with four pieces of type at four sizes, none of them square to the sheet"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "block-acid",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "cr/block-acid",
+        "args": {
+          "region": { "type": "rect", "x": 40, "y": 96, "w": 430, "h": 268 },
+          "style": { "kind": "solid", "color": "acid", "opacity": 255 }
+        }
+      },
+      {
+        "id": "block-hot",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "cr/block-hot",
+        "args": {
+          "region": { "type": "rect", "x": 236, "y": 286, "w": 330, "h": 190 },
+          "style": { "kind": "solid", "color": "hot", "opacity": 255 }
+        }
+      },
+      {
+        "id": "block-ink",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "cr/block-ink",
+        "args": {
+          "region": { "type": "rect", "x": 62, "y": 560, "w": 470, "h": 156 },
+          "style": { "kind": "solid", "color": "ink", "opacity": 255 }
+        }
+      },
+      {
+        "id": "shout",
+        "type": "op",
+        "op": "text",
+        "rngKey": "cr/shout",
+        "args": {
+          "text": "NOBODY",
+          "font": "grotesque",
+          "size": 96,
+          "x": 56,
+          "y": 240,
+          "align": "left",
+          "color": "ink",
+          "tracking": 1
+        }
+      },
+      {
+        "id": "answer",
+        "type": "op",
+        "op": "text",
+        "rngKey": "cr/answer",
+        "args": {
+          "text": "ASKED",
+          "font": "grotesque",
+          "size": 58,
+          "x": 258,
+          "y": 400,
+          "align": "left",
+          "color": "ink",
+          "tracking": 3
+        }
+      },
+      {
+        "id": "under",
+        "type": "op",
+        "op": "text",
+        "rngKey": "cr/under",
+        "args": {
+          "text": "US",
+          "font": "grotesque",
+          "size": 132,
+          "x": 84,
+          "y": 690,
+          "align": "left",
+          "color": "acid",
+          "tracking": 4
+        }
+      },
+      {
+        "id": "smallprint",
+        "type": "op",
+        "op": "text",
+        "rngKey": "cr/smallprint",
+        "args": {
+          "text": "AND THE LICENCE WAS GRANTED ELEVEN WEEKS BEFORE THE ROOF CAME DOWN",
+          "font": "grotesque",
+          "size": 15,
+          "x": 62,
+          "y": 786,
+          "align": "left",
+          "color": "ink",
+          "maxWidth": 460
+        }
+      },
+      {
+        "id": "cut-1",
+        "type": "op",
+        "op": "rule",
+        "rngKey": "cr/cut-1",
+        "args": {
+          "from": [40, 92],
+          "to": [472, 100],
+          "brush": "marker",
+          "color": "ink",
+          "weight": 3
+        }
+      },
+      {
+        "id": "cut-2",
+        "type": "op",
+        "op": "rule",
+        "rngKey": "cr/cut-2",
+        "args": {
+          "from": [236, 480],
+          "to": [568, 470],
+          "brush": "marker",
+          "color": "ink",
+          "weight": 3
+        }
+      },
+      {
+        "id": "scrawl",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "cr/scrawl",
+        "args": {
+          "points": [
+            [92, 838],
+            [214, 826],
+            [340, 846],
+            [468, 830]
+          ],
+          "brush": "marker",
+          "color": "hot",
+          "weight": 5,
+          "curve": 0.3
+        }
+      },
+      {
+        "id": "hole",
+        "type": "op",
+        "op": "cover",
+        "rngKey": "cr/hole",
+        "args": {
+          "region": { "type": "rect", "x": 372, "y": 604, "w": 86, "h": 68 },
+          "softness": 0
+        }
+      }
+    ]
+  }
+}

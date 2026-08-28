@@ -1,0 +1,55 @@
+{
+  "version": "1.0",
+  "id": "eleven-names",
+  "title": "Eleven names, one year on",
+  "client": "The families of the eleven people who died, organised as a group of about thirty relatives with a solicitor and no money. Two of them do all the talking. They have been meeting in a community centre every Thursday for a year and they have never commissioned anything before.",
+  "event": "A fire in a converted warehouse on the night of 14 October killed eleven people, nine of them tenants and two of them visitors. The building had been signed off as compliant eleven weeks earlier by an inspector who has since left the country. The landlord's company was dissolved in January and re-registered in February under a different name at the same address, and is currently letting four other buildings in the same borough. The inquest has been adjourned twice and has not yet heard evidence.",
+  "when": "The anniversary is 14 October. The families will read the names aloud outside the building at 20:15, the time the first call was made.",
+  "where": "Outside the building itself, and along the four streets between it and the station.",
+  "function": "Make people who did not know any of the eleven turn up on the 14th and stand there while the names are read. Second, and not optional: make it impossible to think about that building without thinking about who currently owns the four others. It has failed if it produces sympathy and nothing else.",
+  "audience": "People in the surrounding streets who remember the night and have already been asked to feel something about it several times, by a newspaper, by a council mailing and by a memorial service they did not attend. They are tired of being moved. Also the relatives themselves, who will see it every day for three weeks. Also the current tenants of the four other buildings, most of whom do not know what they are living in.",
+  "production": "One or two colours, whatever the copy shop on the parade will do for the money. A local firm has offered to run something larger for free but wants to be credited, which the families have not agreed to.",
+  "quantity": "300, going up over three weeks and being replaced as they come down.",
+  "mustAppear": [
+    "the date, 14 OCTOBER",
+    "the time, 20:15",
+    "the number, ELEVEN",
+    "the words THE NAMES WILL BE READ"
+  ],
+  "budget": "180 pounds, collected in a bucket at the community centre.",
+  "timeline": "Up from 21 September. Anything after 7 October is too late to be seen four times by the same person.",
+  "clientWantThatHurtsTheWork": [
+    "The solicitor has told us not to name the new company, the old one, or the inspector, and not to put anything on it that could be said to prejudice the inquest. We have accepted that.",
+    "If the eleven names are used at all, every one of them at the same size. None of them was more important than another and we will not have one bigger.",
+    "The word FIRE is not to appear. The paper used it every day for a week and then stopped, and it is now their word rather than ours."
+  ],
+  "clientFear": "That it becomes a piece of art and the names become decoration. We have watched a year of people making our children into a feeling. If somebody looks at this and thinks about how it was made, we have lost them.",
+  "stakes": "Eleven people are dead, the company that killed them is still trading under a new name, and the inquest has not started. This is the last year anybody outside the families will be paying attention.",
+  "hard_constraints": [
+    {
+      "id": "hc-date",
+      "kind": "textRequired",
+      "params": { "contains": ["14 OCTOBER"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "The date is what turns this from a memorial into an appointment. Without it there is nothing to attend."
+    },
+    {
+      "id": "hc-time",
+      "kind": "textRequired",
+      "params": { "contains": ["20:15"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "The time is the time of the first call. It is a fact about the night as well as an instruction, and the families chose it for both reasons."
+    },
+    {
+      "id": "hc-reading",
+      "kind": "textRequired",
+      "params": { "contains": ["THE NAMES WILL BE READ"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "What is being asked for is attendance at a reading, and the families insisted on this sentence exactly. It is the one thing they have said cannot be paraphrased."
+    }
+  ],
+  "notes": "The eleven names themselves are available and the families are divided on whether they should appear. They have left it open deliberately and will accept either answer if it is argued for."
+}

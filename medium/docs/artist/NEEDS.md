@@ -1,25 +1,40 @@
 # What the artist needs and does not have
 
 Everything here is a known gap, not a bug. Each entry says what is missing, what the loop does
-instead, and what it costs to leave it missing. Nothing in this file was fixed by changing the
-medium or the aesthetic layer, because the brief forbids it.
+instead, and what it costs to leave it missing.
+
+Its counterpart is `MEASUREMENT.md`, which is about what the loop *does* have: one entry per score,
+what it is, what it is not, how it fails, and whether to believe it. A gap here and an untrustworthy
+score there are different problems, so they are written down in different files.
+
+The first version of this file was written under a brief that forbade changing the medium or the
+aesthetic layer, so its first two entries described gaps that could not be closed from `artist/`.
+That restriction was lifted and both are now closed; they are kept below as **Closed** so the
+reasoning survives, because both were load-bearing arguments and not just chores.
 
 ## In the medium and the aesthetic layer
 
-**`metricsFromRgba` is module-private in `aesthetic/measure.ts`.**
-A look that needs `RenderMetrics` therefore renders the same program twice on a cold hash: once
-through `Canvas.render` for the plate, once through `Measurer.measure` for the numbers. Both hit the
-same on-disk caches afterwards, so the cost falls on the first visit to a program hash only — but
-the first visit is most of a trajectory. Exporting that one function, or letting `Measurer` accept
-an already-decoded RGBA buffer, would roughly halve the browser time of the whole system. This is
-the single largest saving available and it is one line of `export`.
+**CLOSED — `metricsFromRgba` is module-private in `aesthetic/measure.ts`.**
+It is exported, and `Measurer.measureFrom(program, plate)` is the cached way in: it takes the
+printed RGBA the caller already has and never launches a browser. `Canvas.render` passes the buffer
+it just produced, or decodes its own cached PNG, so a metrics-bearing look renders **once**.
+Verified on a cold cache: one render, no second browser, and the numbers byte-identical to what
+`Measurer.measure` produced by rendering again — so `METRICS_VERSION` did not have to move and every
+metric taken before the change stays comparable. The thunk matters: the metrics cache is checked
+first, so a revisit does not even pay for a PNG decode.
 
-**Constraint evidence is free text, not structured node ids.**
-`env.ts:loadBearing` has to decide which nodes were carrying a satisfied constraint, and the only
-signal available is whether a node id appears as a substring of `result.evidence`. That is crude in
-both directions: an id that happens to be a prefix of another matches, and a constraint that
-describes its evidence without naming ids matches nothing. `destructionRate` is therefore an
-estimate. If `CheckResult` carried `nodeIds: string[]` alongside `evidence`, it would be exact.
+**CLOSED — constraint evidence is free text, not structured node ids.**
+`ConstraintResult` now carries `nodeIds: string[]` beside `evidence`, decided per kind by the
+checker that knows what the kind means. `env.ts:loadBearing` reads it directly and
+`destructionRate` is exact rather than an estimate. The rule is in `docs/constraints.md`: offenders
+when violated, carriers when satisfied, and **empty when the verdict rests on an absence, on an
+aggregate, or on the whole sheet** — empty being an answer, not a gap. The old substring scan was
+wrong in both directions and one of the tests now pins the prefix case (`t` vs `t2`) that it got
+wrong.
+
+The one thing this does *not* buy: render-scope verdicts still name no node, because attributing a
+pixel to the node that laid it down would need per-node coverage out of the renderer and it does not
+report any. That is a real limit, not a stub.
 
 **Nothing in the medium knows occlusion.**
 So `masked-by` is one of the three intention edge types that `intention.ts` refuses to decide, and a
@@ -35,12 +50,40 @@ So `masked-by` is one of the three intention edge types that `intention.ts` refu
 
 ## Phases not built
 
-**The judge.** Nothing in this repo judges. Every rubric a position raised that the checker could not
-decide is carried forward unread in `Scores.judgePending`, and every intention edge that is not
-`aligned-to` or `echoes` comes back `judge-pending`. The hook is those two fields: a judge is a
-function from `(final.png, position, judgePending[])` to a score, and it can be run offline against
-already-collected trajectories because both are on disk. Deliberately not built — a judge trained or
-prompted alongside the artist is a signal the artist can move.
+**The judge — L5 of the prompt stack. Deliberately not built, and the cost of that is named below.**
+
+Nothing in this repo judges. Every rubric a position raised that the checker could not decide is
+carried forward unread in `Scores.judgePending`, and every intention edge that is not `aligned-to` or
+`echoes` comes back `judge-pending`. The hook is those two fields: a judge is a function from
+`(final.png, position, judgePending[])` to a score, and it can be run offline against already
+collected trajectories because both are on disk.
+
+*Why it is not built.* A judge written this week, scoring compliance with prompts written this week,
+is circular. It would agree with the stack because it was written by whoever wrote the stack, and
+that agreement would be reported as a result.
+
+*Two of the five proposed critic dimensions are struck from the spec permanently.* "Does it obey the
+stated formal rules" and "does it violate a stated refusal" are assertion checks dressed as
+evaluation: `aesthetic/check.ts` already decides both mechanically, on the tree and on the render,
+without a model. Routing them through a judge would launder a deterministic check into a subjective
+score and inflate agreement between the judge and the checker, which is not a measurement of
+anything. They are not deferred. They are gone.
+
+*Three survive and are the only ones worth a model:* whether a decision was **necessary** to the
+piece or merely permitted by it; whether the result is **non-generic** — could this have come from
+any position in the catalog, or only from this one; and whether the work **derives** from the
+practice or **quotes** it, which is the difference the whole L1 layer exists to make visible.
+
+*The shape when it is built:* consume `judgePending` rather than re-deciding what the checker already
+decided, and run offline in a fresh context against trajectories already on disk, so the judge never
+shares state with the run it is scoring.
+
+*The cost, stated plainly.* Without L5 the ablation grid has no dependent variable. Removing a layer
+and re-running can show that the layers are **separable** — different hashes, different observations,
+different behaviour — but it cannot show that a layer makes the work **better**, because nothing in
+the repo has an opinion about better. That is acceptable as a staging decision and is not acceptable
+as a permanent one: any claim that the five-layer stack improves output is unsupported until this
+exists.
 
 **Break: a stranger-eye describer that is allowed to be hostile.** `DESCRIBE` is neutral by
 construction and `AUDIENCE` is one named person from the field. Neither is the reading that makes an
@@ -61,10 +104,24 @@ fetched at run time — otherwise two trajectories with the same `fieldHash` saw
 
 ## Observability
 
-**LangSmith sink.** Not built. `call.ts` is the single place every policy call passes through and it
-already has the whole request, response, usage and timing in one scope, so the sink is a wrapper
-there and nowhere else. It must stay a sink: nothing may read from it, and it must be off unless
-`LANGSMITH_TRACING=1`, so tests and replays never touch a network.
+**CLOSED — LangSmith sink.** `artist/trace.ts`, sent from `call.ts` and imported nowhere else, and
+a guard test asserts both. It stays a sink: it exports exactly `tracingEnabled` and `traceCall`,
+makes exactly one `fetch`, and that request is a POST. Off in three independent ways —
+`LANGSMITH_TRACING` must be exactly `"1"`, `LANGSMITH_API_KEY` must be set, and the policy must be
+`anthropic` or `openai-compatible`. That last one is the one that matters: a replay drives the real
+loop with a `RecordedPolicy` and a test drives it with a `StubPolicy`, and neither made a model
+call, so neither may put a request on the network however the environment is set.
+
+Two deliberate choices. The trace is sent **after** the studio.jsonl line is written, so the record
+on disk is complete before anything leaves the machine and a failed trace cannot lose a line. And it
+is **awaited**, with a 5s timeout and every error swallowed: an un-awaited POST can be lost at
+process exit and can surface as an unhandled rejection, and one bounded round trip is nothing beside
+the model call that just happened. If the trace and the log ever disagree, the file on disk is
+right.
+
+Written against the ingest endpoint with `fetch`, for the reason `env-model.ts` is: the guard tests
+say no file in `artist/` imports a framework and only `policy/anthropic.ts` imports a model SDK, and
+those statements are worth more than the convenience of a client library.
 
 ## Known sharp edges
 

@@ -141,7 +141,7 @@ the claim is the thing being tested:
 change, so the id and hash both move: **`default-v0@15ad87c16095` → `default-v1@<new>`**.
 
 `default-v0` must be **left on disk unchanged**. Every existing example names its profile by id, so
-they continue to resolve `default-v0`, their `profileHash` in `goldens/index.json` stays
+they continue to resolve `default-v0`, their `profileHash` in `goldens/v0/index.json` stays
 `15ad87c16095`, and the four committed goldens `626df27b0945` / `43ab77142371` / `5e278e1c86ee` /
 `61982d731298` keep passing without being regenerated. Nothing about this change forces a golden
 rewrite, and if it appears to, that is a bug in the change and not in the goldens.

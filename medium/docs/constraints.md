@@ -4,10 +4,10 @@ Sixteen kinds, closed. Eleven decide from the program tree alone, four from the 
 decides nothing and says so. A seventeenth kind costs one of these.
 
 Every kind is a pure function. Tree-scope checkers read `treeFacts()` — one walk over the **source**
-JSON — and return `{status, evidence}`. Render-scope checkers read a `RenderMetrics` and nothing
-else. `rubric` returns `unverified` always.
+JSON — and return `{status, evidence, nodeIds}`. Render-scope checkers read a `RenderMetrics` and
+nothing else. `rubric` returns `unverified` always.
 
-Three rules hold across the whole language:
+Four rules hold across the whole language:
 
 - **`blocked_by` short-circuits everything.** A constraint that names a primitive the medium does not
   have is `unverified` before its checker is ever called, and is excluded from both the numerator and
@@ -15,6 +15,13 @@ Three rules hold across the whole language:
 - **`unverified` is never a pass.** No metrics means no verdict, not a generous one.
 - **A violation must carry evidence**: node ids, or a measured number against the bound it broke.
   "Violated" with neither is an opinion, and this layer does not have opinions.
+- **`nodeIds` says the same thing as `evidence`, in a form a caller can compute with.** It is the
+  nodes the verdict rests on: the offenders when violated, the carriers when satisfied — the ones
+  whose removal could turn a pass into a violation. It is **empty**, and empty is a real answer, when
+  the verdict rests on an absence (nothing forbidden is present), on an aggregate (the tree has 12
+  nodes), or on the whole sheet (every render kind). A caller must never fall back to scanning
+  `evidence` for ids: that was wrong in both directions, since an id that is a prefix of another
+  matched and a verdict naming no ids matched nothing.
 
 ## The blind spot they all share
 

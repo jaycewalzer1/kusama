@@ -91,7 +91,7 @@ export function checkProgram(tree: unknown, ap: AestheticProgram, metrics: Rende
   const results: ConstraintResult[] = [];
 
   for (const { constraint, part } of constraintsOf(ap)) {
-    const { status, evidence } = checkConstraintWithFacts(constraint, facts, metrics);
+    const { status, evidence, nodeIds } = checkConstraintWithFacts(constraint, facts, metrics);
     const result: ConstraintResult = {
       id: constraint.id,
       kind: constraint.kind,
@@ -100,6 +100,7 @@ export function checkProgram(tree: unknown, ap: AestheticProgram, metrics: Rende
       status,
       part,
       evidence,
+      nodeIds,
       why: constraint.why,
     };
     if (constraint.blocked_by !== undefined) result.blocked_by = constraint.blocked_by;

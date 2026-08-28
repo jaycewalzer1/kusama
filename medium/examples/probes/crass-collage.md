@@ -1,7 +1,0 @@
-# crass-collage
-
-**Target.** Gee Vaucher lineage: found fragments layered as an argument, photographic material set against clean type, anti-war content.
-
-**Tried.** The plate is a black rectangle and every "photograph" in it is a pack fragment. Continuous tone is faked with `hatch`: `light.beam` x3 at 2H/spacing 5 for searchlights, `arch.column` twice at charcoal/spacing 3/layers 2 for state architecture, `arch.arch` as a bare `outline`. `figure.crowd` is repeated five times at span 230 in solid paper so the heads are small enough to read as a crowd, with `figure.standing` alone in front of it. `animal.bird` is printed twice, blood then paper, six pixels off register. The argument is carried by stacking order: architecture behind, crowd beneath, sponsors (`mark.sponsor-a/b/c`) on top, `hand.pointing` rotated 188 degrees so the recruiting hand aims at the sponsors rather than at you. Type is `solid` PT Sans, deliberately clean.
-
-**Could not do.** There is no photographic or found material in the pack at all — fifteen hand-drawn vector outlines, and the "dove" reads as an abstract white blob at any size. `hatch` is engraving, not halftone: it has a fixed spacing and no tonal ramp, so it cannot render a face, a gradient, or anything with midtones. Type cannot be knocked out of an image except by drawing it in the ground colour, which only works over flat ground. This probe is the one where the honest answer is that the *composition* is Vaucher and the *material* is not.

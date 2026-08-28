@@ -1,0 +1,204 @@
+{
+  "version": "1.0",
+  "id": "generation-loss",
+  "name": "Generation Loss",
+  "lineage": [
+    {
+      "ref": "Tobi Vail, \"Jigsaw\" (Olympia, 1988-)",
+      "why": "Written, cut, copied and stapled by one person for an audience she partly knew by name. The reproduction is not a stage after the work; the work is what survives the copier."
+    },
+    {
+      "ref": "Kathleen Hanna, \"Bikini Kill\" zine no. 2 (1991)",
+      "why": "Handwriting, typewriter and cut headline in the same column, at whatever size the copier gave back. Authority is refused by refusing to look produced."
+    },
+    {
+      "ref": "Mark Perry, \"Sniffin' Glue\" (London, 1976-77)",
+      "why": "Felt-tip on typing paper, corrections left in, reproduced at the speed the news moved. Establishes that the degraded copy is a claim about how fast this had to be made."
+    },
+    {
+      "ref": "Ramsey Naja and the mail-art copier networks of the 1970s and 80s",
+      "why": "A body of work in which the copy of a copy is the medium, and the accumulated loss across generations is the thing being sent rather than an accident of sending."
+    },
+    {
+      "ref": "Raymond Pettibon, flyers and record inserts for SST (1979-85)",
+      "why": "A drawing and a sentence reproduced until the greys have collapsed into black and white, so that the surviving line is coarser and worse and more forceful than the one that was drawn."
+    },
+    {
+      "ref": "Sheila Levrant de Bretteville, \"Pink\" (1974)",
+      "why": "Cheap reproduction chosen deliberately, distributed free, and organised so that the reader can add to it. The poverty of the process is the argument about who is allowed to publish."
+    }
+  ],
+  "worldview": "This is made by one person who has no equipment and is not waiting for permission. The evidence of that is everything: writing at whatever size it came out, corrections left where they happened, several kinds of mark in the same breath because that is what was to hand. It is then put through a reproduction that damages it, and the damage is not a texture applied at the end — it is what the reader will actually receive, so it is what has to be composed. Blacks fill in, mid greys collapse to nothing, edges break up, and each generation is worse than the last. Anything that only survives at the first generation was never really made. The right amount of loss is the amount at which it is still readable and obviously nearly not.",
+  "tensions": [
+    {
+      "between": "degradation as a record of the conditions",
+      "and": "degradation as a texture that signals authenticity",
+      "claim": "The marks are identical whether the copier was real or simulated, and simulating it is now overwhelmingly the common case. A work made in one pass on good equipment and then damaged on purpose is claiming a poverty it did not have, and nothing visible distinguishes it from one that did."
+    },
+    {
+      "between": "immediacy",
+      "and": "legibility",
+      "claim": "The method's virtue is that it looks like it was made this morning by somebody who could not wait. Its cost is that the reader gets a worse copy of everything, including the parts they actually need. Every generation of loss buys urgency with information."
+    },
+    {
+      "between": "refusing to look produced",
+      "and": "a reproduction stage that is applied uniformly to everything",
+      "claim": "A real copier damages one part of the page worse than another, because of where the paper sat on the glass and how the toner was lying. A degradation that is even across the whole surface is a filter, and a filter is exactly the produced look the method exists to refuse."
+    },
+    {
+      "between": "one person's voice",
+      "and": "the many hands the material is supposed to show",
+      "claim": "This is made alone, but its vocabulary is borrowed from things made by groups: cut headlines, several typewriters, other people's handwriting. A single maker performing a chorus is a real contradiction and not one the method resolves."
+    }
+  ],
+  "commitments": [
+    {
+      "id": "c-one-toner",
+      "kind": "maxDistinctColors",
+      "params": { "max": 2, "includeGround": true },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "One toner on one paper. A second ink means a second pass through a machine that costs money, and the whole claim is that there was no money."
+    },
+    {
+      "id": "c-voices",
+      "kind": "requireNode",
+      "params": { "op": "text", "min": 5 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Five separate pieces of writing at five sizes, because the page was filled in several sittings with whatever was to hand. A page with one or two is a document, and a document has an editor."
+    },
+    {
+      "id": "c-handled",
+      "kind": "requireMark",
+      "params": { "brushes": ["charcoal", "crayon", "cpencil", "2B"], "min": 3 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Three marks made with something soft: a pencil, a crayon, a smudge. These are the marks the copier exaggerates most, and they are the evidence that a hand was on the original."
+    },
+    {
+      "id": "b-region-decay",
+      "kind": "requireMark",
+      "params": { "styles": ["hatch"], "min": 2 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Two areas where the surface has broken up differently — one filled in solid, one gone thin. The third tension is a constraint, not an observation: the copy must be worse in one place than another, because that unevenness is the difference between a machine and a filter.",
+      "blocked_by": "a print pass with a region: `generation`, `dropout`, `grain` and `misregister` under default-v1 are whole-sheet stages that run after the tree is drawn, so nothing in the tree can ask for one part of the surface to be a worse copy than another. Under this profile there is no print pass at all, and the loss has to be drawn in by hand as though it were a mark"
+    },
+    {
+      "id": "j-nth-copy",
+      "kind": "rubric",
+      "params": {
+        "text": "Does this look like a copy of a copy, or like a clean file with damage on top? Ask what stage each piece of damage belongs to. A real generation loss is cumulative and inconsistent: something that was already broken gets more broken, a dense area fills in solid while a thin one disappears entirely, and the two happen in different places. An applied one is uniform, and every element is damaged to the same degree because they were all damaged at the same moment. Name the part of this that has been through the most generations and the part that has been through the fewest, and say how you can tell."
+      },
+      "scope": "judge",
+      "severity": "hard",
+      "why": "The medium's loss is applied to the whole sheet at once, so the tree can never show unevenness. Only a reader can say whether the result nevertheless reads as accumulated."
+    },
+    {
+      "id": "j-urgency-paid-for",
+      "kind": "rubric",
+      "params": {
+        "text": "What did the speed cost? This vocabulary claims the thing was made fast by somebody who could not wait. Find the evidence for the claim and then find what was given up for it — a correction left in, a word half lost, an element that ran off the edge because there was no time to move it. If everything that matters is intact and only the decoration is damaged, the urgency is a costume. Name what was actually sacrificed."
+      },
+      "scope": "judge",
+      "severity": "soft",
+      "why": "The first tension in a form a reader can answer: it separates the conditions being real from the conditions being cited."
+    }
+  ],
+  "prohibitions": [
+    {
+      "id": "p-upper",
+      "kind": "textCase",
+      "params": { "case": "upper" },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Capitals throughout, because that is what a typewriter and a marker pen give at speed and what survives three generations of copying. Lowercase asks the copier for a distinction it will not preserve."
+    },
+    {
+      "id": "p-no-illustration",
+      "kind": "forbidNode",
+      "params": { "ops": ["fragment"], "macros": ["motif", "frame"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "No emblem and no border. A drawn device is a piece of identity, and identity is a thing an organisation has. This is one person with a copier."
+    },
+    {
+      "id": "p-no-flat-field",
+      "kind": "forbidMark",
+      "params": { "styles": ["field"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "A soft graduated area is the one thing a cheap copier cannot reproduce at all: it comes back as a hard threshold or as nothing. Using one is composing for a machine that will not be used."
+    },
+    {
+      "id": "r-dense",
+      "kind": "inkDensityRange",
+      "params": { "min": 0.06 },
+      "scope": "render",
+      "severity": "hard",
+      "why": "The page is filled, because paper and copies cost money and empty space is money thrown away. A sparse page belongs to somebody with a budget."
+    },
+    {
+      "id": "r-runs-off",
+      "kind": "coverageRange",
+      "params": { "min": 0.4 },
+      "scope": "render",
+      "severity": "soft",
+      "why": "The marks should reach most of the surface. A composition with a comfortable margin all round was laid out; this was filled up until it ran out of room."
+    }
+  ],
+  "generative_rules": [
+    {
+      "rule": "Compose for the copy, not for the original. If an element only reads before the loss is applied, it does not exist.",
+      "constraint": {
+        "id": "g-full",
+        "kind": "nodeCount",
+        "params": { "min": 10 },
+        "scope": "tree",
+        "severity": "soft",
+        "why": "Ten elements is roughly where a surface stops reading as arranged and starts reading as filled. It is a floor on the tendency rather than a claim about the ninth."
+      }
+    },
+    {
+      "rule": "Leave the mistake in. A correction, an overrun, a crossing-out and a thing that did not fit are the record of the time available, and removing them buys tidiness with the only evidence there is."
+    },
+    {
+      "rule": "Use at least three different kinds of mark on the same surface, and do not reconcile them. They were whatever was on the table."
+    },
+    {
+      "rule": "Run something off the edge. A margin all the way round is a decision made by somebody who had the whole surface planned before they started."
+    },
+    {
+      "rule": "Make the most important thing the biggest thing by an absurd margin, and let it collide with whatever it lands on."
+    }
+  ],
+  "cliches": [
+    "a scanned coffee ring or a fold crease dropped over a clean layout",
+    "halftone dots enlarged until they are a pattern, used as a background",
+    "a typewriter typeface with simulated ribbon wear applied evenly to every character",
+    "the safety pin, the ransom note and the anarchy symbol used together as a shorthand",
+    "handwriting set from a font that was drawn once and repeats exactly",
+    "a photocopier's black edge-bar reproduced as a decorative border",
+    "high-contrast thresholding applied to a photograph and called a copy",
+    "staple holes and sellotape drawn in on something that was never stapled",
+    "the words 'DIY' or 'XEROX' used as content"
+  ],
+  "meta": {
+    "practice": {
+      "origin": "It starts wherever somebody has something to say, no press, and access to a machine that was meant for office paperwork. Perry did it on typing paper with a felt-tip in 1976 because the papers would not cover the bands; Vail and Hanna did it in Olympia in the late eighties because the magazines would not print women writing about what was happening to them. In both cases the copier was at somebody's work, the run was as many as could be taken before anyone noticed, and every subsequent copy was made from a copy.",
+      "doing": "Making the thing the reader will actually receive, which is not the original but a degraded reproduction of it. The work is composed for the loss: what will fill in, what will disappear, what will still be legible at the third generation. Everything on it is evidence of the conditions — the corrections, the mismatched marks, the elements that ran out of room — and the evidence is not decoration, it is the argument that this was made by somebody who was not waiting to be allowed.",
+      "period": "1976 to 1993, from 'Sniffin' Glue' to the point at which desktop publishing made the roughness a choice. The machine is genuinely unreliable, the run is genuinely small, and the person making it is genuinely handing it to people they can see.",
+      "register": "First person, present tense, capitals, addressed to one reader as though mid-conversation. It contradicts itself in the same paragraph, it names people, and it does not stop to introduce anything. Where it is angry it says so directly rather than through the material.",
+      "refusals": [
+        "It will not look produced. Even spacing, a consistent typographic system and a clean margin are all evidence of somebody with time and equipment, and the claim is that there was neither.",
+        "It will not use a second ink. A second pass costs money that this does not have, and pretending otherwise is claiming a budget in order to look like it has none.",
+        "It will not use a graduated area. Soft tone is the one thing the reproduction destroys completely, so composing with it is composing for a machine nobody is going to use.",
+        "It will not correct the mistake. What went wrong stays in, because it is the only durable record of how long there was.",
+        "It will not leave a comfortable margin. Empty surface is paper somebody paid for, and filling it is what somebody without money does."
+      ]
+    },
+    "temperament": -0.4,
+    "temperamentWhy": "It comes from being shut out and it says so, but its energy is directed at making the thing rather than at the people who shut it out, so it sits closer to urgent than to hostile."
+  }
+}

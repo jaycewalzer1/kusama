@@ -36,7 +36,7 @@ before handing it to p5.brush. Consequences, both intended and recorded here:
   rasterisation happens in p5's text pipeline, which we cannot geometrically clip; refusing is
   honest, refusing loudly is cheap, and silently ignoring the clip would not be.
 - Circles under an active clip are converted to a fixed 64-gon before clipping, so a clipped circle
-  is not byte-identical to the same circle unclipped. This is visible in `examples/event-picture`.
+  is not byte-identical to the same circle unclipped. This is visible in `examples/v0/event-picture`.
 
 ## L2. `brush.fill()` throws unless `brush.load()` was called first
 
@@ -555,7 +555,7 @@ program actually uses are loaded, so an unused face cannot influence a render.
 `renderer/page.js` is an ES module and a `file://` document cannot load one (opaque origin, blocked by
 CORS), nor can it `fetch` a sibling font. Instead of bundling, `env/browser.ts` intercepts every
 request the page makes with `page.route()` and fulfils it from `medium/` on disk, under the origin
-`http://medium.invalid`. Only `vendor/`, `renderer/`, `fonts/` and `assets/fonts/` are served;
+`http://medium.invalid`. Only `vendor/`, `renderer/` and `assets/fonts/` are served;
 nothing else can be reached and no request ever leaves the machine, so the render stays hermetic and
 works offline. The vendored type library was added to `SERVED_PREFIXES` rather than fetched from
 Google Fonts for exactly that reason: `assets/fonts/fetch.mjs` is the only thing in the repo that
@@ -587,7 +587,7 @@ Node — because a single program holding 135 cells plus a caption per row would
 `assets/packs/core-v1/author.mjs` follows the same rule from one step further back: it does **not**
 re-author a single shape. It reads `fragments` and `motifs` out of `assets/packs/core/pack.json` and
 `faces`/`licenses` out of `assets/fonts/manifest.json`, so there is exactly one definition of
-`figure.standing` in the repo and the two packs cannot drift. `core-v1@366521cbb036` is therefore
+`figure.standing` in the repo and the two packs cannot drift. `core-v1@6d0d9e8f2ccf` is therefore
 `core@003e484d9602`'s 15 fragments and 1 motif plus a 36-face `faces` map and a 32-entry `licenses`
 map, and the only reason its hash differs is the type. Each face carries the `sha256` of its file,
 which is what makes the pack hash cover the bytes the glyphs are drawn from and not merely their
@@ -667,7 +667,7 @@ Kept here rather than built, per the build document's instruction:
 
 ## E1. Edit locality, measured: three typed edits to `event-picture` spill nothing
 
-`examples/event-picture-edited.json` is `examples/event-picture.json` after exactly three actions, each
+`examples/v0/event-picture-edited.json` is `examples/v0/event-picture.json` after exactly three actions, each
 applied through `applyEdit` via `cli/apply-edit.ts` and chained (the output of one is the input of the
 next), so all three are appended to `meta.provenance` in order with their own `before`/`after`/
 `estimatedCost`:
@@ -806,7 +806,7 @@ draws one glyph at a time was silently deleting word spaces: all tracked text, a
 and `lineWidth`, which is what `maxWidth` wraps on and what `align: center`/`right` offset from. So
 `SET AND SETTING` set itself as `SETANDSETTING`, and a wrapped paragraph measured far narrower than
 it drew and therefore did not break where it should have. This was present in V0 and is on disk in
-the committed golden `goldens/poster-less-is-more.png`, in the lines `ON SETTING TYPE` and
+the committed golden `goldens/v0/poster-less-is-more.png`, in the lines `ON SETTING TYPE` and
 `SET IN THE MEDIUM`.
 
 **A second-order observation that is not fixed and is not a bug.** `textWidth('nn')` is 37.148 while

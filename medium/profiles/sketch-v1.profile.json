@@ -1,6 +1,6 @@
 {
   "id": "sketch-v1",
-  "description": "default-v1 with the budgets cut and the print pass removed, used only for the three sketches per problem in the artist loop. A sketch is a question about composition, not a finished plate: it has a fifth of the marks, a third of the nodes, four text ops instead of twelve, and no print stages, so a sketch costs a fraction of a render and can never be mistaken for a final piece. Nothing in this profile widens anything -- every limit is at or below default-v1, so a program that is legal here is legal there.",
+  "description": "default-v1 with the budgets cut and the print pass removed, used only for the three sketches per problem in the artist loop. A sketch is a question about composition, not a finished plate: it has a fifth of the marks, a third of the nodes, and no print stages, so a sketch costs a fraction of a render and can never be mistaken for a final piece. Text ops are deliberately NOT cut. They sat at four, which left a position asking for three separate pieces of text exactly one spare, and in one measured run the policy wrote a fifth text op and had it refused twenty-two times. Text is the cheapest op in the medium -- half the cost weight of a hatch stamp -- and it is where the position's message lives, so it is the one budget held at parity with default-v1. Nothing in this profile widens anything -- every limit is at or below default-v1, so a program that is legal here is legal there.",
   "primitives": [
     "wash",
     "paint",
@@ -103,7 +103,7 @@
     "maxPolygonPoints": 40,
     "maxStrokePoints": 60,
     "maxFragments": 12,
-    "maxTextOps": 4,
+    "maxTextOps": 12,
     "maxTextLength": 120,
     "maxEstimatedMarks": 12000,
     "maxRenderCost": 48000,

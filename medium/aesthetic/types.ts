@@ -92,6 +92,13 @@ export interface ConstraintResult {
   part: 'commitment' | 'prohibition' | 'generative_rule';
   /** Node ids, measured values, or the reason nothing could be decided. Always human-readable. */
   evidence: string;
+  /**
+   * The same claim as `evidence`, in a form a caller can compute with: the nodes the verdict rests
+   * on — offenders when violated, carriers when satisfied. Empty when the verdict rests on an
+   * absence, on an aggregate, or on the whole image; see ./kinds.ts for the rule per kind. Empty is
+   * an answer, not a gap, so a caller must not fall back to reading ids out of `evidence`.
+   */
+  nodeIds: string[];
   why: string;
   blocked_by?: string;
   /** Only on `rubric` results: the text, passed through unread and unexecuted. */

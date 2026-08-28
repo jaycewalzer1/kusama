@@ -1,0 +1,47 @@
+{
+  "version": "1.0",
+  "id": "catalogue-nine",
+  "title": "Catalogue nine: the ninth and last release",
+  "client": "A two-person label operating from a flat, eight releases in, with no office, no press contact and no intention of acquiring either. They have never put a photograph of anybody on anything and are not going to start. One of them presses the records; the other one answers the post.",
+  "event": "The ninth release is the last one. The pressing plant they have used since the first record is closing in June and the plates for everything they have put out will be scrapped with it. They are pressing five hundred and then stopping. The artist on the record does not use a name and does not want one invented for them; the whole catalogue has been numbered rather than titled, and this one is the ninth.",
+  "when": "In the racks by 12 June, which is the week the plant shuts.",
+  "where": "Twenty-odd independent shops in four countries, plus a mail-order list of about four hundred names built over six years.",
+  "function": "Someone flipping through a rack has to stop at it. Then, having stopped, they have to be able to find it again on a shelf in ten years. It has worked if the five hundred go without anybody being told what the record is about; it has not worked if it needs a press release to make sense.",
+  "audience": "People who buy nine or ten records a year and know the catalogue number system without being told it exists. They are in a shop, standing up, going through a rack at about one item a second, and they have already decided about forty things this afternoon. Most of them have at least two of the previous eight.",
+  "production": "Offset litho, two flat inks at most, on 300gsm uncoated board. The plant does not do photographic tone at this run size and would charge more than the whole budget for a third ink. There is no foil, no varnish and no die-cutting.",
+  "quantity": "500, and there will be no second run because there will be no plates.",
+  "mustAppear": [
+    "the catalogue number, NINE",
+    "the label name, HALF LIFE",
+    "the running order, A1 A2 B1",
+    "the year, as four digits"
+  ],
+  "budget": "400 for the artwork and the plates together. The pressing is separately funded and is not negotiable.",
+  "timeline": "Artwork to the plant by 2 May. The plant will not accept anything after the 9th and there is no possibility of an extension, because there is no plant after June.",
+  "clientWantThatHurtsTheWork": [
+    "THANK YOU on the back. One of us wants it, we have argued about it for a month, and it is going on.",
+    "The plant's name and the month it shuts, somewhere on it. They pressed every one of the nine and nobody else is going to say anything about it.",
+    "Nothing anywhere that says this is the last one. We are not announcing anything and we are not being seen off."
+  ],
+  "clientFear": "That it turns the record into a product. Eight times we have got away with it looking like nothing was being sold. If this one looks like it is announcing itself, or like it is a farewell, we will have spent six years being quiet and then shouted at the end.",
+  "stakes": "There is no tenth. Whatever this is, it is the last thing the catalogue says, and it will outlast everyone involved by decades in the shelves of four hundred people.",
+  "hard_constraints": [
+    {
+      "id": "hc-number",
+      "kind": "textRequired",
+      "params": { "contains": ["NINE"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "The catalogue number is the only name this release has. Without it there is nothing to ask for in a shop and nothing to file it under."
+    },
+    {
+      "id": "hc-label",
+      "kind": "textRequired",
+      "params": { "contains": ["HALF LIFE"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "The label is the only thing connecting this to the eight before it, and connection to the eight before it is most of why anybody stops."
+    }
+  ],
+  "notes": "Nothing about the music is being supplied on purpose. The label has never described a record in writing and does not want a first time."
+}

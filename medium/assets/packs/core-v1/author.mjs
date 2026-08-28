@@ -23,21 +23,21 @@ const manifest = JSON.parse(readFileSync(path.join(MEDIUM, 'assets/fonts/manifes
  */
 const LEGACY = {
   grotesque: {
-    family: 'the face vendored as fonts/grotesque.ttf in V0',
+    family: 'the face vendored as grotesque.ttf in V0',
     role: 'display',
-    file: 'fonts/grotesque.ttf',
+    file: 'assets/fonts/grotesque.ttf',
     license: 'OFL-1.1',
-    licenseFile: 'fonts/OFL.txt',
-    source: 'vendored in V0; see fonts/OFL.txt',
+    licenseFile: 'assets/fonts/licenses/ofl-pt.txt',
+    source: 'vendored in V0; see assets/fonts/licenses/ofl-pt.txt',
     variable: false,
   },
   serif: {
-    family: 'the face vendored as fonts/serif.ttf in V0',
+    family: 'the face vendored as serif.ttf in V0',
     role: 'serif',
-    file: 'fonts/serif.ttf',
+    file: 'assets/fonts/serif.ttf',
     license: 'OFL-1.1',
-    licenseFile: 'fonts/OFL.txt',
-    source: 'vendored in V0; see fonts/OFL.txt',
+    licenseFile: 'assets/fonts/licenses/ofl-pt.txt',
+    source: 'vendored in V0; see assets/fonts/licenses/ofl-pt.txt',
     variable: false,
   },
 };
@@ -53,9 +53,9 @@ for (const [name, f] of Object.entries(manifest.faces)) faces[name] = f;
 
 /**
  * The legacy faces' licence, which the manifest cannot supply for the same reason it cannot supply
- * the faces: it did not exist when they were vendored. Keyed `OFL` because the key is the licence
- * file's basename everywhere else, and a pack that carries a face pointing at `fonts/OFL.txt` with
- * no entry under `OFL` is a pack shipping type whose terms it does not itself carry.
+ * the faces: it did not exist when they were vendored. Keyed by the licence file's basename, like
+ * every other entry, because a pack that carries a face whose `licenseFile` has no entry in
+ * `licenses` is a pack shipping type whose terms it does not itself carry.
  *
  * `source` is not a URL and is not going to become one by guessing. The text names ParaType and the
  * Reserved Font Names "PT Sans", which is a real fact about what these two files are; where the
@@ -63,10 +63,10 @@ for (const [name, f] of Object.entries(manifest.faces)) faces[name] = f;
  * here would be inventing provenance rather than citing it.
  */
 const LEGACY_LICENSE = {
-  OFL: {
+  'ofl-pt': {
     spdx: 'OFL-1.1',
-    file: 'fonts/OFL.txt',
-    sha256: sha256('fonts/OFL.txt'),
+    file: 'assets/fonts/licenses/ofl-pt.txt',
+    sha256: sha256('assets/fonts/licenses/ofl-pt.txt'),
     source: 'vendored in V0 with no recorded origin; the text is SIL OFL 1.1 as published by ParaType for the PT family',
   },
 };

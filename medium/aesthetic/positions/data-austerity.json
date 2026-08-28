@@ -1,0 +1,208 @@
+{
+  "version": "1.0",
+  "id": "data-austerity",
+  "name": "Data Austerity",
+  "lineage": [
+    {
+      "ref": "Ryoji Ikeda, \"+/-\" (Touch, 1996)",
+      "why": "Sine tones and silence presented as material rather than as composition. The sleeve is a specification: a few numbers, a rule, and an enormous quantity of nothing."
+    },
+    {
+      "ref": "Ryoji Ikeda, \"dataplex\" (Raster-Noton, 2005) and the datamatics series (2006- )",
+      "why": "Data is not visualised, it is displayed. The image makes no attempt to be a picture of the data; it is the data given a size and a position."
+    },
+    {
+      "ref": "Raster-Noton house design, Carsten Nicolai and Olaf Bender (Chemnitz, 1996- )",
+      "why": "A label identity built from lowercase sans, hairlines, registration marks and grid coordinates, applied identically across a catalogue so that nothing is designed individually."
+    },
+    {
+      "ref": "Carsten Nicolai, \"Anti Reflex\" (2005), and the grid as a claim about perception",
+      "why": "The grid is not a layout aid, it is the subject. Regularity at the threshold of visibility is what the work is about, which is why almost nothing may be present."
+    },
+    {
+      "ref": "Otl Aicher, sign system for the Munich Olympiad (1972)",
+      "why": "The grid before austerity became a mood: a system built so that hundreds of people could produce consistent output without exercising judgement. Establishes the discipline as functional rather than expressive."
+    },
+    {
+      "ref": "Muriel Cooper and the MIT Visible Language Workshop, Information Landscapes (1994)",
+      "why": "Legibility treated as a measurable property of a field rather than a matter of taste, and typography handled as an instrument reading rather than as a voice."
+    }
+  ],
+  "worldview": "Almost nothing, placed exactly. The surface is a field with a measurement on it, and the measurement is the work; there is no image, no illustration, no gesture, and above all no evidence that a person made choices about how it should feel. Two values, because a third would be a preference. Hairlines and small lowercase type set to a coordinate, because the reference is an instrument panel and a scientific plate. What matters is the ratio between the marked and the unmarked, and the marked should be small enough that the eye has to hunt for it. Emptiness here is not restraint or elegance; it is the accurate depiction of a signal in a field of nothing, and if the result looks calm rather than sparse it has failed.",
+  "tensions": [
+    {
+      "between": "data as genuine material",
+      "and": "data as an aesthetic of objectivity",
+      "claim": "Numbers confer authority whether or not they refer to anything, and this position uses that authority constantly. The work is honest when the data is real and the display is faithful; it is a rhetorical device the rest of the time, and the two are indistinguishable to look at."
+    },
+    {
+      "between": "emptiness as the subject",
+      "and": "emptiness as luxury",
+      "claim": "Near-empty surfaces read as expensive, because expensive things can afford to say less. The same arrangement can be a claim about signal and noise or a claim about the owner's taste, and the second reading has almost entirely captured the first over twenty years."
+    },
+    {
+      "between": "a system that removes the maker's judgement",
+      "and": "the maker's judgement in building the system",
+      "claim": "Every decision is pushed one level up into the grid and the specification and then presented as though no decisions were made. The claim to have removed authorship is itself an authorial move, and a strong one."
+    },
+    {
+      "between": "the precision the position demands",
+      "and": "a medium in which every line is a brush stamp",
+      "claim": "This medium draws through p5.brush, so its thinnest available line has a soft irregular edge and a texture. A position built on the hairline is being asked to speak in a language with no hairlines, and the correct response is to say so rather than to approximate."
+    }
+  ],
+  "commitments": [
+    {
+      "id": "c-two-values",
+      "kind": "maxDistinctColors",
+      "params": { "max": 2, "includeGround": true },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "A field and one value marked on it. A third colour is a preference, and preferences are what this position exists to exclude."
+    },
+    {
+      "id": "c-hard-edges",
+      "kind": "requireMark",
+      "params": { "styles": ["solid"], "min": 4 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "The line is the material, and in this medium a hard-edged line is a one-pixel `solid` rect rather than a `rule`: the substrate probe found `solid` is the only style drawn through plain p5 fill, and so the only one with a clean edge under antialias off. Four of them, so what is present reads as a measured field rather than as a picture with a line in it."
+    },
+    {
+      "id": "c-terse",
+      "kind": "textMaxWords",
+      "params": { "max": 2 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "A designation and a number. Anything longer is a caption, and a caption tells the reader how to feel about the field."
+    },
+    {
+      "id": "b-true-hairline",
+      "kind": "requireNode",
+      "params": { "op": "rule", "min": 12 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "The position rests on a line thin enough to sit at the threshold of visibility, repeated across a field. This asks for twelve of them and would still not get one.",
+      "blocked_by": "a non-brush line primitive: every `rule` and every `stroke` goes through p5.brush, so the thinnest available mark is a stamped pen texture with a soft edge and a minimum weight of 0.1, not a 0.25pt hairline (NOTES O1). The workaround is a one-pixel `solid` rect, which has the edge but is a rectangle standing in for a line and cannot go below one device pixel"
+    },
+    {
+      "id": "j-signal",
+      "kind": "rubric",
+      "params": {
+        "text": "Is the emptiness doing work, or is it decor? Ask what the marked part is a measurement of. It is doing the work when the sparse element reads as a signal detected in a field — you have to look for it, and finding it feels like reading an instrument. It is decor when the emptiness reads as calm, expensive or tasteful and the marks read as tastefully placed. The clearest test: would adding one more element be a loss of information, or merely a loss of elegance? If elegance, this is luxury minimalism wearing a lab coat."
+      },
+      "scope": "judge",
+      "severity": "hard",
+      "why": "Ink density can say the surface is empty. It cannot distinguish empty-as-signal from empty-as-good-taste, and that distinction is the entire position."
+    },
+    {
+      "id": "j-no-hand",
+      "kind": "rubric",
+      "params": {
+        "text": "Can you see that a person made this? Look for anything expressive: a line whose weight varies, a mark placed by eye, a texture, a wobble, a soft edge. In this medium every line is a brush stamp, so some of this is unavoidable and should be reported as the medium's failure rather than the work's. Say explicitly which visible hand-marks were chosen and which were imposed by the substrate."
+      },
+      "scope": "judge",
+      "severity": "soft",
+      "why": "The substrate makes this constraint partly unsatisfiable, and the judge is the only place that can separate 'the author was expressive' from 'the renderer was'. Written to ask for that separation rather than to score it."
+    }
+  ],
+  "prohibitions": [
+    {
+      "id": "p-no-hand",
+      "kind": "forbidMark",
+      "params": {
+        "styles": ["wash", "field", "hatch"],
+        "brushes": ["charcoal", "crayon", "pastel", "cpencil", "2B", "marker", "spray"]
+      },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Bleeds, drifts, hatching and every soft drawing medium are gesture. What is left is `solid` and `outline` drawn with `pen`, `rotring`, `HB` or `2H`, which is as close to an instrument as this medium gets."
+    },
+    {
+      "id": "p-no-figuration",
+      "kind": "forbidNode",
+      "params": { "ops": ["fragment"], "macros": ["motif", "frame"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "No image, no emblem, no border. A figure would make the work a picture of something, and it is not a picture of anything."
+    },
+    {
+      "id": "p-lowercase",
+      "kind": "textCase",
+      "params": { "case": "lower" },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Lowercase throughout, as the Raster-Noton catalogue sets it. Capitals raise the voice and there is no voice here."
+    },
+    {
+      "id": "r-near-empty",
+      "kind": "inkDensityRange",
+      "params": { "max": 0.1 },
+      "scope": "render",
+      "severity": "hard",
+      "why": "A tenth of the field marked, at most. Past that the marks are a composition and the field has stopped being a field."
+    },
+    {
+      "id": "r-not-spread",
+      "kind": "coverageRange",
+      "params": { "max": 0.55 },
+      "scope": "render",
+      "severity": "soft",
+      "why": "Marks that reach every part of the surface are a layout. The signal should occupy a region, and most of the field should be untouched."
+    }
+  ],
+  "generative_rules": [
+    {
+      "rule": "Place to a coordinate, never by eye. Every position is a number with a reason, and the reason may be arbitrary as long as it is systematic."
+    },
+    {
+      "rule": "Remove before adding. If an element can be deleted without changing what is being measured, it was decoration and it should already be gone.",
+      "constraint": {
+        "id": "g-almost-nothing",
+        "kind": "nodeCount",
+        "params": { "max": 16 },
+        "scope": "tree",
+        "severity": "soft",
+        "why": "Sixteen drawing nodes is generous for a work whose subject is emptiness, and it is a ceiling on the tendency rather than a claim that the seventeenth is wrong."
+      }
+    },
+    {
+      "rule": "Type is small, lowercase, and sits at the edge of the field rather than in it. It labels the work; it is not present as content."
+    },
+    {
+      "rule": "When it looks finished, it is too full. Take out the element that makes it look finished."
+    },
+    {
+      "rule": "If a mark's position cannot be expressed as a fraction of the surface, move it until it can."
+    }
+  ],
+  "cliches": [
+    "monospaced type used to signify data with no data present",
+    "a barcode, a QR code or a waveform used as texture",
+    "invented coordinates, timestamps or serial numbers that refer to nothing",
+    "crop marks and registration targets on something that will never be printed",
+    "a grid of dots at low opacity as a background",
+    "the words 'data', 'signal', 'noise' or 'entropy' set very small",
+    "a single thin line across an empty ground presented as sufficient",
+    "glitch artefacts produced deliberately in a file that never glitched",
+    "a lowercase sans-serif treated as inherently rigorous",
+    "white space claimed as content rather than as the thing content is measured against"
+  ],
+  "meta": {
+    "practice": {
+      "origin": "The vocabulary is the scientific plate and the instrument panel, arriving twice: through Otl Aicher's Munich sign system, where a mark's position on a field is its meaning and nothing else about it is, and through the Raster-Noton catalogue in Chemnitz, where Nicolai and Bender printed sine tests, spectra and coordinate grids because that is what the records were. Ikeda's own material is sample data — frequencies, timings, counts — and the work is a readout of it. Not a picture referring to data. A readout.",
+      "doing": "Making the ratio between the marked and the unmarked into the subject. The work is a measurement placed on a field, and what it says is contained entirely in where it sits and how little of it there is. It removes the maker's judgement step by step so that what is left can be checked rather than liked. If a viewer reports a feeling about it, the feeling came from the emptiness, and the emptiness is a quantity rather than a mood.",
+      "period": "1996 to 2006, from '+/-' to 'datamatics'. Digital audio is exact and nobody has yet made the exactness into a look; the grid is still an argument about perception rather than a house style, and 'minimal' has not yet become a shop.",
+      "register": "Lowercase throughout, no articles, no verbs where a noun will do. Labels, units, coordinates, counts. It never addresses anybody, never emphasises, and never repeats itself for effect. The voice is a caption on a plate in a journal nobody reads aloud.",
+      "refusals": [
+        "It will not permit a gesture. No bleed, no drift, no hatching, no soft medium, no mark whose edge records the speed it was made at. Anything that looks handled is a person asking to be noticed.",
+        "It will not depict. No image, no emblem, no border, no figure. The moment it is a picture of something it has stopped being a field with a measurement on it.",
+        "It will not use a third value. Two, because a third is a preference, and a preference is taste readmitted under another name.",
+        "It will not raise its voice. No capitals, no bold, no scale used for emphasis. Emphasis is an opinion about which fact matters most, and that is not this practice's to hold.",
+        "It will not fill the field to make the result look composed. Past a tenth marked, the marks become a composition and the field has stopped being a field, whatever the job needs."
+      ]
+    },
+    "temperament": 0,
+    "temperamentWhy": "It makes no claim about whether the situation is good or bad and treats affect in the maker as one more decoration to be stripped, so it starts at exactly neutral."
+  }
+}

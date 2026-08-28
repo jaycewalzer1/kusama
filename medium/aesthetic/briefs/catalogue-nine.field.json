@@ -1,0 +1,47 @@
+{
+  "version": "1.0",
+  "briefId": "catalogue-nine",
+  "whenAndWhere": "A flat with a hallway full of boxes, and a pressing plant in an industrial unit an hour away that has been running the same two machines since 1979. It is spring; the closure was announced in January and the diary has been full since.",
+  "inTheAir": [
+    "Vinyl pressing capacity has collapsed to a handful of plants, and the small ones are closing first because the large ones have taken the queue.",
+    "Anonymity in this corner of music is now itself a recognised marketing position, and everybody involved knows it.",
+    "A catalogue is discoverable in a way a single release is not: people find the eighth because they own the third.",
+    "The independent shops that carry this have a few centimetres of rack per label and decide within a week whether to reorder."
+  ],
+  "contested": [
+    "One of the two thinks the closure should be stated on the object, because it is the reason the record exists. The other says a farewell is exactly the kind of announcement they have spent six years not making.",
+    "Whether a catalogue that has never explained itself has earned the right to be silent, or has simply made silence its house style and stopped noticing.",
+    "Whether the anonymity protects the artist or just makes the label the author of everything."
+  ],
+  "exhausted": [
+    "The blank white square with a stamped number, which is now the default for anything wanting to seem uncommercial.",
+    "A blurred photograph of an industrial building, meaning that the music is about place.",
+    "A grid of small squares of graduated tone used as an index of the tracks.",
+    "The hand-stamped edition number as evidence of care.",
+    "Lowercase sans-serif in the corner of an otherwise empty field."
+  ],
+  "whoIsWatching": {
+    "audience": "A man of thirty-four in a shop on a Saturday, going through the new arrivals with his coat still on. He owns numbers two, three and six and did not know a ninth was coming. He will give this about a second and a half, and what he is actually checking for is whether it belongs to something he already trusts.",
+    "adversary": "Nobody is against this. What is against it is indifference: forty other faces in the same rack, all of which have had more money spent on them, and a shop that will move it to the back if it does not go in a fortnight."
+  },
+  "transplants": [
+    {
+      "ref": "The colophon of a Venetian printing house, 1490s",
+      "why": "A mark that identifies a workshop rather than a title, and accumulates its meaning across everything the workshop ever made."
+    },
+    {
+      "ref": "British Ordnance Survey sheet numbering",
+      "why": "A system in which the number is the name, the sheet is one of a set, and no individual sheet is designed."
+    },
+    {
+      "ref": "The last issue of a small journal that folded without an editorial",
+      "why": "An ending that refuses to announce itself, and is therefore only legible to people who were already paying attention."
+    },
+    {
+      "ref": "Japanese tally sticks used as receipts, split so that the halves must be matched",
+      "why": "An object whose meaning is completed only by another object held somewhere else."
+    }
+  ],
+  "stakesLevel": 0.35,
+  "stakesLevelWhy": "Nobody is harmed by failure and there is no deadline anybody suffers under except a commercial one, but it is genuinely the last of its kind and there is no second attempt."
+}

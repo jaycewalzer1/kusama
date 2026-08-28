@@ -36,8 +36,8 @@ The pinned configuration is:
 | launch flags | `--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader` |
 | GL | software WebGL2 through ANGLE + SwiftShader; no host GPU is used |
 | antialiasing | off — the page calls `setAttributes('antialias', false)` and `pixelDensity(1)` |
-| fonts | `fonts/grotesque.ttf` (PT Sans) `9cc83149…6d0f10a`, `fonts/serif.ttf` (PT Serif) `a4951fad…a2557a`, plus the 34 faces vendored under `assets/fonts/`, each hashed in the pack |
-| asset pack | content-hashed; `core@003e484d9602` (15 fragments, 1 motif) or `core-v1@366521cbb036` (the same shapes plus 36 faces) |
+| fonts | all under `assets/fonts/`: `grotesque.ttf` (PT Sans) `9cc83149…6d0f10a`, `serif.ttf` (PT Serif) `a4951fad…a2557a`, plus 34 more faces, each hashed in the pack |
+| asset pack | content-hashed; `core@003e484d9602` (15 fragments, 1 motif) or `core-v1@6d0d9e8f2ccf` (the same shapes plus 36 faces) |
 | profile | content-hashed; `default-v0@15ad87c16095` or `default-v1@be50e7c6f0a6` |
 | OS / arch | the same one; recorded per render as e.g. `darwin` / `arm64` |
 
@@ -55,6 +55,13 @@ What is **not** claimed:
 - **Not** reproducible with multisampling on. Antialiasing is disabled deliberately.
 - **Not** reproducible across operating systems or architectures. Nothing has been measured there and
   nothing is promised.
+- **Not** a claim about the layer above. A *program* renders deterministically, and a finished run
+  *replays* byte-for-byte with the model unplugged. A *trajectory* is neither: the same commission
+  run twice calls a sampled model and produces two different plans, two different sets of edits and
+  two different score files. Deterministic render, replayable log and reproducible run are three
+  separate properties and get confused in that order; the first two hold and the third is not
+  claimed. That is why `artist grid` takes `--k` and reports a within-cell spread. See
+  `docs/artist/MEASUREMENT.md`.
 
 Determinism *within* one machine and configuration is the property that has been measured. See
 `NOTES.md` (R1, R4, R6, R7) for the measurements and for the three separate non-determinism sources
@@ -280,7 +287,7 @@ Google Fonts repo under `assets/fonts/`, in the roles `display`, `condensed`, `m
 `hand`, `stencil`, `blackletter`, `pixel` and `techno`. `assets/fonts/manifest.json` and the pack's
 `faces` map are the list; both record family, role, file, byte count, sha256, licence, licence file
 and the upstream URL. Licences are OFL-1.1 and Apache-2.0 (Special Elite, Permanent Marker, Rock
-Salt), with 31 licence texts vendored under `assets/fonts/licenses/` and a 32nd, `fonts/OFL.txt`,
+Salt), with 31 licence texts vendored under `assets/fonts/licenses/` and a 32nd, `ofl-pt.txt`,
 covering the two V0 faces. The pack's `licenses` map is the manifest's 31 plus that one, because the
 V0 pair predates the manifest and is declared by hand in `author.mjs` alongside it.
 
@@ -386,7 +393,7 @@ Two are shipped, and a program says which it means:
 | profile | pack | what it is |
 | --- | --- | --- |
 | `default-v0@15ad87c16095` | `core@003e484d9602` | V0 unchanged: 2 faces, no print pass. The four committed goldens are rendered against it. |
-| `default-v1@be50e7c6f0a6` | `core-v1@366521cbb036` | v0 widened: 36 faces, the `print` allow-list, `clipShapes: ["rect","circle","polygon"]`, the 8th primitive `spray`, `limits.maxPrintStages: 6`, `limits.maxTearPoints: 600`, `limits.maxSprayParticles: 4000`, `blendModes: ["normal","multiply","screen","exclusion"]`, and ranges and quantize steps for the new text, print, tear and spray fields. |
+| `default-v1@be50e7c6f0a6` | `core-v1@6d0d9e8f2ccf` | v0 widened: 36 faces, the `print` allow-list, `clipShapes: ["rect","circle","polygon"]`, the 8th primitive `spray`, `limits.maxPrintStages: 6`, `limits.maxTearPoints: 600`, `limits.maxSprayParticles: 4000`, `blendModes: ["normal","multiply","screen","exclusion"]`, and ranges and quantize steps for the new text, print, tear and spray fields. |
 
 Four of those are absences in v0 rather than negations: `print`, `clipShapes`,
 `limits.maxTearPoints` and `limits.maxSprayParticles` are all keys `default-v0.profile.json` does not
@@ -440,7 +447,7 @@ PLAYWRIGHT_BROWSERS_PATH=$PWD/.browsers npx playwright install chromium
 ```
 
 The browser lives in `medium/.browsers/` (currently `chromium-1187`). Nothing else needs to be
-installed: p5, p5.brush and every font are committed under `vendor/`, `fonts/` and `assets/fonts/`,
+installed: p5, p5.brush and every font are committed under `vendor/` and `assets/fonts/`,
 and the page is served from disk over a fake `http://medium.invalid` origin with `page.route()`, so
 renders are hermetic and work offline (NOTES O3). `Renderer.launch()` defaults
 `PLAYWRIGHT_BROWSERS_PATH` to `medium/.browsers` itself, so once installed you do not have to set it
@@ -450,31 +457,33 @@ Every script below builds to `dist/` first.
 
 ```bash
 # Check a program without rendering it. Exit 0 means it may be rendered.
-npm run validate -- examples/poster-less-is-more.json
-npm run validate -- examples/poster-less-is-more.json --json
-npm run validate -- examples/poster-less-is-more.json --determinism   # also renders it twice
+npm run validate -- examples/v0/poster-less-is-more.json
+npm run validate -- examples/v0/poster-less-is-more.json --json
+npm run validate -- examples/v0/poster-less-is-more.json --determinism   # also renders it twice
 
 # Render one program.
-npm run render -- examples/poster-less-is-more.json -o out
-npm run render -- examples/poster-less-is-more.json -o out --grain 0.02 --misregister 1,0
-npm run render -- examples/poster-less-is-more.json -o out --trace-masks
+npm run render -- examples/v0/poster-less-is-more.json -o out
+npm run render -- examples/v0/poster-less-is-more.json -o out --grain 0.02 --misregister 1,0
+npm run render -- examples/v0/poster-less-is-more.json -o out --trace-masks
 
 # Render many programs in one browser, and prove the batch did not change any of them:
 # the first program is re-rendered last and the batch is refused if the hashes disagree.
 # One render at a time; there is no concurrency option, because renders in flight
 # together disagree with each other and with their own serial renders (NOTES R8).
-npm run batch -- examples -o batch-out
+npm run batch -- examples/v0 -o batch-out
 
 # What changed between two programs, in the tree and on the page.
 # `spillover` is the share of changed pixels lying outside the changed nodes' declared bounds.
 npm run diff -- before.json after.json -o out --max-spillover 0.05
 
 # The committed evidence that this medium still renders what it used to. Two sets, one per
-# profile: examples/ against default-v0 in goldens/, examples/v1 against default-v1 in
-# goldens-v1/. `npm test` checks both. v0's four are the ones that must never move.
-npm run golden -- --update     # re-render examples/ and rewrite goldens/
+# profile: examples/v0 against default-v0 in goldens/v0, examples/v1 against default-v1 in
+# goldens/v1. `npm test` checks both. v0's four are the ones that must never move.
+# -e and -g default to the v0 pair; a dir holding no .json programs is an error, not an
+# empty pass.
+npm run golden -- --update     # re-render examples/v0 and rewrite goldens/v0
 npm run golden -- --check      # re-render and compare pixel hashes; exit 1 on any difference
-npm run golden -- -e examples/v1 -g goldens-v1 --check
+npm run golden -- -e examples/v1 -g goldens/v1 --check
 
 # Utilities.
 npm run apply-edit -- program.json action.json -o next.json
@@ -488,6 +497,41 @@ node assets/fonts/fetch.mjs --check
 npm test
 ```
 
+The layer above calls a model, so it needs `ANTHROPIC_API_KEY` and it costs money: a trajectory is
+roughly 3-6 steps, 26-32 policy calls, a couple of dollars and twenty to thirty minutes.
+
+```bash
+# One trajectory: a position, a brief, the kind of object, and a directory to work in.
+npm run artist -- run data-austerity arches-eviction poster -o out/run-1
+
+# Every position against every brief, serially, with a control column.
+npm run artist -- grid -o out/grid
+
+# Or k independent seeds of named cells. The same cell run twice does not repeat, so
+# one run per cell cannot tell a cell effect from run variance; --k is how you find out.
+npm run artist -- grid --cells data-austerity:arches-eviction:poster --k 5 -o out/grid
+
+# Re-run a finished trajectory with the model unplugged: checks the log's hash chain
+# and rebuilds every observation byte-for-byte.
+npm run artist -- replay out/run-1
+
+# Read a finished run: its scores, its plates, its capability sheet, or SFT lines.
+npm run artist -- recompute out/run-1
+npm run artist -- strip out/run-1
+npm run artist -- sheet out/run-1
+npm run artist -- export out/grid/* -o sft.jsonl
+
+# The one test the environment cannot mark itself on: pairs of finals from the same brief
+# under different positions, the practices with the ids stripped, and a sealed answer key.
+# Show five people and ask which work came from which practice.
+npm run artist -- blindpack out/grid -o out/blindpack
+
+# The studio: launch runs and grids, watch the log arrive, audit the reasoning, read the positions
+# and commissions, and write new ones. It is the one thing here that writes into aesthetic/, and it
+# refuses anything the run's own loader would refuse. It prices a run from what runs have cost here.
+npm run ui -- --runs out --port 4321
+```
+
 `npm run <script> -- <args>` — the `--` is needed so npm passes flags through to the CLI rather than
 eating them.
 
@@ -497,8 +541,9 @@ reading the program against a medium other than the one it declares.
 
 ## Layout
 
-Two layers, and the import arrows only ever point one way:
-`renderer/` <- `env/` <- `aesthetic/` <- `cli/`. The substrate never imports the layer that has taste.
+Three layers, and the import arrows only ever point one way:
+`renderer/` <- `env/` <- `aesthetic/` <- `artist/` <- `cli/`. The substrate never imports the layer
+that has taste, and neither of them imports the layer that has a model in it.
 
 ```
 renderer/    plain ESM shared with the browser: resolve, draw, ops, macros, compositing, rng, page
@@ -507,11 +552,11 @@ schema/      program, paintstyle, edit and profile JSON Schemas
 profiles/    medium profiles; default-v0 and default-v1 are the shipped ones
 assets/packs/core/     the content-hashed asset pack (15 fragments, 1 motif) and the script that authors it
 assets/packs/core-v1/  core's shapes read straight out of core, plus the 36-face type library
-assets/fonts/          34 vendored faces, their licence texts, manifest.json, and fetch.mjs
+assets/fonts/          all 36 vendored faces and their licence texts: the two from V0, and the 34
+                       fetched from Google Fonts, which manifest.json and fetch.mjs cover
 vendor/      p5, p5.brush, and VERSIONS.md with the pinned versions and hashes
-fonts/       the two V0 faces and their OFL licence
-examples/    worked programs, plus batch/ (20 variants), v1/, probes/ and the committed edit diff
-goldens/     the committed evidence that this medium still renders what it used to
+examples/    the eleven programs the goldens are pinned to, split by profile: v0/ four, v1/ seven
+goldens/     the committed evidence that this medium still renders what it used to, v0/ and v1/
 
 aesthetic/   the layer above the medium: what a program is *for*, and whether it got there
   check.ts facts.ts kinds.ts types.ts   pure, synchronous, no browser and no LLM, ever
@@ -521,10 +566,17 @@ aesthetic/   the layer above the medium: what a program is *for*, and whether it
   briefs/      five commissions
   fixtures/    twelve trees, a pass and a fail per position
 
-cli/         the ten commands above
+artist/      the layer above the aesthetic: the loop that has a model in it
+  run.ts phases/    find -> choose -> sketch -> act -> examine
+  policy/           the trainable half; the only files here allowed to import a model SDK
+  env*.ts           the environment half, and the on-disk cache that makes replay cheap
+  studio-log.ts     the hash-chained studio.jsonl every run writes
+  reward.ts replay.ts export.ts
+
+cli/         the commands above
 tests/       node:test suites, including the standing determinism and isolation checks
-docs/        constraints.md (the constraint language) and the substrate-test write-up
-ui/          the preview server's two pages; see cli/ui.ts
+docs/        constraints.md (the constraint language), the substrate-test write-up, artist/NEEDS.md
+ui/          the studio's page and studio.js; see cli/ui.ts
 ```
 
 `aesthetic/check.ts` and its pure siblings must never import `measure.ts` or `env/browser.ts`. That

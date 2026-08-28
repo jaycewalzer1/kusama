@@ -15,7 +15,7 @@ import { pixelHash } from '../env/png.js';
 import { contentHash, loadProfileFor } from '../env/profile.js';
 import { printRender } from '../env/print.js';
 import { validateProgram } from '../env/validate.js';
-import { fontsUsed } from '../renderer/resolve.js';
+import { fontsUsed, type ResolvedProgram } from '../renderer/resolve.js';
 import type { RenderMetrics } from './types.js';
 
 /** A pixel counts as ink when any channel is this far from the ground colour. */
@@ -126,7 +126,15 @@ function inkOffset(ink: Uint8Array, width: number, height: number): number {
   return Math.hypot(dx, dy) / Math.hypot(width / 2, height / 2);
 }
 
-function metricsFromRgba(rgba: Buffer, width: number, height: number, ground: string): RenderMetrics {
+/**
+ * The four numbers, from an RGBA buffer that is already the *printed* image. Exported so a caller
+ * that has just produced that buffer does not have to render the program a second time to get them;
+ * `Measurer.measureFrom` is the cached way in and is what callers should normally use.
+ *
+ * The buffer must be post-`printRender`. Measuring the browser plate instead would score a picture
+ * nobody will ever see, and nothing here can detect the difference.
+ */
+export function metricsFromRgba(rgba: Buffer, width: number, height: number, ground: string): RenderMetrics {
   const ink = inkDistance(rgba, width, height, ground);
   let inked = 0;
   for (let p = 0; p < ink.length; p++) if (ink[p]! !== 0) inked++;
@@ -190,14 +198,7 @@ export class Measurer {
     const cached = readCached(programHash);
     if (cached) return cached;
 
-    const { profile } = loadProfileFor(program, this.profileId);
-    const pack: AssetPack = loadPackFor(program);
-    const check = validateProgram(program, profile, pack);
-    if (!check.valid) {
-      throw new Error(`cannot measure an invalid program: ${check.issues.map((i) => `${i.path} ${i.message}`).join('; ')}`);
-    }
-    const resolved = check.resolved!;
-
+    const { resolved, pack } = this.resolve(program);
     this.renderer ??= await Renderer.launch();
     const plate = await this.renderer.render(resolved, pack, fontsUsed(resolved));
     // Measure what the program actually prints: a threshold or a halftone changes ink share and
@@ -206,6 +207,38 @@ export class Measurer {
     const metrics = metricsFromRgba(rgba, plate.width, plate.height, resolved.canvas.ground);
     writeCache(programHash, metrics);
     return metrics;
+  }
+
+  /**
+   * The same measurement for a caller that already has the printed image, and therefore never a
+   * browser. `plate` is a thunk because the metrics cache is checked first and the common case is a
+   * hit: a caller holding a PNG should not pay to decode it to learn nothing new.
+   *
+   * What it hands back must be the image after the program's own print stages, exactly what
+   * `measure` would have produced. Nothing here can check that, so the ground colour is taken from
+   * the program rather than from the caller — a wrong ground would poison the cache silently, and
+   * that is the failure mode METRICS_VERSION exists to remember.
+   */
+  measureFrom(program: unknown, plate: () => { rgba: Buffer; width: number; height: number }): RenderMetrics {
+    const programHash = contentHash(program);
+    const cached = readCached(programHash);
+    if (cached) return cached;
+
+    const { resolved } = this.resolve(program);
+    const { rgba, width, height } = plate();
+    const metrics = metricsFromRgba(rgba, width, height, resolved.canvas.ground);
+    writeCache(programHash, metrics);
+    return metrics;
+  }
+
+  private resolve(program: unknown): { resolved: ResolvedProgram; pack: AssetPack } {
+    const { profile } = loadProfileFor(program, this.profileId);
+    const pack: AssetPack = loadPackFor(program);
+    const check = validateProgram(program, profile, pack);
+    if (!check.valid) {
+      throw new Error(`cannot measure an invalid program: ${check.issues.map((i) => `${i.path} ${i.message}`).join('; ')}`);
+    }
+    return { resolved: check.resolved!, pack };
   }
 
   async close(): Promise<void> {
