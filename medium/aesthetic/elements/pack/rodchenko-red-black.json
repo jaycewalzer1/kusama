@@ -1,0 +1,48 @@
+{
+  "id": "rodchenko-red-black",
+  "name": "Red, Black and the Diagonal",
+  "provenance": {
+    "culture": "Soviet Constructivism; Moscow, the VKhUTEMAS and the advertising partnership with Mayakovsky",
+    "period": "1921-1925",
+    "note": "After declaring easel painting finished with the three monochromes of 1921, Rodchenko worked to a deliberately impoverished kit: two inks and the paper, type set as a structural bar rather than a line, and the rule used as a member under load. The restriction is the argument — a poster that could have used more colours and did not is asserting that the means are public property and countable.",
+    "citation": "Aleksandr Rodchenko, Knigi (Books)! poster for the Leningrad State Publishing House, 1924; discussed in Magdalena Dabrowski, Leah Dickerman and Peter Galassi, Aleksandr Rodchenko (New York: Museum of Modern Art, 1998)"
+  },
+  "worldviewFragment": "The means are declared and countable: two inks and the paper, and nothing arrives that cannot be justified as structure. A colour added for effect is a claim that the work needs decoration to stand up.",
+  "generativeRules": [
+    {
+      "id": "e-two-inks",
+      "kind": "palette",
+      "params": { "allow": ["#f2efe9", "#111111", "#d0021b"], "includeGround": true },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Paper, black and red. The list is short on purpose and includes the ground, because the ground is one of the three and pretending otherwise would let a fourth colour in under the floorboards."
+    },
+    {
+      "id": "e-members-under-load",
+      "kind": "requireNode",
+      "params": { "op": "rule", "min": 5 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "The rule is a structural member, not a divider. Five is the count at which the lines start bracing each other and reading as a frame the other elements hang from, rather than as ornament between blocks of text."
+    }
+  ],
+  "prohibitions": [
+    {
+      "id": "e-no-repose",
+      "kind": "symmetryMax",
+      "params": { "axis": "vertical", "max": 0.55 },
+      "scope": "render",
+      "severity": "hard",
+      "why": "A centred arrangement is at rest, and this work is about forces in tension. Vertical mirror agreement above 0.55 means the sheet has been balanced around an axis, which is the classical composition being refused."
+    }
+  ],
+  "cliches": [
+    "a red diagonal band across a black-and-white photograph",
+    "the shouting-woman photomontage reused as a stock gesture",
+    "a Cyrillic-flavoured Latin typeface standing in for the politics",
+    "the constructivist grid used as a magazine layout with the tension taken out",
+    "a hammer, a sickle or a star added to confirm the reference",
+    "red and black chosen as a colour scheme rather than as the entire available means",
+    "diagonals applied evenly to every element until the angle is the new horizontal"
+  ]
+}

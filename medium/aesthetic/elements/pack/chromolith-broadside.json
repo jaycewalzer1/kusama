@@ -1,0 +1,63 @@
+{
+  "id": "chromolith-broadside",
+  "name": "Chromolithographic Broadside",
+  "provenance": {
+    "culture": "American and British commercial job printing: circus, theatre and patent-medicine bills, worked from stone by shops such as the Strobridge Lithographing Company",
+    "period": "roughly 1860-1900, the decades in which multi-stone colour printing became cheap enough for a handbill",
+    "note": "A sheet that has to be read from across a street and then again from arm's length, so it carries a dozen sizes of type, an engraved vignette or three, and as many colours as the shop had stones for. Every square inch is sold. Restraint is not a virtue available to a bill that is competing with the bill pasted over it.",
+    "citation": "Jay T. Last, The Color Explosion: Nineteenth-Century American Lithography (Santa Ana, CA: Hillcrest Press, 2005)"
+  },
+  "worldviewFragment": "The sheet is competing for attention with every other sheet on the wall, and anything held back is a stone the shop paid for and did not use. More colours, more sizes, more pictures: the abundance is the offer.",
+  "generativeRules": [
+    {
+      "id": "e-all-the-stones",
+      "kind": "palette",
+      "params": { "allow": ["#ffffff", "#1b6b3a", "#e8256f", "#f5e400", "#2b5fa8"], "includeGround": true },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "One stone per colour, and the shop used the ones it had. The list is long and specific because the colours are the inventory of a particular press rather than a chosen harmony, and the ground is on it because the bill is printed on a bright stock, not on a warm paper."
+    },
+    {
+      "id": "e-twelve-sizes",
+      "kind": "requireNode",
+      "params": { "op": "text", "min": 6 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "A broadside is read at three distances and sets a different size for each, plus the terms, plus the date, plus the printer's line. Six separate pieces of type is the floor at which that layering is present rather than implied."
+    },
+    {
+      "id": "e-the-vignette",
+      "kind": "requireNode",
+      "params": { "op": "fragment", "min": 2 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "The engraved picture is the thing being sold — the acrobat, the elephant, the bottle. `fragment` is this medium's drawn figure, so it is where a vignette has to live."
+    },
+    {
+      "id": "e-names-the-night",
+      "kind": "textRequired",
+      "params": { "contains": ["TONIGHT ONLY"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "A bill exists to name an occasion and close it off. The urgency is not a tone applied afterwards; it is a phrase that has to be on the sheet or the sheet is a decoration."
+    }
+  ],
+  "prohibitions": [
+    {
+      "id": "e-no-quiet-corner",
+      "kind": "coverageRange",
+      "params": { "min": 0.7 },
+      "scope": "render",
+      "severity": "hard",
+      "why": "Unsold space on a bill is space the competition will paste over. Coverage rather than ink density, because the requirement is that the sheet is worked everywhere, not that it is dark."
+    }
+  ],
+  "cliches": [
+    "a wood-type circus poster pastiche with the word 'SPECTACULAR' arched over a banner",
+    "distressed cream paper texture laid over flat digital colour",
+    "an ornamental border and a pointing-hand dingbat used as period signals",
+    "the Victorian playbill grid filled with lorem ipsum at eight sizes",
+    "sepia applied to make an image read as historical",
+    "a modern brand name set in Clarendon and called a broadside"
+  ]
+}
