@@ -30,10 +30,14 @@ import { EMPTY_PACK, program, resolve, solidNode, strokeNode } from './helpers.j
 // stood when this layer was built; the catalogue was rebuilt afterwards and the id no longer exists
 // on disk. Every number below — twelve constraints, `c-cut-blocks`, `p-no-illustration`, and
 // `rodchenko-red-black` composing to zero conflicts — is a property of *this* position, so pinning
-// it keeps the assertions meaning what they meant. What it costs is recorded in
-// docs/artist/NEEDS.md: nothing here says the shipped element pack still fits a position the
-// artist can actually be commissioned on, and stage 2 must re-ground against one before `compose`
-// is wired into a run.
+// it keeps the assertions meaning what they meant.
+//
+// The gap that used to be recorded here is closed. `elements-live.test.ts` composes the pack against
+// the three positions a run can actually name and found that it fits: eight clean pairings, and one
+// that both conflicts and stays satisfiable. So this file is now what it should always have been — a
+// test of the mechanism against a fixed input — and the question of fit is asked elsewhere, against
+// the live catalogue. Keep the split: re-deriving these numbers from whatever the catalogue happens
+// to be would make an ordinary position edit read as a `compose` regression.
 const BASE = 'cut-and-reset';
 const POSITION_FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'positions', `${BASE}.json`);
 
@@ -510,7 +514,13 @@ test('invariant: composing adds no judge-pending constraints, so the pending sha
   );
 });
 
-test('invariant: nothing in artist/ imports the elements layer this stage, so the loop is untouched', () => {
+test('invariant: exactly one file in artist/ reaches the elements layer, and it is the commission', () => {
+  // This used to assert that *nothing* in artist/ imported the layer, which was the right invariant
+  // while stage 1 was unwired: an element pack that no run could read was better as dead code than
+  // as half-wired code. Stage 2 wires it, so the invariant inverts rather than disappearing — the
+  // door has to stay a single one. Elements enter a run by being named on the commission and in no
+  // other way, because a second entry point is how the composed constraint list and the hash in
+  // `envVersion` start disagreeing about what the run actually adopted.
   const artist = path.join(ROOT, 'artist');
   const walk = (dir: string): string[] =>
     readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
@@ -518,13 +528,10 @@ test('invariant: nothing in artist/ imports the elements layer this stage, so th
     );
   const files = walk(artist);
   assert.ok(files.length >= 5, 'the scan found almost nothing, so it is scanning the wrong tree');
-  for (const f of files) {
-    assert.doesNotMatch(
-      readFileSync(f, 'utf8'),
-      /aesthetic\/elements\//,
-      `${path.relative(ROOT, f)} imports the elements layer, but stage 1 must not be wired into a run`
-    );
-  }
+  const importers = files
+    .filter((f) => /aesthetic\/elements\//.test(readFileSync(f, 'utf8')))
+    .map((f) => path.relative(artist, f));
+  assert.deepEqual(importers, ['field.ts']);
 });
 
 // --- invariant 5: determinism, three layers ------------------------------------------------------

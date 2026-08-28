@@ -39,6 +39,7 @@ import {
 import { selectPolicy } from '../artist/policy/interface.js';
 import { recomputeMatches, scoresCsv } from '../artist/reward.js';
 import { driftText } from '../artist/env-version.js';
+import { judgeSummary, judgeTrajectory } from '../artist/judge.js';
 import { replay } from '../artist/replay.js';
 import { runTrajectory } from '../artist/run.js';
 import { storyOf, storyText, summarise as summariseLine } from '../artist/story.js';
@@ -207,12 +208,14 @@ program
   .option('--no-audience', 'skip the audience read and its trigger (saves one env call per look)')
   .option('--control', 'strip the position: same brief, same checker, no steering')
   .option('--blind', 'the ablation: take the canvas away during MAKE and work from the tree and the describer alone')
+  .option('--elements <ids>', 'comma-separated lineage elements to compose into the position', '')
   .action(async (position: string, brief: string, deliverable: string, opts: Record<string, string | boolean>) => {
     const t = await runTrajectory({
       policy: await selectPolicy(),
       positionId: position,
       briefId: brief,
       deliverableId: deliverable,
+      elementIds: String(opts['elements'] ?? '').split(',').map((s) => s.trim()).filter(Boolean),
       seed: Number(opts['seed']),
       outDir: String(opts['out']),
       maxSteps: Number(opts['steps']),
@@ -504,6 +507,37 @@ program
     // Loudly, not in a log file. A pack quietly missing half its runs is a test of a different
     // thing from the one it says it is.
     for (const s of pack.skipped) console.log(`  skipped ${s.dir}: ${s.why}`);
+  });
+
+program
+  .command('judge')
+  .description('L5: the three offline critics — attribution, necessity, derivation — over finished runs')
+  .argument('<dirs...>')
+  .option('-o, --out <file>', 'where to write the judgments as JSON')
+  .action(async (dirs: string[], opts: Record<string, string>) => {
+    const found = dirs.flatMap((d) => trajectoriesIn(d));
+    if (!found.length) {
+      console.log('no finished trajectory under those directories');
+      process.exitCode = 1;
+      return;
+    }
+    const judgments = [];
+    for (const { dir } of found) {
+      const j = await judgeTrajectory(dir);
+      judgments.push(j);
+      console.log(
+        `${dir}  ${j.positionId}${j.control ? ' (control)' : ''}  ` +
+          `attributed ${j.attribution.chose}${j.attribution.correct ? ' HIT' : ' miss'}  ` +
+          `necessity ${j.necessity.score}/7  ${j.derivation.verdict}` +
+          `${j.derivation.clichesTaken.length ? ` (${j.derivation.clichesTaken.length} cliche)` : ''}`
+      );
+    }
+    console.log('');
+    console.log(judgeSummary(judgments));
+    if (opts['out']) {
+      writeFileSync(opts['out'], `${JSON.stringify(judgments, null, 2)}\n`);
+      console.log(`-> ${opts['out']}`);
+    }
   });
 
 program

@@ -43,6 +43,9 @@ import { ROOT } from '../env/browser.js';
 import { canonicalJson, contentHash } from '../env/profile.js';
 import { loadAestheticProgram } from '../aesthetic/check.js';
 import { contradictions, type Contradiction } from '../aesthetic/contradictions.js';
+import { compose } from '../aesthetic/elements/compose.js';
+import { elementPackHash, loadElements } from '../aesthetic/elements/pack.js';
+import { qualify, type Composition } from '../aesthetic/elements/types.js';
 import type { AestheticProgram, Constraint } from '../aesthetic/types.js';
 import type { Field } from './types.js';
 
@@ -294,8 +297,21 @@ export interface Commission {
    * artist. Computed here rather than discovered by the artist mid-piece.
    */
   unsatisfiable: Contradiction[];
-  /** position + brief hard_constraints, which is what the checker is actually run against. */
+  /** position + brief hard_constraints + any elements, which is what the checker is run against. */
   effective: AestheticProgram;
+  /** The lineage elements this run adopted, sorted. Empty is the ordinary case. */
+  elementIds: string[];
+  /**
+   * The identity of that set. Always present, including for the empty set, and it goes into
+   * `envVersion` as a tenth field. Two runs under different element packs are different experiments
+   * and must not compare as the same one — the same defect `dynamicsHash` was added to close.
+   */
+  elementPackHash: string;
+  /**
+   * What `compose` derived between the position and the elements. Null when no element was adopted,
+   * which is the one case where there is nothing for two sources to disagree about.
+   */
+  composition: Composition | null;
 }
 
 function resolveIn(dir: string, idOrPath: string): string {
@@ -445,6 +461,69 @@ export function effectivePosition(position: AestheticProgram, brief: Brief): Aes
 }
 
 /**
+ * The composed position the checker sees when a run adopts lineage elements, plus the conflicts
+ * `compose` derived between them.
+ *
+ * Two decisions here, and both are about not changing runs that adopt nothing.
+ *
+ * **Elements are opt-in and the empty case is byte-identical to no elements at all.** `compose`
+ * namespaces every id on the way in, so a composed report reads `position:withheld/c-covered` where
+ * an uncomposed one reads `c-covered`. That is right when there are two sources and a report has to
+ * say which one it means; it is noise when there is one. So an empty element list returns the
+ * position untouched and every fixture, golden and recorded score keeps its ids.
+ *
+ * **The element's constraints keep their part.** `compose` returns one flat list, but the checker
+ * reports `commitment` / `prohibition` / `generative_rule` per constraint and that distinction is
+ * read by anything looking at why a run failed. So the flat list is unflattened back onto the parts
+ * it came from rather than being poured into `commitments`, which would have relabelled every
+ * element prohibition as a commitment.
+ */
+export function withElements(
+  effective: AestheticProgram,
+  elementIds: string[]
+): { position: AestheticProgram; composition: Composition | null } {
+  if (elementIds.length === 0) return { position: effective, composition: null };
+
+  const elements = loadElements(elementIds);
+  const composition = compose(effective, elements);
+  // `compose` qualified every id; the same qualification applied here is what makes the two lists
+  // join. Deriving it rather than string-matching keeps one definition of the namespacing rule.
+  const from = { kind: 'position' as const, id: effective.id };
+  const requalify = (c: Constraint) => ({ ...c, id: qualify(from, c.id) });
+
+  return {
+    position: {
+      ...effective,
+      id: `${effective.id}+${[...elementIds].sort().join('+')}`,
+      commitments: effective.commitments.map(requalify),
+      prohibitions: [
+        ...effective.prohibitions.map(requalify),
+        ...elements.flatMap((e) => e.prohibitions.map((c) => ({ ...c, id: qualify({ kind: 'element', id: e.id }, c.id) }))),
+      ],
+      generative_rules: [
+        ...effective.generative_rules.map((r) => (r.constraint ? { ...r, constraint: requalify(r.constraint) } : r)),
+        ...elements.flatMap((e) =>
+          e.generativeRules.map((c) => ({
+            rule: c.why,
+            constraint: { ...c, id: qualify({ kind: 'element', id: e.id }, c.id) },
+          }))
+        ),
+      ],
+      // The stance each element carries, appended so the artist is shown what it adopted rather than
+      // only being checked against it. A lineage the artist cannot read is a parameter bundle.
+      worldview: [effective.worldview, ...elements.map((e) => e.worldviewFragment)].join('\n\n'),
+      cliches: [...effective.cliches, ...elements.flatMap((e) => e.cliches)],
+    },
+    composition,
+  };
+}
+
+/** The identity of the elements a run adopted. The empty pack is a real, stable hash, not a null. */
+export function packHashFor(elementIds: string[]): string {
+  return elementPackHash(loadElements(elementIds));
+}
+
+/**
  * The three variable layers, chosen independently. The deliverable is an argument rather than a
  * property of the brief: which kind of object a job becomes is the third axis of the grid, and a
  * commission that carried its own would make two thirds of that grid unreachable.
@@ -452,14 +531,19 @@ export function effectivePosition(position: AestheticProgram, brief: Brief): Aes
 export function loadCommission(
   positionIdOrPath: string,
   briefIdOrPath: string,
-  deliverableId: string
+  deliverableId: string,
+  elementIds: string[] = []
 ): Commission {
   const position = loadPosition(positionIdOrPath);
   const brief = loadBrief(briefIdOrPath);
   const deliverable = loadDeliverable(deliverableId);
   const field = loadField(brief.id);
-  const effective = effectivePosition(position, brief);
+  const composed = withElements(effectivePosition(position, brief), elementIds);
+  const effective = composed.position;
   return {
+    elementIds: [...elementIds].sort(),
+    elementPackHash: packHashFor(elementIds),
+    composition: composed.composition,
     position,
     positionHash: contentHash(canonicalJson(position)),
     practice: practiceOf(position),

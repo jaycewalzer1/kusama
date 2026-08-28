@@ -117,40 +117,39 @@ and it compares arms of a run, not variants of a picture.
 
 ## Phases not built
 
-**The judge — L5 of the prompt stack. Deliberately not built, and the cost of that is named below.**
+**The judge — L5 of the prompt stack. BUILT 2026-08-28 as `artist/judge.ts`. What remains open is
+named at the end of this section.**
 
-Nothing in this repo judges. Every rubric a position raised that the checker could not decide is
-carried forward unread in `Scores.judgePending`, and every intention edge that is not `aligned-to` or
-`echoes` comes back `judge-pending`. The hook is those two fields: a judge is a function from
-`(final.png, position, judgePending[])` to a score, and it can be run offline against already
-collected trajectories because both are on disk.
-
-*Why it is not built.* A judge written this week, scoring compliance with prompts written this week,
-is circular. It would agree with the stack because it was written by whoever wrote the stack, and
-that agreement would be reported as a result.
+Every rubric a position raises that the checker cannot decide is carried forward in
+`Scores.judgePending`, and every intention edge that is not `aligned-to` or `echoes` comes back
+`judge-pending`. The judge is a function from `(final.png, position, pendingRubrics[])` to a score,
+run offline against already collected trajectories because both are on disk.
 
 *Two of the five proposed critic dimensions are struck from the spec permanently.* "Does it obey the
 stated formal rules" and "does it violate a stated refusal" are assertion checks dressed as
 evaluation: `aesthetic/check.ts` already decides both mechanically, on the tree and on the render,
 without a model. Routing them through a judge would launder a deterministic check into a subjective
 score and inflate agreement between the judge and the checker, which is not a measurement of
-anything. They are not deferred. They are gone.
+anything. They are not deferred. They are gone, and a test greps for their return.
 
-*Three survive and are the only ones worth a model:* whether a decision was **necessary** to the
-piece or merely permitted by it; whether the result is **non-generic** — could this have come from
-any position in the catalog, or only from this one; and whether the work **derives** from the
-practice or **quotes** it, which is the difference the whole L1 layer exists to make visible.
+*Three survive and are the three that were built:* whether a decision was **necessary** to the
+piece or merely permitted by it; whether the result is **non-generic** — a blind forced-choice
+attribution against the catalog, with a known chance baseline of 1/n; and whether the work
+**derives** from the practice or **quotes** it, which is the difference the whole L1 layer exists to
+make visible.
 
-*The shape when it is built:* consume `judgePending` rather than re-deciding what the checker already
-decided, and run offline in a fresh context against trajectories already on disk, so the judge never
-shares state with the run it is scoring.
+*The shape it was built in.* It consumes `checkProgram(...).pendingRubrics` rather than re-deciding
+what the checker already decided. It runs offline in a fresh context, against trajectories already
+on disk, through its own network door and its own cache — never `envModel`, never the policy, never
+the SDK — so it shares no state with the run it is scoring. `tests/artist-guards.test.ts` pins all
+three isolations, and pins the set of files in `artist/` that import it to the empty set.
 
-*The cost, stated plainly.* Without L5 the ablation grid has no dependent variable. Removing a layer
-and re-running can show that the layers are **separable** — different hashes, different observations,
-different behaviour — but it cannot show that a layer makes the work **better**, because nothing in
-the repo has an opinion about better. That is acceptable as a staging decision and is not acceptable
-as a permanent one: any claim that the five-layer stack improves output is unsupported until this
-exists.
+*What is still open.* The circularity objection is not answered by building it: a judge written by
+whoever wrote the stack will agree with the stack. Two mitigations are in place — the attribution
+critic is blind and has a chance baseline, so it can come out at chance and say so; and
+`judgeVersion()` hashes the prompts, so a prompt edit invalidates old judgments rather than silently
+rescoring. Neither is a substitute for a judgment the authors did not write. **And the judge has
+never scored a real plate** — see the run gap below.
 
 **Break: a stranger-eye describer that is allowed to be hostile.** `DESCRIBE` is neutral by
 construction and `AUDIENCE` is one named person from the field. Neither is the reading that makes an
@@ -242,15 +241,14 @@ the four citations against the four constraint sets, or the layer should say "pa
 drop the word lineage. The nearest thing to a fix inside the repo is a manifest of ISBNs and page
 numbers, which raises the cost of a fabrication without detecting one.
 
-**BLOCKING for stage 2 — `elementPackHash` is not in `envVersion`.** `artist/env-version.ts` joins
-nine hashes; `elementPackHash` is a tenth and is deliberately not there this stage, because nothing
-in `artist/` composes yet and a hash over an input no run reads would be noise. The moment a run
-composes elements, this becomes the ordinary version bug: two runs under different element packs
-would compare as the same experiment, exactly as they would have under different `affect.ts` before
-`dynamicsHash` was added. It must be added as a **tenth field**, not folded into `packHash` — the
-asset pack and the element pack answer different questions and a run that changed one should not read
-as a run that changed the other. Do this in the same change that first wires `compose` into a run,
-not after.
+**CLOSED 2026-08-28 — `elementPackHash` is the tenth field of `envVersion`.** It is a separate
+field, never folded into `packHash`: the asset pack and the element pack answer different questions
+and a run that changed one must not read as a run that changed the other. It landed in the same
+change that first wired `compose` into a run (`artist run --elements <ids>`,
+`loadCommission(pos, brief, deliv, elementIds)`), and the trajectory **id** hashes it too, so two
+runs of the same cell under different lineages cannot collide in a resumable grid. The empty case is
+byte-identical to the pre-change path — no namespacing, no composition object — which is why no
+golden and no fixture moved.
 
 **`Resolution.avoided` cannot be measured at pixel granularity.** The type is defined; nothing emits
 it until stage 3. The honest definition available now is node existence at finish, which answers
@@ -296,11 +294,34 @@ suite. Rather than re-derive them against a position the pack was not selected f
 is pinned at `tests/fixtures/positions/cut-and-reset.json` and the tests read it from there.
 
 What that buys is that `compose`, `deriveConflicts` and the hash are still tested, and what it costs
-is the fit. **Nothing now checks that the four shipped elements conflict usefully with any position
-that exists**, and the clean-compose case in particular was hand-picked and may have no replacement:
-the three current positions all commit to marks and densities that `ma-interval` and
-`rodchenko-red-black` were chosen to be selective about. So the layer could be, today, a mechanism
-that works perfectly on a document nobody can commission. Re-ground it against a live position in
-the same change that first wires `compose` into a run — the same change that must add
-`elementPackHash` to `envVersion` as a tenth field — and if the pack turns out to fit none of them,
-that is the finding, not a reason to keep the fixture.
+is the fit. The fixture stays for those unit properties, but the fit is now measured separately.
+
+**MEASURED 2026-08-28 — `tests/elements-live.test.ts`, against the three commissionable positions.**
+All twelve pairings compose. Eight are clean. Three are provably unsatisfiable, with proofs:
+`withheld/r-heavy` `inkDensityRange [0.3, ∞)` against `ma-interval/e-not-filled` `(-∞, 0.18]`;
+`interference/r-dense` `[0.25, ∞)` against the same; and `kuba-shoowa-surface/e-cut-pile` against
+`many-hands/p-no-atmosphere`, where the mark field is both required and forbidden. Two elements —
+`chromolith-broadside` and `rodchenko-red-black` — are clean against *every* position. The whole
+four-element pack at once is unsatisfiable against all three.
+
+**The finding is thinner than hoped and is recorded as a finding.** Exactly **one** pairing both
+raises conflicts and stays satisfiable: `many-hands + ma-interval`, with two conflicts. That is the
+only cell in which the composition layer does work today that is neither vacuous nor impossible.
+The layer is not a mechanism that works on a document nobody can commission — but on the live
+catalogue its useful surface is one cell out of twelve, and any claim that lineage composition
+shapes a run has exactly that one place to be tested.
+
+## The largest gap is that none of this has finished a run
+
+**No trajectory on the fine-art catalogue has ever reached `final.json`.** `out/first-withheld/`
+holds a partial: FIND, SKETCH, CHOOSE and three MAKE steps against
+`withheld / fifty-year-embargo / panel`, terminated mid-run by an Anthropic API credit exhaustion
+(`400 invalid_request_error`), not by anything in this repo. Its start line carries nine hashes and
+no `elementIds` because it launched from a `dist/` built before the composition change.
+
+Everything downstream inherits this. The finish gate has never refused a real finish. The judge has
+never scored a real plate — all three critics are exercised only against fixtures, so their prompts
+are tested for what they must *not* contain and not for what they return. The one interesting
+composition cell (`many-hands + ma-interval`) has never been run. The tests are green and the
+architecture is guarded, and neither of those is evidence that the thing makes pictures. The next
+change that matters is a completed run, not another layer.

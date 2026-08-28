@@ -75,6 +75,13 @@ export interface RunOptions {
   briefId: string;
   /** L3, chosen here rather than read off the brief: the kind of object is its own axis. */
   deliverableId: string;
+  /**
+   * Lineage elements this run composes into the position. Empty by default, and the empty case is
+   * byte-identical to the run before this option existed — see `withElements`. Non-empty puts the
+   * elements' rules into the checker, their stances into the worldview, their cliches into the list
+   * the artist is told not to take, and their identity into `envVersion.elementPackHash`.
+   */
+  elementIds?: string[];
   seed: number;
   /** Where studio.jsonl, final.png, sketches/ and the rest are written. Created if absent. */
   outDir: string;
@@ -287,7 +294,8 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
   const maxSteps = o.maxSteps ?? 12;
   const hardStop = o.hardStop ?? 20;
 
-  const loaded = loadCommission(o.positionId, o.briefId, o.deliverableId);
+  const elementIds = o.elementIds ?? [];
+  const loaded = loadCommission(o.positionId, o.briefId, o.deliverableId, elementIds);
   const commission = o.control ? stripped(loaded) : loaded;
   const fieldText = canonicalJson(loaded.field);
 
@@ -300,14 +308,19 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
   const pack = loadPackFor(seed);
   const sheet = capabilitySheet(profile, pack);
 
-  const id = contentHash([o.positionId, o.briefId, o.deliverableId, o.seed, o.control ?? false].join('|')).slice(0, 16);
-  // The same eight hashes on the start line and on the finished trajectory, from one place. They
+  // The element set is in the id: two runs of the same cell under different lineages are different
+  // runs, and a shared id would make them overwrite each other in a resumable grid.
+  const id = contentHash(
+    [o.positionId, o.briefId, o.deliverableId, o.seed, o.control ?? false, loaded.elementPackHash].join('|')
+  ).slice(0, 16);
+  // The same ten hashes on the start line and on the finished trajectory, from one place. They
   // used to be two object literals that happened to agree.
-  const envVersion = envVersionNow(o.positionId, o.briefId, o.deliverableId, o.seed);
+  const envVersion = envVersionNow(o.positionId, o.briefId, o.deliverableId, o.seed, elementIds);
   log.append('trajectory-start', {
     id,
     positionId: loaded.position.id,
     briefId: loaded.brief.id,
+    elementIds: loaded.elementIds,
     control: o.control ?? false,
     mode,
     seed: o.seed,
@@ -614,6 +627,7 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
       positionHash: loaded.positionHash,
       briefId: loaded.brief.id,
       deliverableId: loaded.deliverable.id,
+      elementIds: loaded.elementIds,
       control: o.control ?? false,
       fieldHash: loaded.fieldHash,
       mode,

@@ -558,6 +558,13 @@ export interface EnvVersion {
   /** L2. The commission, artist-agnostic. */
   briefHash: string;
   fieldHash: string;
+  /**
+   * The lineage elements the run composed with, as one hash. A tenth field rather than folded into
+   * `packHash`, because the asset pack and the element pack answer different questions: a run that
+   * changed which brushes exist should not read as a run that changed which traditions it drew on.
+   * The empty set hashes to a real, stable value, so an ordinary run carries this too.
+   */
+  elementPackHash: string;
 }
 
 export interface Trajectory {
@@ -567,6 +574,12 @@ export interface Trajectory {
   briefId: string;
   /** The kind of object commissioned — L3. */
   deliverableId: string;
+  /**
+   * The lineage elements composed into the position, sorted. Empty is the ordinary case and means
+   * the run adopted none. Recorded because `envVersion.elementPackHash` says only *whether* two runs
+   * used the same set, never which one, and a hash is not a thing a reader can look up.
+   */
+  elementIds: string[];
   /**
    * Which arm this is: false for the position, true for its null twin.
    *

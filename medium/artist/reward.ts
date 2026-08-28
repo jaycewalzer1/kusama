@@ -126,6 +126,8 @@ interface StartLine {
   deliverableId: string;
   seed: number;
   control: boolean;
+  /** Absent in logs written before elements existed, and those runs composed none. */
+  elementIds?: string[];
 }
 
 /**
@@ -179,7 +181,10 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
   const lines: LogLine[] = readLog(path.join(dir, 'studio.jsonl'));
   const chainProblems = verifyChain(lines);
   const start = lines.find((l) => l.kind === 'trajectory-start')!.data as StartLine;
-  const commission = loadCommission(start.positionId, start.briefId, start.deliverableId);
+  // The elements the run adopted, not today's pack: a rescore has to grade the piece against the
+  // rubric it was made under, and re-deriving the set here would let a change to the pack silently
+  // rewrite the scores of runs collected before it.
+  const commission = loadCommission(start.positionId, start.briefId, start.deliverableId, start.elementIds ?? []);
   const fieldText = canonicalJson(commission.field);
 
   // The seed is data, not a decision, so it is rebuilt rather than read back from final.json.

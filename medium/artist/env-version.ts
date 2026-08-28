@@ -1,4 +1,4 @@
-// The nine hashes that say which environment a trajectory was collected in.
+// The ten hashes that say which environment a trajectory was collected in.
 //
 // Written once here and read by everything that either stamps a run or compares two of them. It was
 // previously built inline in run.ts, twice — once onto the log's start line and once onto the
@@ -48,11 +48,12 @@ export function envVersionNow(
   positionId: string,
   briefId: string,
   deliverableId: string,
-  seed: number
+  seed: number,
+  elementIds: string[] = []
 ): EnvVersion {
   const program = seedProgram(seed);
   const { hash: profileHash } = loadProfileFor(program);
-  const loaded = loadCommission(positionId, briefId, deliverableId);
+  const loaded = loadCommission(positionId, briefId, deliverableId, elementIds);
   return {
     observationHash: OBSERVATION_HASH,
     dynamicsHash: DYNAMICS_HASH,
@@ -63,6 +64,7 @@ export function envVersionNow(
     deliverableHash: loaded.deliverableHash,
     briefHash: loaded.briefHash,
     fieldHash: loaded.fieldHash,
+    elementPackHash: loaded.elementPackHash,
   };
 }
 

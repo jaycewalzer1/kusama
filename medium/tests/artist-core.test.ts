@@ -891,6 +891,7 @@ const ENV = {
   deliverableHash: 'f',
   briefHash: 'g',
   fieldHash: 'h',
+  elementPackHash: 'j',
 };
 
 test('env version: the same environment is no drift at all', () => {

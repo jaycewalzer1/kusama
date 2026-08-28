@@ -72,6 +72,25 @@ test('the environment model is frozen in one place and read nowhere else', () =>
   assert.deepEqual(others.map(rel), [], 'nothing else names the environment model');
 });
 
+test('the judge shares no door with the artist or its environment', () => {
+  // L5 scores runs that are already finished. If it could reach the policy it would be a signal the
+  // artist could learn to move; if it could reach `envModel` it would inherit the environment's
+  // cache and its frozen model, and a judgment would stop being an independent reading. Its
+  // isolation is the entire reason its number is worth anything.
+  const source = read(path.join(ARTIST, 'judge.ts'));
+  assert.ok(!/policy\.call</.test(source), 'the judge reaches the policy');
+  assert.ok(!/from '\.\/policy\/interface\.js'/.test(source), 'the judge imports the policy interface');
+  assert.ok(!/\benvModel[<(]/.test(source), 'the judge reaches the environment model');
+  assert.match(source, /export const JUDGE_MODEL = 'claude-opus-4-6'/);
+  assert.match(source, /export const JUDGE_TEMPERATURE = 0/);
+  const others = FILES.filter((f) => rel(f) !== 'judge.ts' && /JUDGE_MODEL/.test(read(f)));
+  assert.deepEqual(others.map(rel), [], 'nothing else names the judge model');
+  // And nothing in the loop reads it back. A judgment that could reach a running trajectory would
+  // put the evaluator inside the thing it is evaluating.
+  const importers = FILES.filter((f) => /from '\.\/judge\.js'|from '\.\.\/judge\.js'/.test(read(f))).map(rel);
+  assert.deepEqual(importers, [], 'the judge is imported by the CLI only, never by artist/');
+});
+
 test('the trace sink is reachable from call.ts and nowhere else', () => {
   const importers = FILES.filter((f) => /from '\.\/trace\.js'|from '\.\.\/trace\.js'/.test(read(f))).map(rel);
   assert.deepEqual(importers, ['call.ts']);
