@@ -1,15 +1,15 @@
-// The gate: twelve authored fixtures, twelve expected reports.
+// The gate: six authored fixtures, six expected reports.
 //
-// Six programs, each with a tree that satisfies every tree-scope constraint and a tree that violates
-// exactly two named ones. The failing tree's `meta.violates` is the expectation, so the fixture
-// carries its own contract and a drifting checker cannot be quietly re-baselined.
+// Three positions, each with a tree that satisfies every tree-scope constraint and a tree that
+// violates exactly two named ones. The failing tree's `meta.violates` is the expectation, so the
+// fixture carries its own contract and a drifting checker cannot be quietly re-baselined.
 //
 // These are checked with metrics = null. Render-scope constraints therefore come back `unverified`,
 // which is what makes "exactly two violations" a statement about the tree scope alone.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { ROOT } from '../env/browser.js';
 import { checkProgram, constraintsOf, loadAestheticProgram, validateAestheticProgram } from '../aesthetic/check.js';
@@ -18,14 +18,12 @@ import { validateProgram } from '../env/validate.js';
 import { loadPack } from '../env/pack.js';
 import { loadProfile } from '../env/profile.js';
 
-const AESTHETICS = [
-  'situationist-ransom',
-  'crass-collage',
-  'riot-grrrl-zine',
-  'underground-resistance',
-  'berlin-rave-flyer',
-  'ikeda-austerity',
-] as const;
+// Read off disk rather than listed, so a position added or renamed cannot leave the gate quietly
+// checking a smaller set than exists.
+const AESTHETICS = readdirSync(path.join(ROOT, 'aesthetic', 'positions'))
+  .filter((f) => f.endsWith('.json'))
+  .sort()
+  .map((f) => f.slice(0, -'.json'.length));
 
 function programFile(id: string): string {
   return path.join(ROOT, 'aesthetic', 'positions', `${id}.json`);
@@ -56,7 +54,7 @@ test('the pure half of the layer imports no browser, so a search loop pays for n
   }
 });
 
-test('all six aesthetic programs are schema-valid and use only the closed kind set', () => {
+test('every aesthetic program is schema-valid and uses only the closed kind set', () => {
   for (const id of AESTHETICS) {
     const raw = JSON.parse(readFileSync(programFile(id), 'utf8')) as unknown;
     assert.deepEqual(validateAestheticProgram(raw), [], `${id} failed the aesthetic program schema`);
@@ -88,7 +86,8 @@ test('each program states a position: lineage, tensions, rules, cliches, and at 
   }
 });
 
-test('all twelve fixtures are programs the medium accepts', () => {
+test('every fixture is a program the medium accepts', () => {
+  assert.ok(AESTHETICS.length >= 2, 'a gate over one position is not a gate');
   const { profile } = loadProfile('default-v0');
   const pack = loadPack('core');
   for (const id of AESTHETICS) {
@@ -148,9 +147,9 @@ test('render scope is unverified and judge rubrics are returned unread when noth
 });
 
 test('scoring weights hard double and excludes everything undecided', () => {
-  const ap = loadAestheticProgram(programFile('underground-resistance'));
-  const pass = checkProgram(fixture('underground-resistance', 'pass'), ap);
-  const fail = checkProgram(fixture('underground-resistance', 'fail'), ap);
+  const ap = loadAestheticProgram(programFile('cut-and-reset'));
+  const pass = checkProgram(fixture('cut-and-reset', 'pass'), ap);
+  const fail = checkProgram(fixture('cut-and-reset', 'fail'), ap);
 
   // Both fixtures have the same shape of decidable tree constraints; the fail one misses two hard.
   const decidable = pass.results.filter((r) => r.scope === 'tree' && r.status !== 'unverified');

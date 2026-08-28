@@ -27,7 +27,15 @@ import { Canvas, check } from './canvas.js';
 import { newSpend, type Spend } from './call.js';
 import { ArtistEnv, refusalTally } from './env.js';
 import { loadCommission, type Commission } from './field.js';
-import { carryNodeIds, declared, purposeChurn, realization, terminationOf, totalDrift } from './intention.js';
+import {
+  carryNodeIds,
+  declared,
+  purposeChurn,
+  realization,
+  riskDeclared,
+  terminationOf,
+  totalDrift,
+} from './intention.js';
 import { envVersionNow } from './env-version.js';
 import { type MakeContext } from './observation.js';
 import { seedProgram } from './seed.js';
@@ -221,6 +229,7 @@ function scoresOf(
     problemFindingSteps: steps.filter((s) => s.replan !== null).length,
     problemsGrounded: grounded(problems, fieldText),
     destructionRate: destructionRate(steps),
+    riskDeclared: riskDeclared(intentions),
     riskMoveTaken: risk !== undefined,
     // No fallback to `intention.riskMove`. If no accepted step named a risk, the artist planned one
     // and did not take it, and the honest report of that is null — not the plan's sentence dressed

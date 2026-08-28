@@ -1,6 +1,6 @@
 // `golden` — the committed evidence that this medium still renders what it used to.
 //
-// `--update` re-renders every example and rewrites goldens/. `--check` re-renders and compares pixel
+// `--update` re-renders every example and rewrites the goldens dir. `--check` re-renders and compares pixel
 // hashes, and is what CI runs. A failure is not necessarily a bug: it may mean the pinned runtime
 // moved, which is exactly the thing the golden exists to notice, so the report names the runtime.
 
@@ -30,8 +30,8 @@ interface GoldenIndex {
 
 const cli = new Command()
   .name('golden')
-  .option('-e, --examples <dir>', 'directory of programs', 'examples')
-  .option('-g, --goldens <dir>', 'directory of committed renders', 'goldens')
+  .option('-e, --examples <dir>', 'directory of programs', 'examples/v0')
+  .option('-g, --goldens <dir>', 'directory of committed renders', 'goldens/v0')
   .option('-p, --profile <id|path>', 'override the profile each program names')
   .option('--update', 'rewrite the goldens')
   .option('--check', 'compare against the goldens and exit 1 on any difference');
@@ -41,6 +41,10 @@ cli.action(async (opts: { examples: string; goldens: string; profile?: string; u
   const files = readdirSync(opts.examples)
     .filter((f) => f.endsWith('.json'))
     .sort();
+  // The programs live one directory down, per profile version. A dir of subdirectories therefore
+  // yields nothing, and a run over nothing would report `--check` green and write `--update` empty:
+  // a gate that passes because it looked at no programs is the E5 failure shape, so say so instead.
+  if (files.length === 0) throw new Error(`${opts.examples} holds no .json programs, so there is nothing to compare`);
 
   // Validate everything before the browser starts, so an invalid example costs nothing and cannot
   // leave a Chromium process behind on the way out. Each example names its own profile, so one

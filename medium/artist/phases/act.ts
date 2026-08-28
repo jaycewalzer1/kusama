@@ -12,7 +12,7 @@
 import { callPolicy, type CallResult, type Spend } from '../call.js';
 import { makeObservation, replanObservation, type MakeContext } from '../observation.js';
 import { REPLAN_SCHEMA, actSchema } from '../schemas.js';
-import type { Policy } from '../policy/interface.js';
+import type { Policy, PolicyImage } from '../policy/interface.js';
 import type { StudioLog } from '../studio-log.js';
 import type { Action, Intention, TriggerName } from '../types.js';
 
@@ -41,17 +41,34 @@ const REPLAN_SYSTEM = [
   'itself was wrong, change the purpose and say so.',
 ].join('\n');
 
+/**
+ * What the artist looks at: the canvas as it stands, and what its last kept step did to it.
+ *
+ * Order matters and is the order the observation describes them in. Both switches come off the
+ * context that built the text, so the pictures and the sentences about the pictures cannot
+ * disagree — the blind arm attaches neither and claims neither.
+ */
+function framesOf(context: MakeContext, plate: Buffer | null, change: Buffer | null): PolicyImage[] | undefined {
+  if (!context.canvasAttached || !plate) return undefined;
+  const images: PolicyImage[] = [{ mediaType: 'image/png', base64: plate.toString('base64') }];
+  if (context.changeAttached && change) images.push({ mediaType: 'image/png', base64: change.toString('base64') });
+  return images;
+}
+
 export async function act(
   policy: Policy,
   log: StudioLog,
   spend: Spend,
-  context: MakeContext
+  context: MakeContext,
+  plate: Buffer | null = null,
+  change: Buffer | null = null
 ): Promise<CallResult<Action>> {
   return callPolicy<Action>(policy, log, spend, {
     name: 'act',
     system: SYSTEM,
     observation: makeObservation(context),
     schema: actSchema(),
+    images: framesOf(context, plate, change),
     maxTokens: 8000,
   });
 }
@@ -62,7 +79,9 @@ export async function replan(
   spend: Spend,
   context: MakeContext,
   trigger: TriggerName,
-  detail: string
+  detail: string,
+  plate: Buffer | null = null,
+  change: Buffer | null = null
 ): Promise<Intention> {
   log.append('phase', { phase: 'replan', trigger });
   const result = await callPolicy<{ intention: Intention; why: string }>(policy, log, spend, {
@@ -70,6 +89,7 @@ export async function replan(
     system: REPLAN_SYSTEM,
     observation: replanObservation(context, trigger, detail),
     schema: REPLAN_SCHEMA,
+    images: framesOf(context, plate, change),
     maxTokens: 4000,
   });
   return result.action.intention;

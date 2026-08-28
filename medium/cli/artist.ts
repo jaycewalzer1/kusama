@@ -70,7 +70,7 @@ function summarise(t: Trajectory): string {
     `  tree ${n(s.tree)}  render ${n(s.render)}  hard ${s.hardViolations}  soft ${s.softViolations}`,
     `  realization ${n(s.realization.score)} (${s.realization.satisfied}/${s.realization.mechanical} decidable, ${s.realization.judgePending} judge-pending)`,
     `  drift ${s.drift}  replans ${s.problemFindingSteps}  grounded ${s.problemsGrounded}/${t.problems.length}  destruction ${s.destructionRate}`,
-    `  risk ${s.riskMoveTaken ? `taken: ${s.riskConvention}` : 'not taken'}  selfScore ${s.selfScore ?? 'n/a'}`,
+    `  risk ${s.riskDeclared ? 'declared' : 'not declared'}, ${s.riskMoveTaken ? `taken: ${s.riskConvention}` : 'not taken'}  selfScore ${s.selfScore ?? 'n/a'}`,
     `  ${t.steps.length} steps, ${t.cost.policyCalls} policy calls, ${t.cost.renders} renders, $${t.cost.usd.toFixed(4)}, ${(t.cost.wallMs / 1000).toFixed(1)}s`,
   ].join('\n');
 }

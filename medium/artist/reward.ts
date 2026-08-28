@@ -22,16 +22,44 @@ import { applyEdit, type EditAction } from '../env/edits.js';
 import { loadPackFor } from '../env/pack.js';
 import { canonicalJson, loadProfileFor } from '../env/profile.js';
 import { Canvas, check } from './canvas.js';
+import { refusalCause } from './env.js';
 import { loadCommission } from './field.js';
-import { carryNodeIds, declared, realization, totalDrift } from './intention.js';
+import {
+  carryNodeIds,
+  declared,
+  purposeChurn,
+  realization,
+  riskDeclared,
+  terminationOf,
+  totalDrift,
+} from './intention.js';
 import { grounded } from './phases/find.js';
 import { bareEdit } from './schemas.js';
 import { readLog, verifyChain, type LogLine } from './studio-log.js';
-import type { Affect, Intention, Problem, Program, Scores, Trajectory } from './types.js';
+import type {
+  Affect,
+  Control,
+  EdgeEstimate,
+  Intention,
+  Problem,
+  Program,
+  RefusalCause,
+  Scores,
+  Termination,
+  Trajectory,
+} from './types.js';
 
 interface ActLine {
   name: string;
-  action?: { think?: string; risk?: string | null; edits?: (EditAction & { servesElementId?: string })[]; intention?: Intention; problems?: Problem[]; selfScore?: number };
+  action?: {
+    think?: string;
+    risk?: string | null;
+    edits?: (EditAction & { servesElementId?: string })[];
+    intention?: Intention;
+    problems?: Problem[];
+    selfScore?: number;
+    edgeEstimates?: EdgeEstimate[];
+  };
 }
 
 interface StepLine {
@@ -44,13 +72,43 @@ interface StepLine {
   destroyedNodeIds: string[];
   affect: Affect;
   replanned?: boolean;
+  control?: Control;
+  /**
+   * Optional because logs written before stopping was a decision do not carry it. Absence means the
+   * artist named nothing, which is exactly what those runs did, so the default is honest here — but
+   * see `refused` below for the case where a default is not.
+   */
+  unrealizable?: string | null;
+  /**
+   * The `cause` on each entry is deliberately NOT read. It is recomputed from `reason`, which every
+   * log has carried since refusals were first written down, so the split can be applied backwards to
+   * trajectories collected before causes existed. Trusting the stamped field would silently score
+   * every one of those runs as having refused nothing.
+   */
+  refused?: { actionId: string; kind?: string; reason: string }[];
 }
 
 interface StartLine {
   positionId: string;
   briefId: string;
+  deliverableId: string;
   seed: number;
   control: boolean;
+}
+
+/**
+ * How the run stopped, from the last step line alone.
+ *
+ * The driver decides this by watching its own loop break; offline there is no loop, so it is read
+ * off the control the artist chose on its final step. The two agree because the driver breaks on
+ * exactly those two controls and on nothing else — anything that falls out of the bottom of the loop
+ * ran out of steps, which is what `out-of-steps` means and what a log with no terminal control
+ * shows.
+ */
+function stoppedAs(last: StepLine | undefined): Termination['kind'] {
+  if (last?.control === 'finished') return 'declared-finished';
+  if (last?.control === 'abandon') return 'abandoned';
+  return 'out-of-steps';
 }
 
 /** Deep copy through JSON: intentions are plain data by construction (see types.ts). */
@@ -83,7 +141,7 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
   const lines: LogLine[] = readLog(path.join(dir, 'studio.jsonl'));
   const chainProblems = verifyChain(lines);
   const start = lines.find((l) => l.kind === 'trajectory-start')!.data as StartLine;
-  const commission = loadCommission(start.positionId, start.briefId);
+  const commission = loadCommission(start.positionId, start.briefId, start.deliverableId);
   const fieldText = canonicalJson(commission.field);
 
   // The seed is data, not a decision, so it is rebuilt rather than read back from final.json.
@@ -96,6 +154,7 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
   let intention: Intention | null = null;
   const intentions: Intention[] = [];
   let selfScore: number | null = null;
+  let edgeEstimates: EdgeEstimate[] | null = null;
   let pending: (EditAction & { servesElementId?: string })[] = [];
   const steps: StepLine[] = [];
   let replans = 0;
@@ -116,7 +175,10 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
         intentions.push(copy(intention));
         replans++;
       }
-      if (call.name === 'examine') selfScore = call.action?.selfScore ?? null;
+      if (call.name === 'examine') {
+        selfScore = call.action?.selfScore ?? null;
+        edgeEstimates = call.action?.edgeEstimates ?? null;
+      }
       continue;
     }
 
@@ -146,6 +208,7 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
     const report = check(program, commission.effective, rendered.metrics);
     const real = realization(intention, program);
     const risk = steps.find((s) => s.accepted && s.isRiskMove);
+    const last = steps[steps.length - 1];
     // Counted exactly as run.ts counts it: add_node edits that were applied on an accepted step.
     const added = steps
       .filter((s) => s.accepted)
@@ -154,6 +217,9 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
         0
       );
     const gone = steps.reduce((n, s) => n + s.destroyedNodeIds.length, 0);
+
+    const refusals: Record<RefusalCause, number> = { budget: 0, capability: 0, structural: 0 };
+    for (const s of steps) for (const r of s.refused ?? []) refusals[refusalCause(r.reason)]++;
 
     const scores: Scores = {
       tree: report.treeScore,
@@ -165,14 +231,26 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
         mechanical: real.mechanical,
         satisfied: real.satisfied,
         judgePending: real.judgePending,
+        elementsMade: real.elementsMade,
       },
       drift: totalDrift(intentions),
+      purposeChurn: purposeChurn(intentions),
       problemFindingSteps: replans,
       problemsGrounded: grounded(problems, fieldText),
       destructionRate: added === 0 ? 0 : Math.round((gone / added) * 1000) / 1000,
+      riskDeclared: riskDeclared(intentions),
       riskMoveTaken: risk !== undefined,
-      riskConvention: risk?.risk ?? intention.riskMove?.convention ?? null,
+      riskConvention: risk?.risk ?? null,
       selfScore,
+      examineEdges: edgeEstimates
+        ? {
+            satisfied: edgeEstimates.filter((e) => e.status === 'satisfied').length,
+            violated: edgeEstimates.filter((e) => e.status === 'violated').length,
+            judgePending: edgeEstimates.filter((e) => e.status === 'judge-pending').length,
+          }
+        : null,
+      refusals,
+      termination: terminationOf(real.estimates, stoppedAs(last), last?.unrealizable ?? null),
       affectTrace: steps.map((s) => s.affect),
       judgePending: report.pendingRubrics.map((r) => `[${r.id}] ${r.text}`),
     };
@@ -205,25 +283,29 @@ export async function recomputeMatches(dir: string, canvas?: Canvas): Promise<Re
 export function scoresCsv(trajectories: Trajectory[]): string {
   const head = [
     'id', 'position', 'brief', 'control', 'outcome', 'tree', 'render', 'hard', 'soft',
-    'realization', 'judgePending', 'drift', 'replans', 'grounded', 'destruction',
-    'risk', 'selfScore', 'steps', 'policyCalls', 'renders', 'usd', 'wallMs',
+    'realization', 'elementsMade', 'judgePending', 'drift', 'purposeChanged', 'replans',
+    'grounded', 'destruction', 'riskDeclared', 'riskTaken', 'selfScore', 'steps', 'policyCalls',
+    'renders', 'usd', 'wallMs',
   ];
   const rows = trajectories.map((t) => [
     t.id,
     t.positionId,
     t.briefId,
-    t.positionId.endsWith('-control') ? '1' : '0',
+    t.control ? '1' : '0',
     t.outcome,
     t.scores.tree ?? '',
     t.scores.render ?? '',
     t.scores.hardViolations,
     t.scores.softViolations,
     t.scores.realization.score ?? '',
+    t.scores.realization.elementsMade,
     t.scores.realization.judgePending,
     t.scores.drift,
+    t.scores.purposeChurn.changed,
     t.scores.problemFindingSteps,
     t.scores.problemsGrounded,
     t.scores.destructionRate,
+    t.scores.riskDeclared ? '1' : '0',
     t.scores.riskMoveTaken ? '1' : '0',
     t.scores.selfScore ?? '',
     t.steps.length,

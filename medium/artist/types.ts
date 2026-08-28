@@ -326,6 +326,12 @@ export interface Scores {
   /** Problems from FIND whose quoted field lines actually appear in the field. */
   problemsGrounded: number;
   destructionRate: number;
+  /**
+   * Whether any version of the plan named a convention to break. The declaration, kept beside the
+   * outcome so that "said it would, didn't" shows up as the gap between two numbers rather than
+   * disappearing into either one.
+   */
+  riskDeclared: boolean;
   riskMoveTaken: boolean;
   /**
    * The convention a step actually said it was breaking, or null. Never the plan's stated riskMove:

@@ -10,6 +10,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { tracingEnabled } from '../artist/trace.js';
 
 const ARTIST = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'artist');
 
@@ -69,6 +70,49 @@ test('the environment model is frozen in one place and read nowhere else', () =>
   assert.match(source, /export const ENV_TEMPERATURE = 0/);
   const others = FILES.filter((f) => rel(f) !== 'env-model.ts' && /ENV_MODEL/.test(read(f)));
   assert.deepEqual(others.map(rel), [], 'nothing else names the environment model');
+});
+
+test('the trace sink is reachable from call.ts and nowhere else', () => {
+  const importers = FILES.filter((f) => /from '\.\/trace\.js'|from '\.\.\/trace\.js'/.test(read(f))).map(rel);
+  assert.deepEqual(importers, ['call.ts']);
+});
+
+test('the trace sink is a sink: it sends and never reads', () => {
+  // A loop that could read its own traces back would have state living at an observability vendor,
+  // which is the same failure as state living in a framework: it is not in studio.jsonl.
+  const source = read(path.join(ARTIST, 'trace.ts'));
+  const exported = [...source.matchAll(/^export (?:async )?function (\w+)/gm)].map((m) => m[1]);
+  assert.deepEqual(exported.sort(), ['traceCall', 'tracingEnabled']);
+  assert.equal((source.match(/fetch\(/g) ?? []).length, 1, 'exactly one request leaves this file');
+  assert.match(source, /method: 'POST'/);
+});
+
+test('tracing is off by default, and off for policies that never reached a model', () => {
+  const saved = { tracing: process.env['LANGSMITH_TRACING'], key: process.env['LANGSMITH_API_KEY'] };
+  try {
+    delete process.env['LANGSMITH_TRACING'];
+    process.env['LANGSMITH_API_KEY'] = 'test-key';
+    assert.equal(tracingEnabled('anthropic'), false, 'unset LANGSMITH_TRACING must mean off');
+
+    process.env['LANGSMITH_TRACING'] = 'true';
+    assert.equal(tracingEnabled('anthropic'), false, 'only the exact string "1" turns it on');
+
+    process.env['LANGSMITH_TRACING'] = '1';
+    assert.equal(tracingEnabled('anthropic'), true);
+    assert.equal(tracingEnabled('openai-compatible'), true);
+    // A replay and a test both drive the real loop with a policy that answers from disk. Neither
+    // made a call, so neither may put a request on the network however the environment is set.
+    assert.equal(tracingEnabled('recorded'), false);
+    assert.equal(tracingEnabled('stub'), false);
+
+    delete process.env['LANGSMITH_API_KEY'];
+    assert.equal(tracingEnabled('anthropic'), false, 'no key means off, not an error later');
+  } finally {
+    if (saved.tracing === undefined) delete process.env['LANGSMITH_TRACING'];
+    else process.env['LANGSMITH_TRACING'] = saved.tracing;
+    if (saved.key === undefined) delete process.env['LANGSMITH_API_KEY'];
+    else process.env['LANGSMITH_API_KEY'] = saved.key;
+  }
 });
 
 test('every observation a policy sees is built by observation.ts and nothing else', () => {

@@ -42,14 +42,7 @@ export async function examine(
   const result = await callPolicy<Examine>(policy, log, spend, {
     name: 'examine',
     system: SYSTEM,
-    observation: examineObservation(
-      commission.position,
-      commission.brief,
-      intention,
-      report,
-      description,
-      audienceRead
-    ),
+    observation: examineObservation(commission, intention, report, description, audienceRead),
     schema: EXAMINE_SCHEMA,
     images: [{ mediaType: 'image/png', base64: png.toString('base64') }],
     maxTokens: 4000,

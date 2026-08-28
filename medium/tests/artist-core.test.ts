@@ -29,6 +29,7 @@ import {
   estimateEdges,
   purposeChurn,
   realization,
+  riskDeclared,
   terminationOf,
   totalDrift,
 } from '../artist/intention.js';
@@ -420,6 +421,20 @@ test('intention: purpose churn is counted where it can be read, not averaged int
   assert.deepEqual(purposeChurn([a, a]), { changed: 0, charsFirst: a.purpose.length, charsLast: a.purpose.length });
   assert.equal(purposeChurn([a, b, a]).changed, 2);
   assert.equal(purposeChurn([a, b]).charsLast, b.purpose.length);
+});
+
+test('intention: a risk is declared by the plan, and declaring it is not doing it', () => {
+  const quiet = intention();
+  const bold = intention({ riskMove: { convention: 'the date sits at the foot', why: 'it should be read last' } });
+  // MUST STAY FLAT: a plan that never names a convention declares no risk.
+  assert.equal(riskDeclared([quiet, quiet]), false);
+  assert.equal(riskDeclared([]), false);
+  // MUST MOVE: named once and then replanned away. The declaration still happened, and reading only
+  // the last intention would let a run un-declare a risk by changing its mind about it.
+  assert.equal(riskDeclared([bold, quiet]), true);
+  assert.equal(riskDeclared([quiet, bold]), true);
+  // It is a property of the plan alone — no step is consulted — which is why `riskMoveTaken` has to
+  // sit beside it rather than instead of it.
 });
 
 // --- stopping ------------------------------------------------------------------------------------

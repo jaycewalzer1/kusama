@@ -64,8 +64,8 @@ test('every face names a licence that is on disk, unmodified, and one this mediu
   // This walks the *pack*, not the manifest, and that is the whole point. The manifest holds the 34
   // faces fetched from Google Fonts; the pack holds those plus the two vendored in V0, which are
   // declared by hand in author.mjs. Checking the manifest therefore checked 34 of the 36 faces that
-  // actually ship, and the two it skipped were exactly the two that were wrong: both pointed at
-  // `fonts/OFL.txt` and the pack carried no entry for it. A gate that reads a different list from
+  // actually ship, and the two it skipped were exactly the two that were wrong: both pointed at a
+  // licence file the pack carried no entry for. A gate that reads a different list from
   // the one the product is built out of will keep agreeing with itself while the product is broken.
   const faces = coreV1.faces!;
   const licenses = coreV1.licenses!;
@@ -103,7 +103,7 @@ test("core-v1's shapes are byte-identical to core's, so the two packs cannot dri
 test('both packs on disk hash to the hash they declare', () => {
   assert.equal(packHash(core), core.hash);
   assert.equal(packHash(coreV1), coreV1.hash);
-  assert.equal(coreV1.hash.slice(0, 12), '366521cbb036');
+  assert.equal(coreV1.hash.slice(0, 12), '6d0d9e8f2ccf');
 });
 
 test('a pack whose declared face bytes are altered no longer matches its hash', () => {

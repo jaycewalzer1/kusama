@@ -16,7 +16,7 @@ import { applyEdit, type EditAction, type Program } from '../env/edits.js';
 import { loadPackFor } from '../env/pack.js';
 import { contentHash, loadProfileFor } from '../env/profile.js';
 import { editsPerStep, onAcceptImproved, onRevert, onStall, stallThreshold } from './affect.js';
-import { Canvas, InvalidProgramError, check } from './canvas.js';
+import { Canvas, InvalidProgramError, changeSince, check, type Change } from './canvas.js';
 import { describe, audience } from './env-calls.js';
 import { bareEdit } from './schemas.js';
 import { treeFacts } from '../aesthetic/facts.js';
@@ -29,7 +29,31 @@ import {
 } from './triggers.js';
 import type { StudioLog } from './studio-log.js';
 import type { Commission } from './field.js';
-import type { Action, Affect, CheckReport, Intention, Look, Step } from './types.js';
+import type { Action, Affect, CheckReport, Intention, Look, Refusal, RefusalCause, Step } from './types.js';
+
+/**
+ * Which of the three causes a refusal was, from the validator's own sentence.
+ *
+ * Read off the `[code]` the medium already appends to every issue rather than off the prose, so
+ * this is a rename of a fact and not a guess about one. Deliberately a pure function of the string:
+ * that is what lets `reward.ts` recompute the split from a log written before this existed, instead
+ * of trusting a `cause` field that older logs do not carry.
+ */
+export function refusalCause(reason: string): RefusalCause {
+  if (/\[(budget|limit\.[a-zA-Z]+)\]/.test(reason)) return 'budget';
+  if (/\[[a-zA-Z]+\.(notAllowed|unknown)\]/.test(reason)) return 'capability';
+  return 'structural';
+}
+
+/**
+ * Refused edits by cause. The zeroes are written out rather than omitted, so a run that refused
+ * nothing and a run recorded before causes existed do not read the same in a table.
+ */
+export function refusalTally(steps: { refused: Refusal[] }[]): Record<RefusalCause, number> {
+  const tally: Record<RefusalCause, number> = { budget: 0, capability: 0, structural: 0 };
+  for (const s of steps) for (const r of s.refused) tally[r.cause]++;
+  return tally;
+}
 
 /**
  * How well the piece stands against its own position, as one number so "better" and "worse" are
@@ -56,17 +80,23 @@ function nodeIds(program: Program): Set<string> {
 }
 
 /**
- * Node ids that were doing constraint work before the step. The aesthetic layer reports evidence as
- * free text, so an id counts as load-bearing when it appears in the evidence of a satisfied
- * constraint. Matching text is crude, but the alternative is changing the aesthetic layer to emit
- * structured node ids, which the brief forbids; the limit is recorded in docs/artist/NEEDS.md.
+ * Node ids that were doing constraint work before the step, read straight off the checker's
+ * `nodeIds`. Those are the nodes a satisfied constraint rests on, decided by the checker that knows
+ * what each kind means rather than by this file guessing.
+ *
+ * This used to scan `evidence` for id substrings, which was wrong in both directions: an id that is
+ * a prefix of another matched, and a constraint that named no ids matched nothing. `destructionRate`
+ * was an estimate because of it and now is not.
+ *
+ * Still filtered against the tree, because a checker may name a node the position mentions and the
+ * program does not have, and a node that is not there was not destroyed by this step.
  */
 function loadBearing(program: Program, report: CheckReport): Set<string> {
-  const ids = nodeIds(program);
+  const present = nodeIds(program);
   const carrying = new Set<string>();
   for (const r of report.results) {
     if (r.status !== 'satisfied') continue;
-    for (const id of ids) if (r.evidence.includes(id)) carrying.add(id);
+    for (const id of r.nodeIds) if (present.has(id)) carrying.add(id);
   }
   return carrying;
 }
@@ -93,7 +123,12 @@ export interface EnvOptions {
   seedProgram: Program;
   /** Off for sketches: an audience read costs a call and a sketch is not for an audience. */
   useAudience?: boolean;
-  /** Off for sketches, where render-scope constraints are not worth a second render. */
+  /**
+   * Off for sketches. It no longer costs a second render — the canvas measures the pixels it
+   * already has — but a sketch renders under `sketch-v1`, so its ink density is a fact about a
+   * sketch and not about the piece, and a render-scope constraint decided against it would be
+   * decided wrong.
+   */
   useMetrics?: boolean;
   profileId?: string;
 }
@@ -109,6 +144,24 @@ export class ArtistEnv {
   program: Program;
   programHash = '';
   look!: Look;
+  /**
+   * The plate the current look was taken from. Deliberately NOT on `Look`: a Look is written into
+   * every Step and out to final.json, and a megabyte of base64 per step would make the trajectory
+   * unreadable. Held here so MAKE can attach it without costing a second render — the canvas caches
+   * by program hash, so this is the same bytes.
+   */
+  plate: Buffer | null = null;
+  /**
+   * What the last accepted step did to the page. Null at reset and after a step that changed
+   * nothing. The plate says what is there; this says what the artist just did, which is the other
+   * half of looking and the half a single frame cannot carry.
+   *
+   * Computed only from plates that were kept. A reverted candidate never becomes the baseline, so
+   * the diff always answers "what changed since the picture you last saw".
+   */
+  change: Change | null = null;
+  /** The kept plate the next change is measured against. Not the last one rendered. */
+  private baseline: Buffer | null = null;
   affect!: Affect;
   intention!: Intention;
   k = 0;
@@ -140,6 +193,8 @@ export class ArtistEnv {
     this.sinceImprovement = 0;
     this.program = this.o.seedProgram;
     this.look = await this.observe(this.program);
+    this.baseline = this.plate;
+    this.change = null;
     this.best = standing(this.look.checkReport);
     this.o.log.append('phase', { phase: 'reset', programHash: this.programHash, standing: this.best });
     return this.look;
@@ -149,6 +204,7 @@ export class ArtistEnv {
   private async observe(program: Program): Promise<Look> {
     const rendered = await this.o.canvas.render(program, { metrics: this.o.useMetrics ?? false });
     this.programHash = rendered.programHash;
+    this.plate = rendered.png;
     const report = check(program, this.o.commission.effective, rendered.metrics);
 
     const d = await describe(rendered.png);
@@ -205,12 +261,13 @@ export class ArtistEnv {
     // reported at the edit that broke rather than as a failed batch.
     let candidate = before;
     const applied: EditAction[] = [];
-    const refused: { actionId: string; reason: string }[] = [];
+    const refused: Refusal[] = [];
     for (const edit of action.edits.slice(0, this.maxEdits)) {
       const result = applyEdit(candidate, bareEdit(edit), profile, pack);
       if (!result.valid) {
-        refused.push({ actionId: edit.actionId, reason: result.reason ?? 'refused' });
-        this.o.log.append('edit-refused', { k: this.k, actionId: edit.actionId, kind: edit.kind, reason: result.reason });
+        const reason = result.reason ?? 'refused';
+        refused.push({ actionId: edit.actionId, kind: edit.kind, cause: refusalCause(reason), reason });
+        this.o.log.append('edit-refused', { k: this.k, actionId: edit.actionId, kind: edit.kind, cause: refusalCause(reason), reason });
         continue;
       }
       candidate = result.nextProgram;
@@ -226,23 +283,33 @@ export class ArtistEnv {
       isRiskMove: action.risk !== null,
       destroyedNodeIds: [],
       appliedActionIds: [],
+      refused,
       affect: this.affect,
       observationHash: '',
+      pixelsMoved: 0,
     };
 
     step.appliedActionIds = applied.map((e) => e.actionId);
 
     // Nothing applied: the step happened, cost a call, and changed nothing.
     if (applied.length === 0) {
-      step.revertedBecause = refused.length
-        ? `every edit was refused (${refused.map((r) => r.reason).join('; ')})`
-        : 'the step offered no edits';
-      this.affect = onRevert(this.affect);
+      // ...unless it was the last step. An artist that says `finished` and offers no edits has not
+      // reverted anything — it has stopped, which is the move this design explicitly asks for. It
+      // used to be recorded as `the step offered no edits`, punished with `onRevert` and counted
+      // toward the stall, which reads back as a failed terminal step. In an SFT export that is a
+      // mislabelled final action: the one place the label has to be right.
+      const stopping = action.control === 'finished' || action.control === 'abandon';
+      if (!stopping || refused.length > 0) {
+        step.revertedBecause = refused.length
+          ? `every edit was refused (${refused.map((r) => r.reason).join('; ')})`
+          : 'the step offered no edits';
+        this.affect = onRevert(this.affect);
+        this.sinceImprovement++;
+      }
       step.affect = this.affect;
-      this.sinceImprovement++;
-      const fired = this.checkStall();
+      const fired = stopping ? null : this.checkStall();
       this.o.log.append('step', this.logShape(step, refused, applied));
-      return { step, fired, done: action.control === 'abandon' || action.control === 'finished' };
+      return { step, fired, done: stopping };
     }
 
     let after: Look;
@@ -268,7 +335,10 @@ export class ArtistEnv {
       step.affect = this.affect;
       this.sinceImprovement++;
       this.o.log.append('step', this.logShape(step, refused, applied));
-      // The look does not move: the canvas is still what it was.
+      // The look does not move: the canvas is still what it was. `observe` has already pointed
+      // `plate` at the rejected candidate, so put it back — an artist shown a plate that was thrown
+      // away is looking at a picture that does not exist.
+      this.plate = this.baseline;
       return { step, fired: broke, done: false };
     }
 
@@ -278,6 +348,9 @@ export class ArtistEnv {
     this.program = candidate;
     this.programHash = contentHash(candidate);
     this.look = after;
+    this.change = this.baseline && this.plate ? changeSince(this.baseline, this.plate) : null;
+    this.baseline = this.plate;
+    step.pixelsMoved = this.change?.fraction ?? 0;
 
     const now = standing(after.checkReport);
     if (now > this.best) {
@@ -357,12 +430,16 @@ export class ArtistEnv {
     void action;
   }
 
-  private logShape(step: Step, refused: { actionId: string; reason: string }[], applied: EditAction[]): unknown {
+  private logShape(step: Step, refused: Refusal[], applied: EditAction[]): unknown {
     return {
       k: step.k,
       control: step.action.control,
       think: step.action.think,
       risk: step.action.risk,
+      // Only ever meaningful on a `finished` step. Logged on every one so an offline reader gets it
+      // off the step line — the same line that carries `control` — rather than having to join back
+      // to the policy call that produced it.
+      unrealizable: step.action.unrealizable,
       edits: step.action.edits.map((e) => ({ actionId: e.actionId, kind: e.kind, targets: e.targets })),
       refused,
       // The actionIds that actually landed, in order. reward.ts rebuilds the program from these plus
@@ -374,6 +451,9 @@ export class ArtistEnv {
       revertedBecause: step.revertedBecause ?? null,
       isRiskMove: step.isRiskMove,
       destroyedNodeIds: step.destroyedNodeIds,
+      // The step's size on the page. Logged so an offline reader can tell a step that rewrote the
+      // picture from one that nudged an argument, which the tree diff alone will not say.
+      pixelsMoved: step.pixelsMoved,
       affect: step.affect,
       programHash: this.programHash,
       standing: standing(this.look.checkReport),

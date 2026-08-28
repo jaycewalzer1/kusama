@@ -483,3 +483,15 @@ export function purposeChurn(intentions: Intention[]): { changed: number; charsF
     charsLast: intentions[intentions.length - 1]?.purpose.length ?? 0,
   };
 }
+
+/**
+ * Did any version of the plan name a convention to break?
+ *
+ * A declaration, and reported as one. `riskMoveTaken` is the outcome, and the two are deliberately
+ * separate numbers: declaring a risk and never taking it is the cheapest way for an agreeable model
+ * to look bold, and a single number cannot show that case in either direction. Read across the whole
+ * replan history, so a risk planned and then quietly replanned away still counts as declared.
+ */
+export function riskDeclared(intentions: Intention[]): boolean {
+  return intentions.some((i) => i.riskMove !== null);
+}

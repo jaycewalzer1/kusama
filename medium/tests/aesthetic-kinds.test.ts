@@ -230,6 +230,74 @@ test('rubric decides nothing, with or without metrics', () => {
   assert.equal(checkConstraint(c, prog([solid('a')]), metrics()).status, 'unverified');
 });
 
+test('every verdict carries nodeIds, and they are bare ids that exist in the tree', () => {
+  const tree = prog([solid('a', 'red'), text('t', 'SHOUT'), macro('m', 'frame')]);
+  const present = new Set(['root', 'a', 't', 'm']);
+  const cases: Constraint[] = [
+    constraint('maxDistinctColors', { max: 1 }),
+    constraint('palette', { allow: ['#ffffff'] }),
+    constraint('forbidNode', { ops: ['text'] }),
+    constraint('requireNode', { op: 'text', min: 1 }),
+    constraint('nodeCount', { max: 1 }),
+    constraint('textCase', { case: 'lower' }),
+    constraint('textMaxWords', { max: 0 }),
+    constraint('textRequired', { contains: ['SHOUT'] }),
+    constraint('maxRepeatDepth', { max: 0 }),
+    constraint('forbidMark', { styles: ['solid'] }),
+    constraint('requireMark', { styles: ['solid'], min: 1 }),
+  ];
+  for (const c of cases) {
+    const v = checkConstraint(c, tree, null);
+    assert.ok(Array.isArray(v.nodeIds), `${c.kind} returned no nodeIds`);
+    assert.equal(new Set(v.nodeIds).size, v.nodeIds.length, `${c.kind} repeated an id`);
+    for (const id of v.nodeIds) assert.ok(present.has(id), `${c.kind} named "${id}", which is not in the tree`);
+  }
+});
+
+test('nodeIds does not do what substring matching on evidence did', () => {
+  // The bug this replaces: "t" is a prefix of "t2", so scanning the evidence text for ids blamed
+  // the node that was fine. The structured answer names one node because one node offended.
+  const tree = prog([text('t', 'FINE'), text('t2', 'Bad')]);
+  const v = checkConstraint(constraint('textCase', { case: 'upper' }), tree, null);
+  assert.equal(v.status, 'violated');
+  assert.deepEqual(v.nodeIds, ['t2']);
+  assert.ok(v.evidence.includes('t'), 'the prose still names the node, which is why the old scan matched both');
+});
+
+test('a verdict that rests on an absence or an aggregate names nobody', () => {
+  const clean = prog([solid('a')]);
+  // Nothing forbidden is present, so no node is carrying the prohibition.
+  assert.deepEqual(checkConstraint(constraint('forbidNode', { ops: ['text'] }), clean, null).nodeIds, []);
+  assert.deepEqual(checkConstraint(constraint('forbidMark', { styles: ['wash'] }), clean, null).nodeIds, []);
+  // A count is about the tree, not about any node in it.
+  assert.deepEqual(checkConstraint(constraint('nodeCount', { min: 1 }), clean, null).nodeIds, []);
+  assert.deepEqual(checkConstraint(constraint('maxRepeatDepth', { max: 1 }), clean, null).nodeIds, []);
+  // Removing a node can only lower a colour count, so a satisfied cap rests on nobody.
+  assert.deepEqual(checkConstraint(constraint('maxDistinctColors', { max: 5 }), clean, null).nodeIds, []);
+});
+
+test('a satisfied requirement names the nodes carrying it', () => {
+  const tree = prog([text('t1', 'A'), text('t2', 'B'), solid('a')]);
+  const req = checkConstraint(constraint('requireNode', { op: 'text', min: 2 }), tree, null);
+  assert.equal(req.status, 'satisfied');
+  assert.deepEqual(req.nodeIds, ['t1', 't2']);
+
+  const mark = checkConstraint(constraint('requireMark', { styles: ['solid'], min: 1 }), tree, null);
+  assert.equal(mark.status, 'satisfied');
+  assert.deepEqual(mark.nodeIds, ['a']);
+
+  const said = checkConstraint(constraint('textRequired', { contains: ['B'] }), tree, null);
+  assert.equal(said.status, 'satisfied');
+  assert.deepEqual(said.nodeIds, ['t2']);
+});
+
+test('render-scope verdicts name no node, because a metric is about the whole sheet', () => {
+  for (const kind of ['inkDensityRange', 'coverageRange', 'symmetryMax', 'inkOffsetRange'] as const) {
+    const v = checkConstraint(constraint(kind, { min: 0, max: 1 }, 'render'), prog([solid('a')]), metrics());
+    assert.deepEqual(v.nodeIds, [], `${kind} attributed pixels to a node it cannot see`);
+  }
+});
+
 test('blocked_by short-circuits every kind to unverified and names the missing primitive', () => {
   const c: Constraint = {
     id: 'b',

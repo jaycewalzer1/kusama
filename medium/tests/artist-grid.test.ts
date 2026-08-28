@@ -22,6 +22,7 @@ function scores(over: Partial<Scores> = {}): Scores {
     problemFindingSteps: 0,
     problemsGrounded: 3,
     destructionRate: 0,
+    riskDeclared: false,
     riskMoveTaken: false,
     riskConvention: null,
     selfScore: 4,

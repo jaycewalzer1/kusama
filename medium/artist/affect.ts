@@ -99,6 +99,15 @@ export function stallThreshold(a: Affect): number {
  * Above this valence the artist is pleased with itself, and `description-disagrees` is allowed to
  * fire on a weaker signal — the environment gets more say precisely when the artist is least
  * inclined to listen. Consumed by the trigger code in ./triggers.ts.
+ *
+ * Measured over every step on disk (25 steps, 4 pilot cells plus the launch cell): valence ran
+ * min 0.30, median 0.50, max 0.60, and never once went below its starting temperament. So this is
+ * true on 20 of 25 steps. It is not a dead gate — it is a gate that is almost always open, which
+ * makes the weaker `description-disagrees` threshold the normal case and the stricter one the
+ * exception. That is a defensible design (an artist working from a blank sheet upward is credulous
+ * most of the time) but it is not the design the sentence above describes, and the number is left
+ * where it is rather than tuned to make the code match the comment. Raising it would need a run
+ * where valence actually falls, and no run on disk has one.
  */
 export function credulous(a: Affect): boolean {
   return a.valence > 0.3;

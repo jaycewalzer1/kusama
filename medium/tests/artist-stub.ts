@@ -88,6 +88,13 @@ export class StubPolicy implements Policy {
   private answer(request: PolicyRequest): unknown {
     if (request.name === 'find') {
       return {
+        questions: [
+          {
+            question: 'Is the meeting open to people who are not tenants of the block?',
+            whyItChangesTheObject: 'If it is closed, the sheet is a summons to fifty people; if it is open it is an appeal to a street.',
+            decidingInstead: 'Treating it as open, because a poster on a wall cannot check who reads it.',
+          },
+        ],
         problems: [
           {
             id: 'p-legibility',
@@ -120,8 +127,19 @@ export class StubPolicy implements Policy {
 
     if (request.name === 'choose') {
       return {
+        collision: {
+          requirement: 'the two dates have to be readable from across a road',
+          principle: 'one identifiable person talking, unedited',
+          statement: 'A sheet legible at ten metres cannot also be somebody at length, and the commission needs both.',
+        },
         problemId: 'p-date',
         why: 'The sketches show that a date alone holds the sheet, and the other two are pictures of a mood.',
+        cost: 'They give up the account of what happened to the people in the block; what is left is an instruction.',
+        terms: {
+          outOfScope: ['anything for a screen', 'a second version with the logo larger'],
+          willNotChange: ['the two dates stay the largest thing on the sheet'],
+          wouldLoseTheCommissionOver: 'Putting a photograph of a tenant on it without their name and their say-so.',
+        },
         intention: this.intention(),
       };
     }
@@ -147,13 +165,14 @@ export class StubPolicy implements Policy {
     // act
     const k = this.acts++;
     if (k >= this.steps) {
-      return { think: 'The dates and the place are all on the sheet and legible. Nothing more is needed.', control: 'finished', risk: null, edits: [] };
+      return { think: 'The dates and the place are all on the sheet and legible. Nothing more is needed.', control: 'finished', risk: null, unrealizable: null, edits: [] };
     }
     if (k === 0) {
       return {
         think: 'Put the first date down at the top left, large, before anything else competes with it.',
         control: 'continue',
         risk: null,
+        unrealizable: null,
         edits: [
           { actionId: 'a0', kind: 'add_node', targets: ['sheet'], parent: 'sheet', servesElementId: 'dates', node: textNode('t-march-3', 120, TEXTS[0]!) },
           // Deliberately illegal: no such parent. Exercises the refusal path and the invalid-edit count.
@@ -166,6 +185,7 @@ export class StubPolicy implements Policy {
         think: 'The second date, directly under the first, on the same margin so they read as one block.',
         control: 'continue',
         risk: 'leading with a date rather than an image, which this genre would not do',
+        unrealizable: null,
         edits: [
           { actionId: 'a1', kind: 'add_node', targets: ['sheet'], parent: 'sheet', servesElementId: 'dates', node: textNode('t-march-31', 180, TEXTS[1]!) },
           { actionId: 'a1b', kind: 'add_node', targets: ['sheet'], parent: 'sheet', servesElementId: 'bar', node: ruleNode('r-bar', 120) },
@@ -176,6 +196,7 @@ export class StubPolicy implements Policy {
       think: 'The building has to be named, or this is a poster about gentrification in general.',
       control: 'continue',
       risk: null,
+      unrealizable: null,
       edits: [
         { actionId: `a${k}`, kind: 'add_node', targets: ['sheet'], parent: 'sheet', servesElementId: 'dates', node: textNode(`t-place-${k}`, 260 + 40 * k, TEXTS[2]!) },
       ],

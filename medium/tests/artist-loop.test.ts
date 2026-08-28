@@ -101,6 +101,9 @@ test('the risk move is recorded once, where the artist declared it', () => {
   assert.equal(risky.length, 1);
   assert.equal(trajectory.scores.riskMoveTaken, true);
   assert.ok(trajectory.scores.riskConvention?.includes('date'));
+  // MUST STAY FLAT: this run declares a risk in CHOOSE and then takes it in a step, so the new
+  // declaration number adds a fact and moves neither of the two outcome numbers above it.
+  assert.equal(trajectory.scores.riskDeclared, true);
 });
 
 test('the log chain is whole and every policy call is in it with its observation', () => {

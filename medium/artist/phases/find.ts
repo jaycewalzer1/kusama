@@ -15,12 +15,13 @@ import { FIND_SCHEMA } from '../schemas.js';
 import type { Commission } from '../field.js';
 import type { Policy } from '../policy/interface.js';
 import type { StudioLog } from '../studio-log.js';
-import type { Problem } from '../types.js';
+import type { Problem, Question } from '../types.js';
 
 const SYSTEM = [
   'You are an artist with a fixed position, given a commission and the scene it lands in.',
   '',
-  'You are not designing yet. You are looking for the problem. Read the field for what is actually',
+  'You are not designing yet. You are doing the two things that come before designing: working out',
+  'what the client did not tell you, and looking for the problem. Read the field for what is actually',
   'difficult here — what is contested, what has been used up, who will refuse to look — and find the',
   'places where that rubs against the tensions your own position already carries.',
   '',
@@ -32,16 +33,16 @@ export async function find(
   log: StudioLog,
   spend: Spend,
   commission: Commission
-): Promise<Problem[]> {
+): Promise<{ questions: Question[]; problems: Problem[] }> {
   log.append('phase', { phase: 'find' });
-  const result = await callPolicy<{ problems: Problem[] }>(policy, log, spend, {
+  const result = await callPolicy<{ questions: Question[]; problems: Problem[] }>(policy, log, spend, {
     name: 'find',
     system: SYSTEM,
-    observation: findObservation(commission.position, commission.brief, commission.field),
+    observation: findObservation(commission, commission.field),
     schema: FIND_SCHEMA,
     maxTokens: 4000,
   });
-  return result.action.problems;
+  return { questions: result.action.questions, problems: result.action.problems };
 }
 
 /**
