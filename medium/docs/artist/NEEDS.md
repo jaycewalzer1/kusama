@@ -157,3 +157,63 @@ ids it was about to write. Four of those were never written, and because an edge
 either end names a node that is not in the tree, six of seven edges came back violated on a piece
 that scored 1.000 on the checker. Which nodes make an element is the environment's column: it is
 filled in from `servesElementId` on an accepted edit and from nowhere else.
+
+## Lineage elements, stage 1
+
+Four gaps, one of them blocking. All are consequences of what the medium and the aesthetic layer can
+say, not of how `aesthetic/elements/` was written.
+
+**A citation is shape-checked and nothing more.** `checkElementShape` asserts
+`provenance.citation` is a non-empty string. Nothing in this repo can tell whether "Georges Meurant,
+*Shoowa Design: African Textiles from the Kingdom of Kuba*, Thames & Hudson, 1986" names a real book,
+whether the book says what the element claims it says, or whether the constraint is a fair reading of
+it. The four shipped citations were written by a model and checked by nobody. That is not a
+technicality: the entire argument for calling these *lineage* elements rather than parameter bundles
+rests on the provenance being real, and right now the provenance is a string. Anything downstream
+that reports "drawn from the Kuba tradition" is reporting an unverified claim. Either a human reads
+the four citations against the four constraint sets, or the layer should say "parameter bundle" and
+drop the word lineage. The nearest thing to a fix inside the repo is a manifest of ISBNs and page
+numbers, which raises the cost of a fabrication without detecting one.
+
+**BLOCKING for stage 2 — `elementPackHash` is not in `envVersion`.** `artist/env-version.ts` joins
+nine hashes; `elementPackHash` is a tenth and is deliberately not there this stage, because nothing
+in `artist/` composes yet and a hash over an input no run reads would be noise. The moment a run
+composes elements, this becomes the ordinary version bug: two runs under different element packs
+would compare as the same experiment, exactly as they would have under different `affect.ts` before
+`dynamicsHash` was added. It must be added as a **tenth field**, not folded into `packHash` — the
+asset pack and the element pack answer different questions and a run that changed one should not read
+as a run that changed the other. Do this in the same change that first wires `compose` into a run,
+not after.
+
+**`Resolution.avoided` cannot be measured at pixel granularity.** The type is defined; nothing emits
+it until stage 3. The honest definition available now is node existence at finish, which answers
+"were the nodes carrying side A ever written" and not "were they painted over by side B". The
+medium has no per-node pixel attribution: `aesthetic/kinds.ts` returns an empty `nodeIds` for all
+four render kinds because a render verdict is about the whole sheet, and `artist/filmstrip.ts`
+measures pixel survival keyed on step, not on node. This is the same blind spot already recorded
+elsewhere as node-level `destructionRate 0` against 60.22% mean pixel survival: occlusion is
+invisible in the tree. So a run can honour a lineage in the tree and destroy it on the sheet, and
+stage 1 will call that honoured. **Do not fake it** — a self-reported `avoided` is worthless, since
+an artist asked whether it dodged a conflict will say no. Closing this needs per-node ink
+attribution in the renderer, which is a medium change, not an artist one.
+
+**Semantic conflict is `rubric` scope, permanently unverified, and that is the argument for a
+judge.** The conflicts this layer can prove are material: two lineages competing for a bounded
+resource — ink, coverage, node budget, colour budget, symmetry. What it cannot touch is the
+interesting half. "The margin speaks" against "the margin is silence" is a real opposition between
+two real traditions, it is not a competition for any budget, and the only kind that can hold it is
+`rubric` — which `checkConstraintWithFacts` short-circuits to `unverified` before reading, because
+there is no judge in this layer. Every semantic conflict therefore scores as nothing, in both
+directions: a run that resolved one brilliantly and a run that never noticed it produce identical
+reports. This is not a gap that a seventeenth constraint kind closes. It is the case for building a
+judge, stated plainly: without one, the layer can only measure the conflicts that happen to be
+arithmetic, and it will silently select for lineage pairs whose disagreements are about quantities.
+
+**One rule the brief asked for was not built, because it is unsound.** `maxDistinctColors {max: n}`
+against a `palette` naming more than `n` colours is *not* a conflict: `palette` is an allow-list
+(`kinds.ts`), so it permits colours and never requires them, and a tree using three of a five-colour
+list satisfies both. Emitting it would attach a proof to a false claim, which is worse than emitting
+nothing. The colour-budget conflict ships instead as disjoint allow-sets — two `palette` constraints
+with no colour in common, which is unconditionally empty because both count the canvas ground and the
+ground is one colour. Four other candidate rules were rejected the same way and are listed in the
+header of `aesthetic/elements/derive.ts`.

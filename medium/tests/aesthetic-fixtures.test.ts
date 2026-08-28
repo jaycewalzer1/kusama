@@ -39,17 +39,49 @@ function declaredViolations(tree: Record<string, unknown>): string[] {
   return Array.isArray(list) ? (list as string[]) : [];
 }
 
+/**
+ * Every `.ts` under `aesthetic/` except `measure.ts`, which is the browser half by design.
+ *
+ * This was a hardcoded list of four filenames. That made the rule true of exactly the four modules
+ * somebody remembered and silently untrue of everything added afterwards: a new subdirectory could
+ * import `env/browser.ts` and this gate would keep passing. Read off disk instead, for the same
+ * reason AESTHETICS above is.
+ */
+function pureAestheticSources(dir = path.join(ROOT, 'aesthetic')): string[] {
+  const out: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...pureAestheticSources(full));
+    else if (entry.name.endsWith('.ts') && entry.name !== 'measure.ts') out.push(full);
+  }
+  return out.sort();
+}
+
 test('the pure half of the layer imports no browser, so a search loop pays for no browser', () => {
-  // check/facts/kinds/types are the modules a search loop calls per candidate edit. measure.ts is
-  // the browser half and is deliberately not in this list. If this fails, someone reached for
-  // something in env/browser.ts (usually a path constant) and dragged Playwright in behind it.
-  for (const file of ['check.ts', 'facts.ts', 'kinds.ts', 'types.ts']) {
-    const source = readFileSync(path.join(ROOT, 'aesthetic', file), 'utf8');
-    const imports = source.match(/^\s*import[\s\S]*?from\s+'[^']+';/gm) ?? [];
-    for (const line of imports) {
-      assert.doesNotMatch(line, /env\/browser\.js/, `aesthetic/${file} must not import env/browser.js`);
-      assert.doesNotMatch(line, /\.\/measure\.js/, `aesthetic/${file} must not import ./measure.js`);
-      assert.doesNotMatch(line, /playwright/, `aesthetic/${file} must not import playwright`);
+  const files = pureAestheticSources();
+  assert.ok(files.length >= 5, 'the scan found almost nothing, so it is scanning the wrong tree');
+
+  for (const file of files) {
+    const rel = path.relative(ROOT, file);
+    const source = readFileSync(file, 'utf8');
+    // Static `import ... from`, bare `import '...'`, and the dynamic forms. The dynamic form is the
+    // one the old check could not have caught even on the four files it did read: a top-level
+    // `await import('../env/browser.js')` costs exactly what a static one costs.
+    const specifiers = [
+      ...(source.match(/^\s*import[\s\S]*?from\s+'[^']+';/gm) ?? []),
+      ...(source.match(/^\s*import\s+'[^']+';/gm) ?? []),
+      ...(source.match(/\bimport\s*\(\s*'[^']+'\s*\)/g) ?? []),
+      ...(source.match(/\brequire\s*\(\s*'[^']+'\s*\)/g) ?? []),
+    ];
+    for (const line of specifiers) {
+      assert.doesNotMatch(line, /env\/browser\.js/, `${rel} must not import env/browser.js`);
+      assert.doesNotMatch(line, /\/measure\.js/, `${rel} must not import measure.js`);
+      assert.doesNotMatch(line, /playwright/, `${rel} must not import playwright`);
+      // env/profile.ts and env/pack.ts each pull ROOT out of env/browser.ts, so importing either is
+      // importing Playwright one step removed. This is how the rule actually gets broken: somebody
+      // wants `contentHash`, not a browser.
+      assert.doesNotMatch(line, /env\/profile\.js/, `${rel} must not import env/profile.js (it imports env/browser.js)`);
+      assert.doesNotMatch(line, /env\/pack\.js/, `${rel} must not import env/pack.js (it imports env/browser.js)`);
     }
   }
 });

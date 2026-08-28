@@ -1,0 +1,55 @@
+{
+  "id": "ma-interval",
+  "name": "Ma, the Charged Interval",
+  "provenance": {
+    "culture": "Japanese; the term is general to architecture, noh, ikebana and printing, and was put to a Western audience as a design principle by Isozaki",
+    "period": "the concept is old; its statement as an exhibitable design position dates from the 1978-79 exhibition",
+    "note": "Ma is the interval between things, and it is the charged part, not the leftover. An arrangement is judged on the gaps: what is not marked is doing the work, and adding to the surface is spending something that cannot be got back. The unworked area is not unfinished, it is the subject.",
+    "citation": "Arata Isozaki, MA: Space-Time in Japan, exhibition catalogue (New York: Cooper-Hewitt Museum, 1979)"
+  },
+  "worldviewFragment": "The interval is the content and the mark is what interrupts it. Every addition to the sheet costs more than it gives, so the count of things present is itself the thing under discipline.",
+  "generativeRules": [
+    {
+      "id": "e-interval-holds",
+      "kind": "coverageRange",
+      "params": { "max": 0.3 },
+      "scope": "render",
+      "severity": "hard",
+      "why": "Ink must stay gathered rather than distributed. Coverage counts how many cells of a fixed grid hold any ink at all, so it is the one measure here that penalises spreading marks over the whole sheet even when very little ink is used. 0.30 is set from the measured table in docs/artist/element-preflight.md, not from taste."
+    },
+    {
+      "id": "e-few-things",
+      "kind": "nodeCount",
+      "params": { "max": 6 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "The number of separate things on the sheet is the discipline, before anything about how they look. Six is a count a viewer can hold at once, which is the condition for an interval between them to be read as an interval rather than as a gap in a texture."
+    },
+    {
+      "id": "e-quiet-voice",
+      "kind": "textCase",
+      "params": { "case": "lower" },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "Lowercase is a spoken register rather than an announced one. A capital is an increase in weight, and weight is exactly what this position is spending carefully."
+    }
+  ],
+  "prohibitions": [
+    {
+      "id": "e-not-filled",
+      "kind": "inkDensityRange",
+      "params": { "max": 0.18 },
+      "scope": "render",
+      "severity": "hard",
+      "why": "A ceiling on ink, which is the direct statement of the position: most of the sheet stays paper. Held separately from the coverage rule because they refuse different things — this one refuses weight, that one refuses distribution — and a work can fail either without failing the other."
+    }
+  ],
+  "cliches": [
+    "a small mark placed in a large white field and called restraint",
+    "an enso circle used as a signature of contemplativeness",
+    "the word 'ma' set in a light sans-serif in the middle of an empty page",
+    "asymmetry applied as a layout rule while the intervals themselves stay even",
+    "generous margins on a grid that is otherwise fully packed",
+    "grey type at 40 percent opacity standing in for quietness"
+  ]
+}

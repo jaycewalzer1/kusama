@@ -1,0 +1,10 @@
+{
+  "note": "Declared conflicts only: cross-kind material tensions that no algebra over the two constraints settles, each seeded from a measured row of docs/artist/element-preflight.md and from nowhere else. Anything provable belongs in derive.ts, and anything unmeasured is not a conflict yet. A declared conflict is a claim about THIS medium at THIS canvas size; it is only as good as the measurement behind it, and the measurement is cited per entry.",
+  "conflicts": [
+    {
+      "a": { "source": { "kind": "element", "id": "kuba-shoowa-surface" }, "constraintId": "e-worked-through" },
+      "b": { "source": { "kind": "element", "id": "ma-interval" }, "constraintId": "e-interval-holds" },
+      "note": "Horror vacui against the charged interval, as ink density against coverage. Row R3 of docs/artist/element-preflight.md: over 29 measured programs, 16 satisfy ink >= 0.35 and 8 satisfy coverage <= 0.30; none satisfies both, and the highest ink reached anywhere under coverage 0.30 is 0.2500 (pf-aligned-64cells), a margin of 0.10 below the floor. Declared and not derived because the bound that makes it empty is a property of the 16x16 measurement grid and the 600x900 sheet, not of the two constraints' parameters: on a floor-boundary grid a block landing on the wide cells carries slightly more area per unit of coverage, and pf-aligned-99cells measures ink 0.3874 against coverage 0.3867, so 'ink <= coverage' is false by 7.29e-4 and cannot be used as a proof. The same tension written as ink >= 0.35 against coverage <= 0.40 IS satisfiable and was rejected: pf-aligned-100cells sits at 0.3903/0.3906."
+    }
+  ]
+}
