@@ -6,18 +6,35 @@
 // written before the change is visibly a different environment and will not be silently compared to
 // one written after. Editing this file is a version bump whether or not anyone intends it.
 //
-// Two rules are enforced by tests rather than by care:
+// THE ORDER OF THE LAYERS IS PART OF THE DESIGN, not a formatting choice. Every artist-side
+// observation is assembled:
+//
+//   L4 PROTOCOL     first,  because it establishes what kind of transaction this is before any of
+//                           the content arrives. Read last it would be a footnote on a finished
+//                           argument.
+//   L1 PRACTICE     second, so the identity is the most settled thing in the context.
+//   L3 DELIVERABLE  third,  as a constraint on that identity rather than a part of it.
+//   L2 BRIEF        last,   so it is the freshest instruction and unmistakably the thing answered.
+//
+// L4 lives in this file, as one constant, because it varies with nothing. L1, L2 and L3 are loaded
+// from disk by field.ts and hashed separately, so any one of them can be swapped or removed without
+// touching the others — which is the only way an ablation over them is worth running.
+//
+// Three rules are enforced by tests rather than by care:
 //   - `describeObservation` and `audienceObservation` are the environment's, not the artist's. They
 //     may not contain the position, the brief, the field beyond the one watching-paragraph, the
-//     intention, or the affect. See tests/artist/blindness.test.ts.
+//     intention, or the affect.
+//   - L1 and L3 never name each other, and the assembly order above is the order on the page.
+//     See tests/artist-layers.test.ts.
 //   - Nothing here calls a model or renders anything. It is string building, top to bottom.
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { contentHash } from '../env/profile.js';
 import type { AestheticProgram, CheckReport } from '../aesthetic/types.js';
-import type { Brief } from './field.js';
+import type { Brief, Deliverable, Practice } from './field.js';
 import { affectSentence } from './affect.js';
+import { bindingOf } from './intention.js';
 import type { Affect, Field, Intention, Problem, Step, TriggerName } from './types.js';
 
 /**
@@ -40,23 +57,114 @@ function json(value: unknown): string {
   return JSON.stringify(value, null, 2);
 }
 
-// --- shared sections -----------------------------------------------------------------------------
+// --- L4: the protocol ----------------------------------------------------------------------------
 
-/** The position, as the artist reads it. Prose parts included; they are the point of a position. */
-export function positionSection(position: AestheticProgram): string {
+/**
+ * The transaction, spelled out. Constant across every artist, every brief and every kind of object,
+ * which is why it is a string in this file rather than a document on disk.
+ *
+ * This is the cheapest layer to write and the one that changes behaviour most, because it is the
+ * difference between a commission and a style filter. Without it a model given a practice and a
+ * brief produces the brief with the practice's motifs on it, agreeably, having noticed no conflict.
+ * The steps below are mapped onto the loop's phases rather than run as a conversation — there is no
+ * client here to answer a question — so each phase's own task section names which step it is.
+ */
+export const PROTOCOL = [
+  'You are in a commercial transaction. You are not making work for yourself. Somebody is paying,',
+  'and they will use what you make for something. That does not mean you do what you are told.',
+  '',
+  '1. INTERROGATE. Before proposing anything, name what the brief did not answer that would change',
+  '   what you make. Between none and four things. Do not ask to appear thorough: a question whose',
+  '   answer would not change the object is not a question, it is a courtesy. If the brief answers',
+  '   everything, say so. Nobody will answer these — you are working from the brief as written — so',
+  '   name what you are therefore deciding for the client.',
+  '',
+  '2. NAME THE COLLISION. State plainly where the brief and your practice are in conflict. Name the',
+  '   specific requirement and the specific principle, as two things, not as a mood. Do not resolve',
+  '   it. If you find no collision, look again: a brief that fits your practice perfectly almost',
+  '   always means you read it loosely, or you have already started softening it.',
+  '',
+  '3. PROPOSE. Distinct proposals resolve the collision differently. They do not use different',
+  '   colours. For each, say what it physically is, how it handles the collision, and what it costs',
+  '   the client — what they give up by choosing it. A proposal with no cost is a proposal you have',
+  '   not thought through.',
+  '',
+  '4. STATE TERMS. What is out of scope, what you will not change under any circumstances, and what',
+  '   you are willing to lose the commission over. Naming the third one is the point of the other two.',
+  '',
+  '5. REVISE. When the work or the client tells you something, do not simply comply. Either do it, or',
+  '   refuse it and say why in one sentence, or counter with something that solves the underlying',
+  '   problem without violating a refusal. You may lose the commission. Losing it correctly is a valid',
+  '   outcome and you should take it when the alternative is making something you would disown.',
+  '',
+  'NEVER',
+  '  - Never present a compromise as though it were your first instinct.',
+  '  - Never soften a refusal into a preference.',
+  '  - Never produce work that would be indistinguishable from another artist answering this brief.',
+].join('\n');
+
+export const PROTOCOL_HASH = contentHash(PROTOCOL);
+
+export function protocolSection(): string {
+  return section('HOW YOU WORK — this does not change from job to job', PROTOCOL);
+}
+
+// --- L1: the practice ----------------------------------------------------------------------------
+
+/**
+ * The artist, brief-agnostic. Prose first and constraints second, because the constraints are the
+ * checkable shadow of the prose rather than the substance of it: an artist that read only the
+ * commitments would satisfy them and make nothing.
+ *
+ * Nothing in here may mention a poster, a flyer, or any other kind of object. That is L3's, and an
+ * artist told by its own practice how a poster behaves has been handed the derivation this whole
+ * arrangement exists to watch it perform.
+ *
+ * Two fields of the position are deliberately NOT here, and their absence is the point:
+ *
+ *   - `position.name`. "Data Austerity" in the header is a label for a look, and a model handed one
+ *     produces the look the label names rather than deriving anything from the practice under it.
+ *     The name stays in the JSON, where it is how a person refers to the document, and out of every
+ *     prompt. The machinery identifies a position by `id`, which is a trajectory key, not a mood.
+ *   - `position.lineage`. Six citations per position, every one a real artist and a real object
+ *     ("Jamie Reid, artwork for the Sex Pistols"). A model given those imitates their surface, and
+ *     the run then measures the model's recall of Jamie Reid rather than whether the position
+ *     deformed anything. Lineage is a record of where the vocabulary came from, kept on disk for a
+ *     reader; it is not evidence the artist is allowed to reason from.
+ *
+ * The abstract half of the same information survives in `practice.origin`, which is meant to state
+ * the shape of a source rather than its name, so that a commission can trip it. NOTE that the three
+ * positions on disk do not yet honour that — their `origin` prose still names Ikeda, Aicher and
+ * Nicolai outright, so proper nouns continue to reach the prompt through L1. Closing that is an edit
+ * to the position documents, not to this file, and it has not been made.
+ */
+export function practiceSection(position: AestheticProgram, practice: Practice): string {
   const tensions = position.tensions.map((t) => `${t.between} vs ${t.and}: ${t.claim}`);
   const constraint = (c: { id: string; kind: string; severity: string; scope: string; why: string }) =>
     `[${c.id}] ${c.kind} (${c.severity}, ${c.scope}) — ${c.why}`;
   return section(
-    `POSITION: ${position.name}`,
+    'YOUR PRACTICE',
     [
-      position.worldview,
+      'WHERE THE VOCABULARY CAME FROM',
+      practice.origin,
       '',
-      'LINEAGE',
-      bullets(position.lineage.map((l) => `${l.ref} — ${l.why}`)),
+      'WHAT THE WORK IS DOING',
+      practice.doing,
+      '',
+      'PERIOD YOU ARE WORKING IN (exactly this one; periods answer commissions differently)',
+      practice.period,
+      '',
+      'HOW YOU SPEAK',
+      practice.register,
+      '',
+      'WORLDVIEW',
+      position.worldview,
       '',
       'TENSIONS YOU HOLD',
       bullets(tensions),
+      '',
+      'REFUSALS — these override any client instruction, including a hard requirement',
+      bullets(practice.refusals),
       '',
       'COMMITMENTS',
       bullets(position.commitments.map(constraint)),
@@ -73,17 +181,69 @@ export function positionSection(position: AestheticProgram): string {
   );
 }
 
+// --- L3: the deliverable -------------------------------------------------------------------------
+
+/**
+ * What this kind of object has to do, independent of who is making it and what it is about. It names
+ * no artist and no style, and it says so at the end: the consequences are physics and the response
+ * to them is not.
+ */
+export function deliverableSection(deliverable: Deliverable): string {
+  return section(
+    `THE OBJECT: ${deliverable.name.toUpperCase()}`,
+    [
+      'This describes what this kind of object has to do to function. It is independent of who makes',
+      'it and of what it is about. It does not tell you what the piece should look like.',
+      '',
+      'FUNCTION',
+      deliverable.function,
+      '',
+      'CONSEQUENCES',
+      bullets(deliverable.consequences),
+      '',
+      'WHAT THIS DOES NOT DECIDE',
+      deliverable.doesNotDecide,
+    ].join('\n')
+  );
+}
+
+// --- L2: the brief -------------------------------------------------------------------------------
+
+/**
+ * The client, in the client's own terms. Every line here is something a person paying for this would
+ * actually know; nothing here is a description of how it should look, and nothing here says what
+ * kind of object it is — that is L3's, chosen separately, and printed above this. If a style word
+ * appears in this section the run is contaminated — see `aestheticDirection` in field.ts.
+ */
 export function briefSection(brief: Brief): string {
   return section(
-    `BRIEF: ${brief.title}`,
+    `THE COMMISSION: ${brief.title}`,
     [
+      `CLIENT       ${brief.client}`,
+      '',
       brief.event,
       '',
-      `WHEN      ${brief.when}`,
-      `WHERE     ${brief.where}`,
-      `FUNCTION  ${brief.function}`,
-      `STAKES    ${brief.stakes}`,
-      brief.notes ? `NOTES     ${brief.notes}` : '',
+      `WHEN         ${brief.when}`,
+      `WHERE        ${brief.where}`,
+      `PURPOSE      ${brief.function}`,
+      `AUDIENCE     ${brief.audience}`,
+      `PRODUCTION   ${brief.production}`,
+      `QUANTITY     ${brief.quantity}`,
+      `BUDGET       ${brief.budget}`,
+      `TIMELINE     ${brief.timeline}`,
+      `STAKES       ${brief.stakes}`,
+      brief.notes ? `NOTES        ${brief.notes}` : '',
+      '',
+      'MUST APPEAR, LEGIBLY',
+      bullets(brief.mustAppear),
+      '',
+      'WHAT THEY HAVE ALSO ASKED FOR. They were firm about these and they did not argue for them.',
+      'They are not in the fixed list below, so they are not settled: you may do them, refuse them out',
+      'loud, or counter with something that answers what they are actually worried about.',
+      bullets(brief.clientWantThatHurtsTheWork),
+      '',
+      "THE CLIENT'S STATED FEAR (their words, not a design note)",
+      `  "${brief.clientFear}"`,
       '',
       'THE COMMISSION FIXES THESE AND THEY ARE NOT NEGOTIABLE',
       bullets(brief.hard_constraints.map((c) => `[${c.id}] ${c.kind} ${JSON.stringify(c.params)} — ${c.why}`)),
@@ -91,6 +251,20 @@ export function briefSection(brief: Brief): string {
       .filter(Boolean)
       .join('\n')
   );
+}
+
+/**
+ * L4 + L1 + L3 + L2, in that order, which is the only order any artist-side observation uses. Every
+ * phase builds on this and appends its own task; none of them assembles the four itself, so the
+ * order cannot drift apart between phases.
+ */
+export function stack(
+  position: AestheticProgram,
+  practice: Practice,
+  deliverable: Deliverable,
+  brief: Brief
+): string {
+  return [protocolSection(), practiceSection(position, practice), deliverableSection(deliverable), briefSection(brief)].join('\n');
 }
 
 /**
@@ -149,7 +323,16 @@ export function intentionSection(intention: Intention): string {
       `TENSION   ${intention.tension.between} vs ${intention.tension.and}: ${intention.tension.claim}`,
       '',
       'ELEMENTS (an element is a part of the picture; nodeIds are the nodes that make it, so far)',
-      bullets(intention.elements.map((e) => `${e.id} — ${e.role} [${e.nodeIds.join(' ') || 'not made yet'}]`)),
+      bullets(
+        intention.elements.map((e) => {
+          const binding = bindingOf(e);
+          // The binding is echoed back because it is now checked rather than merely recorded: a
+          // `region` element is scored against the rectangle printed here, so the artist has to be
+          // able to see the rectangle it is being held to while it is still drawing.
+          const bound = binding.ref ? `${binding.kind} ${binding.ref}` : binding.kind;
+          return `${e.id} — ${e.role} (${bound}) [${e.nodeIds.join(' ') || 'not made yet'}]`;
+        })
+      ),
       '',
       'EDGES (how the parts are supposed to act on each other)',
       bullets(intention.edges.map((e) => `${e.from} ${e.type} ${e.to}: ${e.claim}`)),
@@ -177,15 +360,32 @@ export function historySection(steps: Step[], keep = 4): string {
 
 // --- policy observations -------------------------------------------------------------------------
 
-export function findObservation(position: AestheticProgram, brief: Brief, field: Field): string {
+/**
+ * The four layers of one commission, in the shape every phase wants them. Passed as a unit so that
+ * no call site can supply three of them and quietly drop the fourth.
+ */
+export interface Layers {
+  position: AestheticProgram;
+  practice: Practice;
+  deliverable: Deliverable;
+  brief: Brief;
+}
+
+export function findObservation(l: Layers, field: Field): string {
   return [
-    positionSection(position),
-    briefSection(brief),
+    stack(l.position, l.practice, l.deliverable, l.brief),
     fieldSection(field),
     section(
-      'YOUR TASK: FIND THE PROBLEM',
+      'YOUR TASK: INTERROGATE, THEN FIND THE PROBLEM (protocol step 1)',
       [
-        'Do not design anything yet. Find between three and six problems.',
+        'Do not design anything yet. Two things.',
+        '',
+        'First, interrogate the brief. Name between none and four things it did not answer that would',
+        'change what you make. Nobody is going to answer them — you are working from the brief as',
+        'written — so for each one also say what you are therefore deciding for the client. If the',
+        'brief answers everything that matters, ask nothing and say so.',
+        '',
+        'Then find between three and six problems.',
         '',
         'A problem is not a topic and not a feeling. It is a specific difficulty this piece would have',
         'to overcome, which you found by reading the field above and noticing where it rubs against a',
@@ -193,39 +393,47 @@ export function findObservation(position: AestheticProgram, brief: Brief, field:
         '',
         'A problem that could have been written without reading the field is not a problem. Neither is',
         'one that restates the brief. The test is: could someone disagree with this and still want the',
-        'same poster? If not, you have written a summary.',
+        'same object? If not, you have written a summary.',
       ].join('\n')
     ),
   ].join('\n');
 }
 
-export function chooseObservation(position: AestheticProgram, brief: Brief, problems: Problem[], sketchNote: string): string {
+export function chooseObservation(l: Layers, problems: Problem[], sketchNote: string): string {
   return [
-    positionSection(position),
-    briefSection(brief),
+    stack(l.position, l.practice, l.deliverable, l.brief),
     section(
       'THE PROBLEMS YOU FOUND',
       bullets(problems.map((p) => `[${p.id}] ${p.text}\n      tension: ${p.tension.between} vs ${p.tension.and}`))
     ),
     section('THE SKETCHES', sketchNote),
     section(
-      'YOUR TASK: CHOOSE',
+      'YOUR TASK: NAME THE COLLISION, CHOOSE, STATE TERMS (protocol steps 2, 3 and 4)',
       [
         'The contact sheet above is what those problems actually look like when drawn. Look at it, not',
-        'at your own summary of it. Pick one problem to make the finished piece about, say why in a way',
-        'that refers to what you can see, and then state the intention as a graph.',
+        'at your own summary of it.',
         '',
-        'The intention is a plan, so it must be losable. Name elements that could fail to appear and',
-        'edges that could fail to hold. A plan that cannot be wrong is not a plan.',
+        'First name the collision: the specific thing this commission requires and the specific',
+        'principle of yours it runs into, as two named things rather than a mood, and then one sentence',
+        'stating the conflict without resolving it. If you cannot find one, look again — a brief that',
+        'fits your practice perfectly means you read it loosely or have already started softening it.',
+        '',
+        'Then pick one problem to make the finished piece about, say why in a way that refers to what',
+        'you can see, and state what this choice costs the client: what they give up by getting this',
+        'rather than the other things it could have been. A choice with no cost has not been made.',
+        '',
+        'Then state your terms: what is out of scope, what you will not change under any circumstances,',
+        'and the one thing you would lose the commission over. Naming the third is the point.',
+        '',
+        'Finally state the intention as a graph. It is a plan, so it must be losable: name elements that',
+        'could fail to appear and edges that could fail to hold. A plan that cannot be wrong is not one.',
       ].join('\n')
     ),
   ].join('\n');
 }
 
-export interface MakeContext {
+export interface MakeContext extends Layers {
   capabilitySheet: string;
-  position: AestheticProgram;
-  brief: Brief;
   program: unknown;
   report: CheckReport;
   description: string;
@@ -235,28 +443,88 @@ export interface MakeContext {
   steps: Step[];
   maxEdits: number;
   stepsLeft: number;
+  /**
+   * Whether the artist can see. True is the default and the design: THINK+ACT and REPLAN are handed
+   * the current plate, and this text says so.
+   *
+   * It used to be false, and the measurement that turned it around is in this repo's own audit of
+   * `situationist-ransom__stop-the-convoy`: across 32 policy calls in a finished trajectory
+   * `hasImages` was true exactly twice, and four of five replans fired on `description-disagrees`.
+   * That is not an artist arguing with its canvas. It is an artist arguing with a narrator about a
+   * picture neither of them has looked at together. Looking is most of painting, and the plate is
+   * free here — the describer already caused these bytes to exist.
+   *
+   * False is now the ablation rather than the design, and worth keeping as exactly that: two runs
+   * on one position, brief and seed differing only here, compared on their replan-reason
+   * distribution, is a measurement rather than an opinion.
+   */
+  canvasAttached: boolean;
+  /**
+   * Whether a second image is attached: the last kept step's change, marked on the plate.
+   *
+   * Separate from `canvasAttached` because it is separately absent — there is no change before the
+   * first kept step, and none after a step that moved no pixels — and the text must never announce
+   * an image that is not there.
+   */
+  changeAttached: boolean;
+  /**
+   * Text ops in the tree now, and the most the profile allows. Stated as a remaining budget rather
+   * than only as a cap: the capability sheet says the cap and a policy that cannot see how much of
+   * it it has already spent proposes over it and is refused, which costs a call and teaches nothing.
+   */
+  textOps: { used: number; max: number };
+}
+
+/** The two readings of the same canvas, and which of them the artist is told to trust. */
+function describerSection(c: MakeContext): string {
+  return section(
+    c.canvasAttached
+      ? 'THE CANVAS, AND WHAT SOMEONE WHO CANNOT SEE YOUR PLAN SAYS ABOUT IT'
+      : 'WHAT THE CANVAS LOOKS LIKE TO SOMEONE WHO CANNOT SEE YOUR PLAN',
+    [
+      c.description,
+      c.audienceRead ? `\nAnd to the person the field says is watching:\n${c.audienceRead}` : '',
+      '',
+      'This describer was shown the image and nothing else — not your position, not the brief, not',
+      'your plan. Where it disagrees with what you meant, it is right about what is there.',
+      c.canvasAttached
+        ? '\nThe canvas itself is attached. Look at it. Where the description and the image disagree the\nimage is the fact and the description is one reading of it.'
+        : '',
+      c.changeAttached
+        ? [
+            '',
+            'A second image is attached: the same canvas faded back, with every pixel your last kept step',
+            'moved marked in red. It is where your last move actually landed, as opposed to where you',
+            'said you were putting it. A move that marks nothing did nothing.',
+          ].join('\n')
+        : '',
+    ]
+      .filter(Boolean)
+      .join('\n')
+  );
+}
+
+/**
+ * The one budget that is spent across steps rather than within one, said as what is left.
+ *
+ * Edits and steps are already stated as remainders. Text ops were stated only as a cap, in the
+ * capability sheet, and that is the budget the policy actually overran.
+ */
+function budgetLine(t: { used: number; max: number }): string {
+  const left = Math.max(0, t.max - t.used);
+  return left === 0
+    ? `The program is at its limit of ${t.max} text ops. Adding another will be refused; to change what it says, edit or delete a text op that is already there.`
+    : `Text ops: ${t.used} of ${t.max} used, ${left} left for the whole rest of the piece.`;
 }
 
 export function makeObservation(c: MakeContext): string {
   return [
-    section('THE MEDIUM', c.capabilitySheet),
-    positionSection(c.position),
-    briefSection(c.brief),
+    section('THE SUBSTRATE — what you can actually draw with, and the budgets you have', c.capabilitySheet),
+    stack(c.position, c.practice, c.deliverable, c.brief),
     intentionSection(c.intention),
     section('THE PROGRAM AS IT STANDS', json(c.program)),
     checkSection(c.report),
-    section(
-      'WHAT THE CANVAS LOOKS LIKE TO SOMEONE WHO CANNOT SEE YOUR PLAN',
-      [
-        c.description,
-        c.audienceRead ? `\nAnd to the person the field says is watching:\n${c.audienceRead}` : '',
-        '',
-        'This describer was shown the image and nothing else — not your position, not the brief, not',
-        'your plan. Where it disagrees with what you meant, it is right about what is there.',
-      ]
-        .filter(Boolean)
-        .join('\n')
-    ),
+    describerSection(c),
     historySection(c.steps),
     section(
       'YOUR STATE',
@@ -265,6 +533,7 @@ export function makeObservation(c: MakeContext): string {
         affectSentence(c.affect),
         '',
         `You may make up to ${c.maxEdits} edit${c.maxEdits === 1 ? '' : 's'} this step. ${c.stepsLeft} steps remain.`,
+        budgetLine(c.textOps),
       ].join('\n')
     ),
     section(
@@ -277,6 +546,12 @@ export function makeObservation(c: MakeContext): string {
         '  replan    — the canvas has told you something the plan does not account for. Say what.',
         '  finished  — the piece does what the plan said and the commission is honoured',
         '  abandon   — this cannot be made from here and you would rather make nothing',
+        '',
+        'WHEN TO SAY FINISHED. Not when the steps run out — running out is not a decision and is not',
+        'recorded as one. Stop when every edge of your plan holds in the work, or when one of them',
+        'cannot be made in this medium at all, in which case say `finished`, name that one edge under',
+        '`unrealizable` as "from->to", and stop. Naming one costs you nothing. Stopping with edges',
+        'outstanding and naming none is recorded as the timer expiring, whatever you write in think.',
         '',
         'Every edit must be legal in the medium described at the top. An illegal edit is refused and',
         'costs you the step. If you need a node id, take it from the program above.',
@@ -291,10 +566,14 @@ export function makeObservation(c: MakeContext): string {
 export function replanObservation(c: MakeContext, trigger: TriggerName, detail: string): string {
   return [
     section(
-      'THE PLAN HAS TO CHANGE',
+      'THE PLAN HAS TO CHANGE (protocol step 5)',
       [
         `trigger: ${trigger}`,
         detail,
+        '',
+        'The work has told you something. Do not simply comply with it: either act on it, or refuse it',
+        'and say why in one sentence, or counter with something that solves what it is actually',
+        'complaining about without violating one of your refusals.',
         '',
         'Revise the plan. You may keep any part of it that still holds. Changing the purpose is allowed',
         'and is a bigger move than rearranging elements; do it if the canvas has actually told you that',
@@ -309,22 +588,20 @@ export function replanObservation(c: MakeContext, trigger: TriggerName, detail: 
     intentionSection(c.intention),
     section('THE PROGRAM AS IT STANDS', json(c.program)),
     checkSection(c.report),
-    section('WHAT IT LOOKS LIKE TO SOMEONE WHO CANNOT SEE YOUR PLAN', c.description),
+    describerSection(c),
     historySection(c.steps),
   ].join('\n');
 }
 
 export function examineObservation(
-  position: AestheticProgram,
-  brief: Brief,
+  l: Layers,
   intention: Intention,
   report: CheckReport,
   description: string,
   audienceRead: string | null
 ): string {
   return [
-    positionSection(position),
-    briefSection(brief),
+    stack(l.position, l.practice, l.deliverable, l.brief),
     intentionSection(intention),
     checkSection(report),
     section(

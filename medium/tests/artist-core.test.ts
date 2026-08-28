@@ -6,7 +6,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
@@ -20,11 +20,25 @@ import {
   onStall,
   stallThreshold,
 } from '../artist/affect.js';
-import { drift, estimateEdges, realization, totalDrift } from '../artist/intention.js';
+import {
+  RENDER_MEASURES,
+  bindingOf,
+  carryNodeIds,
+  declared,
+  drift,
+  estimateEdges,
+  purposeChurn,
+  realization,
+  terminationOf,
+  totalDrift,
+} from '../artist/intention.js';
+import { refusalCause, refusalTally } from '../artist/env.js';
 import { StudioLog, readLog, verifyChain } from '../artist/studio-log.js';
 import { loadCommission, effectivePosition, temperamentOf } from '../artist/field.js';
 import { OBSERVATION_HASH, describeObservation, audienceObservation, findObservation } from '../artist/observation.js';
-import type { Affect, Field, Intention } from '../artist/types.js';
+import { ROOT } from '../env/browser.js';
+import type { RenderMetrics } from '../aesthetic/types.js';
+import type { Affect, EdgeEstimate, Field, Intention } from '../artist/types.js';
 
 // --- affect --------------------------------------------------------------------------------------
 
@@ -150,6 +164,219 @@ test('intention: the three undecidable edge types are reported, never guessed', 
   }
 });
 
+// The test above puts both elements in the tree, so it passes whether the type gate runs first or
+// last, and the regression it is named after is the one where it ran last. This is the case that
+// tells them apart: an undecidable edge is undecidable whether or not its elements got made, and
+// calling it `violated` also counted it in the denominator that `realization` divides by.
+test('intention: an undecidable edge stays undecidable when its element is missing too', () => {
+  const i = intention({ edges: [{ from: 'title', to: 'date', type: 'contradicts', claim: 'x' }] });
+  const t = tree([{ id: 't1', type: 'op', op: 'text', args: { x: 40, y: 10, text: 'A' } }]);
+  const [edge] = estimateEdges(i, t);
+  assert.equal(edge!.status, 'judge-pending');
+  assert.equal(realization(i, t).mechanical, 0, 'and it is not in the denominator');
+});
+
+// --- bindings ------------------------------------------------------------------------------------
+//
+// A binding exists to stop the scoring punishing an artist for declaring an absence or a ratio as
+// part of its plan, WITHOUT handing it an unfalsifiable way out. Its predecessor, `locatable:
+// false`, was a bare assertion that an element was unreachable from the tree; it named no referent,
+// so no evidence could contradict it and the only cost of claiming it for everything was a null
+// score. The tests below are the pair: what the binding must now refuse, and what must not have
+// moved underneath it.
+
+const oneNode = () => tree([{ id: 't1', type: 'op', op: 'text', args: { x: 40, y: 10, text: 'A' } }]);
+
+test('intention: a declared absence is judged, not marked missing', () => {
+  const i = intention({
+    elements: [
+      { id: 'title', role: 'the shout', nodeIds: ['t1'], binding: { kind: 'node' } },
+      {
+        id: 'absence',
+        role: 'the logo nobody printed',
+        nodeIds: [],
+        binding: { kind: 'absence', ref: 'the council crest' },
+      },
+    ],
+    edges: [{ from: 'title', to: 'absence', type: 'aligned-to', claim: 'the gap sits on the margin' }],
+  });
+  const [edge] = estimateEdges(i, oneNode());
+  assert.equal(edge!.status, 'judge-pending');
+  assert.match(edge!.evidence, /deliberate absence of the council crest/);
+  const r = realization(i, oneNode());
+  // One element on the sheet, made. The absence is not in the denominator at all.
+  assert.equal(r.elementsMade, 1);
+  // And binding everything away from the tree earns nothing: null, never 1.
+  assert.equal(r.score, null);
+});
+
+// MUST MOVE. This is the case `locatable: false` could not see: an element that claims to be a
+// relation between things that were never declared. Under the boolean it was judge-pending — the
+// same verdict as an honest absence — so a plan could route any edge it liked away from the tree by
+// asserting a relation over nothing. A ratio has to name its terms, and the terms are checked.
+test('intention: a ratio over elements the plan never declared is broken, not pending', () => {
+  const i = intention({
+    elements: [
+      { id: 'title', role: 'the shout', nodeIds: ['t1'], binding: { kind: 'node' } },
+      { id: 'gap', role: 'the size differential', nodeIds: [], binding: { kind: 'ratio', ref: 'title ghost' } },
+    ],
+    edges: [{ from: 'title', to: 'gap', type: 'aligned-to', claim: 'the gap opens on the margin' }],
+  });
+  const [edge] = estimateEdges(i, oneNode());
+  assert.equal(edge!.status, 'violated');
+  assert.match(edge!.evidence, /never declares: ghost/);
+  // And, being decidable, it is back in the denominator it used to slip out of.
+  assert.equal(realization(i, oneNode()).mechanical, 1);
+});
+
+test('intention: a ratio over elements that do exist is judged, and stays out of the denominator', () => {
+  const i = intention({
+    elements: [
+      { id: 'title', role: 'the shout', nodeIds: ['t1'], binding: { kind: 'node' } },
+      { id: 'date', role: 'the instruction', nodeIds: [], binding: { kind: 'node' } },
+      { id: 'gap', role: 'the size differential', nodeIds: [], binding: { kind: 'ratio', ref: 'title, date' } },
+    ],
+    edges: [{ from: 'title', to: 'gap', type: 'aligned-to', claim: 'the gap opens on the margin' }],
+  });
+  const [edge] = estimateEdges(i, oneNode());
+  assert.equal(edge!.status, 'judge-pending');
+  assert.equal(realization(i, oneNode()).mechanical, 0);
+});
+
+test('intention: a render-measure binding must name a number this medium actually takes', () => {
+  const bound = (ref: string) =>
+    intention({
+      elements: [
+        { id: 'title', role: 'the shout', nodeIds: ['t1'], binding: { kind: 'node' } },
+        { id: 'weight', role: 'how heavy the sheet reads', nodeIds: [], binding: { kind: 'render-measure', ref } },
+      ],
+      edges: [{ from: 'title', to: 'weight', type: 'echoes', claim: 'the shout carries the weight' }],
+    });
+  assert.equal(estimateEdges(bound('inkDensity'), oneNode())[0]!.status, 'judge-pending');
+  const invented = estimateEdges(bound('vibe'), oneNode())[0]!;
+  assert.equal(invented.status, 'violated');
+  assert.match(invented.evidence, /not a measure this medium takes/);
+});
+
+// The list is written out in intention.ts so that no browser module sits behind the offline
+// rescorer. This is the seam that keeps the copy honest: the literal below is typed as the
+// aesthetic layer's own RenderMetrics, so renaming a field there fails to compile here.
+test('intention: the render-measure vocabulary is the aesthetic layer own', () => {
+  const metrics: RenderMetrics = {
+    inkDensity: 0,
+    coverage: 0,
+    inkOffset: 0,
+    symmetry: { vertical: 0, horizontal: 0 },
+    pixelHash: '',
+  };
+  const names = Object.keys(metrics)
+    .filter((k) => k !== 'pixelHash')
+    .flatMap((k) => (k === 'symmetry' ? ['symmetry.vertical', 'symmetry.horizontal'] : [k]));
+  assert.deepEqual(names.sort(), [...RENDER_MEASURES].sort());
+});
+
+// MUST MOVE. A `region` is the one binding that is HARDER than `node`, and it is the answer to the
+// obvious worry about letting the policy declare its own binding: the kinds that leave the tree all
+// cost something, and the one extra kind that stays in it costs more than the default.
+test('intention: a region element written outside its own rectangle did not get made', () => {
+  const region = (ref: string) =>
+    intention({
+      elements: [
+        { id: 'title', role: 'the shout', nodeIds: ['t1'], binding: { kind: 'region', ref } },
+        { id: 'date', role: 'the instruction', nodeIds: ['d1'], binding: { kind: 'node' } },
+      ],
+    });
+  const t = tree([
+    { id: 't1', type: 'op', op: 'text', args: { x: 40, y: 10, text: 'A' } },
+    { id: 'd1', type: 'op', op: 'text', args: { x: 40, y: 80, text: 'B' } },
+  ]);
+  assert.equal(realization(region('0,0,100,50'), t).elementsMade, 1, 'inside the promised band');
+  assert.equal(realization(region('0,60,100,40'), t).elementsMade, 0.5, 'the same node, promised elsewhere');
+  // The edge is still decided from the coordinates: where a thing is promised and whether it is
+  // aligned to another thing are separate questions, and only the second one is an edge.
+  assert.equal(estimateEdges(region('0,60,100,40'), t)[0]!.status, 'satisfied');
+});
+
+test('intention: a region whose rectangle is not a rectangle is a broken plan', () => {
+  const i = intention({
+    elements: [
+      { id: 'title', role: 'the shout', nodeIds: ['t1'], binding: { kind: 'region', ref: 'the top bit' } },
+      { id: 'date', role: 'the instruction', nodeIds: ['d1'], binding: { kind: 'node' } },
+    ],
+  });
+  const t = tree([
+    { id: 't1', type: 'op', op: 'text', args: { x: 40, y: 10, text: 'A' } },
+    { id: 'd1', type: 'op', op: 'text', args: { x: 40, y: 80, text: 'B' } },
+  ]);
+  const [edge] = estimateEdges(i, t);
+  assert.equal(edge!.status, 'violated');
+  assert.match(edge!.evidence, /is not x,y,w,h/);
+});
+
+// MUST STAY FLAT. Every trajectory on disk was logged before bindings existed. If reading one back
+// changed a single verdict, gate 2 would fail on runs nobody touched, and the failure would be
+// blamed on the log rather than on this file.
+test('intention: an intention logged under `locatable` scores exactly as it did', () => {
+  const legacy = intention({
+    elements: [
+      { id: 'title', role: 'the shout', nodeIds: ['t1'] },
+      { id: 'absence', role: 'the logo nobody printed', nodeIds: [], locatable: false },
+    ],
+    edges: [{ from: 'title', to: 'absence', type: 'aligned-to', claim: 'the gap sits on the margin' }],
+  });
+  assert.deepEqual(bindingOf(legacy.elements[0]!), { kind: 'node' });
+  assert.deepEqual(bindingOf(legacy.elements[1]!), { kind: 'absence', ref: 'the logo nobody printed' });
+  const [edge] = estimateEdges(legacy, oneNode());
+  assert.equal(edge!.status, 'judge-pending');
+  const r = realization(legacy, oneNode());
+  assert.equal(r.elementsMade, 1);
+  assert.equal(r.score, null);
+  assert.equal(r.mechanical, 0);
+});
+
+// MUST STAY FLAT. The default case is the overwhelming majority of every plan, and none of the
+// numbers it produces are allowed to have moved.
+test('intention: node-bound elements score identically under either declaration', () => {
+  const t = tree([
+    { id: 't1', type: 'op', op: 'text', args: { x: 40, y: 10, text: 'A' } },
+    { id: 'd1', type: 'op', op: 'text', args: { x: 40, y: 80, text: 'B' } },
+  ]);
+  const unstated = realization(intention(), t);
+  const stated = realization(
+    intention({
+      elements: [
+        { id: 'title', role: 'the shout', nodeIds: ['t1'], binding: { kind: 'node' } },
+        { id: 'date', role: 'the instruction', nodeIds: ['d1'], binding: { kind: 'node' } },
+      ],
+    }),
+    t
+  );
+  assert.deepEqual(stated, unstated);
+  assert.equal(stated.score, 1);
+  assert.equal(stated.elementsMade, 1);
+});
+
+// carryNodeIds is what stops a replan silently unmaking everything built so far. The loop test does
+// not guarantee a replan happens, so without this the function has no coverage at all.
+test('intention: a replan keeps the nodes of the elements it re-declares, and only those', () => {
+  const before = intention();
+  const after = carryNodeIds(
+    before,
+    intention({
+      purpose: 'reworded',
+      elements: [
+        { id: 'title', role: 'still the shout', nodeIds: [] },
+        { id: 'rule', role: 'new', nodeIds: [] },
+      ],
+    })
+  );
+  assert.deepEqual(after.elements.find((e) => e.id === 'title')!.nodeIds, ['t1']);
+  assert.deepEqual(after.elements.find((e) => e.id === 'rule')!.nodeIds, []);
+  assert.equal(after.purpose, 'reworded');
+  // `declared` is the other half: what the policy said, with the environment's column blank.
+  assert.deepEqual(declared(before).elements.map((e) => e.nodeIds), [[], []]);
+});
+
 test('intention: an element that never got made fails its edges whatever they claim', () => {
   const t = tree([{ id: 't1', type: 'op', op: 'text', args: { x: 40, y: 10, text: 'A' } }]);
   const [edge] = estimateEdges(intention(), t);
@@ -169,16 +396,77 @@ test('intention: a plan made only of unjudgeable edges scores null, not one', ()
   assert.equal(r.elementsMade, 1);
 });
 
-test('intention: drift is zero against itself and changing the purpose dominates', () => {
+// Drift is structural and purpose churn is not folded into it, which is the whole point of the two
+// being separate numbers: an artist that reworded its purpose has not moved its plan, and a metric
+// that says it has is measuring the writing.
+test('intention: drift is structural, and rewording the purpose moves nothing', () => {
   const a = intention();
   assert.equal(drift(a, a), 0);
-  assert.ok(drift(a, intention({ purpose: 'something else' })) >= 0.5);
+  assert.equal(drift(a, intention({ purpose: 'something else' })), 0);
   const restructured = intention({
     elements: [{ id: 'other', role: 'r', nodeIds: [] }],
     edges: [],
   });
   assert.ok(drift(a, restructured) > 0);
+  // Renaming a role is rewording too: the id is the identity.
+  assert.equal(drift(a, intention({ elements: a.elements.map((e) => ({ ...e, role: 'renamed' })) })), 0);
   assert.equal(totalDrift([a, a, a]), 0);
+});
+
+test('intention: purpose churn is counted where it can be read, not averaged into drift', () => {
+  const a = intention();
+  const b = intention({ purpose: 'something else entirely' });
+  assert.deepEqual(purposeChurn([a, a]), { changed: 0, charsFirst: a.purpose.length, charsLast: a.purpose.length });
+  assert.equal(purposeChurn([a, b, a]).changed, 2);
+  assert.equal(purposeChurn([a, b]).charsLast, b.purpose.length);
+});
+
+// --- stopping ------------------------------------------------------------------------------------
+
+// The acceptance test for a stop action: a scorer with no model decides whether the run terminated
+// legitimately. Running out of steps can never pass it, however good the piece is, because nothing
+// about the work was consulted when the loop broke.
+test('termination: running out of steps is never a legitimate stop, even with nothing outstanding', () => {
+  const clean: EdgeEstimate[] = [{ from: 'title', to: 'date', type: 'echoes', status: 'satisfied', evidence: 'x' }];
+  assert.equal(terminationOf(clean, 'declared-finished', null).legitimate, true);
+  assert.equal(terminationOf(clean, 'out-of-steps', null).legitimate, false);
+  // An abandon is a different outcome, not a legitimate stop and not scored as a failed one.
+  assert.equal(terminationOf(clean, 'abandoned', null).legitimate, false);
+});
+
+test('termination: stopping with an edge outstanding is legitimate only if the artist named that edge', () => {
+  const one: EdgeEstimate[] = [
+    { from: 'title', to: 'date', type: 'echoes', status: 'satisfied', evidence: 'x' },
+    { from: 'date', to: 'bar', type: 'aligned-to', status: 'violated', evidence: 'no common axis' },
+  ];
+  assert.equal(terminationOf(one, 'declared-finished', null).legitimate, false);
+  assert.equal(terminationOf(one, 'declared-finished', 'date->bar').legitimate, true);
+  // Naming a different edge is not a wildcard, and neither is naming one on a timeout.
+  assert.equal(terminationOf(one, 'declared-finished', 'title->date').legitimate, false);
+  assert.equal(terminationOf(one, 'out-of-steps', 'date->bar').declaredUnrealizable, null);
+  // Two outstanding is not one, whichever is named: the escape is for a single unmakeable edge.
+  const two = [...one, { from: 'bar', to: 'title', type: 'echoes', status: 'violated', evidence: 'y' } as EdgeEstimate];
+  assert.equal(terminationOf(two, 'declared-finished', 'date->bar').legitimate, false);
+  assert.deepEqual(terminationOf(two, 'declared-finished', null).unrealizedEdges, ['date->bar', 'bar->title']);
+});
+
+// A budget refusal and a structural one say opposite things about the artist. One measured run
+// refused 22 edits for maxTextOps out of 29 refusals; a single count would have read as an artist
+// that could not address the tree.
+test('refusals: cause is read off the validator code, so a cap is not counted as a mistake', () => {
+  assert.equal(refusalCause('/root: 13 text ops exceeds the profile\'s limit of 12 [limit.textOps]'), 'budget');
+  assert.equal(refusalCause('/root: ink density 0.71 over 0.62 [budget]'), 'budget');
+  assert.equal(refusalCause('/root/1: the profile does not allow the "spray" operator [op.notAllowed]'), 'capability');
+  assert.equal(refusalCause('/root/1: fragment "x" is not in asset pack "core" [fragment.unknown]'), 'capability');
+  assert.equal(refusalCause('no node "nowhere" in the program'), 'structural');
+  assert.equal(refusalCause('/root/1: 40 is outside the profile\'s range [0, 20] for "w" [range]'), 'structural');
+  assert.deepEqual(
+    refusalTally([
+      { refused: [{ actionId: 'a', kind: 'add_node', cause: 'budget', reason: 'r' }] },
+      { refused: [] },
+    ]),
+    { budget: 1, capability: 0, structural: 0 }
+  );
 });
 
 // --- studio log ----------------------------------------------------------------------------------
@@ -216,25 +504,22 @@ test('studio log: the file on disk is one JSON object per line', () => {
 
 // --- commission ----------------------------------------------------------------------------------
 
+// Every cell of the grid, read off disk rather than listed, so a document added or renamed cannot
+// leave this checking a smaller catalog than exists.
+const catalog = (dir: string, suffix = '.json') =>
+  readdirSync(path.join(ROOT, 'aesthetic', dir))
+    .filter((f) => f.endsWith(suffix) && !f.endsWith('.field.json'))
+    .sort()
+    .map((f) => f.slice(0, -suffix.length));
+
 test('commission: every position carries a temperament and every brief carries a field', () => {
-  const positions = [
-    'berlin-rave-flyer',
-    'crass-collage',
-    'ikeda-austerity',
-    'riot-grrrl-zine',
-    'situationist-ransom',
-    'underground-resistance',
-  ];
-  const briefs = [
-    'night-market-bombing',
-    'rye-lane-evictions',
-    'stop-the-convoy',
-    'transmission-four',
-    'tresor-last-night',
-  ];
+  const positions = catalog('positions');
+  const briefs = catalog('briefs');
+  const deliverable = catalog('deliverables')[0]!;
+  assert.ok(positions.length >= 2 && briefs.length >= 2);
   for (const p of positions) {
     for (const b of briefs) {
-      const c = loadCommission(p, b);
+      const c = loadCommission(p, b, deliverable);
       assert.ok(c.temperament.value >= -1 && c.temperament.value <= 1, `${p} temperament`);
       assert.ok(c.temperament.why.length > 40, `${p} temperament needs a reason`);
       assert.ok(c.field.stakesLevel >= 0 && c.field.stakesLevel <= 1, `${b} stakesLevel`);
@@ -275,7 +560,7 @@ test('observation: the serializer hashes its own bytes, so an edit is a version 
 });
 
 test('observation: the environment describers are blind to everything but the image', () => {
-  const c = loadCommission('crass-collage', 'rye-lane-evictions');
+  const c = loadCommission('cut-and-reset', 'arches-eviction', 'poster');
   const leak = [
     c.position.name,
     c.position.worldview.slice(0, 40),
@@ -297,8 +582,8 @@ test('observation: the environment describers are blind to everything but the im
 });
 
 test('observation: FIND sees the field, because that is where a problem has to come from', () => {
-  const c = loadCommission('crass-collage', 'rye-lane-evictions');
-  const obs = findObservation(c.position, c.brief, c.field);
+  const c = loadCommission('cut-and-reset', 'arches-eviction', 'poster');
+  const obs = findObservation(c, c.field);
   assert.ok(obs.includes(c.field.whoIsWatching.adversary));
   assert.ok(obs.includes(c.field.transplants[0]!.ref));
   assert.ok(obs.includes(c.position.worldview.slice(0, 60)));

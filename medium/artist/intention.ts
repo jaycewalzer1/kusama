@@ -9,7 +9,15 @@
 // Pure. No renders, no model calls, so `reward.ts` recomputes all of this from the log.
 
 import { treeFacts } from '../aesthetic/facts.js';
-import type { EdgeEstimate, EdgeType, Intention, IntentionEdge } from './types.js';
+import type {
+  EdgeEstimate,
+  EdgeType,
+  ElementBinding,
+  Intention,
+  IntentionElement,
+  IntentionEdge,
+  Termination,
+} from './types.js';
 
 type Dict = Record<string, unknown>;
 
@@ -118,6 +126,114 @@ function unionNumbers(ids: string[], per: Map<string, Set<number>>): Set<number>
  */
 const MECHANICAL: ReadonlySet<EdgeType> = new Set<EdgeType>(['aligned-to', 'echoes']);
 
+// --- bindings ------------------------------------------------------------------------------------
+
+/**
+ * The numbers measure.ts takes off the canonical image, by name.
+ *
+ * Written out rather than imported: `measure.ts` pulls in `env/browser.ts`, and putting a browser
+ * behind this file would end the offline rescore that `reward.ts` depends on. This is a vocabulary,
+ * not a measurement — nothing here reads a pixel. A test in artist-core holds the list against a
+ * `RenderMetrics` literal so a rename in the aesthetic layer fails to compile rather than silently
+ * turning every render-measure binding into a broken one.
+ */
+export const RENDER_MEASURES: ReadonlySet<string> = new Set([
+  'inkDensity',
+  'coverage',
+  'inkOffset',
+  'symmetry.vertical',
+  'symmetry.horizontal',
+]);
+
+interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+function refParts(ref: string): string[] {
+  return ref.split(/[\s,]+/).filter((s) => s.length > 0);
+}
+
+/** `x,y,w,h`. Null when the ref is not four finite numbers enclosing a positive area. */
+function parseRect(ref: string): Rect | null {
+  const parts = refParts(ref).map(Number);
+  if (parts.length !== 4 || parts.some((n) => !Number.isFinite(n))) return null;
+  const [x, y, w, h] = parts as [number, number, number, number];
+  return w > 0 && h > 0 ? { x, y, w, h } : null;
+}
+
+/**
+ * The binding an element declared, or the one implied by a trajectory recorded before bindings
+ * existed.
+ *
+ * `locatable: false` said only "not the kind of thing the tree holds" and named no referent, which
+ * is `absence` minus the obligation to say what is absent; `true` and the unstated default both
+ * meant `node`. Reconstructing rather than defaulting to `node` matters: reading those old elements
+ * as node-bound would mark every declared absence as a thing the artist failed to build.
+ */
+export function bindingOf(element: IntentionElement): ElementBinding {
+  if (element.binding) return element.binding;
+  return element.locatable === false ? { kind: 'absence', ref: element.role } : { kind: 'node' };
+}
+
+/**
+ * `points-at-nodes` — the tree is the right place to look, so carry on to the tree gate.
+ * `judge`       — this element is genuinely not in the tree and never could be.
+ * `broken`      — it claims to point at something that does not exist. Not the same as absent.
+ */
+interface BindingVerdict {
+  kind: 'points-at-nodes' | 'judge' | 'broken';
+  why: string;
+}
+
+function resolveBinding(element: IntentionElement, intention: Intention): BindingVerdict {
+  const binding = bindingOf(element);
+  const ref = binding.ref?.trim() ?? '';
+  switch (binding.kind) {
+    case 'node':
+      return { kind: 'points-at-nodes', why: '' };
+    case 'region':
+      return parseRect(ref) === null
+        ? { kind: 'broken', why: `${element.id} is bound to a region, but "${ref}" is not x,y,w,h` }
+        : { kind: 'points-at-nodes', why: '' };
+    case 'ratio': {
+      const ids = refParts(ref);
+      if (ids.length < 2) {
+        return { kind: 'broken', why: `${element.id} is a ratio, but "${ref}" names fewer than two elements` };
+      }
+      const undeclared = ids.filter((id) => !intention.elements.some((e) => e.id === id));
+      if (undeclared.length > 0) {
+        return { kind: 'broken', why: `${element.id} is a ratio over elements the intention never declares: ${undeclared.join(' ')}` };
+      }
+      return { kind: 'judge', why: `${element.id} is a ratio between ${ids.join(' and ')}, which no node carries` };
+    }
+    case 'absence':
+      return ref.length === 0
+        ? { kind: 'broken', why: `${element.id} is an absence that does not say what is absent` }
+        : { kind: 'judge', why: `${element.id} is the deliberate absence of ${ref}` };
+    case 'render-measure':
+      return RENDER_MEASURES.has(ref)
+        ? { kind: 'judge', why: `${element.id} is a property of the printed image (${ref}), not of the tree` }
+        : {
+            kind: 'broken',
+            why: `${element.id} is bound to "${ref}", which is not a measure this medium takes: ${[...RENDER_MEASURES].join(' ')}`,
+          };
+  }
+}
+
+/** Was one of this element's nodes actually written inside the rectangle it was promised to? */
+function insideRegion(element: IntentionElement, rect: Rect, geo: NodeGeometry): boolean {
+  return element.nodeIds.some((id) => {
+    const xs = [...(geo.xs.get(id) ?? [])];
+    const ys = [...(geo.ys.get(id) ?? [])];
+    return (
+      xs.some((x) => x >= rect.x && x <= rect.x + rect.w) && ys.some((y) => y >= rect.y && y <= rect.y + rect.h)
+    );
+  });
+}
+
 export function estimateEdge(
   edge: IntentionEdge,
   intention: Intention,
@@ -133,15 +249,40 @@ export function estimateEdge(
     return { ...base, status: 'violated', evidence: 'edge names an element the intention does not declare' };
   }
 
-  // An element with no node in the tree did not get made, whatever the edge claims about it.
+  // The type gate comes FIRST, before anything is asked of the tree. It used to come last, so an
+  // edge whose endpoint had no node was reported `violated` even when its type was one this file
+  // has already said it cannot decide — and, worse, was counted in `mechanical` and so pushed the
+  // realization score down through a denominator it had no business being in. A `contradicts` edge
+  // is undecidable whether or not its elements are in the tree; saying so is the honest order.
+  if (!MECHANICAL.has(edge.type)) {
+    return { ...base, status: 'judge-pending', evidence: `${edge.type} is not decidable from the tree: "${edge.claim}"` };
+  }
+
+  // Gate 2, before the tree is asked anything: does each endpoint's binding resolve? Some elements
+  // are not the kind of thing that can own a node id. An absence (the missing logo that does the
+  // work of the missing organisation) and a ratio (the size differential between two other
+  // elements) are both real parts of a plan and neither can ever appear in `geo.ids`. Scoring them
+  // `violated` for that punished the artist for declaring exactly the elements its position was
+  // about, which is a reward-hacking incentive pointed at the thesis. They route to the judge.
+  //
+  // A binding whose referent does not exist is the opposite case and is kept apart from it. Broken
+  // is checked before judge so that a plan claiming a ratio over an element it never declared is
+  // scored as the broken plan it is, whichever end of the edge it sits on.
+  //
+  // None of this can be used to escape scoring: an intention whose edges are ALL judge-pending
+  // scores `null`, never 1 (see `realization`), so binding everything away from the tree earns
+  // nothing, and every non-node binding now has to name a referent that survives a check.
+  const verdicts = [from, to].map((e) => resolveBinding(e, intention));
+  const broken = verdicts.find((v) => v.kind === 'broken');
+  if (broken) return { ...base, status: 'violated', evidence: broken.why };
+  const judged = verdicts.find((v) => v.kind === 'judge');
+  if (judged) return { ...base, status: 'judge-pending', evidence: judged.why };
+
+  // Gate 3. A node-bound element with no node in the tree did not get made, whatever the edge claims.
   const missing = [...from.nodeIds, ...to.nodeIds].filter((id) => !geo.ids.has(id));
   if (from.nodeIds.length === 0 || to.nodeIds.length === 0 || missing.length > 0) {
     const which = from.nodeIds.length === 0 ? from.id : to.nodeIds.length === 0 ? to.id : missing.join(' ');
     return { ...base, status: 'violated', evidence: `not in the tree: ${which}` };
-  }
-
-  if (!MECHANICAL.has(edge.type)) {
-    return { ...base, status: 'judge-pending', evidence: `${edge.type} is not decidable from the tree: "${edge.claim}"` };
   }
 
   if (edge.type === 'echoes') {
@@ -171,7 +312,7 @@ export interface Realization {
   mechanical: number;
   satisfied: number;
   judgePending: number;
-  /** Fraction of declared elements that actually have a node in the final tree. */
+  /** Fraction of the elements bound to the sheet that actually landed on it. */
   elementsMade: number;
   estimates: EdgeEstimate[];
 }
@@ -186,13 +327,28 @@ export function realization(intention: Intention, program: unknown): Realization
   const decidable = estimates.filter((e) => e.status !== 'judge-pending');
   const satisfied = decidable.filter((e) => e.status === 'satisfied').length;
   const geo = geometry(program);
-  const made = intention.elements.filter((e) => e.nodeIds.length > 0 && e.nodeIds.every((id) => geo.ids.has(id)));
+  // Only elements that COULD have been built are asked whether they were. An absence has not failed
+  // to be made; there was never anything to make. A ratio and a render-measure likewise.
+  const onSheet = intention.elements.filter((e) => {
+    const kind = bindingOf(e).kind;
+    return kind === 'node' || kind === 'region';
+  });
+  // A `region` binding is answered more strictly than a `node` one, and that asymmetry is the whole
+  // reason the kind exists: promising a part of the picture to a named rectangle and then writing it
+  // somewhere else is not the same as making it. Nodes present but outside the rectangle is unmade.
+  const made = onSheet.filter((e) => {
+    if (e.nodeIds.length === 0 || !e.nodeIds.every((id) => geo.ids.has(id))) return false;
+    const binding = bindingOf(e);
+    if (binding.kind !== 'region') return true;
+    const rect = parseRect(binding.ref?.trim() ?? '');
+    return rect !== null && insideRegion(e, rect, geo);
+  });
   return {
     score: decidable.length === 0 ? null : satisfied / decidable.length,
     mechanical: decidable.length,
     satisfied,
     judgePending: estimates.length - decidable.length,
-    elementsMade: intention.elements.length === 0 ? 0 : made.length / intention.elements.length,
+    elementsMade: onSheet.length === 0 ? 0 : made.length / onSheet.length,
     estimates,
   };
 }
@@ -228,6 +384,41 @@ export function declared(i: Intention): Intention {
   return { ...i, elements: i.elements.map((e) => ({ ...e, nodeIds: [] })) };
 }
 
+// --- stopping ------------------------------------------------------------------------------------
+
+/**
+ * How the run stopped, decided against the plan rather than against the step counter.
+ *
+ * Lives here, beside the edge verdicts it reads, and is shared by `run.ts` and `reward.ts` rather
+ * than written twice. The rescorer's whole claim is that every number is a function of the record; a
+ * legitimacy rule implemented in two places is a rule that eventually becomes two rules, and the
+ * disagreement would surface as a gate-2 failure blamed on the log.
+ *
+ * Read against `realization`'s tree verdicts and never against EXAMINE's. EXAMINE is the artist
+ * grading its own picture, and a stopping rule scored off it would let the artist finish by saying
+ * so twice.
+ */
+export function terminationOf(
+  estimates: EdgeEstimate[],
+  kind: Termination['kind'],
+  declaredUnrealizable: string | null
+): Termination {
+  const unrealizedEdges = estimates.filter((e) => e.status === 'violated').map((e) => `${e.from}->${e.to}`);
+  // Only a `finished` step's claim counts. A run that ran out of steps, or abandoned, is not making
+  // the claim, and honouring the field there would let a timeout present itself as a decision.
+  const named = kind === 'declared-finished' ? declaredUnrealizable : null;
+  return {
+    kind,
+    edgesUnrealized: unrealizedEdges.length,
+    unrealizedEdges,
+    declaredUnrealizable: named,
+    legitimate:
+      kind === 'declared-finished' &&
+      (unrealizedEdges.length === 0 ||
+        (unrealizedEdges.length === 1 && named !== null && named === unrealizedEdges[0])),
+  };
+}
+
 // --- drift ---------------------------------------------------------------------------------------
 
 function jaccardDistance(a: Set<string>, b: Set<string>): number {
@@ -237,8 +428,17 @@ function jaccardDistance(a: Set<string>, b: Set<string>): number {
   return 1 - shared / (a.size + b.size - shared);
 }
 
+/**
+ * An element's identity is its id and nothing else.
+ *
+ * This used to be `${id}:${role}`, which made drift a string diff over prose the artist rewrites on
+ * every replan as a matter of course. On the run that exposed it, five replans kept all six element
+ * ids and all seven edges — the plan's structure never moved once — and drift read 4.71 out of a
+ * possible 5.0, which is what "the artist abandoned its plan five times" looks like. It had not.
+ * A metric that cannot tell rewording from rethinking is measuring the writing.
+ */
 function elementKeys(i: Intention): Set<string> {
-  return new Set(i.elements.map((e) => `${e.id}:${e.role}`));
+  return new Set(i.elements.map((e) => e.id));
 }
 
 function edgeKeys(i: Intention): Set<string> {
@@ -246,20 +446,40 @@ function edgeKeys(i: Intention): Set<string> {
 }
 
 /**
- * How far intention B sits from intention A: 0 is the same plan, 1 shares nothing. Set distance over
- * elements and over edges, averaged, plus a flat 0.5 if the stated purpose changed at all — because
- * a plan that keeps every element and every edge but is now for a different reason has drifted more
- * than any rearrangement of parts.
+ * How far intention B sits from intention A structurally: 0 is the same parts wired the same way,
+ * 1 shares nothing. Set distance over element ids and over edges, averaged.
+ *
+ * Purpose is deliberately NOT in here any more. It carried a flat 0.5 for any change at all, which
+ * on a model that appends a sentence to its purpose every time it thinks meant the term was pinned
+ * on for all but the first comparison and drift could never fall below 0.5. Purpose churn is a real
+ * thing to want to know and it is now its own number — see `purposeChurn` — where it can be read
+ * without being averaged into a claim about structure.
  */
 export function drift(a: Intention, b: Intention): number {
   const structural = (jaccardDistance(elementKeys(a), elementKeys(b)) + jaccardDistance(edgeKeys(a), edgeKeys(b))) / 2;
-  const purposeMoved = a.purpose.trim() === b.purpose.trim() ? 0 : 0.5;
-  return Math.round(Math.min(1, structural + purposeMoved) * 1000) / 1000;
+  return Math.round(Math.min(1, structural) * 1000) / 1000;
 }
 
-/** Total drift across a replan history: the distance actually travelled, not first-to-last. */
+/** Total structural drift across a replan history: the distance travelled, not first-to-last. */
 export function totalDrift(intentions: Intention[]): number {
   let sum = 0;
   for (let i = 1; i < intentions.length; i++) sum += drift(intentions[i - 1]!, intentions[i]!);
   return Math.round(sum * 1000) / 1000;
+}
+
+/**
+ * How many replans rewrote the stated purpose, and by how much the text grew. Reported, never
+ * averaged into drift: an artist that restates its purpose in new words each step and an artist that
+ * changes what the piece is for produce the same number here, and only a judge can separate them.
+ */
+export function purposeChurn(intentions: Intention[]): { changed: number; charsFirst: number; charsLast: number } {
+  let changed = 0;
+  for (let i = 1; i < intentions.length; i++) {
+    if (intentions[i - 1]!.purpose.trim() !== intentions[i]!.purpose.trim()) changed++;
+  }
+  return {
+    changed,
+    charsFirst: intentions[0]?.purpose.length ?? 0,
+    charsLast: intentions[intentions.length - 1]?.purpose.length ?? 0,
+  };
 }
