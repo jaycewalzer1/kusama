@@ -12,6 +12,7 @@
 //   artist recompute <dir...>            rebuild scores.json from the log alone
 //   artist strip <dir>                   every plate the trajectory stood on, left to right
 //   artist sheet <dir>                   the grid image from directories already run
+//   artist blindpack <dir...>            the human test: pictures, practices, and a sealed key
 //   artist export <dir...>               chat-format JSONL for training
 //
 // Renders are strictly serial inside a process (NOTES R8), so `grid` runs its cells one after
@@ -21,6 +22,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import path from 'node:path';
 import { Command } from 'commander';
 import { Canvas } from '../artist/canvas.js';
+import { pairsOf, writePack } from '../artist/blindpack.js';
 import { filmstrip, finalHashOf } from '../artist/filmstrip.js';
 import {
   alreadyDone,
@@ -472,6 +474,36 @@ program
       await canvas.close();
     }
     process.exitCode = bad === 0 ? 0 : 1;
+  });
+
+program
+  .command('blindpack')
+  .description('a folder of paired finals and unlabelled practices, plus a sealed answer key')
+  .argument('<dirs...>')
+  .option('-o, --out <dir>', 'where to write the pack', 'out/blindpack')
+  .option('--seed <n>', 'the shuffle seed, so a pack can be regenerated exactly', '1')
+  .action((dirs: string[], opts: Record<string, string>) => {
+    const runs = dirs
+      .flatMap((d) => trajectoriesIn(d))
+      .map(({ dir, trajectory }) => ({
+        dir,
+        positionId: trajectory.positionId,
+        briefId: trajectory.briefId,
+        deliverableId: trajectory.deliverableId,
+      }));
+    const pack = pairsOf(runs, Number(opts['seed']));
+    if (pack.pairs.length === 0) {
+      console.log('no pair of runs shares a brief and an object under different positions');
+      for (const s of pack.skipped) console.log(`  skipped ${s.dir}: ${s.why}`);
+      process.exitCode = 1;
+      return;
+    }
+    const written = writePack(pack, opts['out']!);
+    console.log(`${pack.pairs.length} pairs, ${written.length} files -> ${opts['out']}`);
+    for (const p of pack.pairs) console.log(`  ${p.name}  ${p.briefId} / ${p.deliverableId}`);
+    // Loudly, not in a log file. A pack quietly missing half its runs is a test of a different
+    // thing from the one it says it is.
+    for (const s of pack.skipped) console.log(`  skipped ${s.dir}: ${s.why}`);
   });
 
 program

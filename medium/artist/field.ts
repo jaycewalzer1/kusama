@@ -295,6 +295,15 @@ function resolveIn(dir: string, idOrPath: string): string {
   return idOrPath.endsWith('.json') ? idOrPath : path.join(ROOT, dir, `${idOrPath}.json`);
 }
 
+/**
+ * A position by id, or by path if it is given one. `loadAestheticProgram` takes a file, so every
+ * caller that has only an id has to know where positions live; naming that once keeps the answer in
+ * one place.
+ */
+export function loadPosition(idOrPath: string): AestheticProgram {
+  return loadAestheticProgram(resolveIn('aesthetic/positions', idOrPath));
+}
+
 export function loadBrief(idOrPath: string): Brief {
   const file = resolveIn('aesthetic/briefs', idOrPath);
   return JSON.parse(readFileSync(file, 'utf8')) as Brief;
@@ -438,7 +447,7 @@ export function loadCommission(
   briefIdOrPath: string,
   deliverableId: string
 ): Commission {
-  const position = loadAestheticProgram(resolveIn('aesthetic/positions', positionIdOrPath));
+  const position = loadPosition(positionIdOrPath);
   const brief = loadBrief(briefIdOrPath);
   const deliverable = loadDeliverable(deliverableId);
   const field = loadField(brief.id);
