@@ -10,7 +10,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, existsSync } from 'node:fs';
+import { cpSync, mkdtempSync, readFileSync, existsSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { runTrajectory } from '../artist/run.js';
@@ -157,7 +157,49 @@ test('gate 1: the trajectory replays exactly, with no model and no divergence', 
 test('gate 2: scores.json rebuilds exactly from the log alone', async () => {
   const result = await recomputeMatches(CELL);
   assert.deepEqual(result.differences, []);
+  // MUST STAY FLAT. A run recorded by this build has every score the recompute produces, so nothing
+  // is new and the union comparison sees exactly what the old one-sided walk saw.
+  assert.deepEqual(result.added, []);
+  assert.equal(result.unscorable, null);
   assert.equal(result.ok, true);
+});
+
+test('a run recorded before a score existed says so instead of reporting exact', async () => {
+  // MUST MOVE. The comparison used to walk the written file's keys, so a score added after a run
+  // was recorded fell outside it entirely: the run reported `exact` while whole families of numbers
+  // went unchecked. Standing in for that here by taking a key away from a copy of a real run.
+  const older = path.join(OUT, 'older');
+  cpSync(CELL, older, { recursive: true });
+  const scores = JSON.parse(readFileSync(path.join(older, 'scores.json'), 'utf8'));
+  delete scores.canvasVisibleRate;
+  scores.destructionRate = 0.5;
+  writeFileSync(path.join(older, 'scores.json'), JSON.stringify(scores, null, 2));
+
+  const result = await recomputeMatches(older);
+  assert.equal(result.added.length, 1);
+  assert.match(result.added[0]!, /^canvasVisibleRate: not recorded/);
+  // A score that did not exist has nothing to disagree with, so it is not a failure — but a score
+  // that was recorded and no longer matches still is, and the two are reported apart.
+  assert.equal(result.ok, false);
+  assert.equal(result.differences.length, 1);
+  assert.match(result.differences[0]!, /^destructionRate: recorded 0\.5/);
+});
+
+test('a run whose commission has left the catalog is unscorable, not a crash', async () => {
+  // Raising here used to kill a whole batch at its first dead run and report nothing about the
+  // rest. Being unable to rescore a run is a fact about that run and belongs in its own row.
+  const gone = path.join(OUT, 'gone');
+  cpSync(CELL, gone, { recursive: true });
+  const lines = readFileSync(path.join(gone, 'studio.jsonl'), 'utf8')
+    .trimEnd()
+    .split('\n')
+    .map((l) => l.replace('"positionId":"generation-loss"', '"positionId":"a-position-that-was-deleted"'));
+  writeFileSync(path.join(gone, 'studio.jsonl'), lines.join('\n') + '\n');
+
+  const result = await recomputeMatches(gone);
+  assert.equal(result.ok, false);
+  assert.equal(result.scores, null);
+  assert.match(result.unscorable!, /a-position-that-was-deleted/);
 });
 
 test('gate 6: the environment never saw the position, the brief, the plan or the mood', () => {

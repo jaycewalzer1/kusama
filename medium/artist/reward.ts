@@ -289,21 +289,55 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
 
 export interface RecomputeCheck {
   dir: string;
+  /** The run was rescored and every score it had recorded came back the same. */
   ok: boolean;
   differences: string[];
+  /**
+   * Scores the written file does not have. Reported apart from `differences` and never counted as
+   * one: a score that did not exist when the run was recorded has nothing to disagree with.
+   */
+  added: string[];
+  /** Why this run cannot be rescored at all, or null. */
+  unscorable: string | null;
+  /** The recomputed scores, for a caller that wants to write them down. Null when unscorable. */
+  scores: Scores | null;
 }
 
-/** Recompute and compare against the scores.json the run wrote. Gate 2 is this, ten times. */
+/**
+ * Recompute and compare against the scores.json the run wrote. Gate 2 is this, ten times.
+ *
+ * Two things this does not do, both of which it used to.
+ *
+ * It no longer iterates the written file's keys alone. Scores get added, and every score added
+ * since a run was recorded was silently outside the comparison — an old run reported `exact` while
+ * whole families of numbers went unchecked, which is the failure mode a verification pass exists to
+ * not have. The union is walked instead, and a key the written file lacks is reported as `added`
+ * rather than as a difference, because a score that did not exist has nothing to disagree with.
+ *
+ * It no longer throws when the run cannot be scored. A commission that has since left the catalog
+ * makes a run unrescorable, which is a fact about the run and belongs in its row; raising it killed
+ * the whole batch at the first dead position and reported nothing about the runs after it.
+ */
 export async function recomputeMatches(dir: string, canvas?: Canvas): Promise<RecomputeCheck> {
   const written = JSON.parse(readFileSync(path.join(dir, 'scores.json'), 'utf8')) as Scores;
-  const { scores, chainProblems } = await recompute(dir, canvas);
+  let result: Awaited<ReturnType<typeof recompute>>;
+  try {
+    result = await recompute(dir, canvas);
+  } catch (e) {
+    const why = e instanceof Error ? e.message : String(e);
+    return { dir, ok: false, differences: [], added: [], unscorable: why, scores: null };
+  }
+  const { scores, chainProblems } = result;
   const differences = chainProblems.map((p) => `log line ${p.seq}: ${p.problem}`);
-  for (const key of Object.keys(written) as (keyof Scores)[]) {
-    if (JSON.stringify(written[key]) !== JSON.stringify(scores[key])) {
+  const added: string[] = [];
+  for (const key of new Set([...Object.keys(written), ...Object.keys(scores)]) as Set<keyof Scores>) {
+    if (!(key in written)) {
+      added.push(`${key}: not recorded, recomputed ${JSON.stringify(scores[key])}`);
+    } else if (JSON.stringify(written[key]) !== JSON.stringify(scores[key])) {
       differences.push(`${key}: recorded ${JSON.stringify(written[key])}, recomputed ${JSON.stringify(scores[key])}`);
     }
   }
-  return { dir, ok: differences.length === 0, differences };
+  return { dir, ok: differences.length === 0, differences, added, unscorable: null, scores };
 }
 
 /** Every score in one directory of trajectories, flattened for a spreadsheet. */

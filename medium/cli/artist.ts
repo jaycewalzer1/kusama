@@ -439,16 +439,33 @@ program
   .command('recompute')
   .description('rebuild scores.json from studio.jsonl and compare')
   .argument('<dirs...>')
-  .action(async (dirs: string[]) => {
+  .option('--write', 'write the recomputed scores to scores.v2.json beside the original')
+  .action(async (dirs: string[], opts: Record<string, unknown>) => {
     const canvas = new Canvas();
     let bad = 0;
     try {
       for (const dir of dirs.flatMap((d) => trajectoriesIn(d).map((t) => t.dir))) {
         const r = await recomputeMatches(dir, canvas);
+        if (r.unscorable) {
+          bad++;
+          console.log(`UNSCORABLE ${dir}\n  ${r.unscorable}`);
+          continue;
+        }
         console.log(`${r.ok ? 'exact  ' : 'DIFFERS'} ${dir}`);
         if (!r.ok) {
           bad++;
           console.log(`  ${r.differences.join('\n  ')}`);
+        }
+        // Not a failure. These are scores that did not exist when the run was recorded, and the
+        // only dishonest thing to do with them is leave them out of the report.
+        if (r.added.length > 0) console.log(`  + ${r.added.join('\n  + ')}`);
+        if (opts['write'] && r.scores) {
+          // Beside scores.json, never over it. The original is what the run actually reported, and
+          // a rescore that edits it in place makes every later comparison unfalsifiable — there is
+          // no longer anything on disk that says what the number was at the time.
+          const to = path.join(dir, 'scores.v2.json');
+          writeFileSync(to, JSON.stringify(r.scores, null, 2));
+          console.log(`  wrote ${to}`);
         }
       }
     } finally {
