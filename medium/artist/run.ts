@@ -21,7 +21,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { loadPackFor } from '../env/pack.js';
 import { canonicalJson, contentHash, loadProfile, loadProfileFor } from '../env/profile.js';
-import { affectSentence, initialAffect } from './affect.js';
+import { affectArmed, affectSentence, initialAffect } from './affect.js';
 import { capabilitySheet } from './capability-sheet.js';
 import { Canvas, check } from './canvas.js';
 import { newSpend, type Spend } from './call.js';
@@ -207,7 +207,8 @@ function scoresOf(
   problems: Problem[],
   fieldText: string,
   seen: Examine | null,
-  stopped: Termination['kind']
+  stopped: Termination['kind'],
+  affect0: Affect
 ): Scores {
   const real = realization(intention, program);
   const risk = steps.find((s) => s.accepted && s.isRiskMove);
@@ -247,6 +248,7 @@ function scoresOf(
     // saying so twice.
     termination: terminationOf(real.estimates, stopped, last?.action.unrealizable ?? null),
     affectTrace: steps.map((s) => s.affect),
+    affectArmed: affectArmed(affect0, steps.map((s) => s.affect)),
     judgePending: report.pendingRubrics.map((r) => `[${r.id}] ${r.text}`),
   };
 }
@@ -518,7 +520,8 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
         problems,
         fieldText,
         seen,
-        stopped
+        stopped,
+        affect0
       ),
       cost,
       envVersion,

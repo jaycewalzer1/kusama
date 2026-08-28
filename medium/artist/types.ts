@@ -421,8 +421,28 @@ export interface Scores {
   /** How the run stopped, and whether a scorer can call that stop legitimate without a model. */
   termination: Termination;
   affectTrace: Affect[];
+  /** Whether the affect in that trace ever changed a decision. See `affectArmed` in ./affect.ts. */
+  affectArmed: AffectArmed;
   /** Nothing in this repo judges. Every rubric the position raised, carried forward unread. */
   judgePending: string[];
+}
+
+/**
+ * The three thresholds affect can cross, counted over the affects the loop actually consulted.
+ *
+ * `armed === 0` is the reading this exists for: the run would have been identical with affect frozen
+ * at its opening value. Movement in `arousalRange` / `valenceRange` beside `armed === 0` says the
+ * numbers moved and never crossed; a zero-width range says they never moved.
+ */
+export interface AffectArmed {
+  observed: number;
+  editsChanged: number;
+  stallChanged: number;
+  credulousChanged: number;
+  armed: number;
+  armedRate: number;
+  arousalRange: [number, number];
+  valenceRange: [number, number];
 }
 
 /**

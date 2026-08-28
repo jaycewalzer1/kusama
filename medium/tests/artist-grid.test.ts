@@ -45,6 +45,16 @@ function scores(over: Partial<Scores> = {}): Scores {
       legitimate: true,
     },
     affectTrace: [],
+    affectArmed: {
+      observed: 0,
+      editsChanged: 0,
+      stallChanged: 0,
+      credulousChanged: 0,
+      armed: 0,
+      armedRate: 0,
+      arousalRange: [0, 0],
+      valenceRange: [0, 0],
+    },
     judgePending: [],
     ...over,
   };

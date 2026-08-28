@@ -10,6 +10,7 @@ import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
+  affectArmed,
   clamp,
   credulous,
   editsPerStep,
@@ -98,6 +99,47 @@ test('affect: arousal buys edits per step, sourness buys patience', () => {
 test('affect: a pleased artist is the one that listens to the describer more readily', () => {
   assert.equal(credulous({ arousal: 0, valence: 0.4 }), true);
   assert.equal(credulous({ arousal: 0, valence: 0.3 }), false);
+});
+
+test('affect: a trace that moves without crossing anything is reported as having changed nothing', () => {
+  // MUST STAY FLAT. This is the inert case, and it is the one that looks busy in a log: both numbers
+  // move on every step, and not one of the three step functions notices. `armed: 0` is the whole
+  // reading — the run is identical to one with affect frozen — and the ranges beside it are what
+  // separate this from a trace that never moved at all.
+  const a0 = { arousal: 0.5, valence: 0.5 };
+  const flat = affectArmed(a0, [
+    { arousal: 0.5, valence: 0.6 },
+    { arousal: 0.51, valence: 0.7 },
+    { arousal: 0.49, valence: 0.4 },
+  ]);
+  assert.equal(flat.armed, 0);
+  assert.equal(flat.armedRate, 0);
+  assert.deepEqual(flat.arousalRange, [0.5, 0.51]);
+  assert.notDeepEqual(flat.valenceRange, [0.5, 0.5], 'it moved; it just never mattered');
+});
+
+test('affect: crossing a threshold is counted, and counted against the affect the step consulted', () => {
+  // MUST MOVE. Same shape of trace, but arousal crosses an editsPerStep boundary and valence goes
+  // sour past `credulous`. The last entry is excluded on purpose: the affect a step leaves behind is
+  // consulted by the next step, and there is no next step after the last one.
+  const armed = affectArmed({ arousal: 0.5, valence: 0.5 }, [
+    { arousal: 0.5, valence: 0.5 },
+    { arousal: 0.5, valence: 0.5 },
+    { arousal: 1, valence: -1 },
+  ]);
+  assert.equal(armed.observed, 3, 'the opening affect plus all but the last of the trace');
+  assert.equal(armed.editsChanged, 0, 'the arousal spike is the last entry, which nothing consulted');
+
+  const consulted = affectArmed({ arousal: 0.5, valence: 0.5 }, [
+    { arousal: 1, valence: -1 },
+    { arousal: 0.5, valence: 0.5 },
+    { arousal: 0.5, valence: 0.5 },
+  ]);
+  assert.equal(consulted.editsChanged, 1);
+  assert.equal(consulted.stallChanged, 1);
+  assert.equal(consulted.credulousChanged, 1);
+  assert.equal(consulted.armed, 1, 'one step, three thresholds — armed counts steps, not crossings');
+  assert.ok(Math.abs(consulted.armedRate - 0.333) < 0.001);
 });
 
 // --- intention -----------------------------------------------------------------------------------

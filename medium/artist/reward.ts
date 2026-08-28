@@ -21,6 +21,7 @@ import path from 'node:path';
 import { applyEdit, type EditAction } from '../env/edits.js';
 import { loadPackFor } from '../env/pack.js';
 import { canonicalJson, loadProfileFor } from '../env/profile.js';
+import { affectArmed, initialAffect } from './affect.js';
 import { Canvas, check } from './canvas.js';
 import { refusalCause } from './env.js';
 import { loadCommission } from './field.js';
@@ -264,6 +265,10 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
       refusals,
       termination: terminationOf(real.estimates, stoppedAs(last), last?.unrealizable ?? null),
       affectTrace: steps.map((s) => s.affect),
+      affectArmed: affectArmed(
+        initialAffect(commission.field, commission.temperament.value),
+        steps.map((s) => s.affect)
+      ),
       judgePending: report.pendingRubrics.map((r) => `[${r.id}] ${r.text}`),
     };
     return { scores, finalProgram: program, chainProblems };

@@ -10,7 +10,7 @@
 // Everything below is a pure function. `affect.ts` imports nothing that can render or call a model,
 // so `reward.ts` can replay the whole affect trace from the log arithmetically.
 
-import type { Affect, Field } from './types.js';
+import type { Affect, AffectArmed, Field } from './types.js';
 
 /** arousal is 0..1, valence is -1..1. Both clamped after every update. */
 export function clamp(a: Affect): Affect {
@@ -111,6 +111,57 @@ export function stallThreshold(a: Affect): number {
  */
 export function credulous(a: Affect): boolean {
   return a.valence > 0.3;
+}
+
+/**
+ * Whether affect changed anything, on this run, at all.
+ *
+ * Affect updates on every step and is written into the log, so it is easy to read the trace as
+ * evidence that it is doing something. It is not. The trace only shows the two numbers moving; what
+ * matters is whether either number ever crossed a threshold and made the loop behave differently
+ * from a loop with affect frozen at its opening value. There are exactly three such thresholds —
+ * `editsPerStep`, `stallThreshold`, `credulous` — and all three are step functions, so a number can
+ * move a long way and change nothing.
+ *
+ * This measures the difference, not the movement. `armed` counts steps where at least one of the
+ * three decisions differs from what the opening affect would have given. `armed === 0` means the run
+ * is bit-identical to one in which affect was never updated: wired up and inert.
+ *
+ * The ranges are carried beside it so the two inert cases can be told apart — affect that never
+ * moved, and affect that moved and never crossed. Instrumentation only; nothing reads this.
+ */
+export function affectArmed(initial: Affect, trace: Affect[]): AffectArmed {
+  // The affect consulted on step k is the one left by step k-1, and the opening affect governs the
+  // first step. Comparing the trace to itself would ask whether affect changed since the last time
+  // it changed, which is always no on the first step and meaningless after.
+  const consulted = [initial, ...trace.slice(0, -1)];
+  const edits0 = editsPerStep(initial);
+  const stall0 = stallThreshold(initial);
+  const cred0 = credulous(initial);
+  let editsChanged = 0;
+  let stallChanged = 0;
+  let credulousChanged = 0;
+  let armed = 0;
+  for (const a of consulted) {
+    const e = editsPerStep(a) !== edits0;
+    const s = stallThreshold(a) !== stall0;
+    const c = credulous(a) !== cred0;
+    if (e) editsChanged++;
+    if (s) stallChanged++;
+    if (c) credulousChanged++;
+    if (e || s || c) armed++;
+  }
+  const span = (ns: number[]): [number, number] => [Math.min(...ns), Math.max(...ns)];
+  return {
+    observed: consulted.length,
+    editsChanged,
+    stallChanged,
+    credulousChanged,
+    armed,
+    armedRate: consulted.length === 0 ? 0 : Math.round((armed / consulted.length) * 1000) / 1000,
+    arousalRange: span(consulted.map((a) => a.arousal)),
+    valenceRange: span(consulted.map((a) => a.valence)),
+  };
 }
 
 /** The one sentence that goes to THINK+ACT beside the two numbers. */
