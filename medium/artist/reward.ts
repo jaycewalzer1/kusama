@@ -27,6 +27,7 @@ import { loadCommission } from './field.js';
 import {
   carryNodeIds,
   declared,
+  examineAgreement,
   purposeChurn,
   realization,
   riskDeclared,
@@ -249,6 +250,7 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
             judgePending: edgeEstimates.filter((e) => e.status === 'judge-pending').length,
           }
         : null,
+      examineAgreement: edgeEstimates ? examineAgreement(real.estimates, edgeEstimates) : null,
       refusals,
       termination: terminationOf(real.estimates, stoppedAs(last), last?.unrealizable ?? null),
       affectTrace: steps.map((s) => s.affect),

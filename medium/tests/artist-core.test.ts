@@ -27,6 +27,7 @@ import {
   declared,
   drift,
   estimateEdges,
+  examineAgreement,
   purposeChurn,
   realization,
   riskDeclared,
@@ -435,6 +436,59 @@ test('intention: a risk is declared by the plan, and declaring it is not doing i
   assert.equal(riskDeclared([quiet, bold]), true);
   // It is a property of the plan alone — no step is consulted — which is why `riskMoveTaken` has to
   // sit beside it rather than instead of it.
+});
+
+// --- tree against eye ----------------------------------------------------------------------------
+
+function estimate(over: Partial<EdgeEstimate> = {}): EdgeEstimate {
+  return { from: 'title', to: 'date', type: 'aligned-to', status: 'satisfied', evidence: '', ...over };
+}
+
+test('examine: the tree and the eye are joined edge by edge, not left as two tallies', () => {
+  const treeSays = [
+    estimate(),
+    estimate({ from: 'date', to: 'title', type: 'echoes', status: 'violated' }),
+    // Non-mechanical: the tree cannot decide it and never will, so it is not a disagreement.
+    estimate({ from: 'title', to: 'rule', type: 'contradicts', status: 'judge-pending' }),
+  ];
+  // MUST STAY FLAT: the eye says exactly what the tree said, so nothing is in dispute — and the
+  // undecidable edge is excluded rather than counted as agreement, which would inflate `comparable`.
+  assert.deepEqual(examineAgreement(treeSays, treeSays), {
+    comparable: 2,
+    agree: 2,
+    treeYesEyeNo: 0,
+    treeNoEyeYes: 0,
+    eyePending: 0,
+    unplanned: 0,
+    unexamined: 0,
+  });
+
+  // MUST MOVE: both verdicts flip, and the two directions are counted apart. They are different
+  // failures — one is structure that did not become a picture, the other is a claim the tree denies.
+  const flipped = [
+    estimate({ status: 'violated' }),
+    estimate({ from: 'date', to: 'title', type: 'echoes', status: 'satisfied' }),
+  ];
+  const d = examineAgreement(treeSays, flipped);
+  assert.equal(d.agree, 0);
+  assert.equal(d.treeYesEyeNo, 1);
+  assert.equal(d.treeNoEyeYes, 1);
+  assert.equal(d.comparable, 2);
+});
+
+test('examine: the join cannot be dodged by ruling on other edges or on none', () => {
+  const treeSays = [estimate(), estimate({ from: 'date', to: 'title', type: 'echoes', status: 'violated' })];
+  // Declining to rule is not agreement, and it is not a disagreement either — it has its own count.
+  const shy = examineAgreement(treeSays, [estimate({ status: 'judge-pending' })]);
+  assert.equal(shy.eyePending, 1);
+  assert.equal(shy.unexamined, 1);
+  assert.equal(shy.comparable, 0);
+  // Verdicts on edges the plan never contained are counted where they cannot be mistaken for
+  // agreement. An edge type that differs is a different edge: the eye did not answer the question.
+  const invented = examineAgreement(treeSays, [estimate({ type: 'echoes' }), estimate({ to: 'nowhere' })]);
+  assert.equal(invented.unplanned, 2);
+  assert.equal(invented.comparable, 0);
+  assert.equal(invented.unexamined, 2);
 });
 
 // --- stopping ------------------------------------------------------------------------------------

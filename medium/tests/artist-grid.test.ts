@@ -27,6 +27,7 @@ function scores(over: Partial<Scores> = {}): Scores {
     riskConvention: null,
     selfScore: 4,
     examineEdges: null,
+    examineAgreement: null,
     refusals: { budget: 0, capability: 0, structural: 0 },
     termination: {
       kind: 'declared-finished',

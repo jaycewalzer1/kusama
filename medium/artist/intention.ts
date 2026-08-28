@@ -13,6 +13,7 @@ import type {
   EdgeEstimate,
   EdgeType,
   ElementBinding,
+  ExamineAgreement,
   Intention,
   IntentionElement,
   IntentionEdge,
@@ -494,4 +495,50 @@ export function purposeChurn(intentions: Intention[]): { changed: number; charsF
  */
 export function riskDeclared(intentions: Intention[]): boolean {
   return intentions.some((i) => i.riskMove !== null);
+}
+
+/**
+ * Where the tree and the eye disagree about the same edge.
+ *
+ * Both verdicts were already being kept — `realization` reads the program, EXAMINE reads the PNG —
+ * and both were already tallied. What nobody computed was the join, and the join is the only place
+ * two of the failures live: a piece whose structure is right and whose picture is not, and an artist
+ * that says a relation holds after the tree has said it does not.
+ *
+ * Only edges the tree actually decided are compared. For `masked-by`, `contradicts` and `answers`
+ * the tree returns `judge-pending` by construction, so counting those as disagreements would measure
+ * the design of `estimateEdge` rather than anything the run did.
+ *
+ * `unplanned` and `unexamined` are the two ways the comparison can be dodged rather than lost:
+ * ruling on edges the plan does not contain, and declining to rule on ones it does.
+ */
+const edgeKey = (e: { from: string; to: string; type: EdgeType }): string => `${e.from}|${e.to}|${e.type}`;
+
+export function examineAgreement(tree: EdgeEstimate[], eye: EdgeEstimate[]): ExamineAgreement {
+  const decided = tree.filter((e) => e.status !== 'judge-pending');
+  const byKey = new Map(eye.map((e) => [edgeKey(e), e]));
+  const planned = new Set(tree.map(edgeKey));
+  const out: ExamineAgreement = {
+    comparable: 0,
+    agree: 0,
+    treeYesEyeNo: 0,
+    treeNoEyeYes: 0,
+    eyePending: 0,
+    unplanned: eye.filter((e) => !planned.has(edgeKey(e))).length,
+    unexamined: 0,
+  };
+  for (const t of decided) {
+    const seen = byKey.get(edgeKey(t));
+    if (!seen) {
+      out.unexamined++;
+    } else if (seen.status === 'judge-pending') {
+      out.eyePending++;
+    } else {
+      out.comparable++;
+      if (seen.status === t.status) out.agree++;
+      else if (t.status === 'satisfied') out.treeYesEyeNo++;
+      else out.treeNoEyeYes++;
+    }
+  }
+  return out;
 }

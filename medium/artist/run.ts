@@ -30,6 +30,7 @@ import { loadCommission, type Commission } from './field.js';
 import {
   carryNodeIds,
   declared,
+  examineAgreement,
   purposeChurn,
   realization,
   riskDeclared,
@@ -237,6 +238,7 @@ function scoresOf(
     riskConvention: risk?.action.risk ?? null,
     selfScore: seen?.selfScore ?? null,
     examineEdges: seen ? tally(seen.edgeEstimates) : null,
+    examineAgreement: seen ? examineAgreement(real.estimates, seen.edgeEstimates) : null,
     refusals: refusalTally(steps),
     // Against `realization`'s estimates, not EXAMINE's: EXAMINE is the artist grading its own
     // picture, and a stopping rule scored off it would let the artist decide it had finished by

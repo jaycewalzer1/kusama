@@ -286,6 +286,27 @@ export interface Examine {
   paragraph: string;
 }
 
+/**
+ * The tree's verdicts and the eye's, joined edge by edge. Only edges the tree actually decided are
+ * compared; for the three non-mechanical edge types the tree returns `judge-pending` by
+ * construction, and counting those as disagreements would measure `estimateEdge` rather than the run.
+ */
+export interface ExamineAgreement {
+  /** Edges the tree decided and EXAMINE also decided. The denominator; the rest are diagnostics. */
+  comparable: number;
+  agree: number;
+  /** Tree: the relation holds. Eye: it does not. Structure that did not become a picture. */
+  treeYesEyeNo: number;
+  /** Tree: it does not hold. Eye: it does. A relation claimed after the program denied it. */
+  treeNoEyeYes: number;
+  /** The tree decided and the artist declined to. Not a disagreement; still not an answer. */
+  eyePending: number;
+  /** Verdicts on edges the plan does not contain. */
+  unplanned: number;
+  /** Edges the tree decided that EXAMINE returned no verdict on at all. */
+  unexamined: number;
+}
+
 export interface Cost {
   policyCalls: number;
   envCalls: number;
@@ -347,6 +368,12 @@ export interface Scores {
    * signal. Null when EXAMINE did not run.
    */
   examineEdges: { satisfied: number; violated: number; judgePending: number } | null;
+  /**
+   * The disagreement itself, edge by edge, rather than the two tallies left side by side for a
+   * reader to subtract. Two separate counts of different edges can look identical and mean opposite
+   * things; only the join says which edges moved. Null when EXAMINE did not run.
+   */
+  examineAgreement: ExamineAgreement | null;
   /**
    * Every edit the validator refused, split by cause. Never summed into one number: a budget
    * refusal and a structural one are evidence about different things, and adding them produces a
