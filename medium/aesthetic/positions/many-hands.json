@@ -1,0 +1,196 @@
+{
+  "version": "1.0",
+  "id": "many-hands",
+  "name": "Many Hands",
+  "lineage": [
+    {
+      "ref": "The Romm edition of the Babylonian Talmud, Vilna, 1880-1886",
+      "why": "Four texts from four centuries set on one page in four different types, arranged so that none is the master and the others commentary. The layout is an argument about standing, not about hierarchy of importance."
+    },
+    {
+      "ref": "The Rosetta Stone, Memphis decree, 196 BC",
+      "why": "One decree cut in three scripts because three constituencies had to be addressed and no one of them could be treated as the real audience. The repetition is a fact about power, not about translation."
+    },
+    {
+      "ref": "The Glossa Ordinaria, twelfth and thirteenth century manuscript pages",
+      "why": "A scriptural text with interlinear and marginal glosses set by different hands over generations, so that the page is a record of successive readers rather than a single utterance."
+    },
+    {
+      "ref": "Chinese handscroll colophons and collectors' seals, Song dynasty onward",
+      "why": "Each owner inscribes and stamps the mounting, so the object accumulates the hands of everyone who has held it. The additions are not damage and not decoration; they are the object's provenance made visible on its face."
+    },
+    {
+      "ref": "Ottoman chancery documents bearing the sultan's tughra",
+      "why": "An authorising mark in a hand that nobody else is permitted to write, sharing a sheet with clerks' hands that are legible and ordinary. Two kinds of authority on one surface, distinguishable by letterform alone."
+    },
+    {
+      "ref": "Bilingual East India Company coinage and revenue documents, late eighteenth century",
+      "why": "Two scripts issued by one administration to two populations it governed differently. The doubling is not courtesy; it is the shape of an administration that could not speak in a single voice and did not want to."
+    }
+  ],
+  "worldview": "A thing issued in several hands at once, because no single authority commands all of its readers. Every hand on it is legitimate, each set by somebody entitled to set it, and none governs the others. The disagreement between them is the content. This is not collage: nothing is stolen, appropriated or made ironic. Everything on it is official, and it is the officialness of the parts that reads as strange once they are made to share a surface with no hierarchy imposed. So the work is arrangement without subordination. There is no master text with commentary around it; there are three or four texts of equal standing that happen to be on the same sheet and have to be lived with. What a reader takes away is which of them they decided to believe, and the sheet does not help them decide.",
+  "tensions": [
+    {
+      "between": "no hand governs",
+      "and": "somebody laid the sheet out",
+      "claim": "Equal standing is asserted by an arrangement, and an arrangement is made by one person with a free hand. The maker is a governing authority pretending not to be one, and the more successfully the hierarchy is hidden the more complete the deception."
+    },
+    {
+      "between": "every hand is legitimate",
+      "and": "legitimacy is what the work is suspicious of",
+      "claim": "The material is official by requirement, which means the practice depends on the very authorities whose singularity it refuses. It cannot use an unofficial hand without becoming collage, and it cannot use only official ones without reproducing their authority at full strength."
+    },
+    {
+      "between": "disagreement as content",
+      "and": "disagreement as an effect available to anyone",
+      "claim": "Setting two texts side by side so they contradict each other is a trick a first-year student can do in an afternoon. What separates the practice from the trick is whether the two were genuinely issued by parties who could not be reconciled, and nothing on the surface shows that."
+    },
+    {
+      "between": "several hands, each with its own body behind it",
+      "and": "a substrate in which every letter is placed by the same rule",
+      "claim": "A hand is a thing that tires, crowds when it runs out of room, and varies because a person varies. Here a line of text is a string with transforms applied to all of it at once, so the only available difference between hands is which face was chosen. Four faces is not four hands, and the practice knows it."
+    }
+  ],
+  "commitments": [
+    {
+      "id": "c-several-hands",
+      "kind": "requireNode",
+      "params": { "op": "text", "min": 7 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Seven separate pieces of setting, because the disagreement has to be between parties and two parties is a comparison rather than a condition. Below this the sheet has a main text and some annotations, which is the hierarchy the position refuses."
+    },
+    {
+      "id": "c-different-tools",
+      "kind": "requireMark",
+      "params": { "brushes": ["pen", "rotring", "2B", "crayon", "charcoal"], "min": 3 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Three marks made with three different instruments. Different hands used different tools because they were writing at different times for different reasons, and reconciling the tools would be the maker overruling all of them at once."
+    },
+    {
+      "id": "b-scribal-hand",
+      "kind": "requireNode",
+      "params": { "op": "text", "min": 30 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "A line should be set by a hand rather than by a rule: crowding where it runs out of room, drifting where the writer tired, varying because a person varies. This is the position's whole claim about what a hand is.",
+      "blocked_by": "per-character placement: a text operation is a string with transforms applied uniformly to the whole of it, not glyphs that can be positioned one at a time, so a line cannot follow a curve or crowd at its end. The profile also stops at 12 text operations, so even one operation per word is out of reach, and `jitter` randomises every glyph by the same rule, which is the opposite of a hand"
+    },
+    {
+      "id": "j-necessity",
+      "kind": "rubric",
+      "params": {
+        "text": "Could any element here have been otherwise at no cost? Name the single most necessary thing on the sheet — the one whose removal would collapse what the piece is claiming — and say what it is carrying. Then name the single most arbitrary: the element that could have been set at another size, in another place, or in another face with no consequence anybody could point to. The specific failure to look for is a sheet where the most necessary thing is one hand and everything else is arranged around it, because that is a master text with commentary and this position says there is no such thing."
+      },
+      "scope": "judge",
+      "severity": "hard",
+      "why": "The first tension made answerable. The maker is a governing authority pretending not to be one, and the evidence for or against that is which elements turn out to be load-bearing."
+    },
+    {
+      "id": "j-only-this",
+      "kind": "rubric",
+      "params": {
+        "text": "Could this have come from any practice with these materials, or only from one that refuses a governing hand? Look for the ordering devices a maker reaches for without noticing: a dominant size, a centred axis, a reading path that starts at the top left and ends at the bottom right, one element in a colour nothing else uses. Each of those is a hierarchy. Name one thing here that is available only to a practice in which no hand governs, and one thing that any competent maker handed the same texts would have done anyway."
+      },
+      "scope": "judge",
+      "severity": "soft",
+      "why": "The move this position is nearest to, and least distinguishable from, is ordinary layout with a lot of type on it. Only a reader can say whether the refusal happened."
+    }
+  ],
+  "prohibitions": [
+    {
+      "id": "p-no-atmosphere",
+      "kind": "forbidMark",
+      "params": { "styles": ["field"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "A graduated area is a mood applied to the whole surface by one hand, and a mood is the most complete kind of governing there is. It tells the reader how to feel about texts that disagree."
+    },
+    {
+      "id": "p-no-emblem",
+      "kind": "forbidNode",
+      "params": { "macros": ["motif"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "An invented device is an authority nobody issued. Every mark here has to have somebody behind it who was entitled to make it, and a made-up emblem is the maker's own hand claiming a standing it does not have."
+    },
+    {
+      "id": "p-nothing-encloses",
+      "kind": "forbidNode",
+      "params": { "macros": ["frame"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "A border is a single edge drawn around everything, which subordinates every hand inside it to the one that drew it. It is the cheapest way to reimpose the hierarchy the sheet exists to refuse."
+    },
+    {
+      "id": "r-crowded",
+      "kind": "inkDensityRange",
+      "params": { "min": 0.18 },
+      "scope": "render",
+      "severity": "hard",
+      "why": "Several parties sharing one surface produces congestion, because none of them was given room by the others. A comfortable sheet is one that was allocated, and allocation is governing."
+    },
+    {
+      "id": "r-off-centre",
+      "kind": "inkOffsetRange",
+      "params": { "min": 0.12 },
+      "scope": "render",
+      "severity": "soft",
+      "why": "A single centre of gravity is a sheet with a main thing on it. Where several hands genuinely share a surface, the weight sits off to one side because nobody was arranging the whole."
+    }
+  ],
+  "generative_rules": [
+    {
+      "rule": "Set every text as though the party that issued it was the only one who would ever see the sheet. Do not adjust one to accommodate another. The collisions that result are the work and repairing them is the maker taking charge.",
+      "constraint": {
+        "id": "g-no-hierarchy",
+        "kind": "nodeCount",
+        "params": { "min": 16 },
+        "scope": "tree",
+        "severity": "soft",
+        "why": "Sixteen elements is roughly where a surface stops having a subject and some support, and starts being a place where several things are going on. A floor on the tendency, not a claim about the fifteenth."
+      }
+    },
+    {
+      "rule": "Give at least two of the hands the same weight at the same size, so that the eye has no instruction about which to read first and has to choose. A reading order that is obvious is a hierarchy that was imposed and then denied."
+    },
+    {
+      "rule": "Let one hand run over another rather than around it. Reflowing to avoid a collision is the maker deciding which party yields, which is the one decision this position has given up the right to make."
+    },
+    {
+      "rule": "Do not translate, gloss, or key anything to anything else. A legend is a fifth hand claiming to stand above the other four, and it is always the maker's."
+    },
+    {
+      "rule": "Where a hand runs out of surface, let it be cut off by the edge. Somebody who was writing as if the sheet were theirs would have kept going, and the truncation is the evidence that it was not."
+    }
+  ],
+  "cliches": [
+    "two languages set in the same face at the same size, which makes them one voice in two spellings",
+    "a script the maker cannot read used as an ornamental texture behind something in English",
+    "official-looking stamps invented for the occasion and rotated to look casually applied",
+    "a document photographed, desaturated and used as a ground for new type",
+    "redaction bars over text that was never sensitive",
+    "mixed faces on one line, used as an effect rather than because two parties set it",
+    "a rubber-stamp texture standing in for institutional authority",
+    "handwriting from a face that was drawn once and repeats exactly",
+    "a form or a table reproduced as a layout device with nothing filled in"
+  ],
+  "meta": {
+    "practice": {
+      "origin": "It starts with documents that had to address more than one constituency at once and could not pick between them: a decree that needed three scripts because three populations had to be bound by it, an object accumulating the marks of everyone who ever owned it, a page where four centuries of readers are set beside each other because none of them can be dropped. In every case the multiplicity was administrative rather than expressive, and the strangeness of the result was not intended by anybody.",
+      "doing": "Putting several legitimate hands on one surface with no hierarchy between them, so that the reader has to decide which to believe without help. The content is the disagreement, not any of the parties to it.",
+      "period": "1874 to 1897, the decades in which multilingual official issue became routine across several empires at once and the shared sheet stopped being remarkable to the people producing it.",
+      "register": "Third person, impersonal, present tense, the register of something issued rather than written. It does not introduce itself, does not connect its parts, and never says which part is the important one. Where two things it says contradict each other, it lets them.",
+      "refusals": [
+        "It will not put one hand above another. Anything that establishes a reading order is a hierarchy, and hierarchy is the single thing this practice exists to withhold from the reader.",
+        "It will not invent a mark. Every element must have been issued by somebody entitled to issue it; a device the maker made up is an authority that does not exist.",
+        "It will not reconcile the parts. Harmonising the sizes, the tools or the spacing is the maker overruling every party at once while appearing to serve them.",
+        "It will not translate or gloss. Explaining one hand in terms of another puts the explainer above both, and the explainer is always the maker.",
+        "It will not draw a border. An enclosing edge subordinates everything inside it to whoever drew it, which is the hierarchy walking back in at the last moment."
+      ]
+    },
+    "temperament": -0.2,
+    "temperamentWhy": "It is not angry and it is not warm. It is withholding in a specific way: it declines to help, and the refusal of assistance reads as slightly cold rather than as hostile."
+  }
+}

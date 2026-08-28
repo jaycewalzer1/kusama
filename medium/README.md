@@ -502,14 +502,14 @@ roughly 3-6 steps, 26-32 policy calls, a couple of dollars and twenty to thirty 
 
 ```bash
 # One trajectory: a position, a brief, the kind of object, and a directory to work in.
-npm run artist -- run data-austerity arches-eviction poster -o out/run-1
+npm run artist -- run interference nine-returned panel -o out/run-1
 
 # Every position against every brief, serially, with a control column.
 npm run artist -- grid -o out/grid
 
 # Or k independent seeds of named cells. The same cell run twice does not repeat, so
 # one run per cell cannot tell a cell effect from run variance; --k is how you find out.
-npm run artist -- grid --cells data-austerity:arches-eviction:poster --k 5 -o out/grid
+npm run artist -- grid --cells interference:nine-returned:panel --k 5 -o out/grid
 
 # Re-run a finished trajectory with the model unplugged: checks the log's hash chain
 # and rebuilds every observation byte-for-byte.

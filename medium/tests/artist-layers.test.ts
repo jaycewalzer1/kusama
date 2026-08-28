@@ -108,7 +108,7 @@ test('L1 holds no facts about L3: and the check would catch one', () => {
  * Reid's surface, and the run then measures the model's recall of a 1977 sleeve rather than whether
  * the position changed anything, which is the one thing it was built to measure.
  *
- * The position's `name` is the same failure in one word: "Data Austerity" is a label for a look, and
+ * The position's `name` is the same failure in one word: "Interference" is a label for a look, and
  * a model given a label produces the look rather than deriving it from the practice underneath.
  *
  * Asserted on the assembled prompt rather than on `practiceSection`, so that a phase which starts

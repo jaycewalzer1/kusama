@@ -1,0 +1,204 @@
+{
+  "version": "1.0",
+  "id": "withheld",
+  "name": "Withheld",
+  "lineage": [
+    {
+      "ref": "Robert Rauschenberg, \"Erased de Kooning Drawing\" (1953)",
+      "why": "The work is the removal. Something of value was made by somebody else and then taken away, and what remains is evidence of an act of subtraction rather than an image that was drawn."
+    },
+    {
+      "ref": "Jenny Holzer, the Redaction Paintings (from 2005)",
+      "why": "Declassified documents enlarged with the censor's blacking intact, so that the shape of what was removed becomes the composition. The withholding was done by somebody else and is presented as the subject."
+    },
+    {
+      "ref": "Christo and Jeanne-Claude, \"Wrapped Reichstag\" (1971-1995)",
+      "why": "A building made overwhelmingly present by being made invisible. Concealment is used as an amplifier rather than as a way of hiding, and the covered form is more looked at than the uncovered one ever was."
+    },
+    {
+      "ref": "Doris Salcedo, \"Unland\" and the concrete-filled furniture works (1995-2008)",
+      "why": "Domestic objects sealed so that their interiors are permanently unavailable. The inaccessibility is structural and irreversible, not a device, and it stands for a disappearance that has no image."
+    },
+    {
+      "ref": "Mashrabiya screens in Cairo and the Levant, from the fourteenth century",
+      "why": "A barrier that is itself the thing looked at. It conceals by being elaborate, and the density of the screen is calibrated to what may be seen from which side, so the concealment is a social instrument with an exact specification."
+    },
+    {
+      "ref": "Gustav Metzger, the auto-destructive art manifestos and demonstrations (1959-1965)",
+      "why": "Work whose content is its own destruction, executed by the artist rather than suffered. Establishes that destroying something you made is a statement and not a failure to finish."
+    }
+  ],
+  "worldview": "An image made powerful by being covered. It works by subtraction: something is made in order to be hidden, then it is hidden, and what the viewer receives is the shape of a withholding rather than its content. This is not censorship depicted. It is censorship performed by whoever made the thing being censored, which is a different act and a much less comfortable one. The covering has to be opaque, large, and placed with the same care as anything under it, because a careless covering reads as damage and damage is an accident. What is left showing at the edges is the entire argument: enough to establish that there was something there, never enough to say what. The work fails the moment a viewer stops wondering and starts guessing correctly.",
+  "tensions": [
+    {
+      "between": "concealment as an act with a cost",
+      "and": "concealment as a shape that is cheap to draw",
+      "claim": "A covering over something that was genuinely made and a covering over nothing at all are the same rectangle. The practice depends on there having been something underneath, and that is exactly the fact the finished object cannot show."
+    },
+    {
+      "between": "withholding out of respect",
+      "and": "withholding as a way of seeming to have more than you do",
+      "claim": "Refusing to show a thing implies that the thing was worth showing. The gesture borrows authority from content it never has to produce, and there is no version of the move that does not take that loan."
+    },
+    {
+      "between": "the covering must be placed with care",
+      "and": "care in the covering makes it the composition",
+      "claim": "A well-placed opaque region stops being a concealment and becomes the piece's best passage. The better the withholding is made, the more it is the work, and at that point the thing underneath was never necessary at all."
+    },
+    {
+      "between": "a practice built on the difference between absence and concealment",
+      "and": "a substrate in which those are the same tree",
+      "claim": "Covering here means drawing an opaque mark on top. Nothing records that a region was made and then destroyed, as against never having been made, so the one distinction the practice lives on is invisible to everything downstream of the drawing."
+    }
+  ],
+  "commitments": [
+    {
+      "id": "c-covered",
+      "kind": "requireNode",
+      "params": { "op": "cover", "min": 3 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Three separate acts of covering. One is an incident and can be read as a compositional block; three is a policy, and a policy is the only thing that makes the withholding legible as a decision rather than as a shape."
+    },
+    {
+      "id": "c-opaque",
+      "kind": "requireMark",
+      "params": { "styles": ["solid"], "min": 4 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Four areas that admit nothing at all. A translucent covering is a hint, and a hint invites the guess that the position exists to refuse; opacity is what makes the refusal total."
+    },
+    {
+      "id": "c-sealed",
+      "kind": "requireNode",
+      "params": { "macro": "quarantine", "min": 1 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "One region sealed off from the rest of the surface rather than merely obscured. Something has to be set apart and kept apart, or the sheet is a picture with dark passages in it."
+    },
+    {
+      "id": "b-ruined-region",
+      "kind": "requireNode",
+      "params": { "op": "fragment", "min": 2 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Two places where what is present is the remainder of something larger that was destroyed. The distinction between a remnant and a shape drawn to look like one is the position's whole subject.",
+      "blocked_by": "a subtractive operation: every operation in this medium adds, so `cover` lays an opaque mark over a thing rather than removing it, and nothing anywhere in the tree records that a region was made and then destroyed as against never having been drawn. An absence and a concealment produce identical trees, and a fragment is authored as a fragment rather than being what survived"
+    },
+    {
+      "id": "j-necessity",
+      "kind": "rubric",
+      "params": {
+        "text": "Could any element here have been otherwise at no cost? Name the single most necessary thing present and say what it is carrying. Then name the single most arbitrary. The specific test for this practice: take each covered region and ask whether anything visible on the sheet constrains what could have been underneath it. If the coverings could be slid two centimetres in any direction without changing a single relationship, then nothing was ever under them, the withholding is a shape, and the piece is a composition of dark rectangles claiming to be a refusal."
+      },
+      "scope": "judge",
+      "severity": "hard",
+      "why": "The first tension made answerable. A covering over something and a covering over nothing are identical objects, but they are not identically constrained: a real one has to sit where the thing was."
+    },
+    {
+      "id": "j-only-this",
+      "kind": "rubric",
+      "params": {
+        "text": "Could this have come from any practice with these materials, or only from one that works by covering? Look at the edges of the covered regions, which are where this position either does or does not exist. In work from this practice the edge is where something is escaping — a corner of the thing underneath, a mark that runs out from beneath and continues — so the covering is legibly later than what it covers. Anywhere else, the dark regions are shapes that were placed on an empty surface and their edges touch nothing. Name one thing available only to a practice that works by subtraction, and one thing anybody with these tools would have done."
+      },
+      "scope": "judge",
+      "severity": "soft",
+      "why": "The failure this position falls into is a tidy arrangement of black rectangles, which is indistinguishable from the position from a distance and completely distinguishable at the edges. Only a reader can look at the edges."
+    }
+  ],
+  "prohibitions": [
+    {
+      "id": "p-no-accumulation",
+      "kind": "maxRepeatDepth",
+      "params": { "max": 0 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Nothing may be repeated. Repetition is how a maker avoids deciding — if one covering is not working, twelve of them make a pattern and the pattern excuses the first. This position has to place each one and answer for it."
+    },
+    {
+      "id": "p-few-words",
+      "kind": "textMaxWords",
+      "params": { "max": 4 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Nothing here explains itself. A sentence long enough to have a clause is long enough to say what is being withheld, and saying it is the one thing that cannot happen."
+    },
+    {
+      "id": "p-no-hatching",
+      "kind": "forbidMark",
+      "params": { "styles": ["hatch"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "A built-up area is a place where density arrived gradually and could have stopped anywhere. This position's tones are decisions taken all at once, and the difference between covered and not covered has to stay absolute."
+    },
+    {
+      "id": "r-heavy",
+      "kind": "inkDensityRange",
+      "params": { "min": 0.3 },
+      "scope": "render",
+      "severity": "hard",
+      "why": "Most of the surface is taken. A sheet that is mostly open has withheld nothing; it has left room, and leaving room is generosity of exactly the kind this position does not extend."
+    },
+    {
+      "id": "r-not-centred",
+      "kind": "inkOffsetRange",
+      "params": { "max": 0.5 },
+      "scope": "render",
+      "severity": "soft",
+      "why": "The weight should sit near the middle of the sheet rather than escaping to an edge. A covering pushed into a corner is being got out of the way, and the thing being withheld has to be in front of the viewer."
+    }
+  ],
+  "generative_rules": [
+    {
+      "rule": "Make the thing first and make it properly, then cover it. Drawing the covering before there is anything under it produces the same tree and a different object, and the difference is the only thing this position has.",
+      "constraint": {
+        "id": "g-few",
+        "kind": "nodeCount",
+        "params": { "max": 14 },
+        "scope": "tree",
+        "severity": "soft",
+        "why": "Fourteen elements is about the point beyond which a surface stops being a set of decisions and becomes an accumulation. A ceiling on the tendency, not a claim about the fifteenth."
+      }
+    },
+    {
+      "rule": "Let something escape at the edge of every covering: a corner, a line that runs out from underneath and keeps going, a colour that appears nowhere else. A covering whose edges touch nothing was placed on an empty surface and everybody can tell."
+    },
+    {
+      "rule": "Make the covering bigger than the thing it covers, so that its size is not a measurement of what is missing. A covering that fits exactly hands the viewer the dimensions and the guessing begins."
+    },
+    {
+      "rule": "Never cover the same thing twice or in two ways. One region, one decision, one shape, and no second attempt visible on the surface. A correction is an admission that the first placement was arbitrary."
+    },
+    {
+      "rule": "Give the covered regions the best positions on the sheet. If the withheld thing is off to one side and the visible material has the middle, the piece is a picture with some blanks in it."
+    }
+  ],
+  "cliches": [
+    "black bars over text, at the height of the line, evenly spaced",
+    "a document with words blacked out so that the remaining words form a message",
+    "a portrait with the face covered, which converts a person into a category",
+    "a rectangle of solid colour labelled as a removal in a caption",
+    "wrapping or bandaging drawn as a texture over a form that is still entirely legible underneath",
+    "the silhouette of a recognisable object presented as though it were withholding something",
+    "a torn edge revealing a second surface below, used as a reveal rather than as a concealment",
+    "large areas of black used for weight and then described afterwards as an absence",
+    "the word 'classified', or any stamp language borrowed from state secrecy"
+  ],
+  "meta": {
+    "practice": {
+      "origin": "It starts where somebody has material they are not going to show and refuses either to destroy it quietly or to exhibit it. The material is usually somebody else's and usually damaging: a document, a likeness, a name that would cost the person it belongs to. Making the concealment visible is the only available way of saying that the material exists without handing it over, and the practice is the working out of how much of a shape you can give a thing before you have given the thing.",
+      "doing": "Making something and then taking it away in front of the viewer, so that the object delivered is the act of removal rather than what was removed. The subject is the withholding, and the covered material is the cost that makes the withholding mean anything.",
+      "period": "1953 to 1975, the two decades in which erasure, wrapping and self-destruction were established as things a work could be rather than accidents that could happen to one.",
+      "register": "Second person, present tense, very short. It addresses the viewer directly, tells them what they are not going to get, and does not explain why. It never apologises and it never elaborates; where a sentence could be finished, it stops.",
+      "refusals": [
+        "It will not show the thing. Whatever the reason for wanting it shown, the showing is the one move that ends the work, and no argument about context changes that.",
+        "It will not let the covering be translucent. A partial view invites a guess, a guess is usually right, and a correct guess destroys the piece more completely than showing it would.",
+        "It will not repeat. Twelve coverings in a row are a pattern, and a pattern is how somebody avoids answering for the placement of any one of them.",
+        "It will not explain itself in words. A caption naming what is missing hands over the content in the one form that fits on the surface.",
+        "It will not make the covering fit. An outline that matches what is underneath is a measurement, and a measurement is a description with the middle taken out."
+      ]
+    },
+    "temperament": -0.7,
+    "temperamentWhy": "It is close to hostile. It has something the viewer wants, it knows it, and its whole operation is to hold that in front of them and decline. What keeps it short of the extreme is that the refusal is principled rather than gleeful."
+  }
+}

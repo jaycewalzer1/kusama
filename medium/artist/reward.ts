@@ -105,6 +105,19 @@ interface StepLine {
    */
   sawCanvas?: boolean;
   sawChange?: boolean;
+  /**
+   * Kept but invisible. Logged as `null` when the step was not kept and absent on every log written
+   * before the threshold existed, and both must stay distinct from `false` — see `inertSteps`.
+   */
+  inert?: boolean | null;
+}
+
+/** A `note` line from the finish gate. `accepted` is the environment's answer, not the artist's. */
+interface GateLine {
+  phase?: string;
+  attempt?: number;
+  accepted?: boolean;
+  blockers?: string[];
 }
 
 interface StartLine {
@@ -124,9 +137,15 @@ interface StartLine {
  * ran out of steps, which is what `out-of-steps` means and what a log with no terminal control
  * shows.
  */
-function stoppedAs(last: StepLine | undefined): Termination['kind'] {
-  if (last?.control === 'finished') return 'declared-finished';
+function stoppedAs(last: StepLine | undefined, gates: GateLine[]): Termination['kind'] {
   if (last?.control === 'abandon') return 'abandoned';
+  if (last?.control === 'finished') {
+    // A `finished` control is now a request. The gate's last word on it decides whether the run
+    // stopped because it was finished or because it had run out of chances to say so. On a log with
+    // no gate lines the request could not have been refused, so the old reading is the right one.
+    const decided = gates[gates.length - 1];
+    return decided && decided.accepted === false ? 'finish-blocked' : 'declared-finished';
+  }
   return 'out-of-steps';
 }
 
@@ -176,9 +195,15 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
   let edgeEstimates: EdgeEstimate[] | null = null;
   let pending: (EditAction & { servesElementId?: string })[] = [];
   const steps: StepLine[] = [];
+  const gates: GateLine[] = [];
   let replans = 0;
 
   for (const line of lines) {
+    if (line.kind === 'note') {
+      const note = line.data as GateLine;
+      if (note.phase === 'finish-gate') gates.push(note);
+      continue;
+    }
     if (line.kind === 'policy-call') {
       const call = line.data as ActLine & { ok?: boolean };
       if (call.ok === false) continue;
@@ -257,6 +282,16 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
       problemFindingSteps: replans,
       problemsGrounded: grounded(problems, fieldText),
       destructionRate: added === 0 ? 0 : Math.round((gone / added) * 1000) / 1000,
+      // Read off the logged flag rather than recomputed from `pixelsMoved`, unlike `refusalCause`
+      // above. The threshold is a run-time constant: recomputing here would re-decide an old run's
+      // steps under whatever `INERT_THRESHOLD` says today, and gate 2 would then report a
+      // difference caused by editing a number rather than by the two paths disagreeing.
+      inertSteps: steps.some((s) => s.inert !== undefined && s.inert !== null)
+        ? steps.filter((s) => s.inert === true).length
+        : null,
+      // Null when the gate never ran at all: a log with no gate lines cannot say whether the run
+      // would have been refused, and 0 would claim it asked once and was let go.
+      finishRefusals: gates.length === 0 ? null : gates.filter((g) => g.accepted === false).length,
       declarations: declarationScores(steps.map((s) => s.declaration ?? null)),
       canvasVisibleRate: visibleRate(steps.map((s) => s.sawCanvas)),
       changeVisibleRate: visibleRate(steps.map((s) => s.sawChange)),
@@ -273,7 +308,7 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
         : null,
       examineAgreement: edgeEstimates ? examineAgreement(real.estimates, edgeEstimates) : null,
       refusals,
-      termination: terminationOf(real.estimates, stoppedAs(last), last?.unrealizable ?? null),
+      termination: terminationOf(real.estimates, stoppedAs(last, gates), last?.unrealizable ?? null),
       affectTrace: steps.map((s) => s.affect),
       affectArmed: affectArmed(
         initialAffect(commission.field, commission.temperament.value),

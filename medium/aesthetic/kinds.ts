@@ -69,8 +69,16 @@ function words(text: string): string[] {
   return text.trim().split(/\s+/).filter(Boolean);
 }
 
-/** Case-insensitive, whitespace-insensitive. "13   MARCH" contains "13 March". */
-function normalizeText(text: string): string {
+/**
+ * Case-insensitive, whitespace-insensitive. "13   MARCH" contains "13 March".
+ *
+ * Exported because the artist layer asks the same question of a blind reader's transcript that
+ * `textRequired` asks of the tree — is this string present — and the two answers are only worth
+ * comparing if one rule decided both. A second normaliser written beside this one would make the
+ * gap between "it is in the program" and "it can be read off the sheet" partly an artefact of two
+ * spellings of the same idea.
+ */
+export function normalizeText(text: string): string {
   return text.replace(/\s+/g, ' ').trim().toLowerCase();
 }
 

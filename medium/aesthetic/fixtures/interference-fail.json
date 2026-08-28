@@ -1,0 +1,241 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 5102,
+  "canvas": {
+    "width": 600,
+    "height": 900,
+    "ground": "#f2efe9",
+    "brushScale": 1
+  },
+  "palette": {
+    "ink": "#14161a",
+    "rust": "#8c3a1f"
+  },
+  "meta": {
+    "aesthetic": "interference",
+    "fixture": "fail",
+    "violates": ["p-no-opacity", "p-nothing-hidden"],
+    "reads_as": "the same eight accumulations after somebody laid a flat block over the middle of them and knocked a clean rectangle out of the bottom",
+    "note": "An opaque area and a covering are the same failure in two forms: both are places where the count underneath cannot be checked, and the position has to refuse them separately or the second walks in behind the first."
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "acc-1",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "if/acc-1",
+        "args": {
+          "region": { "type": "rect", "x": 40, "y": 60, "w": 520, "h": 300 },
+          "style": { "kind": "hatch", "brush": "2H", "color": "ink", "spacing": 11, "angle": 12, "rand": 0.08 }
+        }
+      },
+      {
+        "id": "acc-2",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "if/acc-2",
+        "args": {
+          "region": { "type": "rect", "x": 40, "y": 60, "w": 520, "h": 300 },
+          "style": { "kind": "hatch", "brush": "2H", "color": "rust", "spacing": 13, "angle": 78, "rand": 0.08 }
+        }
+      },
+      {
+        "id": "acc-3",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "if/acc-3",
+        "args": {
+          "region": { "type": "rect", "x": 60, "y": 300, "w": 480, "h": 320 },
+          "style": { "kind": "hatch", "brush": "cpencil", "color": "ink", "spacing": 12, "angle": 34, "rand": 0.1 }
+        }
+      },
+      {
+        "id": "acc-4",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "if/acc-4",
+        "args": {
+          "region": { "type": "rect", "x": 60, "y": 300, "w": 480, "h": 320 },
+          "style": { "kind": "hatch", "brush": "cpencil", "color": "rust", "spacing": 14, "angle": 100, "rand": 0.1 }
+        }
+      },
+      {
+        "id": "acc-5",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "if/acc-5",
+        "args": {
+          "region": { "type": "rect", "x": 30, "y": 560, "w": 540, "h": 300 },
+          "style": { "kind": "hatch", "brush": "2B", "color": "ink", "spacing": 12, "angle": 8, "rand": 0.06 }
+        }
+      },
+      {
+        "id": "acc-6",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "if/acc-6",
+        "args": {
+          "region": { "type": "rect", "x": 30, "y": 560, "w": 540, "h": 300 },
+          "style": { "kind": "hatch", "brush": "2B", "color": "rust", "spacing": 15, "angle": 62, "rand": 0.06 }
+        }
+      },
+      {
+        "id": "acc-7",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "if/acc-7",
+        "args": {
+          "region": { "type": "rect", "x": 200, "y": 180, "w": 420, "h": 520 },
+          "style": { "kind": "hatch", "brush": "2H", "color": "ink", "spacing": 16, "angle": 145, "rand": 0.12 }
+        }
+      },
+      {
+        "id": "acc-8",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "if/acc-8",
+        "args": {
+          "region": { "type": "rect", "x": -40, "y": 420, "w": 380, "h": 420 },
+          "style": { "kind": "hatch", "brush": "cpencil", "color": "rust", "spacing": 13, "angle": 22, "rand": 0.12 }
+        }
+      },
+      {
+        "id": "flat-block",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "if/flat-block",
+        "args": {
+          "region": { "type": "rect", "x": 168, "y": 386, "w": 262, "h": 148 },
+          "style": { "kind": "solid", "color": "ink", "opacity": 255 }
+        }
+      },
+      {
+        "id": "knocked-out",
+        "type": "op",
+        "op": "cover",
+        "rngKey": "if/knocked-out",
+        "args": {
+          "region": { "type": "rect", "x": 92, "y": 742, "w": 196, "h": 96 },
+          "softness": 0
+        }
+      },
+      {
+        "id": "run-01",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "if/run-01",
+        "args": { "points": [[-20, 120], [180, 150], [380, 132], [620, 168]], "brush": "2H", "color": "ink", "weight": 0.8, "curve": 0.2 }
+      },
+      {
+        "id": "run-02",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "if/run-02",
+        "args": { "points": [[-20, 190], [190, 214], [400, 196], [620, 232]], "brush": "2H", "color": "rust", "weight": 0.8, "curve": 0.2 }
+      },
+      {
+        "id": "run-03",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "if/run-03",
+        "args": { "points": [[-20, 260], [200, 286], [410, 262], [620, 300]], "brush": "2H", "color": "ink", "weight": 0.9, "curve": 0.2 }
+      },
+      {
+        "id": "run-04",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "if/run-04",
+        "args": { "points": [[-20, 330], [210, 352], [420, 330], [620, 366]], "brush": "2B", "color": "rust", "weight": 0.9, "curve": 0.2 }
+      },
+      {
+        "id": "run-05",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "if/run-05",
+        "args": { "points": [[-20, 400], [195, 424], [405, 402], [620, 438]], "brush": "2B", "color": "ink", "weight": 1, "curve": 0.2 }
+      },
+      {
+        "id": "run-06",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "if/run-06",
+        "args": { "points": [[-20, 470], [205, 492], [415, 470], [620, 506]], "brush": "2B", "color": "rust", "weight": 1, "curve": 0.2 }
+      },
+      {
+        "id": "run-07",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "if/run-07",
+        "args": { "points": [[-20, 540], [200, 562], [410, 540], [620, 578]], "brush": "cpencil", "color": "ink", "weight": 1.1, "curve": 0.2 }
+      },
+      {
+        "id": "run-08",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "if/run-08",
+        "args": { "points": [[-20, 610], [210, 632], [420, 610], [620, 646]], "brush": "cpencil", "color": "rust", "weight": 1.1, "curve": 0.2 }
+      },
+      {
+        "id": "run-09",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "if/run-09",
+        "args": { "points": [[80, -20], [104, 220], [86, 460], [112, 920]], "brush": "2H", "color": "ink", "weight": 0.8, "curve": 0.15 }
+      },
+      {
+        "id": "run-10",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "if/run-10",
+        "args": { "points": [[160, -20], [186, 230], [164, 470], [190, 920]], "brush": "2H", "color": "rust", "weight": 0.8, "curve": 0.15 }
+      },
+      {
+        "id": "run-11",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "if/run-11",
+        "args": { "points": [[240, -20], [262, 215], [244, 455], [270, 920]], "brush": "2B", "color": "ink", "weight": 0.9, "curve": 0.15 }
+      },
+      {
+        "id": "run-12",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "if/run-12",
+        "args": { "points": [[320, -20], [344, 225], [322, 465], [348, 920]], "brush": "2B", "color": "rust", "weight": 0.9, "curve": 0.15 }
+      },
+      {
+        "id": "run-13",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "if/run-13",
+        "args": { "points": [[400, -20], [422, 210], [404, 450], [430, 920]], "brush": "cpencil", "color": "ink", "weight": 1, "curve": 0.15 }
+      },
+      {
+        "id": "run-14",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "if/run-14",
+        "args": { "points": [[480, -20], [504, 235], [482, 475], [508, 920]], "brush": "cpencil", "color": "rust", "weight": 1, "curve": 0.15 }
+      },
+      {
+        "id": "run-15",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "if/run-15",
+        "args": { "points": [[-20, 700], [200, 724], [410, 702], [620, 738]], "brush": "2H", "color": "ink", "weight": 1.2, "curve": 0.2 }
+      },
+      {
+        "id": "run-16",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "if/run-16",
+        "args": { "points": [[-20, 770], [210, 792], [420, 770], [620, 806]], "brush": "2H", "color": "rust", "weight": 1.2, "curve": 0.2 }
+      }
+    ]
+  }
+}

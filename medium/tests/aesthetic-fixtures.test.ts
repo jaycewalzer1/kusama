@@ -147,9 +147,9 @@ test('render scope is unverified and judge rubrics are returned unread when noth
 });
 
 test('scoring weights hard double and excludes everything undecided', () => {
-  const ap = loadAestheticProgram(programFile('cut-and-reset'));
-  const pass = checkProgram(fixture('cut-and-reset', 'pass'), ap);
-  const fail = checkProgram(fixture('cut-and-reset', 'fail'), ap);
+  const ap = loadAestheticProgram(programFile('interference'));
+  const pass = checkProgram(fixture('interference', 'pass'), ap);
+  const fail = checkProgram(fixture('interference', 'fail'), ap);
 
   // Both fixtures have the same shape of decidable tree constraints; the fail one misses two hard.
   const decidable = pass.results.filter((r) => r.scope === 'tree' && r.status !== 'unverified');

@@ -205,6 +205,40 @@ one function, so the live score and the offline rescore cannot disagree.
   for the pixel view; the two are different questions and neither substitutes for the other.
 - **trust** — yes for what it counts, and the caveat above is not optional.
 
+### `inertSteps`
+- **is** the count of steps that were kept and moved less than `INERT_THRESHOLD` (0.001) of the
+  canvas. A step the page cannot tell happened.
+- **is not** a count of small edits. It is a count of edits that raised the checker's score without
+  changing the picture — splitting a text node in two to get under a word limit, adding a tick to
+  satisfy a count. It is the reward-hacking counter.
+- **fails when** an edit is genuinely invisible for an honest reason: a node moved behind an opaque
+  layer, or a colour changed below the perceptual floor. Both count as inert and one of them is a
+  real decision. Occlusion is invisible to the tree here as everywhere.
+- **trust** — yes for the count. `null`, not 0, on any log written before the threshold existed.
+
+**previously.** Nothing counted it, and worse, `env.step` *rewarded* it: any kept step that raised
+`standing` reset the stall counter and lifted the mood, whether or not a pixel moved. The run this
+was built for split `"3 MARCH 19:00"` into two program nodes to satisfy `textMaxWords`, produced an
+identical sheet, and was recorded as having improved. `this.best` still advances on an inert step —
+only the reward is withheld, so a later step is not credited twice for the same ground.
+
+### `finishRefusals`
+- **is** the number of times the artist asked to finish and the environment refused. See
+  `artist/gate.ts` for the five blockers and `RunOptions.maxFinishAttempts` for the cap.
+- **is not** a measure of how bad the piece was. A run that was refused twice and one that was
+  refused once and then fixed it both spent the same number of asks; what separates them is
+  `termination.kind`.
+- **fails when** read on a log with no gate lines, where it is `null` — the run predates the gate and
+  cannot say whether it would have been refused. 0 means it asked once and was let go, or never asked.
+- **trust** — yes. Recomputed offline from the `finish-gate` note lines, not from a stamped field.
+
+**previously.** Finishing was an assertion nobody could contradict. The run this was built for
+identified that its central device did not work, was told by its own blind watcher that the piece
+read as something else entirely, knowingly kept a time that rendered as the wrong number, scored
+itself 4 out of 10 — and finished, because nothing in the loop could say no. The self-critique was
+therefore an autopsy. The gate is what makes it feedback: EXAMINE now runs at the moment the artist
+asks to stop, and its answer can send the artist back to work.
+
 ### `refusals`
 - **is** every edit the validator refused, split by cause: `budget`, `capability`, `structural`. The
   cause is read off the `[code]` the medium appends to each issue, so it is a rename of a fact rather
@@ -297,6 +331,12 @@ channel.
   position.
 - **fails when** `edgesUnrealized` is read alone. It counts only edges the tree can decide.
 - **trust** — yes.
+
+`kind` has four values, not three. `finish-blocked` means the artist asked to stop, was handed the
+reasons it could not, and asked again with the reasons still true. It is not `declared-finished` —
+the stop was refused rather than made — and it is not `out-of-steps`, because the run had steps left
+and chose not to use them. `legitimate` is false for it by the same rule that makes it false for a
+timeout: only `declared-finished` can be legitimate.
 
 ### `termination.pendingRate` / `.pendingCapExceeded`
 - **is** the share of the final plan's edges that nothing can judge, and whether that share is over

@@ -842,7 +842,7 @@ test('observation: the serializer hashes its own bytes, so an edit is a version 
 });
 
 test('observation: the environment describers are blind to everything but the image', () => {
-  const c = loadCommission('cut-and-reset', 'arches-eviction', 'poster');
+  const c = loadCommission('many-hands', 'nine-returned', 'panel');
   const leak = [
     c.position.name,
     c.position.worldview.slice(0, 40),
@@ -864,7 +864,7 @@ test('observation: the environment describers are blind to everything but the im
 });
 
 test('observation: FIND sees the field, because that is where a problem has to come from', () => {
-  const c = loadCommission('cut-and-reset', 'arches-eviction', 'poster');
+  const c = loadCommission('many-hands', 'nine-returned', 'panel');
   const obs = findObservation(c, c.field);
   assert.ok(obs.includes(c.field.whoIsWatching.adversary));
   assert.ok(obs.includes(c.field.transplants[0]!.ref));

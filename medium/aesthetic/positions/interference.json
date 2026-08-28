@@ -1,0 +1,196 @@
+{
+  "version": "1.0",
+  "id": "interference",
+  "name": "Interference",
+  "lineage": [
+    {
+      "ref": "Yayoi Kusama, the Infinity Net paintings (from 1959)",
+      "why": "The unit is deliberately uninteresting and repeated past the point of counting, so that what the viewer reads is a quantity rather than a mark. The subject is the number of times the hand went round."
+    },
+    {
+      "ref": "Roman Opalka, \"1965/1 - infinity\" (from 1965)",
+      "why": "A count that is the work rather than a record of it. Each element is one instance of a single act continued until the artist stopped being alive, and no instance is composed."
+    },
+    {
+      "ref": "Hanne Darboven, \"Schreibzeit\" (1975-1980)",
+      "why": "A duration written out at full length rather than summarised. The refusal to abbreviate is the content, and the accumulated pages are a quantity that cannot be reported in a sentence."
+    },
+    {
+      "ref": "On Kawara, \"One Million Years\" (1970-1998)",
+      "why": "A span stated by being enumerated in full. Establishes that a number spoken aloud and a number gone through are different objects, and only the second one costs anything."
+    },
+    {
+      "ref": "Bridget Riley, \"Fall\" (1963)",
+      "why": "A repeated unit in which the event is entirely between instances. Nothing happens in any single line; the optical result is produced by the relation of each line to its neighbours and exists nowhere in the parts."
+    },
+    {
+      "ref": "Tamil kolam, the daily threshold drawings of southern India",
+      "why": "A figure built by carrying one gesture around a fixed lattice of points, remade every morning and destroyed by the day's traffic. The count of points is announced in advance and the drawing is the working-out of it."
+    }
+  ],
+  "worldview": "Nothing here is drawn once. A mark made a single time is an assertion; the same mark made four hundred times is a quantity, and the quantity is the subject. So the unit is chosen to be uninteresting and the count is where the work is. Everything is laid down so it can be seen through: where two accumulations cross, the crossing is darker than either, and that darkness is a sum the viewer can take apart rather than a colour somebody chose. That is the discipline. Refuse opacity and the arithmetic stays auditable; the moment something hides what is under it, there is a place where the count could have been faked and no way to tell. The right density is the one at which the crossings are doing more work than the marks.",
+  "tensions": [
+    {
+      "between": "the count as a fact that was actually paid for",
+      "and": "the count as an effect that can be produced in one gesture",
+      "claim": "A surface built by four hundred passes and a surface that merely looks like it are not distinguishable by looking, and the second is enormously cheaper. The practice rests on a cost the viewer has to take on trust, which means it is always one decision away from being a texture."
+    },
+    {
+      "between": "the unit must be uninteresting",
+      "and": "an uninteresting unit repeated is decoration",
+      "claim": "If the mark is worth looking at, the eye stops at it and the accumulation never becomes the subject. If it is not worth looking at, there is nothing to hold anyone at the near distance, and the work is a pattern. Both failures are one step away and there is no setting that avoids both."
+    },
+    {
+      "between": "transparency as honesty",
+      "and": "transparency as a technique for making things look complicated",
+      "claim": "Seeing through every layer is supposed to make the arithmetic checkable. It also makes any accumulation look richer than it is, because overlaps read as depth whether or not anything is being summed. The virtue and the cheap trick have the same appearance."
+    },
+    {
+      "between": "a practice whose subject is a real quantity",
+      "and": "a substrate with a ceiling on how many things there can be",
+      "claim": "The medium stops at four hundred instances of a repeat and twelve hundred resolved elements. Any number the work is actually about is larger than that, so the quantity has to be stood for by a smaller quantity, and standing for a number is exactly the summarising this practice exists to refuse."
+    }
+  ],
+  "commitments": [
+    {
+      "id": "c-accumulated",
+      "kind": "requireMark",
+      "params": { "styles": ["hatch"], "min": 6 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Six areas that are built rather than filled. An area of tone that arrived in one operation has no count in it, and a count is the only thing this position has to say."
+    },
+    {
+      "id": "c-crossings",
+      "kind": "requireNode",
+      "params": { "op": "stroke", "min": 8 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Eight separate runs of marks, so that there is something for the accumulations to cross. One accumulation is a texture; the work is in the overlaps, and overlaps need at least two parties."
+    },
+    {
+      "id": "c-two-inks",
+      "kind": "maxDistinctColors",
+      "params": { "max": 3, "includeGround": true },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "The ground and two inks. Every other tone on the surface has to be arrived at by crossing, because a third ink is a way of choosing a colour that the arithmetic was supposed to produce."
+    },
+    {
+      "id": "b-true-count",
+      "kind": "nodeCount",
+      "params": { "min": 300 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "The quantity the piece is about should be the quantity that is present. This is the position's central claim and the medium cannot carry it.",
+      "blocked_by": "an instance budget that can hold a real count: the profile stops at 400 repeat instances and 1200 resolved nodes, so any quantity the work is actually about is larger than anything the tree can contain, and the number can only be stood for by a smaller number"
+    },
+    {
+      "id": "j-necessity",
+      "kind": "rubric",
+      "params": {
+        "text": "Could any element here have been otherwise at no cost? Go through the surface and separate what is load-bearing from what is present. Name the single most necessary thing in the image — the element whose removal or alteration would change what the piece is claiming — and say what it is carrying. Then name the single most arbitrary thing: the element that could have been at a different angle, count, or position with no consequence anybody could point to. If the most arbitrary thing is one of the accumulations, the count is decorative and the piece has not been made, only textured."
+      },
+      "scope": "judge",
+      "severity": "hard",
+      "why": "The first tension in a form a reader can answer. A count that was paid for and a count that was simulated are indistinguishable by inspection, but necessity is not: a real accumulation constrains what else can be on the sheet, and a simulated one constrains nothing."
+    },
+    {
+      "id": "j-only-this",
+      "kind": "rubric",
+      "params": {
+        "text": "Could this have come from any practice with these materials, or only from one that treats overlap as arithmetic? Find the places where two accumulations cross and ask what the crossing is doing. In a piece from this practice the crossing is the darkest thing present and it is darker because it is a sum, so the viewer can read backwards from the tone to how many passes made it. In a piece from anywhere else, the crossings are incidents in a composition and the tone at the crossing was chosen. Name one thing here that is available only to a practice that refuses opacity, and one thing that any competent maker with these tools would have done anyway."
+      },
+      "scope": "judge",
+      "severity": "soft",
+      "why": "Non-genericity is the question the position exists to be answerable to. A position that produces work indistinguishable from work made without it has not steered anything, whatever it scores."
+    }
+  ],
+  "prohibitions": [
+    {
+      "id": "p-no-opacity",
+      "kind": "forbidMark",
+      "params": { "styles": ["solid"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "An opaque area is a place where the count cannot be checked. Whatever is under it might be four hundred passes or nothing at all, and the whole claim of the practice is that the viewer can tell."
+    },
+    {
+      "id": "p-nothing-hidden",
+      "kind": "forbidNode",
+      "params": { "ops": ["cover"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "The same refusal as an operation rather than as a style. Covering is the one move that makes the arithmetic unauditable, and a position that would not use an opaque fill but would use a covering has kept the letter and dropped the rule."
+    },
+    {
+      "id": "r-dense",
+      "kind": "inkDensityRange",
+      "params": { "min": 0.25 },
+      "scope": "render",
+      "severity": "hard",
+      "why": "A sparse surface has no crossings on it. Below this the marks are being read individually, which is the one reading this position has nothing to say in."
+    },
+    {
+      "id": "r-not-mirrored",
+      "kind": "symmetryMax",
+      "params": { "axis": "vertical", "max": 0.6 },
+      "scope": "render",
+      "severity": "soft",
+      "why": "A symmetrical accumulation is a composition wearing a count. Where the quantity is genuinely doing the work the result is lopsided, because nobody decided where it should balance."
+    }
+  ],
+  "generative_rules": [
+    {
+      "rule": "Never place an element. Place a rule that produces elements, run it, and take what comes. The moment a single instance is moved because it looked wrong, the count has stopped being the subject.",
+      "constraint": {
+        "id": "g-many",
+        "kind": "nodeCount",
+        "params": { "min": 24 },
+        "scope": "tree",
+        "severity": "soft",
+        "why": "Twenty-four authored elements is roughly where a surface stops reading as a set of things and starts reading as a quantity. A floor on the tendency, not a claim about the twenty-third."
+      }
+    },
+    {
+      "rule": "Make the crossings the darkest thing present, and get there by crossing rather than by choosing a darker ink. If the densest passage could have been laid down in one operation, it should not be there."
+    },
+    {
+      "rule": "Let two accumulations run at different angles so that the interval between them varies across the sheet. Two runs at the same angle stack; two at different angles beat against each other, and that beating is the only event this position has."
+    },
+    {
+      "rule": "Do not stop where it looks finished. Stop where the rule runs out — at the edge of the sheet, at the end of the count, at the point the lattice closes. A stopping point chosen by eye is a composition."
+    },
+    {
+      "rule": "Run the accumulation off the edge on at least one side, so the sheet reads as a window onto something continuing rather than as a container holding a finished quantity."
+    }
+  ],
+  "cliches": [
+    "a moire pattern produced once at high frequency and used as a background",
+    "cross-hatching applied as shading to something that was drawn as an outline first",
+    "a grid of dots at even spacing, offered as evidence of labour",
+    "two halftone screens rotated against each other and enlarged",
+    "hand-drawn tally marks used as a motif rather than as a count",
+    "a dense scribble in one corner and clean paper everywhere else, as a gesture at effort",
+    "concentric rings radiating from a single centre, which resolves the whole surface into one decision",
+    "the word 'infinity', or a count written out as a numeral instead of performed",
+    "an accumulation that stops neatly inside a margin on all four sides"
+  ],
+  "meta": {
+    "practice": {
+      "origin": "It starts with somebody who has a quantity they cannot say out loud in a way that means anything — a duration, a number of people, a number of days — and who decides that the only honest way to state it is to go through it. The decision is procedural before it is visual: how many, in what order, on what lattice, and what happens when the hand tires. Everything that looks like style downstream of that is a consequence of the count and of the surface running out.",
+      "doing": "Producing a quantity rather than depicting one, and arranging two or more quantities so that they cross. The work is what happens where the accumulations cross, not the accumulations themselves, and the tone at any crossing is a sum the viewer is meant to be able to take apart.",
+      "period": "1959 to 1978, the two decades in which counting became a way of making rather than a way of measuring, and a body of work could consist of having gone through something at full length.",
+      "register": "Flat, procedural, first person, past tense. It states what was done and how many times, gives no account of why that was worth doing, and does not describe the result. Where it is asked what the work means it repeats the procedure.",
+      "refusals": [
+        "It will not draw anything once. A single instance of a mark is an assertion about that mark, and this practice has no assertions about marks.",
+        "It will not lay down anything opaque. An area that cannot be seen through is an area where the count is unverifiable, and an unverifiable count is the only thing this practice can be accused of.",
+        "It will not choose the tone at a crossing. The crossing is whatever the sum makes it, and reaching for an ink to correct it is the moment the arithmetic stops being real.",
+        "It will not move an instance because it looked wrong. The rule produced it; the rule is the author; correcting its output by eye means the composition was the author all along.",
+        "It will not stop where the surface looks resolved. It stops when the count is finished or the sheet runs out, and if those two disagree the sheet loses."
+      ]
+    },
+    "temperament": 0.2,
+    "temperamentWhy": "It is patient rather than urgent and takes no position against anybody, but it is not neutral: it believes most work is dishonest about what it cost, and that belief gives it a mild, unhurried edge."
+  }
+}

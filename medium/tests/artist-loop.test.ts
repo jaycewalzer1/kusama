@@ -14,6 +14,7 @@ import { cpSync, mkdtempSync, readFileSync, existsSync, writeFileSync } from 'no
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { runTrajectory } from '../artist/run.js';
+import { INERT_THRESHOLD } from '../artist/env.js';
 import { replay } from '../artist/replay.js';
 import { recomputeMatches } from '../artist/reward.js';
 import { readLog, verifyChain } from '../artist/studio-log.js';
@@ -34,9 +35,9 @@ test('the loop runs a whole trajectory: find, sketch, choose, make, examine, fin
   const policy = new StubPolicy(4);
   trajectory = await runTrajectory({
     policy,
-    positionId: 'generation-loss',
-    briefId: 'arches-eviction',
-    deliverableId: 'poster',
+    positionId: 'withheld',
+    briefId: 'two-million-slips',
+    deliverableId: 'panel',
     seed: 4242,
     outDir: CELL,
     maxSteps: 6,
@@ -51,9 +52,11 @@ test('the loop runs a whole trajectory: find, sketch, choose, make, examine, fin
   assert.ok(trajectory.steps.length >= 4, 'MAKE took steps');
   assert.ok(trajectory.examine, 'EXAMINE ran');
 
-  // The phases happened in the order the design insists on, and only once each.
+  // The phases happened in the order the design insists on. EXAMINE runs once per ask to finish —
+  // this stub asks twice and is refused twice — because the gate needs the artist's own reading of
+  // the picture before it can decide whether the artist may stop looking at it.
   const names = policy.calls.filter((c) => c !== 'sketch' && c !== 'act' && c !== 'replan');
-  assert.deepEqual(names, ['find', 'choose', 'examine']);
+  assert.deepEqual(names, ['find', 'choose', 'examine', 'examine']);
   assert.ok(policy.calls.indexOf('sketch') > policy.calls.indexOf('find'));
   assert.ok(policy.calls.indexOf('choose') > policy.calls.lastIndexOf('sketch'));
 
@@ -83,9 +86,14 @@ test('the refusal is filed under its cause, and the causes are not summed', () =
   assert.match(refused[0]!.reason, /nowhere/);
 });
 
+// The stub leaves several of the position's hard constraints violated — nothing covered, nothing
+// sealed, too few opaque marks — and used to be recorded as having finished anyway. That is
+// the failure the gate exists for, so this test now asserts the refusal: the artist said `finished`,
+// the environment said no twice, and the stop is on the record as not made.
 test('the run stopped because the artist said so, and the record says whether that was earned', () => {
   const t = trajectory.scores.termination;
-  assert.equal(t.kind, 'declared-finished');
+  assert.equal(t.kind, 'finish-blocked');
+  assert.equal(trajectory.scores.finishRefusals, 2);
   assert.equal(trajectory.steps[trajectory.steps.length - 1]!.action.control, 'finished');
   // Whatever this particular stub run realizes, the legitimacy of the stop is decidable from the
   // two numbers beside it and nothing else — no model, no prose.
@@ -130,6 +138,18 @@ test('the run records whether the artist could see the sheet it was editing', ()
   assert.ok(steps.every((l) => (l.data as { sawCanvas?: unknown }).sawCanvas === true));
 });
 
+// Every accepted step in this run repaints a visible chunk of the sheet, so the count is 0 — but it
+// is 0 and not null, which is the assertion. The distinction is the whole rule: a run that was
+// measured and found nothing has to be legible apart from a run that was never measured, or the
+// corpus collected before the threshold existed reads as a corpus with no reward hacking in it.
+test('every kept step is checked against the page, and a measured run reports a number not a null', () => {
+  assert.equal(trajectory.scores.inertSteps, 0);
+  for (const step of trajectory.steps.filter((s) => s.accepted)) {
+    assert.equal(typeof step.inert, 'boolean', `step ${step.k} was kept and not asked whether it showed`);
+    assert.equal(step.inert, step.pixelsMoved < INERT_THRESHOLD);
+  }
+});
+
 // MUST MOVE, and the only fixture that can show it: the two arms are a property of the whole loop,
 // not of any function in it. A second trajectory is expensive, but a score that exists so the blind
 // arm can never again be invisible has to be shown telling the two arms apart at least once.
@@ -138,9 +158,9 @@ test('the blind arm scores differently from the default arm, which is the whole 
   installStubEnvModel();
   const blind = await runTrajectory({
     policy: new StubPolicy(4),
-    positionId: 'generation-loss',
-    briefId: 'arches-eviction',
-    deliverableId: 'poster',
+    positionId: 'withheld',
+    briefId: 'two-million-slips',
+    deliverableId: 'panel',
     seed: 4242,
     outDir: blindCell,
     maxSteps: 6,
@@ -217,7 +237,7 @@ test('a run whose commission has left the catalog is unscorable, not a crash', a
   const lines = readFileSync(path.join(gone, 'studio.jsonl'), 'utf8')
     .trimEnd()
     .split('\n')
-    .map((l) => l.replace('"positionId":"generation-loss"', '"positionId":"a-position-that-was-deleted"'));
+    .map((l) => l.replace('"positionId":"withheld"', '"positionId":"a-position-that-was-deleted"'));
   writeFileSync(path.join(gone, 'studio.jsonl'), lines.join('\n') + '\n');
 
   const result = await recomputeMatches(gone);
@@ -249,7 +269,7 @@ test('gate 6: the environment never saw the position, the brief, the plan or the
   }
   // AUDIENCE is allowed exactly one thing beyond the pixels: the field's watching paragraph.
   const audience = envRequests.find((r) => r.name === 'audience');
-  assert.ok(audience?.text.includes('joiner of fifty-two'), 'the audience is the person the field named');
+  assert.ok(audience?.text.includes('postgraduate of twenty-four'), 'the audience is the person the field named');
   assert.ok(audience?.imageBase64, 'and it is looking at the image');
   const describe = envRequests.find((r) => r.name === 'describe');
   assert.ok(describe?.imageBase64);

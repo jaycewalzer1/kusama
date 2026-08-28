@@ -1,0 +1,274 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 5202,
+  "canvas": {
+    "width": 640,
+    "height": 900,
+    "ground": "#efe9dc",
+    "brushScale": 1
+  },
+  "palette": {
+    "ink": "#191512",
+    "iron": "#3d4a52",
+    "oxide": "#7a2f22"
+  },
+  "meta": {
+    "aesthetic": "many-hands",
+    "fixture": "fail",
+    "violates": ["p-no-atmosphere", "p-no-emblem"],
+    "reads_as": "the same eight hands after one of the ruled blocks was softened into a graduated area and a device nobody issued was put at the head of the sheet",
+    "note": "A graduated area tells the reader how to feel about texts that disagree, and an invented device is the maker's own hand claiming a standing no party granted it. Both are the maker governing while appearing to serve."
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "hand-a",
+        "type": "op",
+        "op": "text",
+        "rngKey": "mh/hand-a",
+        "args": {
+          "text": "BY ORDER OF THE COMMISSIONERS",
+          "font": "grotesque",
+          "size": 34,
+          "x": 42,
+          "y": 96,
+          "align": "left",
+          "color": "ink",
+          "tracking": 1,
+          "maxWidth": 540
+        }
+      },
+      {
+        "id": "hand-b",
+        "type": "op",
+        "op": "text",
+        "rngKey": "mh/hand-b",
+        "args": {
+          "text": "and the same by the vestry, sitting the following week, which did not agree",
+          "font": "serif",
+          "size": 19,
+          "x": 58,
+          "y": 188,
+          "align": "left",
+          "color": "iron",
+          "tracking": 0,
+          "maxWidth": 470
+        }
+      },
+      {
+        "id": "hand-c",
+        "type": "op",
+        "op": "text",
+        "rngKey": "mh/hand-c",
+        "args": {
+          "text": "THIS PART IS THE COMPANY'S",
+          "font": "grotesque",
+          "size": 34,
+          "x": 300,
+          "y": 268,
+          "align": "left",
+          "color": "oxide",
+          "tracking": 1,
+          "maxWidth": 400
+        }
+      },
+      {
+        "id": "hand-d",
+        "type": "op",
+        "op": "text",
+        "rngKey": "mh/hand-d",
+        "args": {
+          "text": "Entered in the register on the ninth day, subject to the objection recorded overleaf, which was not answered",
+          "font": "serif",
+          "size": 15,
+          "x": 40,
+          "y": 352,
+          "align": "left",
+          "color": "ink",
+          "tracking": 0,
+          "maxWidth": 330
+        }
+      },
+      {
+        "id": "hand-e",
+        "type": "op",
+        "op": "text",
+        "rngKey": "mh/hand-e",
+        "args": {
+          "text": "NOT ADMITTED",
+          "font": "grotesque",
+          "size": 58,
+          "x": 236,
+          "y": 470,
+          "align": "left",
+          "color": "ink",
+          "tracking": 2
+        }
+      },
+      {
+        "id": "hand-f",
+        "type": "op",
+        "op": "text",
+        "rngKey": "mh/hand-f",
+        "args": {
+          "text": "the claim of the older right, which predates every paper here and is not registered anywhere",
+          "font": "serif",
+          "size": 18,
+          "x": 46,
+          "y": 566,
+          "align": "left",
+          "color": "oxide",
+          "tracking": 0,
+          "maxWidth": 420
+        }
+      },
+      {
+        "id": "hand-g",
+        "type": "op",
+        "op": "text",
+        "rngKey": "mh/hand-g",
+        "args": {
+          "text": "SEALED AND DELIVERED IN THE PRESENCE OF THE UNDERSIGNED CLERK",
+          "font": "grotesque",
+          "size": 15,
+          "x": 330,
+          "y": 664,
+          "align": "left",
+          "color": "iron",
+          "tracking": 0.5,
+          "maxWidth": 340
+        }
+      },
+      {
+        "id": "hand-h",
+        "type": "op",
+        "op": "text",
+        "rngKey": "mh/hand-h",
+        "args": {
+          "text": "and a fourth party, whose entitlement nobody in this room has ever disputed and nobody has ever written down",
+          "font": "serif",
+          "size": 21,
+          "x": 34,
+          "y": 776,
+          "align": "left",
+          "color": "ink",
+          "tracking": 0,
+          "maxWidth": 500
+        }
+      },
+      {
+        "id": "issued-device",
+        "type": "macro",
+        "macro": "motif",
+        "rngKey": "mh/issued-device",
+        "args": {
+          "name": "hibiscus",
+          "x": 560,
+          "y": 92,
+          "size": 96,
+          "rotate": -8,
+          "brush": "pen",
+          "color": "oxide"
+        }
+      },
+      {
+        "id": "ruled-pen",
+        "type": "op",
+        "op": "rule",
+        "rngKey": "mh/ruled-pen",
+        "args": { "from": [-20, 132], "to": [660, 138], "brush": "pen", "color": "ink", "weight": 1.4 }
+      },
+      {
+        "id": "ruled-rotring",
+        "type": "op",
+        "op": "rule",
+        "rngKey": "mh/ruled-rotring",
+        "args": { "from": [292, -20], "to": [300, 700], "brush": "rotring", "color": "iron", "weight": 0.8 }
+      },
+      {
+        "id": "ruled-2b",
+        "type": "op",
+        "op": "rule",
+        "rngKey": "mh/ruled-2b",
+        "args": { "from": [-20, 316], "to": [660, 306], "brush": "2B", "color": "oxide", "weight": 2.2 }
+      },
+      {
+        "id": "ruled-crayon",
+        "type": "op",
+        "op": "rule",
+        "rngKey": "mh/ruled-crayon",
+        "args": { "from": [-20, 512], "to": [660, 528], "brush": "crayon", "color": "ink", "weight": 4.5 }
+      },
+      {
+        "id": "ruled-charcoal",
+        "type": "op",
+        "op": "rule",
+        "rngKey": "mh/ruled-charcoal",
+        "args": { "from": [-20, 726], "to": [660, 716], "brush": "charcoal", "color": "ink", "weight": 3.5 }
+      },
+      {
+        "id": "struck-through",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "mh/struck-through",
+        "args": {
+          "points": [[232, 452], [340, 446], [452, 458], [566, 448]],
+          "brush": "crayon",
+          "color": "oxide",
+          "weight": 5,
+          "curve": 0.2
+        }
+      },
+      {
+        "id": "annotated",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "mh/annotated",
+        "args": {
+          "points": [[36, 604], [130, 618], [214, 600], [318, 616]],
+          "brush": "pen",
+          "color": "iron",
+          "weight": 1.2,
+          "curve": 0.3
+        }
+      },
+      {
+        "id": "margin-mark",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "mh/margin-mark",
+        "args": {
+          "points": [[604, 200], [614, 300], [602, 400], [616, 512]],
+          "brush": "charcoal",
+          "color": "oxide",
+          "weight": 2.4,
+          "curve": 0.25
+        }
+      },
+      {
+        "id": "block-a",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "mh/block-a",
+        "args": {
+          "region": { "type": "rect", "x": 388, "y": 344, "w": 240, "h": 108 },
+          "style": { "kind": "field", "brush": "rotring", "color": "iron", "density": 6, "length": 14, "angle": 40, "jitter": 30, "marks": "dashes" }
+        }
+      },
+      {
+        "id": "block-b",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "mh/block-b",
+        "args": {
+          "region": { "type": "rect", "x": 44, "y": 660, "w": 226, "h": 84 },
+          "style": { "kind": "hatch", "brush": "2B", "color": "ink", "spacing": 6, "angle": 118, "rand": 0.15 }
+        }
+      }
+    ]
+  }
+}

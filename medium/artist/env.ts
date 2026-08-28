@@ -17,7 +17,7 @@ import { loadPackFor } from '../env/pack.js';
 import { contentHash, loadProfileFor } from '../env/profile.js';
 import { editsPerStep, onAcceptImproved, onRevert, onStall, stallThreshold } from './affect.js';
 import { Canvas, InvalidProgramError, changeSince, check, type Change } from './canvas.js';
-import { describe, audience } from './env-calls.js';
+import { describe, audience, transcribe, type ReadString } from './env-calls.js';
 import { bareEdit } from './schemas.js';
 import { treeFacts } from '../aesthetic/facts.js';
 import {
@@ -30,6 +30,16 @@ import {
 import type { StudioLog } from './studio-log.js';
 import type { Commission } from './field.js';
 import type { Action, Affect, CheckReport, Intention, Look, Refusal, RefusalCause, Step } from './types.js';
+
+/**
+ * Below this share of the canvas moved, a kept step did not change the picture.
+ *
+ * 0.001 is a thousandth of the sheet — about 1,700 pixels at A3 print size, which is smaller than a
+ * single character of body text. It is a floor for noise, not a judgement about how much change is
+ * enough: any edit meant to be seen clears it by orders of magnitude, and an edit that does not
+ * clear it is a rearrangement of the tree.
+ */
+export const INERT_THRESHOLD = 0.001;
 
 /**
  * Which of the three causes a refusal was, from the validator's own sentence.
@@ -222,6 +232,7 @@ export class ArtistEnv {
       const a = await audience(rendered.png, this.o.commission.field.whoIsWatching.audience);
       this.account(a);
       look.audienceRead = a.value.read;
+      look.wouldAct = a.value.wouldAct;
     }
 
     this.o.log.append('render', {
@@ -234,8 +245,29 @@ export class ArtistEnv {
       renderScore: report.renderScore,
       description: look.description,
       audienceRead: look.audienceRead ?? null,
+      wouldAct: look.wouldAct ?? null,
     });
     return look;
+  }
+
+  /**
+   * Every string a blind reader can get off the current plate.
+   *
+   * Not part of `observe`: it is only asked when the artist wants to stop, because it exists to
+   * answer one question — can the facts the brief requires actually be read — and asking it every
+   * step would buy a call per step to be told what the tree already says on all but the last one.
+   */
+  async readBack(): Promise<ReadString[]> {
+    if (!this.plate) return [];
+    const t = await transcribe(this.plate);
+    this.account(t);
+    this.o.log.append('env-call', {
+      name: 'transcribe',
+      programHash: this.programHash,
+      strings: t.value.strings,
+      cached: t.cached,
+    });
+    return t.value.strings;
   }
 
   private account(r: { usd: number; cached: boolean }): void {
@@ -362,12 +394,22 @@ export class ArtistEnv {
     this.baseline = this.plate;
     step.pixelsMoved = this.change?.fraction ?? 0;
 
+    // An improvement has to show. Splitting one text node into two to get under a word limit raises
+    // `standing` and moves nothing on the sheet, and the environment used to read that as progress:
+    // it reset the stall counter, it lifted the mood, and the artist got the reward for satisfying
+    // the checker rather than for changing the picture. Now a step that the page cannot tell
+    // happened counts as a step that did not happen. The threshold is a pixel-diff floor, not zero,
+    // because a repaint of identical marks can differ in a handful of pixels.
     const now = standing(after.checkReport);
-    if (now > this.best) {
+    step.inert = step.pixelsMoved < INERT_THRESHOLD;
+    if (now > this.best && !step.inert) {
       this.best = now;
       this.sinceImprovement = 0;
       this.affect = onAcceptImproved(this.affect);
     } else {
+      // The best standing still moves, so a later step is not credited twice for the same ground.
+      // Only the reward for reaching it is withheld.
+      if (now > this.best) this.best = now;
       this.sinceImprovement++;
     }
     step.affect = this.affect;
@@ -468,6 +510,10 @@ export class ArtistEnv {
       // The step's size on the page. Logged so an offline reader can tell a step that rewrote the
       // picture from one that nudged an argument, which the tree diff alone will not say.
       pixelsMoved: step.pixelsMoved,
+      // Kept but invisible. Derivable from `pixelsMoved` and `accepted`, and logged anyway so that
+      // the threshold this run applied is on the record: change `INERT_THRESHOLD` and an offline
+      // rescore of an old log would otherwise silently re-decide steps under the new one.
+      inert: step.inert ?? null,
       // What the act call could see. Logged per step rather than once at the top from the run's
       // flag: the flag is what was asked for, and this is what the payload carried.
       sawCanvas: step.sawCanvas,

@@ -27,6 +27,8 @@ import { Canvas, check } from './canvas.js';
 import { newSpend, type Spend } from './call.js';
 import { ArtistEnv, refusalTally } from './env.js';
 import { loadCommission, type Commission } from './field.js';
+import { blockerLines, finishBlockers } from './gate.js';
+import type { Fired } from './triggers.js';
 import {
   carryNodeIds,
   declarationScores,
@@ -102,6 +104,14 @@ export interface RunOptions {
    * than an opinion.
    */
   showCanvas?: boolean;
+  /**
+   * How many times the artist may ask to finish and be refused before the environment stops
+   * arguing. Default 2: one refusal is a chance to act on the evidence, and a second refusal that
+   * changed nothing is the run telling us it cannot. Setting it to 0 restores the old behaviour,
+   * where finishing was an assertion nobody could contradict, and is only there so the ablation can
+   * be run.
+   */
+  maxFinishAttempts?: number;
 }
 
 /**
@@ -209,7 +219,8 @@ function scoresOf(
   fieldText: string,
   seen: Examine | null,
   stopped: Termination['kind'],
-  affect0: Affect
+  affect0: Affect,
+  finishRefusals: number | null
 ): Scores {
   const real = realization(intention, program);
   const risk = steps.find((s) => s.accepted && s.isRiskMove);
@@ -233,6 +244,11 @@ function scoresOf(
     problemFindingSteps: steps.filter((s) => s.replan !== null).length,
     problemsGrounded: grounded(problems, fieldText),
     destructionRate: destructionRate(steps),
+    // `some(... !== undefined)`, not `filter(s => s.inert)`. On a log written before the field
+    // existed every step reads `undefined`, and counting those as false would report a run that was
+    // never measured as a run with no inert steps.
+    inertSteps: steps.some((s) => s.inert !== undefined) ? steps.filter((s) => s.inert === true).length : null,
+    finishRefusals,
     declarations: declarationScores(steps.map((s) => s.declaration)),
     canvasVisibleRate: visibleRate(steps.map((s) => s.sawCanvas)),
     changeVisibleRate: visibleRate(steps.map((s) => s.sawChange)),
@@ -309,7 +325,23 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
     // Style words found in L2. Non-empty does not stop the run — it marks it non-comparable, which
     // is a different and more useful thing than a crash on a brief somebody is still drafting.
     contamination: loaded.contamination,
+    // Hard constraints of the composed position that cannot all hold. Non-empty stops the run
+    // below; it is on the start line so the refusal is legible from the log alone.
+    unsatisfiable: loaded.unsatisfiable,
   });
+  if (loaded.unsatisfiable.length > 0) {
+    // Refused before any policy call. A run against a commission no program can satisfy measures
+    // the composition, not the artist, and the artist would spend the whole trajectory discovering
+    // mechanically what is decidable here in a millisecond.
+    const why = loaded.unsatisfiable.map((c) => `${c.a} x ${c.b}: ${c.why}`);
+    log.append('note', {
+      phase: 'start',
+      warning: 'commission is unsatisfiable; no program can satisfy its hard constraints',
+      unsatisfiable: why,
+    });
+    log.append('trajectory-end', { id, outcome: 'unsatisfiable', unsatisfiable: why });
+    throw new Error(`unsatisfiable commission ${o.positionId} x ${o.briefId}:\n  ${why.join('\n  ')}`);
+  }
   if (loaded.contamination.length > 0) {
     log.append('note', {
       phase: 'start',
@@ -401,6 +433,11 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
     // Defaults to the timer, and is only upgraded by the artist actually saying so. An artist that
     // never chooses a control gets `out-of-steps`, which is what happened.
     let stopped: Termination['kind'] = 'out-of-steps';
+    // EXAMINE, once the artist has asked to stop. Held here because the gate needs it before the
+    // loop can end, and the trajectory needs the same one afterwards.
+    let seen0: Examine | null = null;
+    let finishAttempts = 0;
+    const maxFinishAttempts = o.maxFinishAttempts ?? 2;
 
     for (let k = 1; k <= hardStop; k++) {
       const stepsLeft = Math.max(0, maxSteps - (k - 1));
@@ -432,14 +469,71 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
         stopped = 'abandoned';
         break;
       }
+      // Finishing is a request, not an assertion. EXAMINE runs here rather than after the loop —
+      // same call, same image, moved to where its answer can still change something — and the
+      // environment either accepts the stop or hands the reasons back as a replan. A run that
+      // finishes cleanly on its first ask therefore costs exactly what it used to, minus nothing:
+      // this EXAMINE becomes the trajectory's.
+      let blocked: Fired | null = null;
       if (call.action.control === 'finished') {
-        stopped = 'declared-finished';
-        break;
+        const attempt = await examine(
+          o.policy,
+          log,
+          spend,
+          commission,
+          env.intention,
+          env.look.checkReport,
+          env.look.description,
+          env.look.audienceRead ?? null,
+          env.plate ?? (await canvas.render(env.program, { metrics: true })).png
+        );
+        seen0 = attempt;
+        if (maxFinishAttempts === 0) {
+          // The gate is off: the pre-gate environment, kept runnable so that "the gate changed the
+          // work" is a comparison somebody can actually run rather than an assertion.
+          stopped = 'declared-finished';
+          break;
+        }
+        const blockers = finishBlockers({
+          brief: loaded.brief,
+          report: env.look.checkReport,
+          examine: attempt,
+          // Only asked when the artist wants to stop. Null would mean "not asked", and the gate
+          // never blocks on evidence it does not have.
+          transcript: await env.readBack(),
+          wouldAct: env.look.wouldAct,
+          declaredUnrealizable: call.action.unrealizable ?? null,
+        });
+        finishAttempts++;
+        log.append('note', {
+          phase: 'finish-gate',
+          k,
+          attempt: finishAttempts,
+          accepted: blockers.length === 0,
+          blockers: blockerLines(blockers),
+        });
+        if (blockers.length === 0) {
+          stopped = 'declared-finished';
+          break;
+        }
+        if (finishAttempts >= maxFinishAttempts) {
+          // It asked, was told why not, and asked again unchanged. The piece stands as it stands
+          // and the record says the stop was not earned.
+          stopped = 'finish-blocked';
+          break;
+        }
+        blocked = {
+          trigger: 'finish-blocked',
+          detail: blockerLines(blockers).join(' '),
+          usd: 0,
+          cached: true,
+        };
       }
 
       // A replan happens for a named reason or not at all. `artist-declares` is the artist's own
-      // control value; everything else was fired by the environment and is already logged.
-      const fired = result.fired ?? (call.action.control === 'replan'
+      // control value; everything else was fired by the environment and is already logged. A
+      // refused finish outranks both: it is the only one the artist cannot decline to hear.
+      const fired = blocked ?? result.fired ?? (call.action.control === 'replan'
         ? { trigger: 'artist-declares' as const, detail: call.action.think, usd: 0, cached: true }
         : null);
       if (fired) {
@@ -483,17 +577,22 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
     writeFileSync(path.join(o.outDir, 'final.png'), finalRender.png);
     const scoringReport = check(env.program, loaded.effective, finalRender.metrics);
 
-    const seen = await examine(
-      o.policy,
-      log,
-      spend,
-      commission,
-      env.intention,
-      env.look.checkReport,
-      env.look.description,
-      env.look.audienceRead ?? null,
-      finalRender.png
-    );
+    // Reused when the artist asked to stop: that call already looked at this program, and asking
+    // again would give the run two self-critiques and no way to say which one is its verdict. Only
+    // a run that never asked — abandoned, or out of steps — pays for one here.
+    const seen =
+      seen0 ??
+      (await examine(
+        o.policy,
+        log,
+        spend,
+        commission,
+        env.intention,
+        env.look.checkReport,
+        env.look.description,
+        env.look.audienceRead ?? null,
+        finalRender.png
+      ));
 
     // 6. FINISH -----------------------------------------------------------------------------------
     const cost: Cost = {
@@ -545,7 +644,9 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
         fieldText,
         seen,
         stopped,
-        affect0
+        affect0,
+        // Asks minus the one that was granted. A run that finished on its first ask refused none.
+        Math.max(0, finishAttempts - (stopped === 'declared-finished' ? 1 : 0))
       ),
       cost,
       envVersion,

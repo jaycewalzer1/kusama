@@ -22,6 +22,8 @@ function scores(over: Partial<Scores> = {}): Scores {
     problemFindingSteps: 0,
     problemsGrounded: 3,
     destructionRate: 0,
+    inertSteps: 0,
+    finishRefusals: 0,
     declarations: {
       declaredViolationRate: 0,
       declarationSpecificity: 0,
@@ -63,13 +65,13 @@ function scores(over: Partial<Scores> = {}): Scores {
 }
 
 test('a cell spec is position:brief:deliverable, with control as a fourth part', () => {
-  assert.deepEqual(parseCell('data-austerity:arches-eviction:poster'), {
-    positionId: 'data-austerity',
-    briefId: 'arches-eviction',
-    deliverableId: 'poster',
+  assert.deepEqual(parseCell('interference:nine-returned:panel'), {
+    positionId: 'interference',
+    briefId: 'nine-returned',
+    deliverableId: 'panel',
     control: false,
   });
-  assert.equal(parseCell('data-austerity:arches-eviction:poster:control').control, true);
+  assert.equal(parseCell('interference:nine-returned:panel:control').control, true);
   assert.equal(cellName(parseCell('a:b:c:control')), 'a__b__c__control');
   assert.equal(runDir('/out', parseCell('a:b:c'), 3), '/out/a__b__c/seed-3');
 });
@@ -77,7 +79,7 @@ test('a cell spec is position:brief:deliverable, with control as a fourth part',
 test('a cell spec that omits the deliverable is refused rather than defaulted', () => {
   // Defaulting here would run a different experiment than the one on the command line, and the
   // difference would not surface until the scores were already paid for.
-  assert.throws(() => parseCell('data-austerity:arches-eviction'), /position:brief:deliverable/);
+  assert.throws(() => parseCell('interference:nine-returned'), /position:brief:deliverable/);
   assert.throws(() => parseCell('a:b:c:sideways'), /position:brief:deliverable/);
   assert.throws(() => parseCell('a::c'), /empty part/);
 });

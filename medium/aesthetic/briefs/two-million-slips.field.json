@@ -1,0 +1,55 @@
+{
+  "version": "1.0",
+  "briefId": "two-million-slips",
+  "whenAndWhere": "The entrance hall of a national library in December, nine hundred people a day crossing it without stopping, a floor upstairs stripped back to the slab for air handling, and forty-two steel drawers on a trolley in a corridor with a contractor's date chalked on the first one.",
+  "inTheAir": [
+    "Institutions now routinely announce their own disposals as acts of stewardship, and the announcement has become the standard way of managing the reaction rather than of inviting one.",
+    "Bulk records of ordinary use are understood to be valuable in aggregate at exactly the moment the storage cost of keeping them becomes visible on a floor plan.",
+    "Confidentiality rules written to protect individuals now also prevent institutions from showing why the material they are destroying mattered, and both effects are real.",
+    "Anything that says a large number is read as an infographic, and an infographic is read as an argument someone is being paid to make.",
+    "The word deaccession is in circulation as the polite form and its politeness is legible to anyone who hears it."
+  ],
+  "contested": [
+    "Whether a record of who read what is an archive of a library's use or a surveillance file that should never have been kept for sixty-five years.",
+    "Whether a board that voted four to two has decided, or has merely not yet been made to decide again.",
+    "Whether the institution can honestly mourn something it is itself destroying on a signed contract.",
+    "Whether the readers have any standing here at all, given that none of them were told the slips were being kept.",
+    "Whether the head of collections wanting the split vote recorded is a matter of accuracy or of getting her name off it."
+  ],
+  "exhausted": [
+    "A dense field of small repeated units standing in for a large number, which converts a specific loss into a texture.",
+    "Handwriting reproduced or imitated, which is the one thing confidentiality forbids and which every treatment of an archive reaches for first.",
+    "A drawer, a filing cabinet or an index tab as the emblem of the thing being lost.",
+    "A number set very large in the middle, which makes the piece an item of statistics and invites the viewer to check it.",
+    "A countdown or calendar grid marking off the weeks to 14 January.",
+    "Torn, shredded or burnt edges, which perform the destruction in advance and let the viewer feel it has already been survived."
+  ],
+  "whoIsWatching": {
+    "audience": "A postgraduate of twenty-four crossing the hall for the fourth time today, who filled in a request an hour ago and has never once wondered what happened to the paper. She has about nine seconds of attention and no reason to give them. What she does not know is that there is a record of every request she has ever made and that it ends on a Wednesday in January.",
+    "adversary": "The institutional voice itself, which is fluent, has done this many times, and turns everything it touches into a caption. It is not lying and it is not hostile. It simply makes every statement sound like a statement the library has approved, which is exactly what this one is."
+  },
+  "transplants": [
+    {
+      "ref": "A retention schedule, which fixes a disposal date at the moment a record is created",
+      "why": "Destruction as a scheduled and ordinary part of keeping, decided long before by a rule rather than now by a person. The thing was always going to end on a date."
+    },
+    {
+      "ref": "Double-entry bookkeeping, where every transaction is written twice so that the loss of one side is detectable",
+      "why": "A structure in which absence is measurable because the counterpart survives. It makes a missing item show up as an imbalance rather than as nothing at all."
+    },
+    {
+      "ref": "A census, which counts a population on one named night and is then sealed for a fixed term",
+      "why": "Complete enumeration of individuals converted by procedure into a total that identifies nobody. The confidentiality is not a limitation on the count, it is the mechanism that permitted the count."
+    },
+    {
+      "ref": "Measuring a bulk commodity by weight or volume rather than counting the units",
+      "why": "A quantity established by a method that never touches an individual unit, arriving at an exact figure about things it has not looked at."
+    },
+    {
+      "ref": "The receipt or docket half retained by the issuer when the other half is handed over",
+      "why": "A record deliberately split at creation between two holders, so that what one party keeps is defined entirely by what the other took away."
+    }
+  ],
+  "stakesLevel": 0.3,
+  "stakesLevelWhy": "The date does not move, nobody is harmed, and the library will be fine either way. What is actually at risk is small and real: whether sixty-five years of ordinary use is registered by anyone at all in the five weeks before it stops being recoverable."
+}

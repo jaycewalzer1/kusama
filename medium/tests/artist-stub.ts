@@ -17,7 +17,13 @@ export interface StubCall {
   observationHash: string;
 }
 
-const TEXTS = ['3 MARCH', '31 MARCH', 'BUSSEY'];
+/**
+ * The three strings `two-million-slips` requires. They used to be two of the three plus a fourth,
+ * which was fine when finishing was an assertion: the third constraint was violated, the trajectory
+ * said `declared-finished` anyway, and nothing noticed. The finish gate notices, so the stub now has
+ * to actually do the job it was given before it is allowed to stop — which is the point.
+ */
+const TEXTS = ['1961', '2.1 MILLION', '14 JANUARY'];
 
 function textNode(id: string, y: number, text: string): Record<string, unknown> {
   return {
@@ -30,9 +36,9 @@ function textNode(id: string, y: number, text: string): Record<string, unknown> 
 }
 
 /**
- * Ink, and short of the right margin. Both on purpose: the accent colour would be a third colour and
- * a rule spanning the sheet is vertically symmetric, and this position's hard constraints refuse
- * either. The stub is meant to exercise the driver, not the revert path twice over.
+ * Ink, and short of the right margin. Both on purpose: a rule spanning the sheet is vertically
+ * symmetric and a second colour is a claim this stub is not making. The stub is meant to exercise
+ * the driver, not the revert path twice over.
  */
 function ruleNode(id: string, y: number): Record<string, unknown> {
   return {
@@ -121,7 +127,7 @@ export class StubPolicy implements Policy {
     if (request.name === 'sketch') {
       return {
         approach: 'One date, set large, with nothing else on the sheet at all.',
-        edits: [{ actionId: 'sk1', kind: 'add_node', targets: ['sheet'], parent: 'sheet', node: textNode('sk-date', 120, '31 MARCH') }],
+        edits: [{ actionId: 'sk1', kind: 'add_node', targets: ['sheet'], parent: 'sheet', node: textNode('sk-date', 120, TEXTS[2]!) }],
       };
     }
 
@@ -174,7 +180,7 @@ export class StubPolicy implements Policy {
         risk: null,
         unrealizable: null,
         edits: [
-          { actionId: 'a0', kind: 'add_node', targets: ['sheet'], parent: 'sheet', servesElementId: 'dates', node: textNode('t-march-3', 120, TEXTS[0]!) },
+          { actionId: 'a0', kind: 'add_node', targets: ['sheet'], parent: 'sheet', servesElementId: 'dates', node: textNode('t-since', 120, TEXTS[0]!) },
           // Deliberately illegal: no such parent. Exercises the refusal path and the invalid-edit count.
           { actionId: 'a0-bad', kind: 'add_node', targets: ['nowhere'], parent: 'nowhere', node: textNode('t-lost', 200, 'X') },
         ],
@@ -187,7 +193,7 @@ export class StubPolicy implements Policy {
         risk: 'leading with a date rather than an image, which this genre would not do',
         unrealizable: null,
         edits: [
-          { actionId: 'a1', kind: 'add_node', targets: ['sheet'], parent: 'sheet', servesElementId: 'dates', node: textNode('t-march-31', 180, TEXTS[1]!) },
+          { actionId: 'a1', kind: 'add_node', targets: ['sheet'], parent: 'sheet', servesElementId: 'dates', node: textNode('t-extent', 180, TEXTS[1]!) },
           { actionId: 'a1b', kind: 'add_node', targets: ['sheet'], parent: 'sheet', servesElementId: 'bar', node: ruleNode('r-bar', 120) },
         ],
       };
@@ -198,7 +204,7 @@ export class StubPolicy implements Policy {
       risk: null,
       unrealizable: null,
       edits: [
-        { actionId: `a${k}`, kind: 'add_node', targets: ['sheet'], parent: 'sheet', servesElementId: 'dates', node: textNode(`t-place-${k}`, 260 + 40 * k, TEXTS[2]!) },
+        { actionId: `a${k}`, kind: 'add_node', targets: ['sheet'], parent: 'sheet', servesElementId: 'dates', node: textNode(`t-date-${k}`, 260 + 40 * k, TEXTS[2]!) },
       ],
     };
   }
@@ -215,9 +221,14 @@ export function installStubEnvModel(): { requests: EnvRequest[]; restore: () => 
     const value =
       request.name === 'describe'
         ? { description: 'A pale sheet. Dark text sits at the upper left. A red bar crosses it. The rest is empty. The eye goes to the text.' }
-        : request.name === 'audience'
-          ? { read: 'It looks like a notice about a date. I would read the date and keep walking.' }
-          : { agree: true, reason: 'the report names the same marks in the same places' };
+        : request.name === 'transcribe'
+          ? // Stands in for a reader who can make out everything the stub policy wrote. A stub that
+            // returned less would block the gate on every run and there would be no accept path
+            // under test; the refusal path is tested against `finishBlockers` directly.
+            { strings: TEXTS.map((text) => ({ text, legible: true })) }
+          : request.name === 'audience'
+            ? { read: 'It looks like a notice about a date. I would read the date and keep walking.', wouldAct: 'consider' }
+            : { agree: true, reason: 'the report names the same marks in the same places' };
     return { value: value as T, cached: true, inputTokens: 0, outputTokens: 0, usd: 0, cacheKey: 'stub' };
   });
   return { requests, restore: () => setEnvModel(null) };

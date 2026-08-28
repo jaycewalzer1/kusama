@@ -13,11 +13,14 @@ import {
   AGREES_SYSTEM,
   AUDIENCE_SYSTEM,
   DESCRIBE_SYSTEM,
+  TRANSCRIBE_SYSTEM,
   agreesObservation,
   audienceObservation,
   describeObservation,
+  transcribeObservation,
 } from './observation.js';
 import { envModel, type EnvResponse } from './env-model.js';
+import type { WouldAct } from './types.js';
 
 const DESCRIPTION_SCHEMA = {
   type: 'object',
@@ -28,12 +31,39 @@ const DESCRIPTION_SCHEMA = {
   },
 } as const;
 
+const TRANSCRIPT_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['strings'],
+  properties: {
+    strings: {
+      type: 'array',
+      description: 'Every visually distinct piece of text, in reading order. Empty if none is readable.',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['text', 'legible'],
+        properties: {
+          text: { type: 'string', description: 'Exactly the characters visible. Not corrected, not completed.' },
+          legible: { type: 'boolean', description: 'False if any of this piece could not be made out.' },
+        },
+      },
+    },
+  },
+} as const;
+
+/**
+ * `wouldAct` is three words rather than a number, for the reason `AGREES_SCHEMA` is a boolean: a
+ * number invites a threshold and a threshold gets tuned until the trajectories look better. The
+ * prose stays beside it because the enum alone cannot be argued with.
+ */
 const AUDIENCE_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['read'],
+  required: ['read', 'wouldAct'],
   properties: {
     read: { type: 'string', description: 'Two sentences: what they think it is, and what they would do.' },
+    wouldAct: { type: 'string', enum: ['act', 'consider', 'ignore'] },
   },
 } as const;
 
@@ -57,6 +87,17 @@ export interface Agreement {
   reason: string;
 }
 
+/** One string a blind reader could make out, and whether they could make all of it out. */
+export interface ReadString {
+  text: string;
+  legible: boolean;
+}
+
+export interface AudienceRead {
+  read: string;
+  wouldAct: WouldAct;
+}
+
 /** What is physically on the sheet, to someone who has never heard of the commission. */
 export async function describe(png: Buffer): Promise<EnvResponse<{ description: string }>> {
   return envModel({
@@ -68,8 +109,19 @@ export async function describe(png: Buffer): Promise<EnvResponse<{ description: 
   });
 }
 
+/** Every string a reader who knows nothing can get off the sheet. Never told what to look for. */
+export async function transcribe(png: Buffer): Promise<EnvResponse<{ strings: ReadString[] }>> {
+  return envModel({
+    name: 'transcribe',
+    system: TRANSCRIBE_SYSTEM,
+    text: transcribeObservation(),
+    imageBase64: png.toString('base64'),
+    schema: TRANSCRIPT_SCHEMA,
+  });
+}
+
 /** How the one person the field says is watching would take it. */
-export async function audience(png: Buffer, watcher: string): Promise<EnvResponse<{ read: string }>> {
+export async function audience(png: Buffer, watcher: string): Promise<EnvResponse<AudienceRead>> {
   return envModel({
     name: 'audience',
     system: AUDIENCE_SYSTEM,

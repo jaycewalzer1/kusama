@@ -21,7 +21,7 @@ const OBSERVATION = 'THE SHEET\n----\nthree marks, and one of them is a lie abou
 function run(extra: Record<string, unknown> = {}): LogLine[] {
   seq = 0;
   return [
-    line('trajectory-start', { positionId: 'generation-loss', briefId: 'arches-eviction', deliverableId: 'poster', seed: 7 }),
+    line('trajectory-start', { positionId: 'withheld', briefId: 'two-million-slips', deliverableId: 'panel', seed: 7 }),
     line('phase', { phase: 'reset' }),
     line('render', { programHash: 'blank', treeScore: 0, renderScore: 0, hardViolations: 6, softViolations: 0 }),
     line('phase', { phase: 'make' }),
@@ -53,7 +53,7 @@ test('the observation and the action survive whole, which is the reason to keep 
   const md = transcriptMarkdown('a-run', run());
   assert.ok(md.includes(OBSERVATION), 'the observation the artist was shown is not in it');
   assert.ok(md.includes('"Lay the structure down."'), 'what the artist generated is not in it');
-  assert.ok(md.includes('# generation-loss x arches-eviction'));
+  assert.ok(md.includes('# withheld x two-million-slips'));
 });
 
 test('a step says, edit by edit, what it did to the program', () => {

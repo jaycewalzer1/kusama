@@ -1,0 +1,55 @@
+{
+  "version": "1.0",
+  "briefId": "nine-returned",
+  "whenAndWhere": "A closed room in a municipal museum in early autumn, with nine empty cases still bolted to the floor and their lighting still on a timer. The building is Edwardian, the room was refitted in 1974, and the labels have not been changed since. Outside it, the rest of the collection is open as usual.",
+  "inTheAir": [
+    "Restitution has moved in ten years from a fringe demand to a thing institutions announce, and the announcement has become a form of publicity that costs the institution nothing.",
+    "Museums have discovered that describing their own history of acquisition is cheaper than acting on it, and that a well-written label about violence can stand in for a decision indefinitely.",
+    "The people making claims are increasingly not asking for the object to be interpreted, only for it to be handed over, and find the interpretive apparatus itself insulting.",
+    "Four other institutions in the same sector have live claims and their boards read each other's press releases closely.",
+    "Empty display cases have been used as a gesture often enough in the last five years that the sector has a shorthand for it."
+  ],
+  "contested": [
+    "Whether the museum has any standing to speak about the return at all, having been the party that refused it for eleven years.",
+    "Whether the keeper's personal record of arguing for the return is relevant, or whether treating it as relevant is exactly the institution making itself the subject again.",
+    "Whether an object commissioned by the museum can mark the loss of objects it should never have had, or whether the commission is the same reflex repeating.",
+    "Whether the school groups should be told the objects were taken, or told they were returned, given that the worksheet has room for one sentence.",
+    "Whether the delegation's refusal to permit the photographs is a principled position or a negotiating one, and whether the difference matters."
+  ],
+  "exhausted": [
+    "The empty plinth or empty case presented as the work, which the sector has now seen from four institutions in five years.",
+    "A silhouette or outline standing where an object used to be, which reproduces the object's form while claiming not to.",
+    "The museum's own accession numbers used as a graphic device, which turns the record of the taking into a typographic feature.",
+    "A timeline running along a wall, ending in the present, with the return as its final and best event.",
+    "The institution's apology set in its own house typeface, which is the sentence and the letterhead arriving together.",
+    "Archival photographs of the objects in situ, aged or desaturated to signal that this is history."
+  ],
+  "whoIsWatching": {
+    "audience": "A woman of forty-one bringing her son's class through on a Tuesday, who has been coming here since she was at school herself and remembers the room. She has about ninety seconds in it before the group moves and she is counting children while she reads. What she is actually deciding is what to say if one of them asks where the things went.",
+    "adversary": "The board, four of whom voted against the return and one of whom has asked whether the interpretation budget requires their approval. They will not object to the piece on its own terms; they will object to it setting a precedent, and their instrument is the minute rather than the veto."
+  },
+  "transplants": [
+    {
+      "ref": "The split tally stick used as a receipt in medieval English exchequer practice",
+      "why": "An object completed only by a counterpart held somewhere else, so that possession of one half is meaningless and the pair cannot be forged. The thing is legible as incomplete without depicting what is missing."
+    },
+    {
+      "ref": "Ledgers of an estate kept by the people the estate was worked by",
+      "why": "A record whose authority comes from being kept by the party it is about rather than by the party with the interest in it. The same facts change meaning entirely depending on whose hand wrote them down."
+    },
+    {
+      "ref": "A duration served rather than stated, as in a sentence measured out in daily marks",
+      "why": "Time that cannot be summarised without being falsified. Eleven years said as a phrase and eleven years gone through are different quantities and only one of them costs anything."
+    },
+    {
+      "ref": "Negative space in a mould or matrix, which holds the exact form of a thing it is not",
+      "why": "A shape that is entirely determined by an absent object without resembling it. The information is complete and the depiction is nil."
+    },
+    {
+      "ref": "The practice of leaving a place setting for someone who is not present",
+      "why": "An absence marked by the apparatus of presence rather than by a representation. What does the work is the readiness of the arrangement and the fact that nobody comes to it."
+    }
+  ],
+  "stakesLevel": 0.7,
+  "stakesLevelWhy": "Nobody is physically at risk and the objects are already home, but a named group of people who fought for eleven years will read this as the institution's final word on what they did, and the keeper's standing to fight the next one depends on it landing."
+}

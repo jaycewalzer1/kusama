@@ -48,6 +48,73 @@ So `masked-by` is one of the three intention edge types that `intention.ts` refu
 - *this mark is off the grid the rest of the sheet is on* — deviation from an implied structure.
 - *this is legible at 3 metres* — the render metrics have coverage and contrast but no acuity model.
 
+## What the loop knew and did not act on
+
+**CLOSED — finishing was an assertion nobody could contradict.** It is now a request. `artist/gate.ts`
+is a pure function from evidence to blockers; `run.ts` calls it when the artist says `finished`, and
+either accepts the stop or hands the reasons back as a `finish-blocked` replan. Five blockers, all
+falsifiable by the artist and all built from evidence the loop already had and already discarded: a
+required fact a blind reader could not read off the sheet, a hard constraint still violated, the
+watcher saying it would walk past, a self-score under 5, and plan relations the artist's own EXAMINE
+says do not hold. Bounded by `maxFinishAttempts` (default 2); exhausting it is
+`termination.kind: 'finish-blocked'`, which is never `legitimate`.
+
+Three consequences worth stating. **EXAMINE moved inside the loop** — it now runs at the moment the
+stop is requested, which is the only place its answer can change anything, and a run that finishes
+on its first ask makes exactly the same number of calls as before, because that EXAMINE becomes the
+trajectory's. **The gate never blocks on evidence it does not have**: a transcript that was not
+taken and an audience that was not asked both return nothing, because a gate that read absence as
+failure would block hardest on the runs it knows least about. And **`maxFinishAttempts: 0` turns the
+gate off**, which is the pre-gate environment kept runnable, so "the gate changed the work" is a
+comparison somebody can run rather than a claim.
+
+**CLOSED — the blind read-back.** `transcribe` is a fifth env call: it is shown the plate, is never
+told what it is looking for, and lists every string it can make out with a per-string `legible`
+flag. `gate.ts` compares that against the brief's `textRequired.params.contains` using
+`normalizeText`, exported from `aesthetic/kinds.ts` so that one function decides both questions — a
+second normaliser here would make the gap between "it is in the tree" and "it can be read off the
+sheet" partly an artefact of two spellings of `contains`. Asked only on a finish request: on every
+other step the tree already answers it.
+
+The obvious version of this — "can you read `3 MARCH` in this image?" — puts the answer in the
+question and gets a yes. That is why it is a transcription and not a quiz.
+
+**CLOSED — the audience said what it thought and never what it would do.** `AUDIENCE_SCHEMA` now
+carries `wouldAct: 'act' | 'consider' | 'ignore'` beside the prose. Three words rather than a number
+for the same reason `AGREES_SCHEMA` is a boolean: a number invites a threshold and a threshold gets
+tuned until the trajectories look better.
+
+**CLOSED — an edit that changed the tree and not the page earned the reward for improving.**
+`env.step` treats a kept step under `INERT_THRESHOLD` (0.001 of the canvas) as a step that did not
+happen: no stall reset, no mood lift. `Scores.inertSteps` counts them. `this.best` still advances,
+so a later step is not credited twice for the same ground.
+
+**CLOSED — nothing checked whether the commission was satisfiable before generating against it.**
+`aesthetic/contradictions.ts` compares hard constraints pairwise over the *composed* position — the
+artist's commitments plus the client's requirements, which is where the collision actually is — and
+`loadCommission` puts the result on `Commission.unsatisfiable`. Non-empty and `runTrajectory` logs
+and throws before the first policy call. Five families: an empty range, two ranges that do not meet,
+two `textCase` constraints that disagree, a node or mark both required and forbidden, and a required
+string with the `text` op forbidden.
+
+Deliberately incomplete in one direction: everything it reports is real, and a pair it says nothing
+about is **not** certified consistent. A false positive refuses a commission that could have been
+made, which is the expensive mistake. Only `hard` constraints are compared — two soft ones pulling
+against each other is the trade the position exists to hold.
+
+**Not done: rollback, deletion and candidate replacement as first-class moves.** Revision is still
+`add_node` and `delete_node` one step at a time; there is no "throw the last three steps away", no
+branch, no keeping two candidates and choosing. The gate is expected to create the pressure that
+makes this worth building — an artist that cannot leave is an artist that has to undo something —
+and until a gated run has actually been observed getting stuck, building the machinery would be
+guessing at which move it needed.
+
+**Not done: intervention-based evaluation.** Nothing renders a controlled variant, shows it to a
+blind viewer, and asks whether the interpretive change matches the predicted one. That is the only
+design here that would make an aesthetic claim testable rather than assertable, and it needs a
+variant generator and a paired-comparison harness that do not exist. `twin.ts` is the nearest thing
+and it compares arms of a run, not variants of a picture.
+
 ## Phases not built
 
 **The judge — L5 of the prompt stack. Deliberately not built, and the cost of that is named below.**

@@ -566,6 +566,13 @@ export function makeObservation(c: MakeContext): string {
         '`unrealizable` as "from->to", and stop. Naming one costs you nothing. Stopping with edges',
         'outstanding and naming none is recorded as the timer expiring, whatever you write in think.',
         '',
+        'SAYING FINISHED IS A REQUEST, NOT A DECISION. The environment checks the sheet when you ask.',
+        'A fact the commission requires that a reader cannot read off the page, a hard constraint still',
+        'violated, the person this is for saying they would walk past it, a self-score you would not',
+        'defend, or relations in your own plan that you can see do not hold — any of these and you are',
+        'handed the reasons and put back to work. You get two asks. Do not spend the first one on a',
+        'piece you already know is not right.',
+        '',
         'Every edit must be legal in the medium described at the top. An illegal edit is refused and',
         'costs you the step. If you need a node id, take it from the program above.',
         '',
@@ -588,6 +595,16 @@ export function replanObservation(c: MakeContext, trigger: TriggerName, detail: 
         'and say why in one sentence, or counter with something that solves what it is actually',
         'complaining about without violating one of your refusals.',
         '',
+        trigger === 'finish-blocked'
+          ? [
+              'You asked to stop and were refused. The reasons are above and they are not opinions about',
+              'taste — each one names something on the sheet that you can go and change. A revision that',
+              'leaves them all true will be refused again and the run will end with the stop recorded as',
+              'not earned. Deleting something and making it again differently is available to you and is',
+              'usually the cheaper answer.',
+              '',
+            ].join('\n')
+          : '',
         'Revise the plan. You may keep any part of it that still holds. Changing the purpose is allowed',
         'and is a bigger move than rearranging elements; do it if the canvas has actually told you that',
         'you were making the wrong thing, and not otherwise.',
@@ -596,7 +613,9 @@ export function replanObservation(c: MakeContext, trigger: TriggerName, detail: 
         'role differently. The nodes already drawn are filed under the id the element had when they were',
         'made, so renaming a part you have already built unfiles everything it is made of and the piece',
         'reads as unmade. Give a new id only to a genuinely new part.',
-      ].join('\n')
+      ]
+        .filter(Boolean)
+        .join('\n')
     ),
     intentionSection(c.intention),
     section('THE PROGRAM AS IT STANDS', json(c.program)),
@@ -659,11 +678,44 @@ export function describeObservation(): string {
   return 'Describe the attached image in five sentences.';
 }
 
+/**
+ * A transcription, not a quiz.
+ *
+ * The question worth asking is whether a required fact can be read off the sheet, and the obvious
+ * way to ask it — "can you read `3 MARCH` in this image?" — puts the answer in the question and
+ * gets a yes. So this call is never told what it is looking for. It writes down every string it can
+ * make out, and `gate.ts` compares that transcript against the brief with `normalizeText`, the same
+ * function `textRequired` uses on the tree. The whole point is the gap between the two: a run whose
+ * program contains `19:00` and whose transcript reads `10:00` is the failure this exists to catch.
+ */
+export const TRANSCRIBE_SYSTEM = [
+  'You are shown one image and nothing else. Transcribe the text in it.',
+  '',
+  'List every piece of text you can make out, one entry per visually distinct piece, in the order',
+  'your eye reaches them. For each, write down exactly the characters you can see. If a piece is',
+  'partly or wholly unreadable, still list it, mark it illegible, and transcribe only the characters',
+  'you are sure of.',
+  '',
+  'Transcribe what is on the surface, not what you expect. If a glyph is ambiguous, write the shape',
+  'you actually see — if a 9 is rotated or broken so that it reads as a 0, write 0. Do not correct',
+  'spelling, do not complete a word that is cut off, do not infer a date or a time from context, and',
+  'do not add text that is not there. If there is no readable text at all, return an empty list.',
+].join('\n');
+
+export function transcribeObservation(): string {
+  return 'Transcribe the text in the attached image.';
+}
+
 export const AUDIENCE_SYSTEM = [
   'You will be given a description of one person and an image. Answer as that person would.',
   '',
   'Two sentences. The first: what they think this is, at a glance, before reading closely. The second:',
   'what they would do about it, if anything.',
+  '',
+  'Then say which of three things they would actually do: `act` if they would go, buy, attend, keep',
+  'it or pass it on; `consider` if it caught them and they might come back to it; `ignore` if they',
+  'would walk past. Judge the doing, not the looking — a person can find something handsome and',
+  'still ignore it.',
   '',
   'You do not know who made the image or what it is meant to achieve. Do not be generous. This person',
   'is busy and did not ask to see it.',

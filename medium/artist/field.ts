@@ -42,6 +42,7 @@ import path from 'node:path';
 import { ROOT } from '../env/browser.js';
 import { canonicalJson, contentHash } from '../env/profile.js';
 import { loadAestheticProgram } from '../aesthetic/check.js';
+import { contradictions, type Contradiction } from '../aesthetic/contradictions.js';
 import type { AestheticProgram, Constraint } from '../aesthetic/types.js';
 import type { Field } from './types.js';
 
@@ -287,6 +288,12 @@ export interface Commission {
   fieldHash: string;
   /** Every place L2 did L1's job. Empty on a clean run; recorded, never silently tolerated. */
   contamination: string[];
+  /**
+   * Hard constraints of the composed position that cannot all hold. Non-empty means no program
+   * satisfies this commission, so a run against it would measure the composition rather than the
+   * artist. Computed here rather than discovered by the artist mid-piece.
+   */
+  unsatisfiable: Contradiction[];
   /** position + brief hard_constraints, which is what the checker is actually run against. */
   effective: AestheticProgram;
 }
@@ -451,6 +458,7 @@ export function loadCommission(
   const brief = loadBrief(briefIdOrPath);
   const deliverable = loadDeliverable(deliverableId);
   const field = loadField(brief.id);
+  const effective = effectivePosition(position, brief);
   return {
     position,
     positionHash: contentHash(canonicalJson(position)),
@@ -463,6 +471,10 @@ export function loadCommission(
     field,
     fieldHash: contentHash(canonicalJson(field)),
     contamination: aestheticDirection(brief),
-    effective: effectivePosition(position, brief),
+    // Over the composed position, not over the brief alone. Every contradiction worth catching is
+    // between a commitment the artist brought and a requirement the client added; a brief checked on
+    // its own is checked against the half of the rubric that cannot conflict with it.
+    unsatisfiable: contradictions(effective),
+    effective,
   };
 }

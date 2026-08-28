@@ -12,6 +12,12 @@ import type { CheckReport } from '../aesthetic/types.js';
 
 export type { EditAction, CheckReport, Program };
 
+/**
+ * What the watcher would actually do. Three words rather than a number: a number invites a
+ * threshold, a threshold gets tuned, and it would be tuned until the trajectories looked better.
+ */
+export type WouldAct = 'act' | 'consider' | 'ignore';
+
 /** The same three-part shape the aesthetic layer uses for a position's tensions. */
 export interface Tension {
   between: string;
@@ -221,6 +227,12 @@ export interface Look {
   checkReport: CheckReport;
   description: string;
   audienceRead?: string;
+  /**
+   * What the watcher would do, beside the prose about what they think it is. Optional because a
+   * sketch has no audience and because logs written before this existed carry no value for it — an
+   * absent field here must read as "not asked", never as `ignore`.
+   */
+  wouldAct?: WouldAct;
 }
 
 export type TriggerName =
@@ -228,7 +240,9 @@ export type TriggerName =
   | 'audience-disagrees'
   | 'unplanned-violation'
   | 'artist-declares'
-  | 'stall';
+  | 'stall'
+  /** The artist asked to finish and the environment refused. See `gate.ts`. */
+  | 'finish-blocked';
 
 export interface Replan {
   trigger: TriggerName;
@@ -255,6 +269,12 @@ export interface Step {
    * was edited; this says whether it showed.
    */
   pixelsMoved: number;
+  /**
+   * A step that was kept and did not change the picture. Undefined on a step that was never kept,
+   * and on any step logged before this existed — it must not read as `false` there, since a run
+   * that was never asked and a run that was asked and said no are different facts.
+   */
+  inert?: boolean;
   affect: Affect;
   /** sha256 of the exact observation string this step's THINK+ACT call was given. */
   observationHash: string;
@@ -378,6 +398,24 @@ export interface Scores {
   problemsGrounded: number;
   destructionRate: number;
   /**
+   * Steps that were kept and did not change the picture. `null` when no step carried the field, so
+   * a log written before the measurement existed does not report a confident zero.
+   *
+   * This is the reward-hacking counter. Splitting a text node in two to get under a word limit, or
+   * adding a tick nobody can see to satisfy a count, both raise the checker's score and leave the
+   * sheet exactly as it was. They earn nothing now; this says how often it was tried.
+   */
+  inertSteps: number | null;
+  /**
+   * Times the artist asked to finish and the environment refused. `null` on a run that predates the
+   * gate — distinct from 0, which means it asked once and was let go, or never asked at all.
+   *
+   * The whole point of the run this was built for is the distance between judging a piece a failure
+   * and doing something about it. This number is the near end of that distance: it counts the
+   * occasions on which the loop made the artist keep working.
+   */
+  finishRefusals: number | null;
+  /**
    * What the run's declarations were worth. A declaration is what buys a step past the revert rule,
    * so it is the one piece of the artist's prose the environment acts on, and it needs measuring on
    * its own terms rather than only as the absence of a trigger.
@@ -476,7 +514,12 @@ export interface AffectArmed {
  * cleanly or punish the one refusal capability the design is trying to elicit.
  */
 export interface Termination {
-  kind: 'declared-finished' | 'abandoned' | 'out-of-steps';
+  /**
+   * `finish-blocked`: the artist asked to stop, was told why it could not, and asked again without
+   * the reasons having gone away. It is not `declared-finished` — the stop was refused, not made —
+   * and it is not `out-of-steps`, because the run had steps left and chose not to use them.
+   */
+  kind: 'declared-finished' | 'abandoned' | 'out-of-steps' | 'finish-blocked';
   /** Edges the tree can decide and says are not satisfied at the final program. */
   edgesUnrealized: number;
   /** `from->to` for each of them, so the record says which and not just how many. */

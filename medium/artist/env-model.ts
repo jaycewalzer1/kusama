@@ -33,7 +33,12 @@ export const ENV_TEMPERATURE = 0;
 
 const CACHE_DIR = path.join(ROOT, '.cache', 'artist-env');
 
-export type EnvCallName = 'describe' | 'audience' | 'description-agrees' | 'audience-agrees';
+export type EnvCallName =
+  | 'describe'
+  | 'transcribe'
+  | 'audience'
+  | 'description-agrees'
+  | 'audience-agrees';
 
 export interface EnvRequest {
   name: EnvCallName;

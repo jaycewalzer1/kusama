@@ -37,9 +37,10 @@ function op(id: string, name: string, args: Record<string, unknown>): Node {
 }
 
 /**
- * The smallest tree that satisfies every DECIDABLE tree-scope constraint of cut-and-reset crossed
- * with arches-eviction: three solid blocks, four texts in capitals carrying the three required
- * strings, no wash or field, no fragment or motif, and enough drawing nodes to clear the floor.
+ * The smallest tree that satisfies every DECIDABLE tree-scope constraint of withheld crossed with
+ * two-million-slips: four opaque blocks, one sealed region, three coverings, three texts of at most
+ * four words carrying the three required strings, no hatching, no repeat, and few enough drawing
+ * nodes to stay under the ceiling.
  *
  * Hand-written rather than lifted from a run, so the test does not depend on `out/` — which is
  * gitignored, and would make this test pass or fail depending on what happened to be on the disk.
@@ -53,24 +54,48 @@ function passing(): Record<string, unknown> {
       id: 'root',
       type: 'group',
       children: [
-        op('block-a', 'paint', {
+        op('made-a', 'paint', {
           region: { type: 'rect', x: 20, y: 40, w: 300, h: 120 },
           style: { kind: 'solid', color: 'ink', opacity: 255 },
         }),
-        op('block-b', 'paint', {
-          region: { type: 'rect', x: 60, y: 320, w: 380, h: 90 },
-          style: { kind: 'solid', color: 'red', opacity: 255 },
-        }),
-        op('block-c', 'paint', {
-          region: { type: 'rect', x: 40, y: 500, w: 260, h: 70 },
+        op('made-b', 'paint', {
+          region: { type: 'rect', x: 60, y: 200, w: 380, h: 150 },
           style: { kind: 'solid', color: 'ink', opacity: 255 },
         }),
-        op('t-street', 'text', { text: 'LOWER MARSH', font: 'anton', size: 64, x: 30, y: 130, color: 'red' }),
-        op('t-meeting', 'text', { text: '3 MARCH', font: 'anton', size: 48, x: 70, y: 390, color: 'ink' }),
-        op('t-expiry', 'text', { text: '31 MARCH', font: 'anton', size: 92, x: 40, y: 560, color: 'ink' }),
-        op('t-hour', 'text', { text: '19:00', font: 'anton', size: 30, x: 300, y: 640, color: 'ink' }),
-        op('cut-a', 'rule', { from: [16, 36], to: [326, 44], brush: 'marker', color: 'ink', weight: 3 }),
-        op('cut-b', 'rule', { from: [58, 416], to: [446, 404], brush: 'marker', color: 'ink', weight: 3 }),
+        op('made-c', 'paint', {
+          region: { type: 'rect', x: 40, y: 380, w: 260, h: 130 },
+          style: { kind: 'solid', color: 'red', opacity: 255 },
+        }),
+        op('made-d', 'paint', {
+          region: { type: 'circle', x: 360, y: 560, r: 90 },
+          style: { kind: 'solid', color: 'ink', opacity: 255 },
+        }),
+        {
+          id: 'sealed',
+          type: 'macro',
+          macro: 'quarantine',
+          rngKey: 'k/sealed',
+          args: {
+            x: 200,
+            y: 430,
+            w: 180,
+            h: 120,
+            style: { kind: 'solid', color: 'ink', opacity: 255 },
+            boxBrush: 'marker',
+            boxColor: 'ink',
+            boxWeight: 4,
+            label: 'NOT THIS',
+            labelFont: 'anton',
+            labelSize: 20,
+          },
+        },
+        op('taken-back-1', 'cover', { region: { type: 'rect', x: 50, y: 70, w: 210, h: 70 }, softness: 0 }),
+        op('taken-back-2', 'cover', { region: { type: 'rect', x: 90, y: 240, w: 280, h: 80 }, softness: 0 }),
+        op('taken-back-3', 'cover', { region: { type: 'rect', x: 70, y: 410, w: 190, h: 60 }, softness: 0 }),
+        op('t-since', 'text', { text: '1961', font: 'anton', size: 64, x: 30, y: 660, color: 'ink' }),
+        op('t-extent', 'text', { text: '2.1 MILLION', font: 'anton', size: 48, x: 30, y: 610, color: 'ink' }),
+        op('t-date', 'text', { text: '14 JANUARY', font: 'anton', size: 48, x: 30, y: 560, color: 'red' }),
+        op('escapes', 'rule', { from: [16, 36], to: [326, 44], brush: 'marker', color: 'ink', weight: 3 }),
       ],
     },
   };
@@ -112,7 +137,7 @@ function empty(p: Record<string, unknown>): Record<string, unknown> {
   return q;
 }
 
-const commission = loadCommission('cut-and-reset', 'arches-eviction', 'poster');
+const commission = loadCommission('withheld', 'two-million-slips', 'panel');
 const position = commission.effective;
 const tree = (r: CheckReport): number => {
   assert.notEqual(r.treeScore, null, 'this position has decidable tree constraints');
@@ -152,8 +177,9 @@ test('a tree score of 1.0 is 1.0 over what could be decided, and the rest is cou
   const treeScoped = report.results.filter((r) => r.scope === 'tree');
   const undecided = treeScoped.filter((r) => r.status === 'unverified');
 
-  // The position's own load-bearing commitment — a detourned found image — is blocked by a missing
-  // primitive. It is hard, it is unverified, and it leaves both sides of the fraction. So the
+  // The position's own load-bearing commitment — a region that is the remainder of something
+  // destroyed — is blocked by a missing primitive. It is hard, it is unverified, and it leaves both
+  // sides of the fraction. So the
   // headline reads 1.000 while the thing the position is actually about went unmeasured.
   assert.equal(tree(report), 1);
   assert.ok(undecided.length > 0, 'this position is supposed to have an undecidable tree constraint');
@@ -173,13 +199,13 @@ test('positions are not interchangeable: one program does not satisfy all of the
   assert.ok(ids.length >= 3, 'expected the catalog of positions on disk');
 
   const perfect = ids.filter((id) => {
-    const c = loadCommission(id, 'arches-eviction', 'poster');
+    const c = loadCommission(id, 'two-million-slips', 'panel');
     return checkProgram(program, c.effective, null).treeScore === 1;
   });
   // A false pass is expected — positions overlap, and one program legitimately answering two of
   // them is not a defect. All of them would mean the position is not doing any work at all.
   assert.ok(
     perfect.length < ids.length,
-    `a program made for cut-and-reset scored 1.0 on every position: ${perfect.join(' ')}`
+    `a program made for withheld scored 1.0 on every position: ${perfect.join(' ')}`
   );
 });

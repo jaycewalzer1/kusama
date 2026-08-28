@@ -1,0 +1,188 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 5302,
+  "canvas": {
+    "width": 600,
+    "height": 860,
+    "ground": "#e6e2d8",
+    "brushScale": 1
+  },
+  "palette": {
+    "black": "#0d0d0e",
+    "slate": "#2b3138"
+  },
+  "meta": {
+    "aesthetic": "withheld",
+    "fixture": "fail",
+    "violates": ["p-few-words", "p-no-hatching"],
+    "reads_as": "the same five areas after one of them was built up out of lines instead of laid down at once, and a sentence was added at the foot saying what is under them",
+    "note": "A built-up area is a tone that arrived gradually and could have stopped anywhere, so covered and uncovered stop being absolute. The sentence is the worse of the two: it hands over the content in the one form that fits on the surface."
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "escaping-left",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "wh/escaping-left",
+        "args": {
+          "points": [[30, 262], [128, 250], [214, 268], [286, 252]],
+          "brush": "charcoal",
+          "color": "slate",
+          "weight": 3,
+          "curve": 0.25
+        }
+      },
+      {
+        "id": "escaping-low",
+        "type": "op",
+        "op": "stroke",
+        "rngKey": "wh/escaping-low",
+        "args": {
+          "points": [[318, 704], [402, 690], [486, 708], [572, 692]],
+          "brush": "charcoal",
+          "color": "slate",
+          "weight": 3,
+          "curve": 0.25
+        }
+      },
+      {
+        "id": "held-1",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "wh/held-1",
+        "args": {
+          "region": { "type": "rect", "x": 74, "y": 132, "w": 396, "h": 214 },
+          "style": { "kind": "solid", "color": "black", "opacity": 255 }
+        }
+      },
+      {
+        "id": "held-2",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "wh/held-2",
+        "args": {
+          "region": { "type": "rect", "x": 168, "y": 306, "w": 372, "h": 178 },
+          "style": { "kind": "solid", "color": "black", "opacity": 255 }
+        }
+      },
+      {
+        "id": "held-3",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "wh/held-3",
+        "args": {
+          "region": { "type": "rect", "x": 46, "y": 424, "w": 302, "h": 196 },
+          "style": { "kind": "hatch", "brush": "charcoal", "color": "slate", "spacing": 4, "angle": 62, "rand": 0.2 }
+        }
+      },
+      {
+        "id": "held-4",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "wh/held-4",
+        "args": {
+          "region": { "type": "rect", "x": 262, "y": 566, "w": 300, "h": 168 },
+          "style": { "kind": "solid", "color": "black", "opacity": 255 }
+        }
+      },
+      {
+        "id": "held-5",
+        "type": "op",
+        "op": "paint",
+        "rngKey": "wh/held-5",
+        "args": {
+          "region": { "type": "circle", "cx": 168, "cy": 690, "r": 96 },
+          "style": { "kind": "solid", "color": "slate", "opacity": 255 }
+        }
+      },
+      {
+        "id": "sealed",
+        "type": "macro",
+        "macro": "quarantine",
+        "rngKey": "wh/sealed",
+        "args": {
+          "x": 356,
+          "y": 96,
+          "w": 200,
+          "h": 152,
+          "style": { "kind": "solid", "color": "black", "opacity": 255 },
+          "boxBrush": "rotring",
+          "boxColor": "black",
+          "boxWeight": 2,
+          "label": "NOT THIS",
+          "labelFont": "grotesque",
+          "labelSize": 15,
+          "labelTracking": 2
+        }
+      },
+      {
+        "id": "taken-back-1",
+        "type": "op",
+        "op": "cover",
+        "rngKey": "wh/taken-back-1",
+        "args": {
+          "region": { "type": "rect", "x": 206, "y": 196, "w": 120, "h": 78 },
+          "softness": 0
+        }
+      },
+      {
+        "id": "taken-back-2",
+        "type": "op",
+        "op": "cover",
+        "rngKey": "wh/taken-back-2",
+        "args": {
+          "region": { "type": "rect", "x": 300, "y": 380, "w": 152, "h": 64 },
+          "softness": 0
+        }
+      },
+      {
+        "id": "taken-back-3",
+        "type": "op",
+        "op": "cover",
+        "rngKey": "wh/taken-back-3",
+        "args": {
+          "region": { "type": "rect", "x": 92, "y": 508, "w": 138, "h": 90 },
+          "softness": 0
+        }
+      },
+      {
+        "id": "said-once",
+        "type": "op",
+        "op": "text",
+        "rngKey": "wh/said-once",
+        "args": {
+          "text": "YOU DO NOT",
+          "font": "grotesque",
+          "size": 46,
+          "x": 46,
+          "y": 806,
+          "align": "left",
+          "color": "black",
+          "tracking": 2
+        }
+      },
+      {
+        "id": "stopped",
+        "type": "op",
+        "op": "text",
+        "rngKey": "wh/stopped",
+        "args": {
+          "text": "UNDER THESE ARE THE SIX NAMES THE FAMILY ASKED US NEVER TO PUBLISH",
+          "font": "grotesque",
+          "size": 17,
+          "x": 46,
+          "y": 838,
+          "align": "left",
+          "color": "black",
+          "tracking": 1,
+          "maxWidth": 500
+        }
+      }
+    ]
+  }
+}

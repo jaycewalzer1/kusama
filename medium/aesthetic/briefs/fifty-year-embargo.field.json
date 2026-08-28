@@ -1,0 +1,55 @@
+{
+  "version": "1.0",
+  "briefId": "fifty-year-embargo",
+  "whenAndWhere": "A village of about four hundred people in late autumn, with a hall that takes sixty at a push, a shop that closes at one, and a house at the end of the lane with seven canvases in an upstairs room and a dehumidifier running. It is twenty-two years into a fifty-year instruction and everyone involved expects to be dead before it ends.",
+  "inTheAir": [
+    "Estates that restrict access are now widely read as managing scarcity for value, because most of them are, and the assumption arrives before any evidence about a particular one.",
+    "An artist's instruction about their own work after death has no legal force beyond what an estate chooses to enforce, and estates are increasingly choosing not to.",
+    "The scholarship on any twentieth-century figure is now written from reproductions, so a body of work that has none is effectively outside the discipline and its absence is self-reinforcing.",
+    "Two academics have built partial readings of the work from letters and a single 1959 exhibition list, and those readings are now the work as far as anyone knows it.",
+    "Withholding has itself become a recognised way of generating interest, and everybody in the room knows that, including the niece."
+  ],
+  "contested": [
+    "Whether a promise to a dead person can outrank the interest of people who are alive and want to see the work, and who will mostly be dead by 2048.",
+    "Whether the niece is keeping faith or has made the keeping of faith into her life's work and can no longer separate the two.",
+    "Whether the artist's instruction was a considered position about reproduction or the decision of a frightened person in her last year.",
+    "Whether marking the centenary at all is already a breach of the spirit of the thing, given that the will's evident purpose was to be left alone.",
+    "Whether the four institutions have honoured the condition or simply not had a reason to test it."
+  ],
+  "exhausted": [
+    "An empty frame, or a blank rectangle at the proportions of a canvas, standing for a work not shown.",
+    "A veil, curtain or wrapping motif, which turns a legal instruction into a romance about mystery.",
+    "The artist's signature enlarged, which substitutes the one mark of hers that is not embargoed for all the ones that are.",
+    "A countdown to 2048, which makes the piece about waiting rather than about a decision.",
+    "Text from a letter set in a script face to signal intimacy and handwriting.",
+    "A silhouette of the house, or the studio window, standing in for the work by standing in for the place."
+  ],
+  "whoIsWatching": {
+    "audience": "A man of sixty-eight who delivered her groceries for nine years and never once saw a canvas, waiting for the bus outside the shop with eleven minutes to fill. He liked her. What he is deciding, without knowing he is deciding it, is whether she was a private woman or a difficult one, and the answer he settles on is the one the village will keep.",
+    "adversary": "Not a person. The default reading, which is that any estate restricting access is protecting a price. It arrives instantly, it requires no evidence, and it is correct often enough that the audience is right to hold it."
+  },
+  "transplants": [
+    {
+      "ref": "A sealed foundation deposit, placed under a building to be found only if the building is destroyed",
+      "why": "Material deliberately made inaccessible for a stated duration, where the inaccessibility is the point of the deposit and not a side effect of where it was put."
+    },
+    {
+      "ref": "The closed period on state records, after which a file opens automatically",
+      "why": "A withholding with an end date fixed in advance by rule rather than by whoever currently holds the material. The holder has no discretion, which is what distinguishes it from a refusal."
+    },
+    {
+      "ref": "A cast or squeeze taken from an inscription, which carries the form without the object",
+      "why": "A derivation that is complete in one dimension and empty in every other. It is not a reproduction and it is not nothing, and the difference is procedural rather than visual."
+    },
+    {
+      "ref": "An inventory or probate list, which enumerates possessions without describing any of them",
+      "why": "A record whose whole content is extent: how many, of what kind, in which room. It establishes that something specific exists while conveying nothing about it."
+    },
+    {
+      "ref": "The practice of covering mirrors and pictures in a house of mourning",
+      "why": "Concealment carried out by the people closest to the thing, as an obligation rather than a choice, and lifted on a fixed day."
+    }
+  ],
+  "stakesLevel": 0.45,
+  "stakesLevelWhy": "Nothing irreversible happens if this fails and nobody is harmed, but there is exactly one centenary, the person who has carried the promise is seventy-one, and a bad outcome starts the pressure to break the embargo twenty-two years early."
+}

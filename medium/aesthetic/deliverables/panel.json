@@ -1,0 +1,17 @@
+{
+  "version": "1.0",
+  "id": "panel",
+  "name": "the wall panel as a physical object",
+  "function": "It is fixed to a wall in a room that people walk through on their way to something else, at a size that cannot be taken in from where the viewer enters. Nobody chose to stand in front of it and nobody may pick it up. The room decides the two distances at which it will be seen — the one from the doorway and the one from as close as the floor allows — and the maker does not get to choose either. It stays for the length of a hanging and is then taken down whole.",
+  "consequences": [
+    "Two distances, both set by the architecture rather than the work. There is a far reading from wherever the entrance is, which decides whether anyone crosses the floor at all, and a near reading at the closest the room permits, which is the only one anybody will remember. A piece that resolves at one and dies at the other has thrown the room away.",
+    "It is larger than the field of view at the near distance. Nothing is seen whole and close at the same time, so the near reading is always of a part, and which part is decided by where a body happens to stop.",
+    "It cannot be handled, turned over, or held up to the light. Every property that depends on the viewer doing something with it is unavailable; the only variable the viewer controls is where they stand and how long they stay.",
+    "The encounter is involuntary and brief by default. People are crossing the room, not visiting it. Attention has to be taken rather than assumed, and the taking happens at the far distance or not at all.",
+    "The light is the room's and does not change: fixed, even, and chosen by somebody else for the whole hanging. There is no dusk here and no weather. What is dim at the far distance stays dim for three months.",
+    "It hangs alone or beside other work, on a wall with a top and a bottom and a horizon set by the hanging line. Ankle height and above head height are outside the readable band and everybody involved knows it.",
+    "It is made once, at size, and there is no second copy. Damage is repair rather than replacement, and any process that depends on a run of identical objects is unavailable.",
+    "It leaves the room intact and goes into storage, so it has a life after the hanging in which nobody sees it at all and it must survive being rolled, crated or stacked."
+  ],
+  "doesNotDecide": "Composition, palette, imagery, type, scale relationships, what carries the far reading and what is held back for the near one, whether the two readings are the same work or two works, how much of the surface is used, and what any of it is about. None of that follows from the wall."
+}
