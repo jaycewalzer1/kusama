@@ -92,8 +92,16 @@ test('the run stopped because the artist said so, and the record says whether th
   assert.equal(t.unrealizedEdges.length, t.edgesUnrealized);
   assert.equal(
     t.legitimate,
-    t.edgesUnrealized === 0 || (t.edgesUnrealized === 1 && t.declaredUnrealizable === t.unrealizedEdges[0])
+    !t.pendingCapExceeded &&
+      (t.edgesUnrealized === 0 || (t.edgesUnrealized === 1 && t.declaredUnrealizable === t.unrealizedEdges[0]))
   );
+  // The stub's plan is one `aligned-to` and one `contradicts`, so half of it is unjudgeable and it
+  // does not get to finish. Nothing was left undone — `edgesUnrealized` is 0 — which is precisely
+  // the shape the cap exists to catch, caught here on a whole trajectory rather than a unit fixture.
+  assert.equal(t.pendingRate, 0.5);
+  assert.equal(t.pendingCapExceeded, true);
+  assert.equal(t.edgesUnrealized, 0);
+  assert.equal(t.legitimate, false);
 });
 
 test('the risk move is recorded once, where the artist declared it', () => {

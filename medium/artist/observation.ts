@@ -38,10 +38,23 @@ import { bindingOf } from './intention.js';
 import type { Affect, Field, Intention, Problem, Step, TriggerName } from './types.js';
 
 /**
- * This file, hashed. Read from disk at import rather than baked in, so it cannot go stale: there is
- * no way to change the serializer without changing the number.
+ * What the policy is shown, hashed. Read from disk at import rather than baked in, so it cannot go
+ * stale: there is no way to change the serializer without changing the number.
+ *
+ * Both files, not just this one. The schemas carry `description` strings the model reads and acts
+ * on — the CHOOSE edge-type descriptions tell it which relations are checkable and how many it may
+ * leave unjudgeable — so a run collected before an edit to one of them was collected in a different
+ * environment. With only this file hashed, that edit was invisible to `envDrift` and `replay` would
+ * have compared the two arms as though nothing had moved.
  */
-export const OBSERVATION_HASH = contentHash(readFileSync(fileURLToPath(import.meta.url), 'utf8'));
+const here = fileURLToPath(import.meta.url);
+const schemasFile = here.replace(/observation\.(js|ts)$/, 'schemas.$1');
+// Not a defensive check on a path that cannot be wrong: if the rename silently fails to match, this
+// file is hashed twice and the schemas stop being covered again, which is the exact failure above.
+if (schemasFile === here) throw new Error(`cannot locate schemas beside ${here}`);
+export const OBSERVATION_HASH = contentHash(
+  `${readFileSync(here, 'utf8')}\n${readFileSync(schemasFile, 'utf8')}`
+);
 
 const RULE = '-'.repeat(88);
 

@@ -399,6 +399,28 @@ export function declared(i: Intention): Intention {
  * grading its own picture, and a stopping rule scored off it would let the artist finish by saying
  * so twice.
  */
+/**
+ * How much of a plan may be unjudgeable before finishing it proves nothing.
+ *
+ * Three of the five edge types cannot be decided from the tree, so an artist picking types without
+ * thinking lands near 0.6. At 0.34 two edges in three must be checkable — enough room to say a real
+ * thing about masking or contradiction, not enough to build a plan out of them.
+ *
+ * The number is arbitrary in the way every threshold is. What is not arbitrary is that some cap must
+ * exist: `terminationOf` counts only `violated` edges as unrealized, so before this an intention
+ * whose every edge was `contradicts` finished with `edgesUnrealized: 0` and `legitimate: true`,
+ * having been built so that nothing about it could be wrong. That is the cheapest strategy in the
+ * environment and it was scoring perfectly.
+ */
+export const PENDING_CAP = 0.34;
+
+/** Unjudgeable edges over all edges. 0 for a plan with no edges — there is nothing being dodged. */
+export function pendingRate(estimates: EdgeEstimate[]): number {
+  if (estimates.length === 0) return 0;
+  const pending = estimates.filter((e) => e.status === 'judge-pending').length;
+  return Math.round((pending / estimates.length) * 1000) / 1000;
+}
+
 export function terminationOf(
   estimates: EdgeEstimate[],
   kind: Termination['kind'],
@@ -408,13 +430,21 @@ export function terminationOf(
   // Only a `finished` step's claim counts. A run that ran out of steps, or abandoned, is not making
   // the claim, and honouring the field there would let a timeout present itself as a decision.
   const named = kind === 'declared-finished' ? declaredUnrealizable : null;
+  const rate = pendingRate(estimates);
+  const capExceeded = rate > PENDING_CAP;
   return {
     kind,
     edgesUnrealized: unrealizedEdges.length,
     unrealizedEdges,
     declaredUnrealizable: named,
+    pendingRate: rate,
+    pendingCapExceeded: capExceeded,
+    // A plan too unjudgeable to be wrong is too unjudgeable to be finished. Reported as its own
+    // field beside the verdict so that an illegitimate stop can be told apart from a stop that was
+    // legitimate but never checkable — those are different results and one boolean cannot hold both.
     legitimate:
       kind === 'declared-finished' &&
+      !capExceeded &&
       (unrealizedEdges.length === 0 ||
         (unrealizedEdges.length === 1 && named !== null && named === unrealizedEdges[0])),
   };

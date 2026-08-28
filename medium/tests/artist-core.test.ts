@@ -28,6 +28,7 @@ import {
   drift,
   estimateEdges,
   examineAgreement,
+  PENDING_CAP,
   purposeChurn,
   realization,
   riskDeclared,
@@ -518,6 +519,38 @@ test('termination: stopping with an edge outstanding is legitimate only if the a
   const two = [...one, { from: 'bar', to: 'title', type: 'echoes', status: 'violated', evidence: 'y' } as EdgeEstimate];
   assert.equal(terminationOf(two, 'declared-finished', 'date->bar').legitimate, false);
   assert.deepEqual(terminationOf(two, 'declared-finished', null).unrealizedEdges, ['date->bar', 'bar->title']);
+});
+
+test('termination: a plan nothing could contradict does not get to finish', () => {
+  const mech = (n: string): EdgeEstimate => ({ from: n, to: 'x', type: 'echoes', status: 'satisfied', evidence: '' });
+  const soft = (n: string): EdgeEstimate =>
+    ({ from: n, to: 'x', type: 'contradicts', status: 'judge-pending', evidence: 'only a judge can say' });
+
+  // MUST MOVE: every edge unjudgeable. `edgesUnrealized` is 0 because only `violated` counts, so
+  // before the cap this was a clean legitimate finish — the cheapest strategy in the environment.
+  const dodge = terminationOf([soft('a'), soft('b'), soft('c')], 'declared-finished', null);
+  assert.equal(dodge.edgesUnrealized, 0);
+  assert.equal(dodge.pendingRate, 1);
+  assert.equal(dodge.pendingCapExceeded, true);
+  assert.equal(dodge.legitimate, false);
+
+  // MUST STAY FLAT: a real plan with one unjudgeable edge in three is under the cap and stops
+  // exactly as it did before. The cap has to leave room to say a true thing about contradiction.
+  const honest = terminationOf([mech('a'), mech('b'), soft('c')], 'declared-finished', null);
+  assert.ok(honest.pendingRate <= PENDING_CAP);
+  assert.equal(honest.pendingCapExceeded, false);
+  assert.equal(honest.legitimate, true);
+
+  // Two in four is over the cap, and the two failures stay legible apart: nothing is unrealized,
+  // so `legitimate: false` here means "never checkable", not "left something undone".
+  const half = terminationOf([mech('a'), mech('b'), soft('c'), soft('d')], 'declared-finished', null);
+  assert.equal(half.pendingRate, 0.5);
+  assert.equal(half.edgesUnrealized, 0);
+  assert.equal(half.pendingCapExceeded, true);
+  assert.equal(half.legitimate, false);
+
+  // A plan with no edges at all is not dodging anything; it fails on its own emptiness elsewhere.
+  assert.equal(terminationOf([], 'declared-finished', null).pendingRate, 0);
 });
 
 // A budget refusal and a structural one say opposite things about the artist. One measured run

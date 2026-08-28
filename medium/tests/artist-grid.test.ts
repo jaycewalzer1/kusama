@@ -34,6 +34,8 @@ function scores(over: Partial<Scores> = {}): Scores {
       edgesUnrealized: 0,
       unrealizedEdges: [],
       declaredUnrealizable: null,
+      pendingRate: 0,
+      pendingCapExceeded: false,
       legitimate: true,
     },
     affectTrace: [],

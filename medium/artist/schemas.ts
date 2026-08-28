@@ -189,7 +189,9 @@ const INTENTION: Schema = {
             enum: ['aligned-to', 'masked-by', 'echoes', 'contradicts', 'answers'],
             description:
               'aligned-to and echoes are checked against the tree. The other three can only be judged ' +
-              'by a person, and are reported unjudged rather than assumed to hold.',
+              'by a person, and are reported unjudged rather than assumed to hold. At most a third of ' +
+              'your edges may be of those three: a plan nothing can contradict is not a plan you ' +
+              'finished, and finishing it counts as not having stopped for a reason.',
           },
           claim: { type: 'string', minLength: 10 },
         },

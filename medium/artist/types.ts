@@ -408,6 +408,13 @@ export interface Termination {
   unrealizedEdges: string[];
   /** What the artist named on its terminal step, or null. Not required to match. */
   declaredUnrealizable: string | null;
+  /** Unjudgeable edges over all edges in the final plan. */
+  pendingRate: number;
+  /**
+   * Whether that rate is over `PENDING_CAP`. Reported separately from `legitimate` because the two
+   * failures are different: a stop that was not earned, and a stop nothing could have contradicted.
+   */
+  pendingCapExceeded: boolean;
   /** True only when the stop was a decision about the work rather than a step count expiring. */
   legitimate: boolean;
 }
