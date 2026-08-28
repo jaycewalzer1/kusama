@@ -485,6 +485,8 @@ export interface Termination {
 export interface EnvVersion {
   /** sha256 of the observation serializer's own bytes. Changing it is a new environment version. */
   observationHash: string;
+  /** sha256 of the affect arithmetic: how the environment reacts, as opposed to what it shows. */
+  dynamicsHash: string;
   profileHash: string;
   packHash: string;
   /** L4. The transaction protocol, which varies with neither artist nor commission. */

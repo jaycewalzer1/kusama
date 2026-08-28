@@ -78,21 +78,63 @@ export function onStall(a: Affect): Affect {
   return round(clamp({ arousal: a.arousal + 0.2, valence: a.valence - 0.2 }));
 }
 
+const between = (lo: number, hi: number, n: number): number => Math.min(hi, Math.max(lo, n));
+
 /**
- * How many edits this step may carry. High arousal buys bigger swings, which is the whole
- * behavioural content of arousal: 1 edit at rest, 5 at full agitation. The medium refuses an edit
- * batch that breaks a budget regardless, so this cannot run away.
+ * The two knobs below read affect's *movement since this run opened*, not its level. That is a
+ * correction, and it is worth saying what it corrects.
+ *
+ * Read as levels, neither knob did anything. Measured over every run on disk — 6 runs, 26 consulted
+ * affects — `editsPerStep` changed on 0 of them and `stallThreshold` took one value, ever. The cause
+ * was not where the thresholds sat. Both numbers open near where they stay and only ratchet upward:
+ * arousal opens at the brief's `stakesLevel`, which for real briefs is 0.8-0.9, already near its
+ * ceiling, and rises only on revert or stall; valence opens at the position's temperament and rises
+ * on every improving step, so it never reached the negative half `stallThreshold` was reading. A
+ * threshold moved against a one-way signal only changes *when* the one-way flip happens, so
+ * recalibration could not have fixed this.
+ *
+ * Against the opening affect both are live. `stakesLevel` and temperament are constants of the
+ * commission; subtracting them leaves the part that is actually a state of the artist.
+ *
+ * The gain is 10, which is not a tuning choice — it is the reciprocal of the smallest update. The
+ * update rules move affect in steps of 0.1 and 0.2, so a gain of 10 means one revert is worth
+ * exactly one notch of either knob and one stall is worth two. Any smaller gain and the smallest
+ * thing that can happen to the artist rounds to nothing.
+ *
+ * That mattered concretely. The first version of this scaled a 0..1 movement by 4, which needed a
+ * shift of 0.125 to move a notch — more than one revert delivers. Worse, arousal is clamped to
+ * [0, 1] and opens at `stakesLevel`, which for every real brief is 0.8 to 0.9, so a 0.9-stakes brief
+ * has 0.1 of headroom in total and could never have crossed anything at all. Reading movement
+ * instead of level does not help if the scale is set where the movement cannot reach.
+ *
+ * The named cost: `editsPerStep` no longer varies across briefs. Under the level reading a
+ * 0.9-stakes brief got 5 edits a step and a 0.8-stakes brief got 4 — the only behavioural effect
+ * `stakesLevel` ever had. That was a constant of the commission wearing affect's clothes, and it is
+ * now gone. If per-brief step size is wanted back it belongs in the deliverable or the protocol,
+ * where it can be read as the constant it is.
  */
-export function editsPerStep(a: Affect): number {
-  return 1 + Math.round(4 * a.arousal);
+
+/**
+ * How many edits this step may carry. Growing agitation buys bigger swings: 3 edits at the opening
+ * affect, 4 after one revert, 5 after two or after a stall. The medium refuses an edit batch that
+ * breaks a budget regardless, so this cannot run away.
+ */
+export function editsPerStep(a: Affect, a0: Affect): number {
+  return between(1, 5, 3 + Math.round(10 * (a.arousal - a0.arousal)));
 }
 
 /**
- * How many unimproving steps the artist tolerates before `stall` fires. A sour artist waits longer
- * before admitting it is stuck — which is the pessimist's actual failure mode, not impatience.
+ * How many unimproving steps the artist tolerates before `stall` fires. An artist that has soured
+ * since it started waits longer before admitting it is stuck — which is the pessimist's actual
+ * failure mode, not impatience. Three at the opening affect, six once it has soured by three
+ * reverts' worth. Cheering up buys no patience: the floor is the opening value.
+ *
+ * Souring, not sourness. A position whose temperament is low is not one that has lost confidence,
+ * it is one that never had any; reading the standing disposition here made patience a constant of
+ * the commission rather than a state of the run.
  */
-export function stallThreshold(a: Affect): number {
-  return 3 + Math.round(3 * Math.max(0, -a.valence));
+export function stallThreshold(a: Affect, a0: Affect): number {
+  return between(3, 6, 3 + Math.round(10 * (a0.valence - a.valence)));
 }
 
 /**
@@ -135,16 +177,16 @@ export function affectArmed(initial: Affect, trace: Affect[]): AffectArmed {
   // first step. Comparing the trace to itself would ask whether affect changed since the last time
   // it changed, which is always no on the first step and meaningless after.
   const consulted = [initial, ...trace.slice(0, -1)];
-  const edits0 = editsPerStep(initial);
-  const stall0 = stallThreshold(initial);
+  const edits0 = editsPerStep(initial, initial);
+  const stall0 = stallThreshold(initial, initial);
   const cred0 = credulous(initial);
   let editsChanged = 0;
   let stallChanged = 0;
   let credulousChanged = 0;
   let armed = 0;
   for (const a of consulted) {
-    const e = editsPerStep(a) !== edits0;
-    const s = stallThreshold(a) !== stall0;
+    const e = editsPerStep(a, initial) !== edits0;
+    const s = stallThreshold(a, initial) !== stall0;
     const c = credulous(a) !== cred0;
     if (e) editsChanged++;
     if (s) stallChanged++;

@@ -87,13 +87,33 @@ test('affect: both numbers stay in range however many bad steps happen', () => {
   assert.deepEqual(clamp({ arousal: 5, valence: -5 }), { arousal: 1, valence: -1 });
 });
 
-test('affect: arousal buys edits per step, sourness buys patience', () => {
-  assert.equal(editsPerStep({ arousal: 0, valence: 0 }), 1);
-  assert.equal(editsPerStep({ arousal: 1, valence: 0 }), 5);
-  assert.equal(stallThreshold({ arousal: 0, valence: 0 }), 3);
-  assert.equal(stallThreshold({ arousal: 0, valence: -1 }), 6);
-  // A good mood buys no extra patience: positive valence is not a licence to dawdle.
-  assert.equal(stallThreshold({ arousal: 0, valence: 1 }), 3);
+test('affect: rising agitation buys edits per step, souring buys patience', () => {
+  // MUST STAY FLAT. Two runs whose opening affects are far apart get the same knobs, because the
+  // opening affect is `stakesLevel` and temperament — constants of the commission, not states of the
+  // artist. Under the level reading these two lines differed by 4 edits and 6 steps of patience for
+  // no reason the run had anything to do with.
+  const calm = { arousal: 0, valence: 0 };
+  const fraught = { arousal: 0.9, valence: -0.9 };
+  assert.equal(editsPerStep(calm, calm), 3);
+  assert.equal(editsPerStep(fraught, fraught), 3);
+  assert.equal(stallThreshold(calm, calm), 3);
+  assert.equal(stallThreshold(fraught, fraught), 3);
+
+  // MUST MOVE. What the knobs read is the distance travelled since then, and the scale is set so
+  // that the smallest thing that can happen — one revert, 0.1 — is worth exactly one notch. A gain
+  // that needed more than one revert to register would be dead on a 0.9-stakes brief, which has
+  // 0.1 of arousal headroom in total before the clamp.
+  assert.equal(editsPerStep(onRevert(calm), calm), 4);
+  assert.equal(editsPerStep(onRevert(onRevert(calm)), calm), 5);
+  assert.equal(editsPerStep(onStall(calm), calm), 5);
+  assert.equal(editsPerStep(onRevert(fraught), fraught), 4, 'and the same from a fraught opening');
+
+  assert.equal(stallThreshold(onRevert(calm), calm), 4);
+  assert.equal(stallThreshold({ arousal: 0, valence: -0.3 }, calm), 6);
+  assert.equal(stallThreshold({ arousal: 0.9, valence: 0.1 }, fraught), 3, 'souring, not sourness');
+
+  // A good mood buys no extra patience: cheering up is not a licence to dawdle.
+  assert.equal(stallThreshold(onAcceptImproved(calm), calm), 3);
 });
 
 test('affect: a pleased artist is the one that listens to the describer more readily', () => {
@@ -844,6 +864,7 @@ test('observation: FIND sees the field, because that is where a problem has to c
 
 const ENV = {
   observationHash: 'a',
+  dynamicsHash: 'i',
   profileHash: 'b',
   packHash: 'c',
   protocolHash: 'd',

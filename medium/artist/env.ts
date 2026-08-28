@@ -163,6 +163,8 @@ export class ArtistEnv {
   /** The kept plate the next change is measured against. Not the last one rendered. */
   private baseline: Buffer | null = null;
   affect!: Affect;
+  /** What this run opened with. Both mechanical knobs read the distance from it, not the level. */
+  affect0!: Affect;
   intention!: Intention;
   k = 0;
   private sinceImprovement = 0;
@@ -178,7 +180,7 @@ export class ArtistEnv {
   }
 
   get maxEdits(): number {
-    return editsPerStep(this.affect);
+    return editsPerStep(this.affect, this.affect0);
   }
 
   /**
@@ -189,6 +191,7 @@ export class ArtistEnv {
   async reset(intention: Intention, affect: Affect): Promise<Look> {
     this.intention = intention;
     this.affect = affect;
+    this.affect0 = affect;
     this.k = 0;
     this.sinceImprovement = 0;
     this.program = this.o.seedProgram;
@@ -405,7 +408,7 @@ export class ArtistEnv {
   }
 
   private checkStall(): Fired | null {
-    const fired = stalled(this.sinceImprovement, stallThreshold(this.affect));
+    const fired = stalled(this.sinceImprovement, stallThreshold(this.affect, this.affect0));
     if (!fired) return null;
     this.affect = onStall(this.affect);
     this.sinceImprovement = 0;
