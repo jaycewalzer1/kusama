@@ -138,6 +138,19 @@ environment cost. The policy side is genuinely replayed from the log and is chec
 keeps the nodes that element was made of. Element identity is by id, and the alternative — dropping
 them — measured how recently the artist last changed its mind rather than what it built.
 
+**The `32e3e8b..81bdd4c` work is unattributed and unreviewed.** Fourteen commits titled "Task N",
+28 files, +4736/-260 across `artist/` and `aesthetic/`. The sessions that wrote them were terminated
+on 2026-08-27 and their intent was never read. It is kept rather than quarantined: it passes, and
+`dynamicsHash` is a real improvement — a change to the response rules can no longer pass as the same
+experiment. Surgery on the one commit that cleared the acceptance test is the worse trade.
+
+Two things follow. **`reward.ts` is in the blast radius of the three mismeasuring scorers** — `drift`,
+`realization`, `riskConvention` — and took +171 in this range; read
+`git diff 32e3e8b 81bdd4c -- artist/reward.ts artist/affect.ts artist/env-version.ts` before the
+scorer fix touches those files. And **the series is incomplete**: Tasks 1 and 7 exist in no commit on
+any ref, so whatever they were meant to do is undone and unrecorded. Do not infer them; the numbering
+is the only evidence they were ever planned.
+
 **`nodeIds` is not on the CHOOSE or REPLAN schema at all,** and must not be put back. The first real
 run put it there, described as "empty until it has been built", and the artist filled it in with the
 ids it was about to write. Four of those were never written, and because an edge is violated when
