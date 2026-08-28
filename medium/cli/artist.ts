@@ -1,7 +1,13 @@
 // `artist` — run the loop, and everything you can do to a run afterwards.
 //
-//   artist run <position> <brief>        one trajectory into a directory
+//   artist run <position> <brief> <deliverable>
+//                                        one trajectory into a directory
 //   artist grid <dir>                    the whole grid, serially, plus the control column
+//   artist steps <dir>                   one record per step: before, action, after, what it moved
+//   artist filmstrip <dir> [--story]     the piece rebuilt step by step, and the survival curve
+//                                        --story adds index.html: each frame next to why it happened
+//   artist twin <arm> <control>          does the position steer, or is it decoration? the two arms
+//                                        compared on what they DID, not on what they scored
 //   artist replay <dir>                  the same trajectory with the model unplugged
 //   artist recompute <dir...>            rebuild scores.json from the log alone
 //   artist strip <dir>                   every plate the trajectory stood on, left to right
@@ -15,35 +21,51 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import path from 'node:path';
 import { Command } from 'commander';
 import { Canvas } from '../artist/canvas.js';
-import { gridSheet, strip, type GridCell } from '../artist/grid.js';
+import { filmstrip, finalHashOf } from '../artist/filmstrip.js';
+import {
+  alreadyDone,
+  cellName,
+  gridSheet,
+  parseCell,
+  runDir,
+  scoreSpreads,
+  spreadText,
+  strip,
+  type Cell,
+  type GridCell,
+} from '../artist/grid.js';
 import { selectPolicy } from '../artist/policy/interface.js';
 import { recomputeMatches, scoresCsv } from '../artist/reward.js';
 import { replay } from '../artist/replay.js';
 import { runTrajectory } from '../artist/run.js';
+import { storyOf, storyText, summarise as summariseLine } from '../artist/story.js';
+import { readLog } from '../artist/studio-log.js';
+import { processOf, processText } from '../artist/transition.js';
+import { twinOf, twinText } from '../artist/twin.js';
+import { walkthroughOf, walkthroughHtml } from '../artist/walkthrough.js';
 import { sftLines, toJsonl } from '../artist/export.js';
+import { ROOT } from '../env/browser.js';
 import type { Trajectory } from '../artist/types.js';
 
-const POSITIONS = [
-  'situationist-ransom',
-  'crass-collage',
-  'riot-grrrl-zine',
-  'underground-resistance',
-  'berlin-rave-flyer',
-  'ikeda-austerity',
-];
-const BRIEFS = [
-  'stop-the-convoy',
-  'rye-lane-evictions',
-  'night-market-bombing',
-  'tresor-last-night',
-  'transmission-four',
-];
+/**
+ * Read off disk rather than listed here. A hardcoded catalog in the CLI goes stale the first time a
+ * document is added or renamed, and it goes stale silently: `grid` just runs a smaller grid.
+ */
+const ids = (dir: string) =>
+  readdirSync(path.join(ROOT, 'aesthetic', dir))
+    .filter((f) => f.endsWith('.json') && !f.endsWith('.field.json'))
+    .sort()
+    .map((f) => f.slice(0, -'.json'.length));
+
+const POSITIONS = ids('positions');
+const BRIEFS = ids('briefs');
+const DELIVERABLES = ids('deliverables');
 
 function summarise(t: Trajectory): string {
   const s = t.scores;
   const n = (v: number | null) => (v === null ? 'n/a' : v.toFixed(3));
   return [
-    `${t.positionId} x ${t.briefId}  ${t.outcome}`,
+    `${t.positionId} x ${t.briefId} x ${t.deliverableId}  ${t.outcome}`,
     `  tree ${n(s.tree)}  render ${n(s.render)}  hard ${s.hardViolations}  soft ${s.softViolations}`,
     `  realization ${n(s.realization.score)} (${s.realization.satisfied}/${s.realization.mechanical} decidable, ${s.realization.judgePending} judge-pending)`,
     `  drift ${s.drift}  replans ${s.problemFindingSteps}  grounded ${s.problemsGrounded}/${t.problems.length}  destruction ${s.destructionRate}`,
@@ -68,6 +90,100 @@ function trajectoriesIn(dir: string): { dir: string; trajectory: Trajectory }[] 
   return out;
 }
 
+/**
+ * k independent seeds of each named cell, serially, resumable.
+ *
+ * This is the shape the n=1-per-cell grid could not produce. One seed per cell cannot separate a
+ * cell effect from run variance, so a table built from it reports differences that may be entirely
+ * the seed; k seeds per cell gives every score a within-cell spread to be judged against, which is
+ * what `scoreSpreads` then does.
+ *
+ * Serial because renders share one Chromium GPU process (NOTES R8) and concurrent renders diverge.
+ * Resumable because a batch of this size will be interrupted: an existing `final.json` is loaded
+ * rather than re-run, so continuing costs only the runs that never finished. Cost is real money and
+ * hours, and restarting from zero after an interruption is how a batch never completes.
+ */
+async function runCells(opts: Record<string, string | boolean>): Promise<void> {
+  const cells: Cell[] = String(opts['cells']).split(',').map(parseCell);
+  const k = Number(opts['k']);
+  const seed0 = Number(opts['seed0']);
+  const deliverableDefault = String(opts['deliverable']);
+  const root = String(opts['out']);
+  if (!Number.isInteger(k) || k < 1) throw new Error(`--k must be a positive integer, got "${opts['k']}"`);
+
+  // Every cell is validated against the catalog before the first model call. Finding out at cell
+  // three of three that a brief id was misspelled costs the two cells already paid for.
+  for (const c of cells) {
+    const missing = [
+      POSITIONS.includes(c.positionId) ? null : `position "${c.positionId}"`,
+      BRIEFS.includes(c.briefId) ? null : `brief "${c.briefId}"`,
+      DELIVERABLES.includes(c.deliverableId) ? null : `deliverable "${c.deliverableId}"`,
+    ].filter(Boolean);
+    if (missing.length) throw new Error(`cell ${cellName(c)}: no such ${missing.join(', ')}`);
+  }
+
+  // Selected on first use, not up front: a batch whose runs are all already on disk is a rescore of
+  // work already paid for, and it should not need a key or a provider to rebuild spread.json.
+  let policy: Awaited<ReturnType<typeof selectPolicy>> | null = null;
+  const rows: { cell: string; scores: Trajectory['scores'] }[] = [];
+  const done: Trajectory[] = [];
+  const failed: string[] = [];
+  let resumed = 0;
+  const total = cells.length * k;
+  let n = 0;
+
+  for (const c of cells) {
+    for (let i = 0; i < k; i++) {
+      const seed = seed0 + i;
+      const dir = runDir(root, c, seed);
+      n++;
+      const label = `[${n}/${total}] ${cellName(c)} seed ${seed}`;
+
+      if (alreadyDone(dir)) {
+        const t = JSON.parse(readFileSync(path.join(dir, 'final.json'), 'utf8')) as Trajectory;
+        rows.push({ cell: cellName(c), scores: t.scores });
+        done.push(t);
+        resumed++;
+        console.log(`${label}: already done, resumed`);
+        continue;
+      }
+
+      mkdirSync(dir, { recursive: true });
+      console.log(`${label}: running`);
+      try {
+        policy ??= await selectPolicy();
+        const t = await runTrajectory({
+          policy,
+          positionId: c.positionId,
+          briefId: c.briefId,
+          deliverableId: c.deliverableId,
+          seed,
+          outDir: dir,
+          maxSteps: Number(opts['steps']),
+          control: c.control,
+        });
+        rows.push({ cell: cellName(c), scores: t.scores });
+        done.push(t);
+        console.log(summarise(t));
+      } catch (e) {
+        // A dead seed is one hole, not the end of the batch: the remaining cells are still worth
+        // the money already committed, and the hole is reported rather than averaged over.
+        failed.push(`${cellName(c)} seed ${seed}: ${e instanceof Error ? e.message : String(e)}`);
+        console.error(`FAILED ${label}: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+  }
+
+  const spreads = scoreSpreads(rows);
+  writeFileSync(path.join(root, 'spread.json'), `${JSON.stringify(spreads, null, 2)}\n`);
+  writeFileSync(path.join(root, 'scores.csv'), `${scoresCsv(done)}\n`);
+  console.log(
+    `\n${done.length}/${total} run(s) in hand${resumed ? ` (${resumed} resumed)` : ''}; scores.csv and spread.json written.\n`
+  );
+  console.log(spreadText(spreads));
+  if (failed.length) console.log(`\nfailed:\n  ${failed.join('\n  ')}`);
+}
+
 const program = new Command();
 program.name('artist').description('Run the artist loop and inspect what it did.');
 
@@ -75,6 +191,7 @@ program
   .command('run')
   .argument('<position>')
   .argument('<brief>')
+  .argument('<deliverable>', 'the kind of object; chosen here, not by the brief')
   .requiredOption('-o, --out <dir>', 'directory for studio.jsonl, final.json, final.png and sketches/')
   .option('--seed <n>', 'master seed for the program', '1')
   .option('--steps <n>', 'steps the artist is told it has', '12')
@@ -82,11 +199,13 @@ program
   .option('--sketches <n>', 'sketches per problem', '3')
   .option('--no-audience', 'skip the audience read and its trigger (saves one env call per look)')
   .option('--control', 'strip the position: same brief, same checker, no steering')
-  .action(async (position: string, brief: string, opts: Record<string, string | boolean>) => {
+  .option('--blind', 'the ablation: take the canvas away during MAKE and work from the tree and the describer alone')
+  .action(async (position: string, brief: string, deliverable: string, opts: Record<string, string | boolean>) => {
     const t = await runTrajectory({
       policy: await selectPolicy(),
       positionId: position,
       briefId: brief,
+      deliverableId: deliverable,
       seed: Number(opts['seed']),
       outDir: String(opts['out']),
       maxSteps: Number(opts['steps']),
@@ -94,6 +213,7 @@ program
       sketchesPerProblem: Number(opts['sketches']),
       useAudience: opts['audience'] !== false,
       control: Boolean(opts['control']),
+      showCanvas: !opts['blind'],
     });
     console.log(summarise(t));
   });
@@ -106,11 +226,23 @@ program
   .option('--steps <n>', 'steps per trajectory', '12')
   .option('--positions <ids>', 'comma-separated subset', POSITIONS.join(','))
   .option('--briefs <ids>', 'comma-separated subset', BRIEFS.join(','))
+  // The grid is positions x briefs at one kind of object. Crossing the third axis in as well would
+  // cube the cell count for a comparison nobody has asked for yet; run the grid again with a
+  // different --deliverable when they do.
+  .option('--deliverable <id>', 'the kind of object every cell is made as', DELIVERABLES[0])
   .option('--control-brief <id>', 'the brief the control column runs', BRIEFS[0])
   .option('--no-control', 'skip the control column')
+  .option(
+    '--cells <list>',
+    'comma-separated position:brief:deliverable[:control]; runs --k seeds of each instead of the cross-product'
+  )
+  .option('--k <n>', 'independent seeds per cell, only with --cells', '1')
+  .option('--seed0 <n>', 'first seed; the k seeds are seed0..seed0+k-1', '1')
   .action(async (opts: Record<string, string | boolean>) => {
+    if (opts['cells']) return runCells(opts);
     const positions = String(opts['positions']).split(',');
     const briefs = String(opts['briefs']).split(',');
+    const deliverable = String(opts['deliverable']);
     const root = String(opts['out']);
     const policy = await selectPolicy();
     const rows: GridCell[][] = [];
@@ -132,6 +264,7 @@ program
             policy,
             positionId: position,
             briefId: brief,
+            deliverableId: deliverable,
             seed: Number(opts['seed']),
             outDir: dir,
             maxSteps: Number(opts['steps']),
@@ -173,6 +306,101 @@ program
     const out = path.join(dir, 'grid.png');
     writeFileSync(out, png);
     console.log(`${out}: ${cells.length} cells, ${missing} blank`);
+  });
+
+program
+  .command('story')
+  .description('what the run did, folded into acts and beats — the log without the 200 lines')
+  .argument('<dir>')
+  .action((dir: string) => {
+    const lines = readLog(path.join(dir, 'studio.jsonl'));
+    console.log(storyText(storyOf(lines.map((l) => ({ seq: l.seq, t: l.t, kind: l.kind, summary: summariseLine(l.kind, l.data) })))));
+  });
+
+program
+  .command('steps')
+  .description('one line per step: before, the edits, after, what it moved — written as transitions.json')
+  .argument('<dir>')
+  .action((dir: string) => {
+    const p = processOf(readLog(path.join(dir, 'studio.jsonl')));
+    writeFileSync(path.join(dir, 'transitions.json'), `${JSON.stringify(p, null, 2)}\n`);
+    console.log(processText(p));
+  });
+
+program
+  .command('filmstrip')
+  .description('the piece rebuilt step by step, and the pixel survival curve off it')
+  .argument('<dir>')
+  .option('--story', 'also write index.html: every frame next to the reasoning that produced it')
+  .action(async (dir: string, opts: Record<string, boolean>) => {
+    const lines = readLog(path.join(dir, 'studio.jsonl'));
+    const canvas = new Canvas();
+    try {
+      const strip = await filmstrip(lines, canvas, finalHashOf(dir));
+      const into = path.join(dir, 'filmstrip');
+      mkdirSync(into, { recursive: true });
+      for (const f of strip.frames) writeFileSync(path.join(into, `step-${String(f.k).padStart(2, '0')}.png`), f.png);
+      writeFileSync(
+        path.join(into, 'survival.json'),
+        `${JSON.stringify({ meanSurvival: strip.meanSurvival, survival: strip.survival }, null, 2)}\n`
+      );
+      if (opts['story']) {
+        const w = walkthroughOf(lines, strip.frames, strip.survival, strip.meanSurvival);
+        writeFileSync(path.join(into, 'walkthrough.json'), `${JSON.stringify(w, null, 2)}\n`);
+        writeFileSync(path.join(into, 'index.html'), walkthroughHtml(w));
+      }
+      for (const r of strip.survival) {
+        const pct = (n: number) => `${(n * 100).toFixed(2)}%`;
+        console.log(
+          `k${String(r.k).padStart(2)}  laid ${pct(r.laidDown).padStart(7)}  survived ${pct(r.survived).padStart(7)}  ${
+            r.survival === null ? 'moved nothing' : `${pct(r.survival)} of it still visible at the end`
+          }`
+        );
+      }
+      console.log(
+        strip.meanSurvival === null
+          ? 'nothing was ever laid down, so there is no curve'
+          : `\n${strip.frames.length} frames -> ${into}\nmean survival ${(strip.meanSurvival * 100).toFixed(2)}% — ` +
+            (strip.meanSurvival >= 0.999
+              ? 'nothing in this piece was painted over. It accumulated; it did not revise.'
+              : 'some of what was made was covered by what came after.')
+      );
+      if (opts['story']) console.log(`\nwalkthrough -> ${path.join(into, 'index.html')}`);
+    } finally {
+      await canvas.close();
+    }
+  });
+
+program
+  .command('twin')
+  .description('a position against its null twin, compared on actions rather than on scores')
+  .argument('<arm>', 'the trajectory run with the position')
+  .argument('<control>', 'the same commission and seed run with --control')
+  .option('--json', 'write twin.json into the arm directory as well')
+  .action((armDir: string, controlDir: string, opts: Record<string, boolean>) => {
+    const log = (d: string) => readLog(path.join(d, 'studio.jsonl'));
+    const t = twinOf(log(armDir), log(controlDir));
+    // A pairing mistake makes every number below meaningless, so check it rather than trust the
+    // argument order: two arms of one experiment differ in exactly one thing.
+    const head = (d: string) => {
+      const f = path.join(d, 'final.json');
+      return existsSync(f) ? (JSON.parse(readFileSync(f, 'utf8')) as Trajectory) : null;
+    };
+    const a = head(armDir);
+    const c = head(controlDir);
+    if (a && c) {
+      const mismatched = (['positionId', 'briefId', 'deliverableId', 'seed'] as const).filter((k) => a[k] !== c[k]);
+      if (mismatched.length) {
+        console.error(`WARNING: these are not two arms of one experiment — they differ in ${mismatched.join(', ')}`);
+      }
+      if (a.control) console.error('WARNING: the first directory is itself a control arm');
+      if (!c.control) console.error('WARNING: the second directory was not run with --control');
+    }
+    console.log(twinText(t));
+    if (opts['json']) {
+      writeFileSync(path.join(armDir, 'twin.json'), `${JSON.stringify(t, null, 2)}\n`);
+      console.log(`\n${path.join(armDir, 'twin.json')}`);
+    }
   });
 
 program

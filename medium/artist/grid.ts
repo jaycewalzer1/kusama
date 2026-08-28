@@ -16,6 +16,7 @@ import { ROOT } from '../env/browser.js';
 import { decodePng, encodePng } from '../env/png.js';
 import { contactSheet, type Image } from '../env/sheet.js';
 import { readLog } from './studio-log.js';
+import type { Scores } from './types.js';
 
 const PNG_CACHE = path.join(ROOT, '.cache', 'artist-png');
 
@@ -89,4 +90,168 @@ export function strip(dir: string, cell = 220): { png: Buffer | null; frames: nu
     background: [0x18, 0x18, 0x18],
   });
   return { png: encodePng(sheet.rgba, sheet.width, sheet.height), frames: images.length, evicted };
+}
+
+// --- cells, seeds and the spread -----------------------------------------------------------------
+//
+// The grid above answers "do six positions make six kinds of picture". These answer a different and
+// harsher question: is any score in this system separating cells at all, or is every apparent cell
+// effect inside the noise of running the same cell twice?
+//
+// n=1 per cell cannot tell those apart. Nothing below computes a p-value or a significance claim —
+// there is no such claim to be made off five seeds — it reports the between-cell difference beside
+// the within-cell spread and lets the reader see which is bigger.
+
+/** One point in the design: a commission, an arm, and nothing else. Seeds vary within it. */
+export interface Cell {
+  positionId: string;
+  briefId: string;
+  deliverableId: string;
+  /** The null-twin arm: L1 stripped, still graded against the real position. */
+  control: boolean;
+}
+
+/**
+ * `position:brief:deliverable` with an optional trailing `:control`.
+ *
+ * Deliberately strict about arity. A three-part cell spec that silently defaulted its deliverable
+ * would run a different experiment than the one written on the command line, and the difference
+ * would not show up until the scores were already collected.
+ */
+export function parseCell(spec: string): Cell {
+  const parts = spec.split(':');
+  const control = parts.length === 4 && parts[3] === 'control';
+  if (parts.length !== 3 && !control) {
+    throw new Error(
+      `cell "${spec}" is not position:brief:deliverable[:control] — got ${parts.length} part(s)`
+    );
+  }
+  const [positionId, briefId, deliverableId] = parts as [string, string, string];
+  if (!positionId || !briefId || !deliverableId) throw new Error(`cell "${spec}" has an empty part`);
+  return { positionId, briefId, deliverableId, control };
+}
+
+export function cellName(c: Cell): string {
+  return `${c.positionId}__${c.briefId}__${c.deliverableId}${c.control ? '__control' : ''}`;
+}
+
+/** Where one seed of one cell lives. Stable, so an interrupted batch can find what it already did. */
+export function runDir(root: string, c: Cell, seed: number): string {
+  return path.join(root, cellName(c), `seed-${seed}`);
+}
+
+/**
+ * A run counts as already done only if `final.json` is there. `scores.json` is written first and a
+ * directory holding one but not the other is a run that died between the two writes — resuming over
+ * it would keep a half-recorded trajectory and quietly shrink k.
+ */
+export function alreadyDone(dir: string): boolean {
+  return existsSync(path.join(dir, 'final.json'));
+}
+
+/**
+ * Every number in a Scores object, flattened to dotted paths.
+ *
+ * Walks the object rather than naming the scores, so a score added by a later repair appears in the
+ * spread table without anyone remembering to list it here — the failure mode of an explicit list is
+ * that the newest and least trusted score is the one missing from the analysis. Booleans count as
+ * 0/1 because a rate over seeds is exactly what is wanted of them. Arrays are skipped: `affectTrace`
+ * and `judgePending` are traces, not scores, and averaging them would produce a number with no
+ * referent. `null` is dropped rather than zeroed — see `Stat.n`.
+ */
+export function flattenScores(scores: Scores): Map<string, number> {
+  const out = new Map<string, number>();
+  const walk = (v: unknown, prefix: string) => {
+    if (typeof v === 'number') out.set(prefix, v);
+    else if (typeof v === 'boolean') out.set(prefix, v ? 1 : 0);
+    else if (v && typeof v === 'object' && !Array.isArray(v)) {
+      for (const [k, sub] of Object.entries(v)) walk(sub, prefix ? `${prefix}.${k}` : k);
+    }
+  };
+  walk(scores, '');
+  return out;
+}
+
+export interface Stat {
+  /** How many seeds actually produced a number. Lower than k when the score was null on some. */
+  n: number;
+  mean: number;
+  /** Population sd over the seeds in this cell. 0 when n < 2, which is not the same as agreement. */
+  sd: number;
+}
+
+export interface ScoreSpread {
+  score: string;
+  perCell: { cell: string; stat: Stat }[];
+  /** Largest cell mean minus smallest. The effect, if there is one. */
+  between: number;
+  /** Mean of the per-cell sds. The noise the effect has to clear. */
+  within: number;
+  /**
+   * False when `between <= within`: on this data the score does not separate these cells. Not a
+   * claim that it never could — it is a claim that this run is not evidence that it does.
+   */
+  separates: boolean;
+}
+
+function stat(values: number[]): Stat {
+  const n = values.length;
+  if (n === 0) return { n: 0, mean: 0, sd: 0 };
+  const mean = values.reduce((a, b) => a + b, 0) / n;
+  const sd = n < 2 ? 0 : Math.sqrt(values.reduce((a, b) => a + (b - mean) ** 2, 0) / n);
+  return { n, mean: Math.round(mean * 1e6) / 1e6, sd: Math.round(sd * 1e6) / 1e6 };
+}
+
+/**
+ * Per score: the mean and sd within each cell, and the between-cell difference against the pooled
+ * within-cell spread.
+ *
+ * Cells with fewer than two seeds contribute an sd of 0, which flatters `separates`. That is why
+ * `Stat.n` is reported per cell rather than assumed equal to k: a table whose within-cell spread is
+ * zero because nothing was repeated should be readable as such.
+ */
+export function scoreSpreads(runs: { cell: string; scores: Scores }[]): ScoreSpread[] {
+  const cells = [...new Set(runs.map((r) => r.cell))];
+  const flat = runs.map((r) => ({ cell: r.cell, values: flattenScores(r.scores) }));
+  const names = [...new Set(flat.flatMap((f) => [...f.values.keys()]))].sort();
+
+  return names.map((score) => {
+    const perCell = cells.map((cell) => ({
+      cell,
+      stat: stat(
+        flat.filter((f) => f.cell === cell).map((f) => f.values.get(score)).filter((v): v is number => v !== undefined)
+      ),
+    }));
+    const present = perCell.filter((p) => p.stat.n > 0);
+    const means = present.map((p) => p.stat.mean);
+    const between = means.length < 2 ? 0 : Math.max(...means) - Math.min(...means);
+    const within = present.length === 0 ? 0 : present.reduce((a, p) => a + p.stat.sd, 0) / present.length;
+    return {
+      score,
+      perCell,
+      between: Math.round(between * 1e6) / 1e6,
+      within: Math.round(within * 1e6) / 1e6,
+      separates: between > within,
+    };
+  });
+}
+
+/** The spread table, plainly, with the scores that measure nothing called out as such. */
+export function spreadText(spreads: ScoreSpread[]): string {
+  const rows = spreads.map((s) => {
+    const cells = s.perCell.map((p) => `${p.cell}=${p.stat.mean.toFixed(3)}+-${p.stat.sd.toFixed(3)}(n${p.stat.n})`);
+    return `${s.separates ? '  ' : '! '}${s.score.padEnd(28)} between ${s.between.toFixed(3).padStart(8)}  within ${s.within
+      .toFixed(3)
+      .padStart(8)}  ${cells.join('  ')}`;
+  });
+  const dead = spreads.filter((s) => !s.separates);
+  return [
+    ...rows,
+    '',
+    dead.length === 0
+      ? 'Every score separated these cells by more than the spread within them.'
+      : `${dead.length} score(s) marked ! have a between-cell difference no larger than the spread within a cell.\n` +
+        'On this data they are not measuring anything:\n  ' +
+        dead.map((s) => s.score).join('\n  '),
+  ].join('\n');
 }
