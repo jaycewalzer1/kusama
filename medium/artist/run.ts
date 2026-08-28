@@ -36,6 +36,7 @@ import {
   realization,
   riskDeclared,
   terminationOf,
+  visibleRate,
   totalDrift,
 } from './intention.js';
 import { envVersionNow } from './env-version.js';
@@ -233,6 +234,8 @@ function scoresOf(
     problemsGrounded: grounded(problems, fieldText),
     destructionRate: destructionRate(steps),
     declarations: declarationScores(steps.map((s) => s.declaration)),
+    canvasVisibleRate: visibleRate(steps.map((s) => s.sawCanvas)),
+    changeVisibleRate: visibleRate(steps.map((s) => s.sawChange)),
     riskDeclared: riskDeclared(intentions),
     riskMoveTaken: risk !== undefined,
     // No fallback to `intention.riskMove`. If no accepted step named a risk, the artist planned one
@@ -401,15 +404,25 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
 
     for (let k = 1; k <= hardStop; k++) {
       const stepsLeft = Math.max(0, maxSteps - (k - 1));
-      const call = await act(
-        o.policy,
-        log,
-        spend,
-        makeContext(commission, sheet, env, steps, stepsLeft, showCanvas, textOps(env, profile.limits.maxTextOps)),
-        env.plate,
-        env.change?.png ?? null
+      // `showCanvas && env.plate !== null`, not `showCanvas`. The observation says "The canvas
+      // itself is attached. Look at it." off `canvasAttached`, while the payload is assembled from
+      // the plate, so passing the raw flag lets the prompt promise an image the call does not
+      // carry. Built once and reused for the replan so the step's record of what it saw is the
+      // same object the call was made from.
+      const context = makeContext(
+        commission,
+        sheet,
+        env,
+        steps,
+        stepsLeft,
+        showCanvas && env.plate !== null,
+        textOps(env, profile.limits.maxTextOps)
       );
-      const result = await env.step(call.action);
+      const call = await act(o.policy, log, spend, context, env.plate, env.change?.png ?? null);
+      const result = await env.step(call.action, {
+        canvas: context.canvasAttached,
+        change: context.changeAttached,
+      });
       result.step.observationHash = call.observationHash;
       steps.push(result.step);
 
@@ -435,7 +448,18 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
           o.policy,
           log,
           spend,
-          makeContext(commission, sheet, env, steps, stepsLeft, showCanvas, textOps(env, profile.limits.maxTextOps)),
+          // Rebuilt rather than reusing the act call's context: the step has landed, so the plate,
+          // the report and the change image have all moved on, and a replan reasoning from the
+          // pre-step sheet would be replanning against a picture that no longer exists.
+          makeContext(
+            commission,
+            sheet,
+            env,
+            steps,
+            stepsLeft,
+            showCanvas && env.plate !== null,
+            textOps(env, profile.limits.maxTextOps)
+          ),
           fired.trigger,
           fired.detail,
           env.plate,

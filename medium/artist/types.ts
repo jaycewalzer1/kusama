@@ -263,6 +263,13 @@ export interface Step {
    * comparison — nothing applied, or the candidate would not render.
    */
   declaration: StepDeclaration | null;
+  /**
+   * Whether the plate was actually attached to this step's THINK+ACT call, and the change image
+   * with it. Stamped from the context that was built, not from the run's flag: the flag says what
+   * was asked for, and these say what the payload carried.
+   */
+  sawCanvas: boolean;
+  sawChange: boolean;
 }
 
 /**
@@ -385,6 +392,16 @@ export interface Scores {
     /** Steps whose risk named more constraints than a declaration can carry. */
     blanketSteps: number;
   };
+  /**
+   * Share of steps whose act call actually carried the plate, and the change image with it.
+   *
+   * Whether the artist can see what it is editing is the largest single difference between two runs
+   * of this environment, and until now it was recorded nowhere in the scores — a blind run and a
+   * sighted one produced score files that could not be told apart, and every comparison across the
+   * two silently mixed them. `null` when no step recorded it: see `visibleRate` in ./intention.ts.
+   */
+  canvasVisibleRate: number | null;
+  changeVisibleRate: number | null;
   /**
    * Whether any version of the plan named a convention to break. The declaration, kept beside the
    * outcome so that "said it would, didn't" shows up as the gap between two numbers rather than

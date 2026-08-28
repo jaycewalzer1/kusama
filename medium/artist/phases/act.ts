@@ -47,9 +47,17 @@ const REPLAN_SYSTEM = [
  * Order matters and is the order the observation describes them in. Both switches come off the
  * context that built the text, so the pictures and the sentences about the pictures cannot
  * disagree — the blind arm attaches neither and claims neither.
+ *
+ * The throw is what makes that sentence true. `canvasAttached` is what puts "The canvas itself is
+ * attached. Look at it." into the observation, so a null plate under a true flag is a call whose
+ * text promises an image it does not carry — the artist is told to look at something that is not
+ * there, and the run's own record says it could see. Returning `undefined` there would make that
+ * silent. The caller builds the flag as `showCanvas && env.plate !== null`, so this cannot fire;
+ * it fires if that ever stops being true.
  */
-function framesOf(context: MakeContext, plate: Buffer | null, change: Buffer | null): PolicyImage[] | undefined {
-  if (!context.canvasAttached || !plate) return undefined;
+export function framesOf(context: MakeContext, plate: Buffer | null, change: Buffer | null): PolicyImage[] | undefined {
+  if (!context.canvasAttached) return undefined;
+  if (!plate) throw new Error('canvasAttached is set but there is no plate to attach');
   const images: PolicyImage[] = [{ mediaType: 'image/png', base64: plate.toString('base64') }];
   if (context.changeAttached && change) images.push({ mediaType: 'image/png', base64: change.toString('base64') });
   return images;

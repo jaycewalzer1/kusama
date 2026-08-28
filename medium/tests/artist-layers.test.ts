@@ -33,6 +33,7 @@ import {
   makeObservation,
   type MakeContext,
 } from '../artist/observation.js';
+import { framesOf } from '../artist/phases/act.js';
 import { loadAestheticProgram } from '../aesthetic/check.js';
 import type { CheckReport } from '../aesthetic/types.js';
 import type { Intention } from '../artist/types.js';
@@ -305,6 +306,25 @@ test('assembly order is L4 then L1 then L3 then L2, in every phase that assemble
       assert.ok(at[i]! > at[i - 1]!, `${phase} has "${markers[i]}" before "${markers[i - 1]}"`);
     }
   }
+
+  // What the observation says about the images and what the call carries have to be the same two
+  // switches, or `canvasVisibleRate` measures the flag rather than the run.
+  const png = Buffer.from('not really a png');
+  const blind = makeObservation(make);
+  assert.equal(framesOf(make, png, png), undefined, 'the blind arm attaches nothing');
+  assert.ok(!blind.includes('The canvas itself is attached'), 'and claims nothing');
+
+  const seeing: MakeContext = { ...make, canvasAttached: true, changeAttached: true };
+  assert.equal(framesOf(seeing, png, png)?.length, 2);
+  assert.ok(makeObservation(seeing).includes('The canvas itself is attached'));
+  // A first step has a plate and no change yet: one image, and the sentence about the second one
+  // is not written either.
+  const noChange: MakeContext = { ...make, canvasAttached: true, changeAttached: false };
+  assert.equal(framesOf(noChange, png, null)?.length, 1);
+  assert.ok(!makeObservation(noChange).includes('marked in red'));
+  // MUST MOVE. This is the case that used to pass silently: the text promises an image, the payload
+  // carries none, and the step is recorded as having seen the canvas.
+  assert.throws(() => framesOf(seeing, null, png), /no plate/);
 });
 
 test('the four layer files are four files; nothing generates them', () => {

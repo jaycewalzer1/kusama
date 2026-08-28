@@ -114,6 +114,22 @@ test('the risk move is recorded once, where the artist declared it', () => {
   assert.equal(trajectory.scores.riskDeclared, true);
 });
 
+// The default arm is sighted, so this run's rate is 1. Worth asserting on a whole trajectory rather
+// than only on the fold: the number has to survive the trip through `env.step` and out to the log,
+// and the fold was never the part at risk.
+test('the run records whether the artist could see the sheet it was editing', () => {
+  assert.equal(trajectory.scores.canvasVisibleRate, 1);
+  assert.ok(trajectory.steps.every((s) => s.sawCanvas));
+  // Not a second copy of the same flag. There is no change image before the first kept step, so a
+  // sighted run's change rate is strictly below its canvas rate.
+  assert.equal(trajectory.steps[0]!.sawChange, false);
+  assert.ok(trajectory.scores.changeVisibleRate! < 1);
+
+  const steps = readLog(path.join(CELL, 'studio.jsonl')).filter((l) => l.kind === 'step');
+  assert.ok(steps.length > 0);
+  assert.ok(steps.every((l) => (l.data as { sawCanvas?: unknown }).sawCanvas === true));
+});
+
 test('the log chain is whole and every policy call is in it with its observation', () => {
   const lines = readLog(path.join(CELL, 'studio.jsonl'));
   assert.deepEqual(verifyChain(lines), []);

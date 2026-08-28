@@ -566,6 +566,22 @@ export function declarationScores(declarations: (StepDeclaration | null)[]): Sco
 }
 
 /**
+ * How often a per-step boolean was true — but `null` rather than 0 when no step recorded it.
+ *
+ * Used for sight (`sawCanvas`, `sawChange`). The distinction is the whole point of the function. A
+ * log written before the field existed carries no evidence either way, and folding its silence into
+ * 0 would report every run in the existing corpus as having worked blind, which is false: they were
+ * sighted, and nothing wrote it down. This is the same trap `pixelsMoved` fell into — an absent
+ * field read as a confident zero — so the presence check happens here, at the fold, rather than
+ * relying on every caller to remember.
+ */
+export function visibleRate(saw: (boolean | undefined)[]): number | null {
+  const seen = saw.filter((s): s is boolean => typeof s === 'boolean');
+  if (seen.length === 0) return null;
+  return Math.round((seen.filter(Boolean).length / seen.length) * 1000) / 1000;
+}
+
+/**
  * Where the tree and the eye disagree about the same edge.
  *
  * Both verdicts were already being kept — `realization` reads the program, EXAMINE reads the PNG —

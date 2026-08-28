@@ -36,6 +36,7 @@ import {
   riskDeclared,
   terminationOf,
   totalDrift,
+  visibleRate,
 } from '../artist/intention.js';
 import { envDrift } from '../artist/env-version.js';
 import { refusalCause, refusalTally } from '../artist/env.js';
@@ -650,6 +651,24 @@ test('declaration: the fold separates covering a break from having named a lot',
     declaredViolationsByConstraint: {},
     blanketSteps: 0,
   });
+});
+
+test('sight: a blind run and a sighted run no longer produce the same score file', () => {
+  // MUST MOVE. Whether the artist could see the sheet it was editing is the largest single
+  // difference between two runs of this environment, and it was recorded in the scores nowhere.
+  assert.equal(visibleRate([false, false, false]), 0);
+  assert.equal(visibleRate([true, true, true]), 1);
+  // Not all-or-nothing either: the change image is genuinely absent before the first kept step, so
+  // a sighted run's `changeVisibleRate` is a fraction and reading it as a flag would be wrong.
+  assert.equal(visibleRate([false, true, true]), 0.667);
+
+  // MUST STAY FLAT. Every run already on disk was sighted and said so nowhere. Folding that silence
+  // into 0 would report the whole existing corpus as blind — a fact invented out of an absent
+  // field, which is exactly how `pixelsMoved` came to claim a 64% repaint had moved nothing.
+  assert.equal(visibleRate([]), null);
+  assert.equal(visibleRate([undefined, undefined]), null);
+  // A partly-migrated log reports on the steps that carry evidence and does not count the rest.
+  assert.equal(visibleRate([undefined, true, undefined]), 1);
 });
 
 // --- stopping ------------------------------------------------------------------------------------

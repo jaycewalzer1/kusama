@@ -28,6 +28,8 @@ function scores(over: Partial<Scores> = {}): Scores {
       declaredViolationsByConstraint: {},
       blanketSteps: 0,
     },
+    canvasVisibleRate: 1,
+    changeVisibleRate: 0,
     riskDeclared: false,
     riskMoveTaken: false,
     riskConvention: null,

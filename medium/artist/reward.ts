@@ -35,6 +35,7 @@ import {
   riskDeclared,
   terminationOf,
   totalDrift,
+  visibleRate,
 } from './intention.js';
 import { grounded } from './phases/find.js';
 import { bareEdit } from './schemas.js';
@@ -97,6 +98,13 @@ interface StepLine {
    * never applied to them.
    */
   declaration?: StepDeclaration | null;
+  /**
+   * Absent on every log written before sight was recorded. Absence is read as "no evidence", not as
+   * "blind": the runs already in the corpus were sighted and simply did not write it down, and
+   * folding their silence into 0 would invent a blind corpus. `visibleRate` returns null for that.
+   */
+  sawCanvas?: boolean;
+  sawChange?: boolean;
 }
 
 interface StartLine {
@@ -250,6 +258,8 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
       problemsGrounded: grounded(problems, fieldText),
       destructionRate: added === 0 ? 0 : Math.round((gone / added) * 1000) / 1000,
       declarations: declarationScores(steps.map((s) => s.declaration ?? null)),
+      canvasVisibleRate: visibleRate(steps.map((s) => s.sawCanvas)),
+      changeVisibleRate: visibleRate(steps.map((s) => s.sawChange)),
       riskDeclared: riskDeclared(intentions),
       riskMoveTaken: risk !== undefined,
       riskConvention: risk?.risk ?? null,

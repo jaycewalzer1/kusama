@@ -252,7 +252,7 @@ export class ArtistEnv {
    * including candidates that score worse. An artist that can only move uphill cannot make the move
    * where a piece gets worse before it gets better, and that move is most of what making is.
    */
-  async step(action: Action): Promise<StepOutcome> {
+  async step(action: Action, saw: { canvas: boolean; change: boolean }): Promise<StepOutcome> {
     this.k++;
     const before = this.program;
     const beforeReport = this.look.checkReport;
@@ -291,6 +291,8 @@ export class ArtistEnv {
       observationHash: '',
       pixelsMoved: 0,
       declaration: null,
+      sawCanvas: saw.canvas,
+      sawChange: saw.change,
     };
 
     step.appliedActionIds = applied.map((e) => e.actionId);
@@ -466,6 +468,10 @@ export class ArtistEnv {
       // The step's size on the page. Logged so an offline reader can tell a step that rewrote the
       // picture from one that nudged an argument, which the tree diff alone will not say.
       pixelsMoved: step.pixelsMoved,
+      // What the act call could see. Logged per step rather than once at the top from the run's
+      // flag: the flag is what was asked for, and this is what the payload carried.
+      sawCanvas: step.sawCanvas,
+      sawChange: step.sawChange,
       affect: step.affect,
       programHash: this.programHash,
       standing: standing(this.look.checkReport),
