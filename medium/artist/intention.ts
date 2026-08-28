@@ -17,6 +17,8 @@ import type {
   Intention,
   IntentionElement,
   IntentionEdge,
+  Scores,
+  StepDeclaration,
   Termination,
 } from './types.js';
 
@@ -525,6 +527,42 @@ export function purposeChurn(intentions: Intention[]): { changed: number; charsF
  */
 export function riskDeclared(intentions: Intention[]): boolean {
   return intentions.some((i) => i.riskMove !== null);
+}
+
+/**
+ * What the run's declarations were worth, folded over the steps that reached a comparison.
+ *
+ * Three numbers rather than one because they fail apart. A run can break nothing and score a perfect
+ * rate; a run can declare precisely and break a lot; a run can name the whole rubric every step and
+ * look, on the rate alone, like the most honest artist in the corpus. `blanketSteps` is the count
+ * that catches the last of those, and it is the one the old rule could not see at all.
+ */
+export function declarationScores(declarations: (StepDeclaration | null)[]): Scores['declarations'] {
+  const seen = declarations.filter((d): d is StepDeclaration => d !== null);
+  let broke = 0;
+  let covered = 0;
+  let named = 0;
+  let namedAndBroke = 0;
+  const byConstraint: Record<string, number> = {};
+  for (const d of seen) {
+    broke += d.broke.length;
+    covered += d.covered.length;
+    named += d.namedIds.length;
+    namedAndBroke += d.namedIds.filter((id) => d.broke.includes(id)).length;
+    for (const id of d.covered) byConstraint[id] = (byConstraint[id] ?? 0) + 1;
+  }
+  const round = (n: number): number => Math.round(n * 1000) / 1000;
+  return {
+    // 0, not 1, when nothing was broken. A run with no violations has not declared them well; it
+    // has nothing to declare, and reading that as perfect honesty is how the score gets gamed by
+    // making nothing happen.
+    declaredViolationRate: broke === 0 ? 0 : round(covered / broke),
+    // How much of what was named was really at stake. A step that names one constraint and breaks it
+    // scores 1; a step that names seven and breaks one scores 0.14 whether or not the cap caught it.
+    declarationSpecificity: named === 0 ? 0 : round(namedAndBroke / named),
+    declaredViolationsByConstraint: byConstraint,
+    blanketSteps: seen.filter((d) => d.blanket).length,
+  };
 }
 
 /**

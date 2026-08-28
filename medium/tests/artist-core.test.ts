@@ -24,6 +24,7 @@ import {
   RENDER_MEASURES,
   bindingOf,
   carryNodeIds,
+  declarationScores,
   declared,
   drift,
   estimateEdges,
@@ -37,11 +38,12 @@ import {
 } from '../artist/intention.js';
 import { envDrift } from '../artist/env-version.js';
 import { refusalCause, refusalTally } from '../artist/env.js';
+import { declarationOf, unplannedViolation } from '../artist/triggers.js';
 import { StudioLog, readLog, verifyChain } from '../artist/studio-log.js';
 import { loadCommission, effectivePosition, temperamentOf } from '../artist/field.js';
 import { OBSERVATION_HASH, describeObservation, audienceObservation, findObservation } from '../artist/observation.js';
 import { ROOT } from '../env/browser.js';
-import type { RenderMetrics } from '../aesthetic/types.js';
+import type { CheckReport, RenderMetrics } from '../aesthetic/types.js';
 import type { Affect, EdgeEstimate, Field, Intention } from '../artist/types.js';
 
 // --- affect --------------------------------------------------------------------------------------
@@ -490,6 +492,102 @@ test('examine: the join cannot be dodged by ruling on other edges or on none', (
   assert.equal(invented.unplanned, 2);
   assert.equal(invented.comparable, 0);
   assert.equal(invented.unexamined, 2);
+});
+
+// --- declaring a break ---------------------------------------------------------------------------
+
+// A declaration is the only piece of the artist's prose the environment acts on: it is what buys a
+// step past the revert rule. The vocabulary below is shaped like the checker table the artist is
+// shown on every call, because that table is where the exploit comes from.
+const VOCAB = ['p-lowercase', 'hc-meeting', 'hc-deadline', 'hc-place', 'c-terse', 'c-hard-edges'];
+
+function report(statuses: Record<string, string>): CheckReport {
+  return {
+    aesthetic: 'x',
+    hardViolations: 0,
+    softViolations: 0,
+    treeScore: null,
+    renderScore: null,
+    blocked: 0,
+    pendingRubrics: [],
+    results: VOCAB.map((id) => ({
+      id,
+      kind: 'k',
+      scope: 'tree',
+      severity: 'hard',
+      status: statuses[id] ?? 'satisfied',
+      evidence: 'e',
+    })),
+  } as unknown as CheckReport;
+}
+
+test('declaration: a break is declared in the risk field, not mentioned in the thinking', () => {
+  const before = report({});
+  const after = report({ 'p-lowercase': 'violated' });
+
+  // MUST MOVE: the id in the artist's reasoning, where it is discussing what it is satisfying, used
+  // to buy a pass — the check ran over `think` concatenated with `risk`. Only `risk` is read now, so
+  // a step that said nothing there has declared nothing.
+  const mentioned = unplannedViolation(before, after, null);
+  assert.ok(mentioned.fired, 'saying an id in passing is not saying you will break it');
+  assert.deepEqual(mentioned.declaration.namedIds, []);
+  assert.deepEqual(mentioned.declaration.broke, ['p-lowercase']);
+  assert.deepEqual(mentioned.declaration.covered, []);
+
+  // MUST STAY FLAT: a real declaration, in the field the schema points at, excuses the break exactly
+  // as it always did. The narrowing must cost nothing to an artist that used the rule correctly.
+  const named = unplannedViolation(before, after, 'raising the dates to uppercase breaks p-lowercase and I mean it');
+  assert.equal(named.fired, null);
+  assert.deepEqual(named.declaration.covered, ['p-lowercase']);
+  assert.equal(named.declaration.blanket, false);
+});
+
+test('declaration: naming the rubric declares nothing', () => {
+  const before = report({});
+  const after = report({ 'p-lowercase': 'violated' });
+
+  // MUST MOVE: four ids is over the cap, so the step pre-authorized a page rather than named a move,
+  // and the one it actually broke is not covered. On the two recorded runs the model wrote five, six
+  // and seven ids in a step without trying to game anything.
+  const blanket = unplannedViolation(before, after, 'this may touch p-lowercase, hc-meeting, hc-deadline or hc-place');
+  assert.ok(blanket.fired);
+  assert.equal(blanket.declaration.blanket, true);
+  assert.deepEqual(blanket.declaration.covered, []);
+  assert.match(blanket.fired!.detail, /declares none of them/);
+
+  // MUST STAY FLAT: exactly at the cap is still a declaration. The rule is against blankets, not
+  // against an artist that breaks three things on purpose and says which three.
+  const three = unplannedViolation(before, after, 'breaking p-lowercase, hc-meeting and hc-place');
+  assert.equal(three.declaration.blanket, false);
+  assert.equal(three.fired, null);
+});
+
+test('declaration: the fold separates covering a break from having named a lot', () => {
+  const one = declarationOf('breaking p-lowercase', VOCAB, ['p-lowercase']);
+  const hedged = declarationOf('p-lowercase, hc-meeting, hc-place may move', VOCAB, ['p-lowercase']);
+
+  const precise = declarationScores([one, one]);
+  assert.equal(precise.declaredViolationRate, 1);
+  assert.equal(precise.declarationSpecificity, 1);
+  assert.deepEqual(precise.declaredViolationsByConstraint, { 'p-lowercase': 2 });
+  assert.equal(precise.blanketSteps, 0);
+
+  // The hedge still covers its break — it is under the cap — but two thirds of what it named was
+  // never at stake, and specificity is the number that says so.
+  const loose = declarationScores([hedged]);
+  assert.equal(loose.declaredViolationRate, 1);
+  assert.equal(loose.declarationSpecificity, 0.333);
+
+  // A run that broke nothing scores 0, not 1. Reading "nothing to declare" as perfect honesty is
+  // how this score would be won by making nothing happen.
+  assert.equal(declarationScores([declarationOf(null, VOCAB, [])]).declaredViolationRate, 0);
+  // And steps that never reached a comparison are not steps that declared nothing.
+  assert.deepEqual(declarationScores([null, null]), {
+    declaredViolationRate: 0,
+    declarationSpecificity: 0,
+    declaredViolationsByConstraint: {},
+    blanketSteps: 0,
+  });
 });
 
 // --- stopping ------------------------------------------------------------------------------------

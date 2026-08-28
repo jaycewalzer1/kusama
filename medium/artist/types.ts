@@ -258,6 +258,29 @@ export interface Step {
   affect: Affect;
   /** sha256 of the exact observation string this step's THINK+ACT call was given. */
   observationHash: string;
+  /**
+   * What this step broke, and what its `risk` had said about it. Null on steps that never reached a
+   * comparison — nothing applied, or the candidate would not render.
+   */
+  declaration: StepDeclaration | null;
+}
+
+/**
+ * A step's account of what it was going to break, checked against what it did break.
+ *
+ * `namedIds` comes from the step's `risk` field alone. The MAKE schema has always said that naming a
+ * constraint id there is how a break is declared; the trigger used to read `think` as well, which
+ * turned every incidental mention into a pass — and the artist is shown every id, on every call, in
+ * the checker table.
+ */
+export interface StepDeclaration {
+  namedIds: string[];
+  /** More than `MAX_DECLARED_IDS` were named, so the step declared nothing and covers nothing. */
+  blanket: boolean;
+  /** Constraints that went satisfied -> violated on this step. */
+  broke: string[];
+  /** The ones the declaration actually covered. Empty whenever `blanket`. */
+  covered: string[];
 }
 
 export interface Sketch {
@@ -347,6 +370,21 @@ export interface Scores {
   /** Problems from FIND whose quoted field lines actually appear in the field. */
   problemsGrounded: number;
   destructionRate: number;
+  /**
+   * What the run's declarations were worth. A declaration is what buys a step past the revert rule,
+   * so it is the one piece of the artist's prose the environment acts on, and it needs measuring on
+   * its own terms rather than only as the absence of a trigger.
+   */
+  declarations: {
+    /** New violations a declaration covered, over all new violations. 0 when nothing broke. */
+    declaredViolationRate: number;
+    /** Named ids that were really broken, over named ids. Low means the naming was a hedge. */
+    declarationSpecificity: number;
+    /** Which constraints this run declared away, and how often. */
+    declaredViolationsByConstraint: Record<string, number>;
+    /** Steps whose risk named more constraints than a declaration can carry. */
+    blanketSteps: number;
+  };
   /**
    * Whether any version of the plan named a convention to break. The declaration, kept beside the
    * outcome so that "said it would, didn't" shows up as the gap between two numbers rather than

@@ -18,7 +18,7 @@
 
 import { credulous } from './affect.js';
 import { descriptionAgrees, audienceAgrees, type Agreement } from './env-calls.js';
-import type { Affect, CheckReport, Intention, TriggerName } from './types.js';
+import type { Affect, CheckReport, Intention, StepDeclaration, TriggerName } from './types.js';
 
 export interface Fired {
   trigger: TriggerName;
@@ -52,29 +52,71 @@ export function newViolations(before: CheckReport, after: CheckReport): string[]
 }
 
 /**
- * Did the artist say it was going to break something? A declared risk excuses a violation; an
- * undeclared one is the trigger. The match is deliberately loose — the artist writes the risk in
- * prose and the constraint id is machine-generated — so it looks for the id appearing anywhere in
- * what the artist said this step. A false negative here costs one replan, which is cheap; a false
- * positive would let an artist dodge the trigger by naming a constraint at random, which is not.
+ * How many constraints one step's risk may name before it has declared nothing.
+ *
+ * Above this the step is not saying "I am going to break p-lowercase", it is holding a pass over the
+ * rubric. Three leaves room to break a couple of things on purpose and say so; it does not leave
+ * room to pre-authorize a page. Measured on the two recorded runs before this cap existed, steps
+ * named 5, 4, 6 and 6 of a 9-constraint vocabulary without any adversarial intent at all — the model
+ * does this by default.
  */
-export function declared(said: string, violation: string): boolean {
-  const id = violation.split(' ')[0] ?? '';
-  return id.length > 0 && said.toLowerCase().includes(id.toLowerCase());
+export const MAX_DECLARED_IDS = 3;
+
+/**
+ * What this step declared it was breaking.
+ *
+ * Read from `risk` alone. The MAKE schema has always said "naming a constraint id here is how you
+ * declare that you meant to break it", and `here` is that field — but the check was run against
+ * `think` concatenated with `risk`, so any incidental mention counted. That is not a narrow reading
+ * of a loose rule; it is the code disagreeing with its own documented contract, and the artist is
+ * shown every constraint id in the checker table on every call. On the two recorded runs the model
+ * named up to 6 of the 9 constraints per step while reasoning about which ones it was *satisfying*,
+ * and each of those steps held an undeclared-violation pass over all 6. Read from `risk` alone the
+ * same seven steps name 1, 0, 0, 0 and 0, 0, 0.
+ *
+ * The match within `risk` stays loose — the ids are machine-generated and the risk is prose — but a
+ * declaration naming more than a handful is treated as no declaration. A false negative costs one
+ * replan. A false positive is the whole channel.
+ */
+export function declarationOf(risk: string | null, vocabulary: string[], broke: string[]): StepDeclaration {
+  const said = (risk ?? '').toLowerCase();
+  const namedIds = said.length === 0 ? [] : vocabulary.filter((id) => id.length > 0 && said.includes(id.toLowerCase()));
+  const blanket = namedIds.length > MAX_DECLARED_IDS;
+  const named = new Set(namedIds);
+  return {
+    namedIds,
+    blanket,
+    broke,
+    covered: blanket ? [] : broke.filter((id) => named.has(id)),
+  };
+}
+
+/** The constraint id a `newViolations` line starts with. */
+export function violatedId(line: string): string {
+  return line.split(' ')[0] ?? '';
 }
 
 export function unplannedViolation(
   before: CheckReport,
   after: CheckReport,
-  said: string
-): Fired | null {
-  const undeclared = newViolations(before, after).filter((v) => !declared(said, v));
-  if (undeclared.length === 0) return null;
+  risk: string | null
+): { fired: Fired | null; declaration: StepDeclaration } {
+  const lines = newViolations(before, after);
+  const declaration = declarationOf(risk, after.results.map((r) => r.id), lines.map(violatedId));
+  const covered = new Set(declaration.covered);
+  const undeclared = lines.filter((v) => !covered.has(violatedId(v)));
+  if (undeclared.length === 0) return { fired: null, declaration };
   return {
-    trigger: 'unplanned-violation',
-    detail: `this step broke something that was holding, and you did not say you would: ${undeclared.join('; ')}`,
-    usd: 0,
-    cached: true,
+    fired: {
+      trigger: 'unplanned-violation',
+      detail: declaration.blanket
+        ? `this step broke something that was holding. Your risk named ${declaration.namedIds.length} ` +
+          `constraints, which declares none of them — name the one you are breaking: ${undeclared.join('; ')}`
+        : `this step broke something that was holding, and you did not say you would: ${undeclared.join('; ')}`,
+      usd: 0,
+      cached: true,
+    },
+    declaration,
   };
 }
 

@@ -26,6 +26,7 @@ import { refusalCause } from './env.js';
 import { loadCommission } from './field.js';
 import {
   carryNodeIds,
+  declarationScores,
   declared,
   examineAgreement,
   purposeChurn,
@@ -46,6 +47,7 @@ import type {
   Program,
   RefusalCause,
   Scores,
+  StepDeclaration,
   Termination,
   Trajectory,
 } from './types.js';
@@ -87,6 +89,13 @@ interface StepLine {
    * every one of those runs as having refused nothing.
    */
   refused?: { actionId: string; kind?: string; reason: string }[];
+  /**
+   * Absent on every log written before the declaration was checked against `risk` alone. Absence is
+   * read as "this step reached no comparison", not as "this step declared nothing and broke
+   * nothing": the second would score old runs a perfect `declaredViolationRate` for a rule that was
+   * never applied to them.
+   */
+  declaration?: StepDeclaration | null;
 }
 
 interface StartLine {
@@ -239,6 +248,7 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
       problemFindingSteps: replans,
       problemsGrounded: grounded(problems, fieldText),
       destructionRate: added === 0 ? 0 : Math.round((gone / added) * 1000) / 1000,
+      declarations: declarationScores(steps.map((s) => s.declaration ?? null)),
       riskDeclared: riskDeclared(intentions),
       riskMoveTaken: risk !== undefined,
       riskConvention: risk?.risk ?? null,

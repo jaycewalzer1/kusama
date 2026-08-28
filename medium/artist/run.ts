@@ -29,6 +29,7 @@ import { ArtistEnv, refusalTally } from './env.js';
 import { loadCommission, type Commission } from './field.js';
 import {
   carryNodeIds,
+  declarationScores,
   declared,
   examineAgreement,
   purposeChurn,
@@ -230,6 +231,7 @@ function scoresOf(
     problemFindingSteps: steps.filter((s) => s.replan !== null).length,
     problemsGrounded: grounded(problems, fieldText),
     destructionRate: destructionRate(steps),
+    declarations: declarationScores(steps.map((s) => s.declaration)),
     riskDeclared: riskDeclared(intentions),
     riskMoveTaken: risk !== undefined,
     // No fallback to `intention.riskMove`. If no accepted step named a risk, the artist planned one

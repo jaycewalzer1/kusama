@@ -287,6 +287,7 @@ export class ArtistEnv {
       affect: this.affect,
       observationHash: '',
       pixelsMoved: 0,
+      declaration: null,
     };
 
     step.appliedActionIds = applied.map((e) => e.actionId);
@@ -326,7 +327,11 @@ export class ArtistEnv {
       return { step, fired: this.checkStall(), done: false };
     }
 
-    const broke = unplannedViolation(beforeReport, after.checkReport, `${action.think} ${action.risk ?? ''}`);
+    // `action.risk` and not `${action.think} ${action.risk}`. The schema tells the artist that naming
+    // a constraint id in `risk` is how it declares a break; reading `think` as well made every
+    // incidental mention a declaration, and the checker table shows it every id on every call.
+    const { fired: broke, declaration } = unplannedViolation(beforeReport, after.checkReport, action.risk);
+    step.declaration = declaration;
     const brokeHard = broke !== null && after.checkReport.hardViolations > beforeReport.hardViolations;
 
     if (brokeHard) {
@@ -451,6 +456,10 @@ export class ArtistEnv {
       revertedBecause: step.revertedBecause ?? null,
       isRiskMove: step.isRiskMove,
       destroyedNodeIds: step.destroyedNodeIds,
+      // Environment-side evidence, logged like `refused` and `standing` rather than re-derived: the
+      // offline rescore would otherwise have to re-render and re-check every intermediate program
+      // to answer what this step broke and what it had said about it.
+      declaration: step.declaration,
       // The step's size on the page. Logged so an offline reader can tell a step that rewrote the
       // picture from one that nudged an argument, which the tree diff alone will not say.
       pixelsMoved: step.pixelsMoved,

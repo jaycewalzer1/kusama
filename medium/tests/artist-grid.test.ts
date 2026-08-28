@@ -22,6 +22,12 @@ function scores(over: Partial<Scores> = {}): Scores {
     problemFindingSteps: 0,
     problemsGrounded: 3,
     destructionRate: 0,
+    declarations: {
+      declaredViolationRate: 0,
+      declarationSpecificity: 0,
+      declaredViolationsByConstraint: {},
+      blanketSteps: 0,
+    },
     riskDeclared: false,
     riskMoveTaken: false,
     riskConvention: null,
