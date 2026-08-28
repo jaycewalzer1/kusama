@@ -130,6 +130,30 @@ test('the run records whether the artist could see the sheet it was editing', ()
   assert.ok(steps.every((l) => (l.data as { sawCanvas?: unknown }).sawCanvas === true));
 });
 
+// MUST MOVE, and the only fixture that can show it: the two arms are a property of the whole loop,
+// not of any function in it. A second trajectory is expensive, but a score that exists so the blind
+// arm can never again be invisible has to be shown telling the two arms apart at least once.
+test('the blind arm scores differently from the default arm, which is the whole point of the score', async () => {
+  const blindCell = path.join(OUT, 'blind');
+  installStubEnvModel();
+  const blind = await runTrajectory({
+    policy: new StubPolicy(4),
+    positionId: 'generation-loss',
+    briefId: 'arches-eviction',
+    deliverableId: 'poster',
+    seed: 4242,
+    outDir: blindCell,
+    maxSteps: 6,
+    sketchesPerProblem: 1,
+    useAudience: true,
+    showCanvas: false,
+  });
+  assert.equal(blind.scores.canvasVisibleRate, 0);
+  assert.equal(blind.scores.changeVisibleRate, 0);
+  assert.ok(blind.steps.every((s) => !s.sawCanvas));
+  assert.notEqual(blind.scores.canvasVisibleRate, trajectory.scores.canvasVisibleRate);
+});
+
 test('the log chain is whole and every policy call is in it with its observation', () => {
   const lines = readLog(path.join(CELL, 'studio.jsonl'));
   assert.deepEqual(verifyChain(lines), []);
