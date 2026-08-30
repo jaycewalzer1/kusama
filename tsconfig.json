@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "dist",
+    "rootDir": ".",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "declaration": false,
+    "sourceMap": true,
+    // The renderer is plain ESM shared with the browser. It is copied through to dist so Node can
+    // import it; the page is always served the source files. Types come from the .d.ts siblings.
+    "allowJs": true,
+    "checkJs": false
+  },
+  "include": [
+    "renderer/**/*.js",
+    "renderer/tests/**/*.ts",
+    "env/**/*.ts",
+    "aesthetic/**/*.ts",
+    "artist/**/*.ts",
+    "studio/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist", "renderer/vendor", "renderer/assets"]
+}

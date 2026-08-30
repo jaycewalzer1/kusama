@@ -1,48 +1,25 @@
-# Python
-__pycache__/
-*.py[cod]
-*.egg-info/
-.venv/
-.pytest_cache/
-.ruff_cache/
-build/
+# Build output. dist/ is the real one; dist-* are scratch builds used when more than one
+# thing is being built at once, and must never be committed.
 dist/
+dist-*/
+*.tsbuildinfo
+
+# The hermetic browser, fetched into the repo by PLAYWRIGHT_BROWSERS_PATH. Large, and pinned
+# by revision in renderer/vendor/VERSIONS.md rather than by being checked in.
+.browsers/
+
+node_modules/
+
+# Scratch render output and trajectories. goldens/ and examples/ are deliberately NOT ignored.
+out/
+
+# Render-metrics, env-model, judge and PNG caches (keyed by content hash; regenerable).
+.cache/
 
 # Env / secrets
 .env
 *.env
 !.env.example
 
-# Run data (artifacts can be large; keep dir, ignore contents)
-data/runs/*
-!data/runs/.gitkeep
-
-# Generated: trajectories (test runs and launched runs), captured job output
-projects/
-jobs/
-
-# Node / monorepo
-node_modules/
-apps/web/.next/
-apps/web/dist/
-packages/*/dist/
-.turbo/
-*.tsbuildinfo
-out/*.svg
-out/*.png
-!out/.gitkeep
-
-# Expo / React Native
-apps/mobile/.expo/
-apps/mobile/.expo-shared/
-apps/mobile/dist/
-apps/mobile/web-build/
-
-# Aesthetic render-metrics cache (keyed by program hash; regenerable)
-medium/.cache/
-
 # OS
 .DS_Store
-
-# Source-only upstreams: sam2, Depth-Anything-V2 (fetched via docs/repos.md; not tracked here)
-/third_party/
