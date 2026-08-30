@@ -34,6 +34,8 @@ import {
   declarationScores,
   declared,
   examineAgreement,
+  fusedRealization,
+  gradientOf,
   purposeChurn,
   realization,
   riskDeclared,
@@ -60,6 +62,7 @@ import type {
   Examine,
   Intention,
   Mode,
+  Outcome,
   Problem,
   Program,
   Scores,
@@ -243,6 +246,9 @@ function scoresOf(
       satisfied: real.satisfied,
       judgePending: real.judgePending,
       elementsMade: real.elementsMade,
+      // The eye decides only what the tree cannot. It never overturns a mechanical verdict, and it
+      // never reaches `termination` below — see `fusedRealization`.
+      fused: seen ? fusedRealization(real.estimates, seen.edgeEstimates) : null,
     },
     drift: totalDrift(intentions),
     purposeChurn: purposeChurn(intentions),
@@ -255,6 +261,7 @@ function scoresOf(
     // existed every step reads `undefined`, and counting those as false would report a run that was
     // never measured as a run with no inert steps.
     inertSteps: steps.some((s) => s.inert !== undefined) ? steps.filter((s) => s.inert === true).length : null,
+    gradient: gradientOf(steps.map((s) => s.improved)),
     finishRefusals,
     declarations: declarationScores(steps.map((s) => s.declaration)),
     canvasVisibleRate: visibleRate(steps.map((s) => s.sawCanvas)),
@@ -275,7 +282,7 @@ function scoresOf(
     termination: terminationOf(real.estimates, stopped, last?.action.unrealizable ?? null),
     affectTrace: steps.map((s) => s.affect),
     affectArmed: affectArmed(affect0, steps.map((s) => s.affect)),
-    judgePending: report.pendingRubrics.map((r) => `[${r.id}] ${r.text}`),
+    pendingRubrics: report.pendingRubrics.map((r) => `[${r.id}] ${r.text}`),
   };
 }
 
@@ -441,7 +448,6 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
     });
 
     const steps: Step[] = [];
-    let outcome: 'finished' | 'abandoned' = 'finished';
     let abandonReason: string | undefined;
     // Defaults to the timer, and is only upgraded by the artist actually saying so. An artist that
     // never chooses a control gets `out-of-steps`, which is what happened.
@@ -477,7 +483,6 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
       steps.push(result.step);
 
       if (call.action.control === 'abandon') {
-        outcome = 'abandoned';
         abandonReason = call.action.think;
         stopped = 'abandoned';
         break;
@@ -608,6 +613,12 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
       ));
 
     // 6. FINISH -----------------------------------------------------------------------------------
+    // Derived from how the loop actually ended, never defaulted. `finished` used to be the initial
+    // value that anything short of `abandon` kept, so a run that used its last step and a run whose
+    // finish was refused both reported `outcome: "finished"` next to `termination.legitimate:
+    // false`. The headline said the work was done and the field under it said it was not.
+    const outcome: Outcome =
+      stopped === 'abandoned' ? 'abandoned' : stopped === 'declared-finished' ? 'finished' : 'unresolved';
     const cost: Cost = {
       policyCalls: spend.policyCalls,
       envCalls: env.envCalls,

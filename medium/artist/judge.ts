@@ -400,7 +400,7 @@ export async function judgeTrajectory(dir: string, options: JudgeOptions = {}): 
   const attribution = await judgeAttribution(png, trajectory.positionId, catalog, trajectory.id);
 
   // The rubrics the checker carried forward unread. Re-derived from the position rather than read
-  // off `scores.judgePending`, which flattens them to `[id] text` and loses the id as a field; the
+  // off `scores.pendingRubrics`, which flattens them to `[id] text` and loses the id as a field; the
   // ids are how a judgment joins back to the constraint that asked for it.
   const pending = checkProgram(trajectory.finalProgram, position).pendingRubrics;
 

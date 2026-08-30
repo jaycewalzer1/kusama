@@ -240,6 +240,11 @@ function header() {
     ['hard', s.hardViolations],
     ['soft', s.softViolations],
     ['realized', `${fmt(s.realization?.score)} (${s.realization?.judgePending ?? 0} pending)`],
+    ['fused', s.realization?.fused ? fmt(s.realization.fused.score) : 'n/a'],
+    // The stop and the gradient sit with the scores, not under them: a green board over an
+    // illegitimate stop, or over a run that stopped improving at step 2, is the case worth seeing.
+    ['stop', `${s.termination?.kind ?? '?'}${s.termination && !s.termination.legitimate ? ' (not legitimate)' : ''}`],
+    ['gradient', s.gradient ? `${s.gradient.improvedSteps} up, ${s.gradient.trailing} trailing` : 'n/a'],
     ['drift', s.drift],
     ['replans', s.problemFindingSteps],
     ['destroyed', s.destructionRate],

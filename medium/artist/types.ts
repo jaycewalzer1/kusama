@@ -275,6 +275,16 @@ export interface Step {
    * that was never asked and a run that was asked and said no are different facts.
    */
   inert?: boolean;
+  /**
+   * Whether this step raised the run's best standing and showed it — the exact condition the
+   * environment uses to reset the stall counter and lift the mood.
+   *
+   * Stamped rather than recomputed because the standing it compares against is the *running best*,
+   * which no per-step field carries; without it, "when did the reward last move" is not a function
+   * of the record. Undefined on steps logged before this existed, and it must not read as `false`
+   * there: a run nobody asked and a run that improved nothing are different facts.
+   */
+  improved?: boolean;
   affect: Affect;
   /** sha256 of the exact observation string this step's THINK+ACT call was given. */
   observationHash: string;
@@ -319,7 +329,16 @@ export interface Sketch {
 }
 
 export type Mode = 'plan' | 'discover' | 'both';
-export type Outcome = 'finished' | 'abandoned';
+/**
+ * How the run ended, as the headline reads it.
+ *
+ * `unresolved` exists because `finished` used to be the default and absorbed two other endings.
+ * A run that used its last step and stopped, and a run that asked to stop and was refused, both
+ * reported `outcome: "finished"` beside `termination.legitimate: false` — the top line said the
+ * work was done and the field underneath said it was not. `finished` now means only what
+ * `declared-finished` means: the artist asked, and the environment let it go.
+ */
+export type Outcome = 'finished' | 'abandoned' | 'unresolved';
 
 export interface EdgeEstimate {
   from: string;
@@ -351,6 +370,17 @@ export interface ExamineAgreement {
   treeNoEyeYes: number;
   /** The tree decided and the artist declined to. Not a disagreement; still not an answer. */
   eyePending: number;
+  /**
+   * Edges the eye ruled on that the tree had already declined to decide — the three non-mechanical
+   * types. Where the eye actually decided one, this is the only place EXAMINE adds evidence instead
+   * of duplicating it, and `fusedRealization` is what consumes those. Where the eye declined too,
+   * nobody decided the edge and it is counted here rather than nowhere.
+   *
+   * It exists because the rollup did not close: on the run that exposed this, EXAMINE gave 9
+   * verdicts and the buckets accounted for 7. `comparable + eyePending + treePending + unplanned`
+   * is now every verdict EXAMINE gave, and a rollup that does not add up is one nobody can read.
+   */
+  treePending: number;
   /** Verdicts on edges the plan does not contain. */
   unplanned: number;
   /** Edges the tree decided that EXAMINE returned no verdict on at all. */
@@ -385,6 +415,15 @@ export interface Scores {
      * `node`, since it named the rectangle it was going in.
      */
     elementsMade: number;
+    /**
+     * `score`, with EXAMINE allowed to decide only the edges the tree cannot decide at all.
+     *
+     * One-directional on purpose: the eye fills silence, it never overturns a mechanical verdict.
+     * The artist controls both sides of that trade, so letting a self-assessment flip `violated` to
+     * `satisfied` would make claiming a relation cheaper than building it. Null when EXAMINE did
+     * not run. `fromEye` says how much of the denominator it supplied — at 0 this is `score`.
+     */
+    fused: { score: number | null; decidable: number; satisfied: number; fromEye: number } | null;
   };
   /**
    * Structural distance travelled across replans: element ids and edges only. Rewording a role or a
@@ -406,6 +445,20 @@ export interface Scores {
    * sheet exactly as it was. They earn nothing now; this says how often it was tried.
    */
   inertSteps: number | null;
+  /**
+   * Where the reward gradient actually is: how many steps improved anything, and how many ran on
+   * the end having improved nothing.
+   *
+   * This is the number that decides whether the environment can train. On the run it was built for,
+   * the piece was made in step 1, the score hit 1.000 at step 2 and stayed there — `trailing: 10`
+   * on a 12-step trajectory, meaning 83% of the run carried no signal at all, while every headline
+   * score read perfect. Nothing else in this file could show that: `tree` and `render` report where
+   * the run ended up, and a run that arrives immediately and a run that climbs steadily produce the
+   * same pair of numbers.
+   *
+   * `null` when no step recorded `improved`, for the reason `inertSteps` is null there.
+   */
+  gradient: { improvedSteps: number; trailing: number; longestStall: number } | null;
   /**
    * Times the artist asked to finish and the environment refused. `null` on a run that predates the
    * gate — distinct from 0, which means it asked once and was let go, or never asked at all.
@@ -478,8 +531,15 @@ export interface Scores {
   affectTrace: Affect[];
   /** Whether the affect in that trace ever changed a decision. See `affectArmed` in ./affect.ts. */
   affectArmed: AffectArmed;
-  /** Nothing in this repo judges. Every rubric the position raised, carried forward unread. */
-  judgePending: string[];
+  /**
+   * Every rubric the position raised, carried forward unread for L5.
+   *
+   * Named `pendingRubrics`, not `judgePending`, because `judgePending` already meant something else
+   * twice in this same object — `realization.judgePending` and `examineEdges.judgePending`, both
+   * counts of *edges* nobody could decide. Those two agree with each other and are fine. This one
+   * is a list of rubric texts and shares nothing but the word.
+   */
+  pendingRubrics: string[];
 }
 
 /**

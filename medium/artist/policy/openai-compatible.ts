@@ -18,6 +18,7 @@
 // truncated answer says it was truncated, and the retry raises the budget instead of lecturing the
 // model about a schema it never got to finish writing.
 
+import { usd } from '../pricing.js';
 import { PolicyError, type Policy, type PolicyRequest, type PolicyResponse } from './interface.js';
 import { schemaErrors } from './schema-check.js';
 
@@ -138,8 +139,12 @@ export class OpenAICompatiblePolicy implements Policy {
         return {
           action: parsed as T,
           raw,
-          // No price table for a self-hosted endpoint; the token counts are the honest cost.
-          usage: { inputTokens, outputTokens, usd: 0 },
+          // Priced from the same table the other two doors use. It used to be a hard 0 with the
+          // note that a self-hosted endpoint has no price — true of a local checkpoint, and false
+          // of the hosted model this adapter has actually been pointed at, which reported half a
+          // million input tokens against `usd: 0` and made the run unbudgetable. `usd()` still
+          // returns 0 for a model it does not know, so the local case reads exactly as before.
+          usage: { inputTokens, outputTokens, usd: usd(this.model, inputTokens, outputTokens) },
           attempts: attempt,
           failures,
           model: this.model,

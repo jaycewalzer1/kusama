@@ -25,13 +25,39 @@ function editSchema(): Schema {
     type: 'string',
     description:
       'Optional. The id of the intention element this edit is building — it must be one of the ' +
-      'element ids listed under ELEMENTS in your plan, exactly, and never a node id. Nodes added ' +
-      'under it are attached to that element, which is how the plan later gets checked against the ' +
-      'tree. An id that names no element attaches nothing and the element reads as never built.',
+      'element ids listed under ELEMENTS in your plan, exactly, and never a node id. The nodes the ' +
+      'edit touches are attached to that element, which is how the plan later gets checked against ' +
+      'the tree: an add_node attaches the node it adds, and an edit that changes a node in place ' +
+      'attaches the node it changed. An id that names no element attaches nothing and the element ' +
+      'reads as never built.',
   };
   // $id and $schema are dropped: this is being embedded as a sub-schema, not registered as one.
   const { $id: _id, $schema: _s, ...rest } = raw;
   return { ...rest, properties };
+}
+
+/**
+ * Which node ids an edit that names an element gives to that element.
+ *
+ * This used to be `edit.node?.id` at both call sites, which is a field only `add_node` has. Every
+ * other kind names its subject in `targets`, so an artist that shaded, moved or recoloured a node
+ * and said which element the node belonged to attached nothing at all — silently. On the run this
+ * was found in, 10 of 11 `servesElementId` edits were `set_arg` against real nodes of real
+ * elements, and `realization` reported the plan as unbuilt.
+ *
+ * `delete_node` is deliberately excluded. Attaching an id that the same edit removes would make
+ * `realization` mark the element unmade for having been worked on, which is worse than not
+ * attaching. The remaining kinds all leave their `targets` in the tree.
+ *
+ * It lives here, beside the schema that documents the field, because "which ids does this edit
+ * kind touch" is a fact about the edit vocabulary. The *attachment rule* stays written out twice —
+ * once in env.ts and once in reward.ts — so that the two can still disagree and fail gate 2.
+ */
+export function servedNodeIds(edit: EditAction): string[] {
+  const added = (edit.node as { id?: string } | undefined)?.id;
+  if (added !== undefined) return [added];
+  if (edit.kind === 'delete_node') return [];
+  return edit.targets ?? [];
 }
 
 /**

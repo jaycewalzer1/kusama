@@ -45,7 +45,12 @@ test('the loop runs a whole trajectory: find, sketch, choose, make, examine, fin
     useAudience: true,
   });
 
-  assert.equal(trajectory.outcome, 'finished');
+  // `unresolved`, not `finished`. This stub asks to stop twice and is refused twice — see the
+  // EXAMINE assertion below — so it never earned the stop. `finished` used to be the initial value
+  // that anything short of `abandon` kept, which is how a blocked run came to report the same
+  // outcome as a granted one while `termination.legitimate` underneath it read false.
+  assert.equal(trajectory.outcome, 'unresolved');
+  assert.equal(trajectory.scores.termination.kind, 'finish-blocked');
   assert.equal(trajectory.problems.length, 3, 'FIND ran and produced its problems');
   assert.equal(trajectory.sketches.length, 3, 'one sketch per problem, all of which rendered');
   assert.equal(trajectory.chosen?.problemId, 'p-date');

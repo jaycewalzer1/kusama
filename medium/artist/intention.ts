@@ -321,6 +321,52 @@ export interface Realization {
 }
 
 /**
+ * Realization with EXAMINE's verdicts allowed to decide the edges the tree cannot.
+ *
+ * The tree returns `judge-pending` for `masked-by`, `contradicts` and `answers` by construction —
+ * it knows paint order but not overlap, and nothing in a JSON tree contradicts anything. On the
+ * run that prompted this, that was a quarter of the plan, and those edges were reported nowhere in
+ * the headline: EXAMINE had ruled on them, with evidence, and the ruling was tallied beside
+ * `realization` and never counted.
+ *
+ * The fusion is deliberately one-directional. The eye fills in where the tree is silent; it may
+ * never overturn an edge the tree decided. That asymmetry is the whole safety property. EXAMINE is
+ * the artist grading its own picture, so letting it flip a mechanical `violated` to `satisfied`
+ * would make "say the relation holds" a cheaper way to score than building it — and the artist
+ * controls both sides of that trade. Where the two disagree about a decidable edge, the tree wins
+ * here and the disagreement is reported in full by `examineAgreement`, which is where it belongs.
+ *
+ * Null when EXAMINE did not run, and null when nothing was decidable even after fusing — never 1,
+ * for the same reason `score` is never 1 on an unjudgeable plan.
+ */
+export function fusedRealization(
+  tree: EdgeEstimate[],
+  eye: EdgeEstimate[] | null
+): { score: number | null; decidable: number; satisfied: number; fromEye: number } {
+  const byKey = new Map((eye ?? []).map((e) => [edgeKey(e), e]));
+  let decidable = 0;
+  let satisfied = 0;
+  let fromEye = 0;
+  for (const t of tree) {
+    let verdict = t.status;
+    if (verdict === 'judge-pending') {
+      const seen = byKey.get(edgeKey(t));
+      if (!seen || seen.status === 'judge-pending') continue;
+      verdict = seen.status;
+      fromEye++;
+    }
+    decidable++;
+    if (verdict === 'satisfied') satisfied++;
+  }
+  return {
+    score: decidable === 0 ? null : Math.round((satisfied / decidable) * 1000) / 1000,
+    decidable,
+    satisfied,
+    fromEye,
+  };
+}
+
+/**
  * Realization is deliberately harsh in one specific way: an intention whose edges are all
  * `contradicts` scores `null`, not 1. An artist cannot earn a realization score by planning only
  * things nobody can check.
@@ -566,6 +612,30 @@ export function declarationScores(declarations: (StepDeclaration | null)[]): Sco
 }
 
 /**
+ * Where the reward last moved, folded over the per-step `improved` flag.
+ *
+ * `trailing` is the one to read: steps at the end of the run that improved nothing. A high trailing
+ * count beside a perfect `tree` score says the artist arrived early and then spent the rest of the
+ * budget in a flat region — the trajectory has an outcome but no gradient, and nothing after the
+ * last improvement could have taught a policy anything. `longestStall` catches the same shape in
+ * the middle of a run, where `trailing` cannot see it.
+ *
+ * Null when no step carried the flag, for the same reason `visibleRate` returns null: a log written
+ * before the measurement existed has no evidence, and 0 would claim the run improved on every step.
+ */
+export function gradientOf(improved: (boolean | null | undefined)[]): Scores['gradient'] {
+  const seen = improved.filter((s): s is boolean => typeof s === 'boolean');
+  if (seen.length === 0) return null;
+  let longestStall = 0;
+  let run = 0;
+  for (const step of seen) {
+    if (step) run = 0;
+    else longestStall = Math.max(longestStall, ++run);
+  }
+  return { improvedSteps: seen.filter(Boolean).length, trailing: run, longestStall };
+}
+
+/**
  * How often a per-step boolean was true — but `null` rather than 0 when no step recorded it.
  *
  * Used for sight (`sawCanvas`, `sawChange`). The distinction is the whole point of the function. A
@@ -602,12 +672,21 @@ export function examineAgreement(tree: EdgeEstimate[], eye: EdgeEstimate[]): Exa
   const decided = tree.filter((e) => e.status !== 'judge-pending');
   const byKey = new Map(eye.map((e) => [edgeKey(e), e]));
   const planned = new Set(tree.map(edgeKey));
+  const pendingInTree = new Set(tree.filter((e) => e.status === 'judge-pending').map(edgeKey));
   const out: ExamineAgreement = {
     comparable: 0,
     agree: 0,
     treeYesEyeNo: 0,
     treeNoEyeYes: 0,
     eyePending: 0,
+    // Edges the eye ruled on that the tree had already declined to decide. Neither a disagreement
+    // nor a dodge: where the eye decided one, it is the only place EXAMINE adds information nothing
+    // else can get, and `fusedRealization` takes exactly those. Where the eye declined too, nobody
+    // decided the edge — still counted here, because the alternative is counting it nowhere.
+    //
+    // It exists because the two tallies did not add up. On the run that exposed this, EXAMINE ruled
+    // on 9 edges and the buckets accounted for 7; the missing two were these.
+    treePending: eye.filter((e) => pendingInTree.has(edgeKey(e))).length,
     unplanned: eye.filter((e) => !planned.has(edgeKey(e))).length,
     unexamined: 0,
   };

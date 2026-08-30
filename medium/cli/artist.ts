@@ -69,10 +69,19 @@ function summarise(t: Trajectory): string {
   const s = t.scores;
   const n = (v: number | null) => (v === null ? 'n/a' : v.toFixed(3));
   return [
-    `${t.positionId} x ${t.briefId} x ${t.deliverableId}  ${t.outcome}`,
+    // The stop, on the same line as the cell, never `outcome` alone. A run can end with every score
+    // under it green and still not have earned the stop, and that gap is the thing most worth
+    // seeing first — so it prints next to the word that used to absorb it.
+    `${t.positionId} x ${t.briefId} x ${t.deliverableId}  ${t.outcome}` +
+      `  [${s.termination.kind}${s.termination.legitimate ? '' : ', not legitimate'}` +
+      `${s.termination.edgesUnrealized > 0 ? `, ${s.termination.edgesUnrealized} edges unrealized` : ''}]`,
     `  tree ${n(s.tree)}  render ${n(s.render)}  hard ${s.hardViolations}  soft ${s.softViolations}`,
-    `  realization ${n(s.realization.score)} (${s.realization.satisfied}/${s.realization.mechanical} decidable, ${s.realization.judgePending} judge-pending)`,
-    `  tree vs eye ${s.examineAgreement ? `${s.examineAgreement.agree}/${s.examineAgreement.comparable} agree (${s.examineAgreement.treeYesEyeNo} unseen, ${s.examineAgreement.treeNoEyeYes} claimed, ${s.examineAgreement.unplanned} unplanned)` : 'not examined'}`,
+    `  realization ${n(s.realization.score)} (${s.realization.satisfied}/${s.realization.mechanical} decidable, ${s.realization.judgePending} judge-pending)` +
+      `${s.realization.fused ? `  fused ${n(s.realization.fused.score)} (${s.realization.fused.satisfied}/${s.realization.fused.decidable}, ${s.realization.fused.fromEye} from the eye)` : ''}`,
+    `  tree vs eye ${s.examineAgreement ? `${s.examineAgreement.agree}/${s.examineAgreement.comparable} agree (${s.examineAgreement.treeYesEyeNo} unseen, ${s.examineAgreement.treeNoEyeYes} claimed, ${s.examineAgreement.treePending} beyond the tree, ${s.examineAgreement.unplanned} unplanned)` : 'not examined'}`,
+    // Where the reward stopped moving. Beside the outcome scores because a perfect `tree` over a
+    // long trailing stall is a run that arrived early and then had nothing left to learn from.
+    `  gradient ${s.gradient ? `${s.gradient.improvedSteps}/${t.steps.length} steps improved, ${s.gradient.trailing} trailing, longest stall ${s.gradient.longestStall}` : 'not recorded'}`,
     `  drift ${s.drift}  replans ${s.problemFindingSteps}  grounded ${s.problemsGrounded}/${t.problems.length}  destruction ${s.destructionRate}`,
     `  risk ${s.riskDeclared ? 'declared' : 'not declared'}, ${s.riskMoveTaken ? `taken: ${s.riskConvention}` : 'not taken'}  selfScore ${s.selfScore ?? 'n/a'}`,
     `  ${t.steps.length} steps, ${t.cost.policyCalls} policy calls, ${t.cost.renders} renders, $${t.cost.usd.toFixed(4)}, ${(t.cost.wallMs / 1000).toFixed(1)}s`,

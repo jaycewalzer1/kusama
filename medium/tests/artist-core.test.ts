@@ -525,9 +525,20 @@ test('examine: the tree and the eye are joined edge by edge, not left as two tal
     treeYesEyeNo: 0,
     treeNoEyeYes: 0,
     eyePending: 0,
+    // The undecidable edge is still one of the three verdicts the eye gave, so it lands here rather
+    // than falling out of the rollup — which is what it used to do. It stays out of `comparable`.
+    treePending: 1,
     unplanned: 0,
     unexamined: 0,
   });
+
+  // Every verdict the eye gave is in exactly one bucket. This is the property the bucket was added
+  // for: two tallies that do not add up cannot be read against each other at all.
+  const closed = examineAgreement(treeSays, treeSays);
+  assert.equal(
+    closed.comparable + closed.eyePending + closed.treePending + closed.unplanned,
+    treeSays.length,
+  );
 
   // MUST MOVE: both verdicts flip, and the two directions are counted apart. They are different
   // failures — one is structure that did not become a picture, the other is a claim the tree denies.

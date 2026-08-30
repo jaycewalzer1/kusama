@@ -18,7 +18,7 @@ import { contentHash, loadProfileFor } from '../env/profile.js';
 import { editsPerStep, onAcceptImproved, onRevert, onStall, stallThreshold } from './affect.js';
 import { Canvas, InvalidProgramError, changeSince, check, type Change } from './canvas.js';
 import { describe, audience, transcribe, type ReadString } from './env-calls.js';
-import { bareEdit } from './schemas.js';
+import { bareEdit, servedNodeIds } from './schemas.js';
 import { treeFacts } from '../aesthetic/facts.js';
 import {
   descriptionDisagrees,
@@ -322,6 +322,11 @@ export class ArtistEnv {
       affect: this.affect,
       observationHash: '',
       pixelsMoved: 0,
+      // False from the start, not undefined, so that every path out of this method carries a
+      // verdict. A step that was refused, reverted or would not render did not improve anything,
+      // and leaving it undefined would drop it from `gradientOf`'s denominator — which is the fold
+      // that is supposed to notice runs that stop improving.
+      improved: false,
       declaration: null,
       sawCanvas: saw.canvas,
       sawChange: saw.change,
@@ -402,7 +407,11 @@ export class ArtistEnv {
     // because a repaint of identical marks can differ in a handful of pixels.
     const now = standing(after.checkReport);
     step.inert = step.pixelsMoved < INERT_THRESHOLD;
-    if (now > this.best && !step.inert) {
+    // Stamped here, on the one branch that decides it, so that "when did the reward last move" is
+    // readable off the log. It compares against the running best, which no per-step field carries,
+    // so a rescorer cannot reconstruct it from anything else. See `gradientOf`.
+    step.improved = now > this.best && !step.inert;
+    if (step.improved) {
       this.best = now;
       this.sinceImprovement = 0;
       this.affect = onAcceptImproved(this.affect);
@@ -460,24 +469,35 @@ export class ArtistEnv {
     return fired;
   }
 
-  /** An accepted `add_node` that named the element it serves gives that element its node id. */
+  /** An accepted edit that named the element it serves gives that element the node ids it touched. */
   private attachNodes(action: Action, applied: EditAction[]): void {
     for (const edit of applied) {
       const serves = (edit as { servesElementId?: string }).servesElementId;
       if (!serves) continue;
       const element = this.intention.elements.find((e) => e.id === serves);
-      const id = (edit.node as { id?: string } | undefined)?.id;
+      const ids = servedNodeIds(edit);
       // A serves that names no element attaches nothing, and used to do so in silence — which made
       // an element look unbuilt for a reason nothing on disk could explain. It is not an error; the
       // edit stands. It is logged so the gap between the plan and the work is countable.
       if (!element) {
         this.o.log.append('note', {
           phase: 'make',
-          unattached: { actionId: edit.actionId, serves, nodeId: id ?? null, elements: this.intention.elements.map((e) => e.id) },
+          unattached: { actionId: edit.actionId, serves, nodeIds: ids, elements: this.intention.elements.map((e) => e.id) },
         });
         continue;
       }
-      if (id && !element.nodeIds.includes(id)) element.nodeIds.push(id);
+      // The other half of the same silence: the element existed, the edit named it, and the edit
+      // carried no id this rule could read. That case is logged too, because an element that is
+      // worked on and never attached is exactly how `realization` reads 0 on a run that built the
+      // picture it planned.
+      if (ids.length === 0) {
+        this.o.log.append('note', {
+          phase: 'make',
+          unattached: { actionId: edit.actionId, serves, nodeIds: [], kind: edit.kind },
+        });
+        continue;
+      }
+      for (const id of ids) if (!element.nodeIds.includes(id)) element.nodeIds.push(id);
     }
     void action;
   }
@@ -514,6 +534,10 @@ export class ArtistEnv {
       // the threshold this run applied is on the record: change `INERT_THRESHOLD` and an offline
       // rescore of an old log would otherwise silently re-decide steps under the new one.
       inert: step.inert ?? null,
+      // Whether the reward moved on this step. Logged rather than derived because it compares
+      // against the running best standing, which no other field on this line carries — without it,
+      // "how long has this run been flat" is not answerable from the record at all.
+      improved: step.improved ?? null,
       // What the act call could see. Logged per step rather than once at the top from the run's
       // flag: the flag is what was asked for, and this is what the payload carried.
       sawCanvas: step.sawCanvas,

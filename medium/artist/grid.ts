@@ -156,7 +156,7 @@ export function alreadyDone(dir: string): boolean {
  * spread table without anyone remembering to list it here — the failure mode of an explicit list is
  * that the newest and least trusted score is the one missing from the analysis. Booleans count as
  * 0/1 because a rate over seeds is exactly what is wanted of them. Arrays are skipped: `affectTrace`
- * and `judgePending` are traces, not scores, and averaging them would produce a number with no
+ * and `pendingRubrics` are traces, not scores, and averaging them would produce a number with no
  * referent. `null` is dropped rather than zeroed — see `Stat.n`.
  */
 export function flattenScores(scores: Scores): Map<string, number> {

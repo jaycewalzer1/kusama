@@ -222,6 +222,11 @@ export function capabilitySheet(profile: MediumProfile, pack: AssetPack): string
   say('    that edit runs, so if an earlier edit in the same step is refused, every later hard-coded');
   say('    index is off by one and is refused too — one mistake becomes all of them.');
   say('  set_arg replaces a value in place and the replacement must be the same shape as what it replaces.');
+  say('  set_arg `path` is relative to that node\'s args and NEVER starts with "args.". To move the node');
+  say('    whose id is n1 to x=120: {kind:"set_arg", targets:["n1"], path:"x", value:120}. One level down,');
+  say('    a region\'s width is path:"region.w"; an endpoint of a rule is path:"to.1". Writing "args.x"');
+  say('    is refused with `"args.x" does not exist in the args of "n1"`, which names the right node and');
+  say('    the wrong field, and costs the whole step.');
   say('  wrap_group needs contiguous siblings under one parent.');
   say('  Only a group carries a transform; an op\'s position lives in its own args.');
   say();

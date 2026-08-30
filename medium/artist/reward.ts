@@ -30,6 +30,8 @@ import {
   declarationScores,
   declared,
   examineAgreement,
+  fusedRealization,
+  gradientOf,
   purposeChurn,
   realization,
   riskDeclared,
@@ -38,7 +40,7 @@ import {
   visibleRate,
 } from './intention.js';
 import { grounded } from './phases/find.js';
-import { bareEdit } from './schemas.js';
+import { bareEdit, servedNodeIds } from './schemas.js';
 import { readLog, verifyChain, type LogLine } from './studio-log.js';
 import type {
   Affect,
@@ -110,6 +112,12 @@ interface StepLine {
    * before the threshold existed, and both must stay distinct from `false` — see `inertSteps`.
    */
   inert?: boolean | null;
+  /**
+   * Absent on every log written before the gradient was measured. Same reading as `inert`: absence
+   * is "not recorded", and `gradientOf` returns null for a run of them rather than reporting that
+   * nothing ever improved.
+   */
+  improved?: boolean | null;
 }
 
 /** A `note` line from the finish gate. `accepted` is the environment's answer, not the artist's. */
@@ -157,17 +165,19 @@ function copy<T>(v: T): T {
 }
 
 /**
- * The same rule env.ts uses: an accepted `add_node` that named the element it serves gives that
- * element its node id. Duplicated here rather than shared because the two must be able to disagree —
+ * The same rule env.ts uses: an accepted edit that named the element it serves gives that element
+ * the nodes it touched. Duplicated here rather than shared because the two must be able to disagree —
  * if this drifts from the runtime rule, gate 2 fails, which is exactly the alarm that should ring.
+ * Only `servedNodeIds` is shared, because which ids an edit kind touches is a fact about the edit
+ * vocabulary rather than a scoring decision either side is entitled to make differently.
  */
 function attach(intention: Intention, edits: (EditAction & { servesElementId?: string })[]): void {
   for (const edit of edits) {
     const serves = edit.servesElementId;
     if (!serves) continue;
     const element = intention.elements.find((e) => e.id === serves);
-    const id = (edit.node as { id?: string } | undefined)?.id;
-    if (element && id && !element.nodeIds.includes(id)) element.nodeIds.push(id);
+    if (!element) continue;
+    for (const id of servedNodeIds(edit)) if (!element.nodeIds.includes(id)) element.nodeIds.push(id);
   }
 }
 
@@ -281,6 +291,7 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
         satisfied: real.satisfied,
         judgePending: real.judgePending,
         elementsMade: real.elementsMade,
+        fused: edgeEstimates ? fusedRealization(real.estimates, edgeEstimates) : null,
       },
       drift: totalDrift(intentions),
       purposeChurn: purposeChurn(intentions),
@@ -294,6 +305,9 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
       inertSteps: steps.some((s) => s.inert !== undefined && s.inert !== null)
         ? steps.filter((s) => s.inert === true).length
         : null,
+      // Read off the logged flag, never recomputed, for the same reason `inertSteps` is: it compares
+      // against the running best standing, which the log does not carry per step.
+      gradient: gradientOf(steps.map((s) => s.improved)),
       // Null when the gate never ran at all: a log with no gate lines cannot say whether the run
       // would have been refused, and 0 would claim it asked once and was let go.
       finishRefusals: gates.length === 0 ? null : gates.filter((g) => g.accepted === false).length,
@@ -319,7 +333,7 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
         initialAffect(commission.field, commission.temperament.value),
         steps.map((s) => s.affect)
       ),
-      judgePending: report.pendingRubrics.map((r) => `[${r.id}] ${r.text}`),
+      pendingRubrics: report.pendingRubrics.map((r) => `[${r.id}] ${r.text}`),
     };
     return { scores, finalProgram: program, chainProblems };
   } finally {

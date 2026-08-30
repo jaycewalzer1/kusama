@@ -16,13 +16,14 @@ function scores(over: Partial<Scores> = {}): Scores {
     render: 1,
     hardViolations: 0,
     softViolations: 0,
-    realization: { score: 0.5, mechanical: 4, satisfied: 2, judgePending: 1, elementsMade: 1 },
+    realization: { score: 0.5, mechanical: 4, satisfied: 2, judgePending: 1, elementsMade: 1, fused: null },
     drift: 0,
     purposeChurn: { changed: 0, charsFirst: 10, charsLast: 10 },
     problemFindingSteps: 0,
     problemsGrounded: 3,
     destructionRate: 0,
     inertSteps: 0,
+    gradient: null,
     finishRefusals: 0,
     declarations: {
       declaredViolationRate: 0,
@@ -59,7 +60,7 @@ function scores(over: Partial<Scores> = {}): Scores {
       arousalRange: [0, 0],
       valenceRange: [0, 0],
     },
-    judgePending: [],
+    pendingRubrics: [],
     ...over,
   };
 }
