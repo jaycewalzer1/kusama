@@ -15,10 +15,10 @@ alike. This is why the corpus was originally built entirely from Cleveland.
 failures. A random 200-work sample (see `size-report.md`) returned **198 verified JPEGs and 2 HTTP
 403s** with a 3,417-byte non-JPEG body.
 
-**Status: cleared, ~1% residual.** The blanket block is gone. The 403s that remain are sparse and
-did not correlate with anything visible in the sample. The fetcher treats them as retryable and
-records anything that survives retry in `corpus/failures.jsonl`, so the residue is measured rather
-than absorbed.
+**Status: cleared, and the residue was never Cloudflare either.** The blanket block is gone. The
+sparse 403s that remained were written up here as an unexplained ~1% and later measured at 3.0% of
+live fetches — **and they were not a block at all**. See the next section. All 6,817 AIC works now
+have their pixels.
 
 **Why status is not the test.** A block that returns an HTML apology with status 200 is precisely
 what this source taught us to expect. Every image is therefore checked for the JPEG magic number
@@ -29,6 +29,29 @@ every image, that is a recurrence and not a code change: fall back to metadata-o
 null` is a legitimate manifest state, and `image_url` is still recorded so the pull can resume) and
 email `engineering@artic.edu` — their API terms invite research use and the block appears to be
 infrastructure rather than policy.
+
+## AIC images: the 3% of 403s were an upscale refusal, not a block — FIXED
+
+**Diagnosed 2026-08-31, after a day of being recorded as Cloudflare.** 203 of 6,817 AIC works
+(**3.0%**) returned 403 on `full/843,/0/default.jpg`. Blamed on the CDN because that is what the last
+403 from this host was, and because a 403 with no body looks like a refusal to serve.
+
+What ruled Cloudflare out was one request. On the same image id, in the same second,
+`full/400,/0/default.jpg` returns **200**. A block does not care about the size in the path. Its
+`info.json` then said it outright: `"width":770,"height":779`, `"maxArea":599830`, and a `sizes` list
+topping out below 843. **`843,` is an upscale, and the IIIF spec lets a server refuse to enlarge.**
+843 is the Art Institute's own viewer width, so it is right for most of the collection and wrong for
+every work narrower than itself.
+
+**Handled.** `withoutUpscale` in `artist/corpus.ts` rewrites `full/843,` to **`full/!843,843`** —
+IIIF's "fit inside this box, never enlarge" — and it is asked for **only after 843 has been refused**,
+so every work with the pixels to spare still arrives at exactly the tier the rest of the corpus is at,
+and only the small ones come back at their own native size, which is all the pixels that exist for
+them. `image.source_url` records which of the two actually produced the bytes; that is what that field
+is for. Recovered **203 of 203**.
+
+**The general lesson.** A status code is not a diagnosis. The cheapest test of "are we blocked" is to
+ask the same host for something slightly different and see whether it answers.
 
 ## AIC search: `page * limit` capped at 1,000, and the refusal is a 403
 

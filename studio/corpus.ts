@@ -173,7 +173,8 @@ program
   .description('fetch the pixels for every manifest row that has not got them, resumably')
   .option('--pause <ms>', 'override the per-source delay between requests')
   .option('--limit <n>', 'stop after this many works, for a smoke test', '0')
-  .action(async (opts: { pause?: string; limit: string }) => {
+  .option('--source <src>', 'fetch only this museum — met, aic or cma')
+  .action(async (opts: { pause?: string; limit: string; source?: string }) => {
     // This is the long one — twenty thousand downloads, hours, unattended. Three things follow from
     // that and none of them are optional.
     //
@@ -186,12 +187,14 @@ program
     // that work. It goes to corpus/failures.jsonl with the reason and the run continues.
     //
     // **Rates are per source.** Three museums are three courtesies, and one of them has blocked us
-    // before.
-    const pending = listWorks().filter((w) => !hasImage(w));
+    // before — which is why `--source` exists. The Met's object API is IP-blocked, and without a way
+    // to say "the other two", every run spends itself on nine thousand requests that are known in
+    // advance to 403 and does not reach the works that would succeed.
+    const pending = listWorks().filter((w) => !hasImage(w) && (!opts.source || w.source === opts.source));
     const cap = Number(opts.limit) || Number.POSITIVE_INFINITY;
     const todo = Number.isFinite(cap) ? pending.slice(0, cap) : pending;
     if (todo.length === 0) {
-      process.stdout.write(`all ${listWorks().length} works have their images\n`);
+      process.stdout.write(`nothing left to fetch${opts.source ? ` for ${opts.source}` : ''} (${listWorks().length} rows in the manifest)\n`);
       return;
     }
     process.stdout.write(`${todo.length} works to fetch (of ${listWorks().length} in the manifest)\n`);

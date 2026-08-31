@@ -65,9 +65,20 @@ of a million not. Separately, every date parses as a number but **147 rows have 
 inverted** (met-107853 is `"1800–1875"` backwards). Those become `null`. The guard that earns its
 place is `begin <= end`, not the NaN check.
 
-Also standing, from `BLOCKERS.md`: the Art Institute's IIIF image host sits behind a Cloudflare
-managed challenge. It is mostly clear now — 198 of 200 probe images verified as JPEG — but the
-residue is real and shows up in a run as a 403 per few hundred works.
+**7. The Art Institute's residual 403s were an upscale refusal, not a block.** Written up here for a
+day as Cloudflare residue: 203 of 6,817 AIC works (3.0%) refused `full/843,/0/default.jpg`. They are
+works **narrower than 843 pixels**, and IIIF permits a server to decline to enlarge. `full/400,`
+returns 200 on the same id in the same second, which is what ruled the CDN out. Asking for
+`full/!843,843` — fit inside, never enlarge — **only after 843 has been refused** recovered all 203.
+Detail in `BLOCKERS.md`.
+
+**8. The Met IP-blocks its own object API by volume.** After roughly 200 requests to
+`collectionapi.metmuseum.org/…/objects/<id>` it begins serving an Akamai bot-manager challenge with a
+**403**, and it does so for our user agent, a full browser user agent, and no user-agent header at
+all — so it is IP-level, not headers. Probes spaced five minutes apart keep returning 200
+indefinitely, which is why this looks like it has lifted and then does not. The documented limit (80
+req/s, no key) is not the limit being enforced. The CSV import is untouched; it is only the per-work
+image-URL resolve that is blocked, which is the one Met step that needs the API at all.
 
 ## What the corpus honestly contains
 
