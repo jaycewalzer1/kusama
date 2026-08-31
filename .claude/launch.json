@@ -2,9 +2,9 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "medium-ui",
+      "name": "studio",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "./medium", "run", "ui"],
+      "runtimeArgs": ["run", "ui"],
       "port": 4321
     }
   ]

@@ -1,0 +1,38 @@
+{
+  "name": "kusama",
+  "version": "0.2.0",
+  "private": true,
+  "description": "A creativity environment: deterministic p5.brush substrate, an aesthetic position language, and an artist that works in it",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test dist/*/tests/*.test.js && node dist/studio/golden.js -e examples/v0 -g goldens/v0 --check && node dist/studio/golden.js -e examples/v1 -g goldens/v1 --check",
+    "render": "npm run build && node dist/studio/render.js",
+    "validate": "npm run build && node dist/studio/validate.js",
+    "diff": "npm run build && node dist/studio/diff.js",
+    "batch": "npm run build && node dist/studio/batch.js",
+    "golden": "npm run build && node dist/studio/golden.js",
+    "apply-edit": "npm run build && node dist/studio/apply-edit.js",
+    "contact-sheet": "npm run build && node dist/studio/contact-sheet.js",
+    "fragments-sheet": "npm run build && node dist/studio/fragments-sheet.js",
+    "ui": "npm run build && node dist/studio/ui.js",
+    "check": "npm run build && node dist/studio/check.js",
+    "artist": "npm run build && node dist/studio/artist.js",
+    "fonts": "node renderer/assets/fonts/fetch.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.65.0",
+    "ajv": "8.17.1",
+    "commander": "12.1.0",
+    "playwright": "1.55.0",
+    "pngjs": "7.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "@types/pngjs": "6.0.5",
+    "typescript": "5.7.2"
+  }
+}
