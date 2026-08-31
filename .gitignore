@@ -40,3 +40,9 @@ corpus/pool.jsonl
 
 # OS
 .DS_Store
+
+# The atlas and its viewer. Both are recomputed from `corpus/manifest.jsonl` in about three seconds
+# by `corpus atlas`, and together they are 6.5MB of derived numbers. The manifest is the evidence;
+# these are a reading of it.
+corpus/atlas.json
+corpus/atlas.html

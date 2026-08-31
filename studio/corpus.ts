@@ -45,6 +45,8 @@ import {
   saveWorks,
 } from '../artist/corpus.js';
 import { type AicRecord, metadataFrom as aicFrom, searchUrl, walkPublicDomain } from '../artist/aic.js';
+import { atlas } from '../artist/atlas.js';
+import { atlasPage } from './atlas-page.js';
 import { type Source, type Work, imagePath, readManifest, workId } from '../artist/manifest.js';
 import { csvRows, metadataFrom as metFrom, resolveImageUrl } from '../artist/met.js';
 import { DEFAULT_TARGET, MAX_CLASSIFICATION_SHARE, MAX_SOURCE_SHARE, select } from '../artist/selection.js';
@@ -580,6 +582,46 @@ program
         process.stdout.write(`  ${id}  said "${r?.leakage.artist ?? '?'}"\n`);
       }
     }
+  });
+
+program
+  .command('atlas')
+  .description('lay the corpus out in two dimensions from its metadata alone, and say whether the layout means anything')
+  .option('--sample <n>', 'how many works the honesty measure compares', '1500')
+  .option('--neighbours <k>', 'neighbourhood size for that measure', '20')
+  .action((opts: { sample: string; neighbours: string }) => {
+    // Offline and free: this reads the manifest and nothing else. It runs on all 20,000 works,
+    // including the ones whose pixels have not arrived, because every column is a field a museum
+    // already filled in.
+    const works = listWorks();
+    if (works.length === 0) {
+      process.stdout.write('no manifest — run `corpus metadata` and `corpus select` first\n');
+      return;
+    }
+    const a = atlas(works, Number(opts.sample), Number(opts.neighbours));
+    writeFileSync(path.join(CORPUS_DIR, 'atlas.json'), `${JSON.stringify(a, null, 1)}\n`);
+    writeFileSync(path.join(CORPUS_DIR, 'atlas.html'), atlasPage(a, new Date().toISOString()));
+
+    const p = a.preservation;
+    process.stdout.write(
+      `${a.works} works, ${a.columns.length} columns\n` +
+        `axis 1 carries ${(a.varianceExplained[0] ?? 0).toFixed(4)} of the variance, axis 2 ${(a.varianceExplained[1] ?? 0).toFixed(4)}\n`,
+    );
+    // Printed, not merely stored, because an axis nobody reads the loadings of gets called
+    // "style" in the next sentence somebody writes about it.
+    for (const axis of a.loadings) {
+      process.stdout.write(`\naxis ${axis[0]?.axis} is made of:\n`);
+      for (const l of axis) process.stdout.write(`  ${l.weight >= 0 ? '+' : '-'}${Math.abs(l.weight).toFixed(2)}  ${l.column}\n`);
+    }
+    process.stdout.write(`\n${p.k}-neighbourhoods, over ${p.n} works: ${p.preserved.toFixed(4)} preserved against ${p.chance.toFixed(4)} by chance\n`);
+    // The whole reason this command exists. A scatter plot that does not beat scattering the same
+    // points at random is a decoration, and it says so here rather than in a caption nobody writes.
+    process.stdout.write(
+      p.informative
+        ? `the layout carries ${(p.preserved / p.chance).toFixed(1)}x chance — neighbourhoods on the map are real\n`
+        : `NOTHING MEASURED — ${(p.preserved / (p.chance || 1)).toFixed(1)}x chance. Do not read clusters off this plot.\n`,
+    );
+    process.stdout.write(`\ncorpus/atlas.json\ncorpus/atlas.html  — open this one in a browser\n`);
   });
 
 await program.parseAsync(process.argv);

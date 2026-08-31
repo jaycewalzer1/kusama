@@ -4,8 +4,23 @@
     {
       "name": "studio",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "ui"],
+      "runtimeArgs": [
+        "run",
+        "ui"
+      ],
       "port": 4321
+    },
+    {
+      "name": "atlas",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "4322",
+        "--directory",
+        "corpus"
+      ],
+      "port": 4322
     }
   ]
 }
