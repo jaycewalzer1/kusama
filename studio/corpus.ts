@@ -15,7 +15,7 @@
 // withdrawn for everybody. `read` is idempotent: the environment model caches on request content, so
 // re-running it costs nothing and returns exactly what the first run got.
 
-import { appendFileSync, createReadStream, existsSync, writeFileSync } from 'node:fs';
+import { appendFileSync, createReadStream, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { Command } from 'commander';
@@ -28,6 +28,7 @@ import {
   fetchImage,
   hasImage,
   importWork,
+  jpegSize,
   POOL,
   SELECTION,
   listCandidates,
@@ -128,6 +129,38 @@ program
     const s = corpusSummary();
     process.stdout.write(`\nimported ${added}; corpus now holds ${s.works} works\n`);
     if (failed) process.stdout.write(`${failed} failed; see ${FAILURES}\n`);
+  });
+
+program
+  .command('measure')
+  .description('read width and height out of the JPEGs already on disk, for rows that lack them')
+  .action(() => {
+    // Backfill, offline, no network. Every row fetched before dimensions were measured carries
+    // `width: null, height: null`; a field that is null on every row of a 20,000-row file is not a
+    // schema, it is a leftover. This reads the bytes that are already here and fills them in.
+    const works = listWorks();
+    const done: Work[] = [];
+    let unreadable = 0;
+    for (const work of works) {
+      const rel = imagePath(work);
+      if (!work.image || !rel || work.image.width !== null) continue;
+      const file = path.join(CORPUS_DIR, rel);
+      if (!existsSync(file)) continue;
+      const size = jpegSize(readFileSync(file));
+      if (size.width === null) {
+        // A JPEG whose frame header cannot be walked is worth knowing about: it hashed, it passed the
+        // magic-number check, and it may still be a truncated download.
+        unreadable++;
+        continue;
+      }
+      work.image = { ...work.image, ...size };
+      done.push(work);
+    }
+    if (done.length) saveWorks(done, MANIFEST);
+    process.stdout.write(
+      `measured ${done.length} rows\n` +
+        `${unreadable ? `${unreadable} files are JPEGs whose frame header could not be walked — check these\n` : ''}`,
+    );
   });
 
 /** Per-source politeness. Cleveland's CDN is a CDN; the Met and the AIC answer from their own APIs. */

@@ -497,31 +497,119 @@ export async function importWork(record: CmaRecord): Promise<Work | null> {
 }
 
 /**
+ * The IIIF size that fits inside the same box without enlarging: `full/843,` -> `full/!843,843`.
+ *
+ * Returns null for any URL that is not the exact shape this is meant for, so that a change to the
+ * requested tier does not silently keep rewriting a path that no longer exists.
+ */
+export function withoutUpscale(url: string): string | null {
+  return url.includes('/full/843,/') ? url.replace('/full/843,/', '/full/!843,843/') : null;
+}
+
+/**
+ * The bytes, and the URL that actually produced them.
+ *
+ * That is `url` unchanged in every case but one, and the exception is measured. The Art Institute's
+ * IIIF endpoint answers **403** when the size asked for is bigger than the original: `843,` is the
+ * museum's own viewer width, but a few hundred of the selected works are less than 843px across, and
+ * for those the request is an upscale the server refuses. Its own `info.json` says so — `maxArea`,
+ * and a `sizes` list topping out below 843. This was recorded as a Cloudflare block for a day; what
+ * ruled that out was that `full/400,` returns 200 on the very same image id at the very same moment.
+ *
+ * `!843,843` is IIIF's "fit inside this box, never enlarge". It is asked for only once 843 has been
+ * refused, so every work with the pixels to spare still arrives at exactly the tier the rest of the
+ * corpus is at, and only the small ones come back at their own native size — which is the most
+ * pixels that exist for them. `image.source_url` then records which of the two was used, which is
+ * the whole reason that field is separate from `image_url`.
+ */
+async function pixels(url: string): Promise<{ bytes: Buffer; url: string }> {
+  try {
+    return { bytes: Buffer.from(await (await politely(url, 'image/*')).arrayBuffer()), url };
+  } catch (e) {
+    const smaller = (e as Error).message.includes('answered 403') ? withoutUpscale(url) : null;
+    if (!smaller) throw e;
+    return { bytes: Buffer.from(await (await politely(smaller, 'image/*')).arrayBuffer()), url: smaller };
+  }
+}
+
+/**
  * Fetch one work's pixels and write the row that will be verified against them forever after.
  *
  * Mutates `work.image` because the sha256 is not knowable until the bytes arrive — until then the
  * field is null, which is precisely the state `corpus verify` and the resumable fetcher look for.
- * `claimed` carries the source's own dimensions when the caller has the source record in hand; it is
- * left null rather than measured off the file, on the same rule as every other field here.
+ *
+ * `width`/`height` are read out of the JPEG we just hashed, not copied from the museum's record.
+ * `claimed` is the museum's own figure and is used only when the file will not tell us — a museum
+ * publishes the dimensions of whichever derivative it thinks you asked for, and the whole point of
+ * hashing the bytes is that we stop taking its word for what it sent.
  */
 export async function fetchImage(work: Work, claimed: { width: number | null; height: number | null } = { width: null, height: null }): Promise<void> {
   if (!work.image_url) throw new Error(`${work.id} has no image url to fetch`);
-  const res = await politely(work.image_url, 'image/*');
-  const bytes = Buffer.from(await res.arrayBuffer());
+  const { bytes, url } = await pixels(work.image_url);
   // A Cloudflare challenge is an HTML page, and an HTML page written to `<hash>.jpg` is a file that
   // hashes fine, verifies fine, and is not a picture. The magic number is the only check that tells
   // a JPEG from an apology, and it is cheap enough that there is no argument for skipping it.
-  if (!isJpeg(bytes)) throw new Error(`${work.id}: ${work.image_url} did not return a JPEG (${bytes.length} bytes)`);
+  if (!isJpeg(bytes)) throw new Error(`${work.id}: ${url} did not return a JPEG (${bytes.length} bytes)`);
   const sha256 = createHash('sha256').update(bytes).digest('hex');
+  const measured = jpegSize(bytes);
 
   mkdirSync(IMAGES, { recursive: true });
   writeFileSync(path.join(IMAGES, `${sha256}.jpg`), bytes);
-  work.image = { source_url: work.image_url, sha256, bytes: bytes.length, ...claimed };
+  work.image = {
+    source_url: url,
+    sha256,
+    bytes: bytes.length,
+    width: measured.width ?? claimed.width,
+    height: measured.height ?? claimed.height,
+  };
 }
 
 /** `FF D8 FF` — the SOI marker every JPEG starts with, and no HTML error page does. */
 export function isJpeg(bytes: Buffer): boolean {
   return bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+}
+
+/**
+ * The pixel dimensions written in the JPEG's own start-of-frame marker.
+ *
+ * This is a *measurement of the bytes on disk*, which is why it is allowed where a guessed date or
+ * an inferred licence is not. The rule in this file is never to invent a fact about the work; the
+ * width of the file we just hashed is not a fact about the work, it is a fact about the file, and it
+ * is the one thing here that can be read with certainty. Leaving it null and taking the museum's
+ * claimed size instead would be the inference — museums routinely publish the dimensions of a
+ * different derivative than the one they serve you.
+ *
+ * Walks the segment chain rather than scanning for a marker byte, because `FF C0` occurs constantly
+ * inside entropy-coded scan data and a scan would find a "SOF" in the middle of the picture.
+ */
+export function jpegSize(bytes: Buffer): { width: number | null; height: number | null } {
+  const none = { width: null, height: null };
+  if (!isJpeg(bytes)) return none;
+  let i = 2;
+  while (i + 3 < bytes.length) {
+    if (bytes[i] !== 0xff) return none; // desynchronised: refuse rather than guess
+    let marker = bytes[i + 1] as number;
+    // Any number of 0xFF fill bytes may precede a marker.
+    let j = i + 1;
+    while (marker === 0xff && j + 1 < bytes.length) marker = bytes[++j] as number;
+    // Standalone markers carry no length payload: TEM, the eight RSTn, SOI, EOI.
+    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd9)) {
+      i = j + 1;
+      continue;
+    }
+    const len = bytes.readUInt16BE(j + 1);
+    // SOF0-SOF15, except DHT (C4), JPG (C8) and DAC (CC) which share the range but are not frames.
+    const isFrame = marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc;
+    if (isFrame) {
+      if (j + 8 >= bytes.length) return none;
+      // ...len(2), precision(1), height(2), width(2)
+      return { height: bytes.readUInt16BE(j + 4), width: bytes.readUInt16BE(j + 6) };
+    }
+    // 0xDA is the start of scan; everything after it is entropy-coded and there is no frame left.
+    if (marker === 0xda) return none;
+    i = j + 1 + len;
+  }
+  return none;
 }
 
 /** Whether this work's pixels are on this machine. Manifest rows are tracked; images are not. */

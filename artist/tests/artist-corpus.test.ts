@@ -8,16 +8,19 @@
 
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import {
   CORPUS_DIR,
+  isJpeg,
+  jpegSize,
   listWorks,
   loadReading,
   readingProtocolHash,
   readWork,
   verdict,
+  withoutUpscale,
   type Leakage,
   type Work,
 } from '../corpus.js';
@@ -244,4 +247,60 @@ test('every reading on disk agrees with the rule that scored it', () => {
       `${w.id} carries a verdict the rule does not reproduce`,
     );
   }
+});
+
+// --- reading the picture's own dimensions ---------------------------------------------------------
+
+/** SOI, an APP0 whose *payload* contains a decoy `FF C0`, then the real SOF0 saying 200x100. */
+const jpegWithDecoy = (): Buffer =>
+  Buffer.from([
+    0xff, 0xd8, // SOI
+    0xff, 0xe0, 0x00, 0x10, // APP0, length 16 => 14 bytes of payload follow
+    0xff, 0xc0, 0x00, 0x11, 0x08, 0x01, 0xf4, 0x02, 0x58, 0, 0, 0, 0, 0, // the decoy: "500x600"
+    0xff, 0xc0, 0x00, 0x11, 0x08, 0x00, 0x64, 0x00, 0xc8, 0x03, 0, 0, 0, 0, 0, 0, 0, 0, 0, // SOF0: 200x100
+  ]);
+
+test('the frame header is walked, not scanned, so a FF C0 inside a segment is not a size', () => {
+  // This is the whole reason the function follows the segment chain. `FF C0` is a perfectly ordinary
+  // byte pair inside APP0 thumbnails and inside entropy-coded scan data, and a scan for it finds a
+  // "start of frame" in the middle of the picture and reports two bytes of image data as a width.
+  assert.deepEqual(jpegSize(jpegWithDecoy()), { width: 200, height: 100 });
+});
+
+test('anything that is not a JPEG has no size and does not throw', () => {
+  // A Cloudflare challenge page written to `<hash>.jpg` is the case that actually occurred: it
+  // hashes fine, it is a real file, and it is not a picture.
+  const apology = Buffer.from('<!DOCTYPE html><title>Just a moment...</title>', 'utf8');
+  assert.equal(isJpeg(apology), false);
+  assert.deepEqual(jpegSize(apology), { width: null, height: null });
+  // Truncated mid-segment: refuse rather than read past the end.
+  assert.deepEqual(jpegSize(jpegWithDecoy().subarray(0, 12)), { width: null, height: null });
+  // Desynchronised — a byte that is not 0xFF where a marker must be.
+  const broken = jpegWithDecoy();
+  broken[2] = 0x41;
+  assert.deepEqual(jpegSize(broken), { width: null, height: null });
+});
+
+test('every measured row on disk still agrees with the bytes it was measured from', () => {
+  // The dimensions are a claim about the file, not about the work, so they are recomputable — and a
+  // row whose stored size no longer matches its own pixels means the file under that hash changed.
+  const works = listWorks().filter((w) => w.image?.width != null);
+  if (works.length === 0) return;
+  for (const w of works.slice(0, 40)) {
+    const rel = imagePath(w);
+    if (!rel || !existsSync(path.join(CORPUS_DIR, rel))) continue;
+    assert.deepEqual(jpegSize(readFileSync(path.join(CORPUS_DIR, rel))), { width: w.image?.width, height: w.image?.height }, `${w.id}`);
+  }
+});
+
+test('a 403 on an upscale is answered by asking for the size that exists', () => {
+  // 203 of 6,817 selected Art Institute works are narrower than the 843px the corpus asks for, and
+  // IIIF answers 403 rather than enlarging. For a day these were logged as a Cloudflare block; what
+  // ruled that out was `full/400,` returning 200 on the same image id in the same second.
+  const asked = 'https://www.artic.edu/iiif/2/e16d6339-72f5-ce3b-b355-ed9fd1f005ba/full/843,/0/default.jpg';
+  assert.equal(withoutUpscale(asked), 'https://www.artic.edu/iiif/2/e16d6339-72f5-ce3b-b355-ed9fd1f005ba/full/!843,843/0/default.jpg');
+  // Nothing else is rewritten. If the requested tier ever changes, this returns null and the 403
+  // surfaces as a 403 instead of being retried against a path that no longer means anything.
+  assert.equal(withoutUpscale('https://www.artic.edu/iiif/2/abc/full/full/0/default.jpg'), null);
+  assert.equal(withoutUpscale('https://openaccess-cdn.clevelandart.org/1916.1030/1916.1030_web.jpg'), null);
 });
