@@ -18,7 +18,7 @@
     "fixture": "fail",
     "violates": ["p-few-words", "p-no-hatching"],
     "reads_as": "the same five areas after one of them was built up out of lines instead of laid down at once, and a sentence was added at the foot saying what is under them",
-    "note": "A built-up area is a tone that arrived gradually and could have stopped anywhere, so covered and uncovered stop being absolute. The sentence is the worse of the two: it hands over the content in the one form that fits on the surface."
+    "note": "A built-up area is a tone that arrived gradually and could have stopped anywhere, so covered and uncovered stop being absolute. The sentence is the worse of the two: it hands over the content in the one form that fits on the surface. It is set at the same size as the line above it, and deliberately so: this fixture exists to fail `p-few-words`, and shrinking the sentence to caption size would fail `p-no-caption` as well, making the fixture violate three things while declaring two. The caption test has its own fixtures in aesthetic-kinds.test.ts."
   },
   "root": {
     "id": "root",
@@ -174,7 +174,7 @@
         "args": {
           "text": "UNDER THESE ARE THE SIX NAMES THE FAMILY ASKED US NEVER TO PUBLISH",
           "font": "grotesque",
-          "size": 17,
+          "size": 46,
           "x": 46,
           "y": 838,
           "align": "left",

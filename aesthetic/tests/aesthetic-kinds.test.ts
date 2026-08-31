@@ -76,9 +76,41 @@ function bothWays(
   assert.ok(bad.evidence.length > 0, `${kind} must say why`);
 }
 
-test('the constraint language is closed at sixteen kinds', () => {
-  assert.equal(CONSTRAINT_KINDS.length, 16);
-  assert.equal(new Set(CONSTRAINT_KINDS).size, 16);
+test('the constraint language is closed at seventeen kinds', () => {
+  assert.equal(CONSTRAINT_KINDS.length, 17);
+  assert.equal(new Set(CONSTRAINT_KINDS).size, 17);
+});
+
+/**
+ * The caption test. Not a length and not a wording — type set small enough to read as apparatus
+ * rather than as image, which is the difference between a work with words in it and a work with a
+ * label on it, and which no combination of the other sixteen kinds could decide.
+ */
+test('textMinHeight measures set size against the sheet, not against a fixed number of units', () => {
+  const big = op('t', 'text', { text: 'ONE', font: 'grotesque', size: 90, x: 0, y: 0, color: 'ink' });
+  // 3 on a 100-unit sheet is 0.03: a credit line. 90 is 0.90: the string is the picture.
+  const small = op('t', 'text', { text: 'ONE', font: 'grotesque', size: 3, x: 0, y: 0, color: 'ink' });
+  bothWays('textMinHeight', { min: 0.05 }, prog([big]), prog([small]));
+
+  // The same 40-unit string passes on a short sheet and fails on a tall one.
+  const forty = op('t', 'text', { text: 'ONE', font: 'grotesque', size: 40, x: 0, y: 0, color: 'ink' });
+  const on = (height: number) => ({ ...(prog([forty]) as Record<string, unknown>), canvas: { width: 400, height, ground: '#ffffff', brushScale: 1 } });
+  assert.equal(checkConstraint(constraint('textMinHeight', { min: 0.05 }), on(600), null).status, 'satisfied');
+  assert.equal(checkConstraint(constraint('textMinHeight', { min: 0.05 }), on(1600), null).status, 'violated');
+});
+
+/** A quarantine label is set by the macro at a size the program never states. Unmeasured, not small. */
+test('textMinHeight excludes quarantine labels rather than failing them', () => {
+  const labelled: Node = {
+    id: 'q',
+    type: 'macro',
+    macro: 'quarantine',
+    rngKey: 'k/q',
+    args: { region: { type: 'rect', x: 0, y: 0, w: 10, h: 10 }, label: 'HELD' },
+  } as unknown as Node;
+  const v = checkConstraint(constraint('textMinHeight', { min: 0.05 }), prog([labelled]), null);
+  assert.equal(v.status, 'satisfied');
+  assert.match(v.evidence, /no set type/);
 });
 
 test('maxDistinctColors counts palette-resolved hexes and the ground', () => {

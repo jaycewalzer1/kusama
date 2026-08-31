@@ -2,55 +2,25 @@
   "version": "1.0",
   "id": "nine-returned",
   "title": "The nine that went back",
-  "client": "Two parties who are commissioning this together and do not agree. The Harnwell Museum's board, through its keeper of collections, and a delegation of six from the community the nine objects were taken from, who have travelled here twice and who now hold the objects. The keeper signs the cheque. The delegation has a veto that the keeper agreed to in writing and has since asked twice to have clarified.",
-  "event": "Nine objects, held here since 1907, went home in June after a claim that took eleven years and two refusals. The room they were in has been closed since. It reopens on 14 October with the objects gone and the cases still in it. The museum has never returned anything before and has forty thousand objects acquired in the same decade by the same means.",
-  "when": "The room reopens 14 October. The objects left on 2 June.",
+  "material": "Nine empty cases, still bolted to the floor of a room that has been closed since June, with their lighting still on a timer that switches at four. The mounts are still in them, cut to the shape of what stood on them, and the felt is unfaded in nine outlines where the objects sat since 1974. The museum's photographs of the nine exist and are not available. The labels have not been changed. The room is Edwardian, refitted once, and smells of the carpet.",
+  "occasion": "Nine objects held here since 1907 went home in June after a claim that took eleven years and two refusals. The museum has never returned anything before and holds forty thousand more acquired in the same decade by the same means. The room reopens on 14 October with the objects gone and the cases still in it, and nobody has decided what a room in that state is.",
+  "when": "The room reopens on 14 October. The objects left on 2 June. The claim ran eleven years.",
   "where": "The south room of the Harnwell Museum, which is the room they were in.",
-  "function": "Make the absence do something other than read as a gap. A visitor who came for the nine has to leave knowing they are gone, who has them, and that this was a claim that was resisted for eleven years, not a gift. It has worked if that visitor can say those three things at the door. It has not worked if they leave feeling that the museum has behaved well.",
-  "audience": "Around nine hundred people a week, two thirds of them school groups aged eight to thirteen with a worksheet, most of whom have been brought here before. Also the regular visitors who know the room and will notice the cases are empty, the delegation's own people who will come to see how it was done, and the keeper's colleagues at four other institutions with claims outstanding against them.",
-  "production": "Whatever the museum's own workshop can make in six weeks, using the one process they have in the building. No outside supplier, because a purchase order over two thousand goes to the board and the board is where this gets softened.",
-  "quantity": "One, for the room. If it works the delegation want a second made the same way to go back with them.",
-  "mustAppear": [
-    "the number of objects, nine",
-    "the date the room reopens, 14 October",
-    "the room it is in, the south room",
-    "the length of the claim, eleven years"
+  "means": "The museum's own workshop, six weeks, the one process they have in the building. No outside supplier: a purchase order over two thousand goes to the board, and the board is where things get softened.",
+  "atStake": "Forty thousand objects in the same building were acquired the same way and four other institutions are watching. What is unsettled is not whether the nine come back — they are already home — but whether the return is recorded as a claim that was won or as a kindness that was performed, and a room can say either without a word in it.",
+  "fear": "That it comes out as an apology. An apology would be accepted here and would be insulting there, and it is the one register that makes everybody comfortable, which is how it gets chosen.",
+  "pressures": [
+    "The eleven years want to be stated, and stating them turns the room into an argument with the board, which converts a return into a grievance and hands the four watching institutions a reason to call it a campaign.",
+    "An empty case is a ready-made gesture. The sector has used it often enough in five years to have a shorthand for it, and the shorthand is available here for nothing, already legible, and says almost the opposite of what happened.",
+    "Absence reads as a gap unless something is done to it, and the fastest thing to do to a gap is fill it, which undoes the only true thing in the room.",
+    "The institution's own conduct wants to be visible somewhere — somebody did fight for eleven years — and there is no way to make that visible that does not also make the museum the subject."
   ],
-  "budget": "Four thousand two hundred, from the interpretation line, which is the only line the keeper can spend without the board.",
-  "timeline": "Installed by 7 October so the education team can rewrite the worksheet. Six weeks from now.",
-  "clientWantThatHurtsTheWork": [
-    "The keeper wants the museum's conduct in the return to be legible on the piece. She is the person who fought the board for eleven years and she is not willing for this to read as an institution being shamed into something.",
-    "The delegation will not permit any image of the nine objects to be used. The museum still holds the photographs and still owns the rights, and using them would be the museum exercising, on this of all things, the last piece of ownership it has left.",
-    "Nothing that could be read as an instruction to other claimants. Four institutions with live claims are watching and the board has told the keeper that this must not become a campaign.",
-    "The trustees' names, or at minimum the museum's own name, on the object itself. The board approved the return and considers that a decision it made."
+  "refusals": [
+    "No image of the nine. The museum still holds the photographs and still owns the rights, and using them would be the museum exercising, on this of all things, the last piece of ownership it has left.",
+    "Nothing that could be read as an instruction to other claimants. This is one room and one claim, and a room that generalises has started speaking for people who have not asked it to.",
+    "Nothing that reads as a gift given. That is what the museum's own account has always implied and what eleven years were spent refusing.",
+    "Not the outlines in the felt. They are the most affecting thing in the room and they are a picture of possession, made by the objects sitting where they were put."
   ],
-  "clientFear": "The keeper is afraid it will be read as an apology, which the board would accept and the delegation would find insulting. The delegation is afraid it will be read as a gift, which is what the museum's own account has always implied and what eleven years were spent refusing.",
-  "stakes": "Forty thousand objects in the same building were acquired the same way, and four other institutions are watching what happens when one of them does this. The nine are already home; what is at issue is whether the return is recorded as a claim that was won or as a kindness that was performed.",
-  "hard_constraints": [
-    {
-      "id": "hc-count",
-      "kind": "textRequired",
-      "params": { "contains": ["NINE"] },
-      "scope": "tree",
-      "severity": "hard",
-      "why": "Without the number this is about absence in general. Nine is a countable claim that was made and answered, and it is the fact a visitor can carry out of the room."
-    },
-    {
-      "id": "hc-reopens",
-      "kind": "textRequired",
-      "params": { "contains": ["14 OCTOBER"] },
-      "scope": "tree",
-      "severity": "hard",
-      "why": "The date makes it an event that happened rather than a condition that obtains. A room that has always been like this is a room nobody did anything to."
-    },
-    {
-      "id": "hc-duration",
-      "kind": "textRequired",
-      "params": { "contains": ["ELEVEN YEARS"] },
-      "scope": "tree",
-      "severity": "hard",
-      "why": "The length of the claim is the difference between a return and a gift, and it is the single fact the museum's own account has always left out."
-    }
-  ],
-  "notes": "The keeper has said she will not sign off anything the delegation has not seen first. She has not told the board that."
+  "hard_constraints": [],
+  "notes": "The lighting timer still switches at four and nobody has turned it off. The education team have to rewrite the worksheet by 7 October and have not been told what to write."
 }

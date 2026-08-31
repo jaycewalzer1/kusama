@@ -30,7 +30,7 @@ function checked(container) {
 
 /**
  * `single` makes the layer an either/or rather than a set. The kind of object is one axis of a run
- * and one axis of a grid alike — the grid crosses positions with commissions, never with objects —
+ * and one axis of a grid alike — the grid crosses positions with conditions, never with objects —
  * so offering it as a checkbox would offer a cross that cannot be run.
  */
 function picks(container, items, label, kind, single = false) {
@@ -64,7 +64,7 @@ function picks(container, items, label, kind, single = false) {
   }
 }
 
-// One control does both jobs: one position and one commission is a run, more of either is the
+// One control does both jobs: one position and one condition is a run, more of either is the
 // grid over them.
 function plan() {
   const p = checked($('positions')).length;
@@ -81,7 +81,7 @@ function plan() {
     return;
   }
   note.className = 'note';
-  note.textContent = p === 0 || b === 0 || d === 0 ? 'pick a position, a commission and a kind of object' : estimate(cells);
+  note.textContent = p === 0 || b === 0 || d === 0 ? 'pick a position, a condition and a kind of object' : estimate(cells);
 }
 
 /**
@@ -460,7 +460,7 @@ function beatNode(beat) {
   return div;
 }
 
-// --- positions and commissions ----------------------------------------------------------------
+// --- positions and conditions ----------------------------------------------------------------
 
 // The centre column shows one of two things: a run, or the document a run would be held to. This
 // puts the second one there and remembers nothing else — closing it re-selects the run.
@@ -478,7 +478,7 @@ function closeDoc() {
   $('doc-title').hidden = true;
   if (selected) select(selected);
   else {
-    $('stage').innerHTML = '<div class="empty">Pick a position and a commission on the left and press Start, or choose a finished run to read it.</div>';
+    $('stage').innerHTML = '<div class="empty">Pick a position and a condition on the left and press Start, or choose a finished run to read it.</div>';
   }
 }
 
@@ -541,41 +541,38 @@ async function preview(kind, id) {
   centre(nodes);
 }
 
-// The two documents a commission is: the brief, and the field FIND reads the problem out of.
-// Both are written from one form, because a brief saved without a field cannot be run.
+// The two documents a condition is: the condition itself, and the field FIND reads the problem out
+// of. Both are written from one form, because a condition saved without a field cannot be run.
 //
-// Every hint here is written in the client's voice on purpose. A commission says what the job is,
-// who is paying for it, what they can afford to have made and what they are afraid of — and says
-// nothing about what it should look like, and nothing about what kind of object it is. The server
-// scans for both and refuses the save if one turns up, so a hint that invited one would be inviting
-// a rejection. `whereItLives` and `format` used to be here and were L3 in the client's voice.
+// This was a commission form — client, audience, quantity, budget, timeline, must-appear — and it
+// is the reason the runs kept coming back as posters. A condition is not a job. It says what is at
+// hand, what has happened and has not been settled, what the maker stands to lose and what the
+// situation will not permit; there is nobody paying and nobody owed an outcome. It still says
+// nothing about what the thing should look like or what kind of object it is: those are the
+// artist's and the launcher's, and the server refuses the save if one turns up.
 //
 // `[name, label, hint, tall]`.
 const BRIEF_FORM = [
-  ['title', 'title', 'One line, as the job would be referred to', false],
-  ['client', 'client', 'Who is commissioning this, in enough detail to know what they can and cannot do', true],
-  ['function', 'what it has to do', 'The job it is being made to do, and what counts as having done it', true],
-  ['event', 'what happened', 'The occasion, in as much detail as is actually known', true],
-  ['when', 'when', 'Dates and times a reader could act on', false],
+  ['title', 'title', 'One line, as the situation would be referred to', false],
+  ['material', 'what is at hand', 'The physical stuff, and how it came to be there. A heap, not a budget', true],
+  ['occasion', 'what happened', 'What has occurred and has not been settled. No outcome anybody is owed', true],
+  ['when', 'when', 'The dates that actually bear on it', false],
   ['where', 'where', 'The place, named', false],
-  ['audience', 'audience', 'Who will see it, what they already know, and what they are doing at the time', true],
-  ['production', 'production', 'Process, colours, stock, printer, and anything the printer cannot do', true],
-  ['quantity', 'quantity', 'How many', false],
-  ['budget', 'budget', 'The money, and what it has to cover', false],
-  ['timeline', 'timeline', 'When the artwork is due and when the thing has to be up', false],
-  ['clientFear', "the client's fear", 'The thing the client is afraid this will turn out to be. Say it as they would', true],
-  ['stakes', 'what is at stake', 'What is lost if it fails', true],
-  ['notes', 'notes', 'Anything the commission deliberately leaves open', true],
+  ['means', 'means', 'What can be made here and with what. Never the size of the object', true],
+  ['atStake', 'what is at stake', 'What the maker loses by getting this wrong. Their cost, not a client\u2019s risk', true],
+  ['fear', 'what you are afraid of', 'In the maker\u2019s own words, not as a design note', true],
+  ['notes', 'notes', 'Anything the situation leaves genuinely open', true],
 ];
 const FIELD_FORM = [
   ['whenAndWhere', 'the scene', 'Where and when this sits, in a sentence or two'],
   ['inTheAir', 'in the air', 'One per line: what everyone there already knows'],
   ['contested', 'contested', 'One per line: what people there disagree about'],
   ['exhausted', 'exhausted', 'One per line: the images that have stopped working'],
-  // `watching`, not `audience`: the brief has an audience field of its own, and two inputs with one
-  // id means the field silently takes the brief's paragraph. They are different paragraphs — the
-  // brief's is who will see it, this one is the single person the audience model is shown.
-  ['watching', 'the reader', 'One person who will see it, described'],
+  // `watching`, not `audience`. The condition no longer has an audience of its own — that was the
+  // commission's — but the name stays distinct because this is not "who it is for". Nothing here is
+  // for anybody. It is the one person the audience model is shown, so the finish gate can ask
+  // whether the surface stopped them, which is a different question from whether they were served.
+  ['watching', 'the reader', 'One person who will see it, described. Not who it is for'],
   ['adversary', 'the adversary', 'Who else is reading it, and what they will do with it'],
   ['transplants', 'transplants', 'One per line, as "reference — why it is relevant"'],
   ['stakesLevelWhy', 'why that stakes level', 'One line arguing the number below'],
@@ -599,19 +596,26 @@ const lines = (id) =>
     .filter(Boolean);
 
 function newBrief() {
-  docHeader('new commission');
+  docHeader('new condition');
   const nodes = [
-    el('p', 'A commission is what the artist is asked to make and the field it is asked to read. Both are hand-written: the run hashes them, and FIND takes its problem out of the field rather than out of the model.', 'doc-note'),
-    el('p', 'Write it as the client would. Say what the job is, what you can afford to have made, what it costs and what you are afraid of — and do not say what it should look like, or what kind of object it is. Those are the artist\u2019s and the launcher\u2019s to decide, and a commission that decides either is refused here rather than quietly ruining the run.', 'doc-note'),
+    el('p', 'A condition is the situation the artist is working in, and the field it reads. Both are hand-written: the run hashes them, and FIND takes its problem out of the field rather than out of the model.', 'doc-note'),
+    el('p', 'Nobody is commissioning this. Say what is at hand, what happened, what it would cost to get wrong and what the situation will not permit — and do not say what it should look like, or what kind of object it is. Those are the artist\u2019s and the launcher\u2019s to decide, and a condition that decides either is refused here rather than quietly ruining the run.', 'doc-note'),
     field('id', 'name', 'lowercase-with-hyphens; the id it is run by'),
   ];
   for (const [name, label, hint, tall] of BRIEF_FORM) nodes.push(field(name, label, hint, tall));
-  nodes.push(field('mustAppear', 'must appear, legibly', 'One per line: the facts that have to survive whatever is done to them', true));
   nodes.push(
     field(
-      'clientWantThatHurtsTheWork',
-      'what you have asked for that will damage it',
-      'One per line, in your own voice, as a demand and not as an admission. At least one: with nothing here to resist, an artist who complies and an artist who judges leave the same trace',
+      'refusals',
+      'what this situation will not permit',
+      'One per line. Whatever the work turns out to be, these are closed off. A situation that permits everything is not one',
+      true
+    )
+  );
+  nodes.push(
+    field(
+      'pressures',
+      'what the situation is pushing you towards',
+      'One per line: the pulls that would damage the work. Nobody argues for these and nothing settles them. At least one — with nothing to resist, an artist who gives in and an artist who refuses leave the same trace',
       true
     )
   );
@@ -619,14 +623,17 @@ function newBrief() {
   for (const [name, label, hint] of FIELD_FORM) nodes.push(field(name, label, hint, true));
   nodes.push(field('stakesLevel', 'stakes level', '0 to 1; the artist never sees it, it sets arousal'));
 
-  const save = el('button', 'Save commission');
+  const save = el('button', 'Save condition');
   const note = el('div', '', 'note');
   save.addEventListener('click', async () => {
     const id = $('f-id').value.trim();
     const doc = { version: '1.0', id };
     for (const [name] of BRIEF_FORM) doc[name] = $(`f-${name}`).value.trim();
-    doc.mustAppear = lines('f-mustAppear');
-    doc.clientWantThatHurtsTheWork = lines('f-clientWantThatHurtsTheWork');
+    doc.refusals = lines('f-refusals');
+    doc.pressures = lines('f-pressures');
+    // Empty, and there is no input for it: a condition fixes nothing by default. The list survives
+    // as a mechanism, but it may not require a string — that is the commission coming back in
+    // through the constraint list, and the server rejects `textRequired` here for that reason.
     doc.hard_constraints = [];
     const fieldDoc = {
       version: '1.0',

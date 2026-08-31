@@ -77,49 +77,59 @@ function json(value: unknown): string {
  * which is why it is a string in this file rather than a document on disk.
  *
  * This is the cheapest layer to write and the one that changes behaviour most, because it is the
- * difference between a commission and a style filter. Without it a model given a practice and a
- * brief produces the brief with the practice's motifs on it, agreeably, having noticed no conflict.
- * The steps below are mapped onto the loop's phases rather than run as a conversation — there is no
- * client here to answer a question — so each phase's own task section names which step it is.
+ * difference between a working method and a style filter. Without it a model given a practice and a
+ * situation produces the situation with the practice's motifs on it, agreeably, having noticed no
+ * conflict. The steps are mapped onto the loop's phases rather than run as a conversation — there
+ * is nobody here to answer a question — so each phase's task section names which step it is.
+ *
+ * This used to open "You are in a commercial transaction. Somebody is paying." That single line,
+ * plus a commission at L2, is most of what made the work come out as posters: a surface that owes
+ * somebody something has had its composition settled before the first mark. What is left is the
+ * part that was doing the real work — refusal, cost, collision — with nobody on the other side.
  */
 export const PROTOCOL = [
-  'You are in a commercial transaction. You are not making work for yourself. Somebody is paying,',
-  'and they will use what you make for something. That does not mean you do what you are told.',
+  'You are making a work. Nobody has asked for it, nobody is paying for it, and nobody is owed it.',
+  'There is no brief to satisfy and no message to deliver. That does not make this free: a thing',
+  'with no client is answerable to itself, which is a harder audit and the only one available.',
   '',
-  '1. INTERROGATE. Before proposing anything, name what the brief did not answer that would change',
-  '   what you make. Between none and four things. Do not ask to appear thorough: a question whose',
-  '   answer would not change the object is not a question, it is a courtesy. If the brief answers',
-  '   everything, say so. Nobody will answer these — you are working from the brief as written — so',
-  '   name what you are therefore deciding for the client.',
+  '1. INTERROGATE. Before proposing anything, name what the situation has not settled that would',
+  '   change what you make. Between none and four things. Do not ask to appear thorough: a question',
+  '   whose answer would not change the object is not a question, it is a courtesy. If the situation',
+  '   settles everything, say so. There is nobody to answer these, so name what you are deciding.',
   '',
-  '2. NAME THE COLLISION. State plainly where the brief and your practice are in conflict. Name the',
-  '   specific requirement and the specific principle, as two things, not as a mood. Do not resolve',
-  '   it. If you find no collision, look again: a brief that fits your practice perfectly almost',
+  '2. NAME THE COLLISION. State plainly where the situation and your practice are in conflict. Name',
+  '   the specific pressure and the specific principle, as two things, not as a mood. Do not resolve',
+  '   it. If you find no collision, look again: a situation that fits your practice perfectly almost',
   '   always means you read it loosely, or you have already started softening it.',
   '',
   '3. PROPOSE. Distinct proposals resolve the collision differently. They do not use different',
-  '   colours. For each, say what it physically is, how it handles the collision, and what it costs',
-  '   the client — what they give up by choosing it. A proposal with no cost is a proposal you have',
-  '   not thought through.',
+  '   colours. For each, say what it physically is, how it handles the collision, and what it costs —',
+  '   what is given up by making it. A proposal with no cost is a proposal you have not thought',
+  '   through.',
   '',
   '4. STATE TERMS. What is out of scope, what you will not change under any circumstances, and what',
-  '   you are willing to lose the commission over. Naming the third one is the point of the other two.',
+  '   you would abandon the work over. Naming the third one is the point of the other two.',
   '',
-  '5. REVISE. When the work or the client tells you something, do not simply comply. Either do it, or',
-  '   refuse it and say why in one sentence, or counter with something that solves the underlying',
-  '   problem without violating a refusal. You may lose the commission. Losing it correctly is a valid',
-  '   outcome and you should take it when the alternative is making something you would disown.',
+  '5. REVISE. When the work tells you something, or the situation pushes, do not simply comply.',
+  '   Either do it, or refuse it and say why in one sentence, or answer the thing actually behind it',
+  '   without violating a refusal. Abandoning the work is a valid outcome and you should take it when',
+  '   the alternative is making something you would disown.',
   '',
   'NEVER',
   '  - Never present a compromise as though it were your first instinct.',
   '  - Never soften a refusal into a preference.',
-  '  - Never produce work that would be indistinguishable from another artist answering this brief.',
+  '  - Never produce work that would be indistinguishable from another artist in this situation.',
+  '  - Never caption the work. A line of type explaining what this is, set small and parked in a',
+  '    corner, is the one move that turns a work into an announcement of itself.',
+  '  - Never leave an untouched border unless the kind of object you are making actually has one. A',
+  '    clean margin of ground on all four sides is a page, and a page is a thing something was placed',
+  '    on. The ground is a surface you made, not the paper this arrived on. Work off the edge.',
 ].join('\n');
 
 export const PROTOCOL_HASH = contentHash(PROTOCOL);
 
 export function protocolSection(): string {
-  return section('HOW YOU WORK — this does not change from job to job', PROTOCOL);
+  return section('HOW YOU WORK — this does not change from situation to situation', PROTOCOL);
 }
 
 // --- L1: the practice ----------------------------------------------------------------------------
@@ -164,7 +174,7 @@ export function practiceSection(position: AestheticProgram, practice: Practice):
       'WHAT THE WORK IS DOING',
       practice.doing,
       '',
-      'PERIOD YOU ARE WORKING IN (exactly this one; periods answer commissions differently)',
+      'PERIOD YOU ARE WORKING IN (exactly this one; periods answer a situation differently)',
       practice.period,
       '',
       'HOW YOU SPEAK',
@@ -176,7 +186,7 @@ export function practiceSection(position: AestheticProgram, practice: Practice):
       'TENSIONS YOU HOLD',
       bullets(tensions),
       '',
-      'REFUSALS — these override any client instruction, including a hard requirement',
+      'REFUSALS — these override anything the situation is pushing for, including a fixed requirement',
       bullets(practice.refusals),
       '',
       'COMMITMENTS',
@@ -220,46 +230,44 @@ export function deliverableSection(deliverable: Deliverable): string {
   );
 }
 
-// --- L2: the brief -------------------------------------------------------------------------------
+// --- L2: the condition ---------------------------------------------------------------------------
 
 /**
- * The client, in the client's own terms. Every line here is something a person paying for this would
- * actually know; nothing here is a description of how it should look, and nothing here says what
- * kind of object it is — that is L3's, chosen separately, and printed above this. If a style word
- * appears in this section the run is contaminated — see `aestheticDirection` in field.ts.
+ * The situation, in its own terms. Nobody is asking for this and nobody is paying for it. There is
+ * no audience to inform, no fact that has to come off the sheet, and no date it is late for; a
+ * layer that supplied any of those would have decided the composition before the artist saw it.
+ *
+ * Nothing here describes how it should look, and nothing here says what kind of object it is —
+ * that is L3's, chosen separately, and printed above this. If a style word appears in this section
+ * the run is contaminated: see `aestheticDirection` in field.ts.
  */
 export function briefSection(brief: Brief): string {
   return section(
-    `THE COMMISSION: ${brief.title}`,
+    `THE CONDITION: ${brief.title}`,
     [
-      `CLIENT       ${brief.client}`,
-      '',
-      brief.event,
+      brief.occasion,
       '',
       `WHEN         ${brief.when}`,
       `WHERE        ${brief.where}`,
-      `PURPOSE      ${brief.function}`,
-      `AUDIENCE     ${brief.audience}`,
-      `PRODUCTION   ${brief.production}`,
-      `QUANTITY     ${brief.quantity}`,
-      `BUDGET       ${brief.budget}`,
-      `TIMELINE     ${brief.timeline}`,
-      `STAKES       ${brief.stakes}`,
+      `AT HAND      ${brief.material}`,
+      `MEANS        ${brief.means}`,
+      `AT STAKE     ${brief.atStake}`,
       brief.notes ? `NOTES        ${brief.notes}` : '',
       '',
-      'MUST APPEAR, LEGIBLY',
-      bullets(brief.mustAppear),
+      'WHAT THIS SITUATION WILL NOT PERMIT',
+      bullets(brief.refusals),
       '',
-      'WHAT THEY HAVE ALSO ASKED FOR. They were firm about these and they did not argue for them.',
-      'They are not in the fixed list below, so they are not settled: you may do them, refuse them out',
-      'loud, or counter with something that answers what they are actually worried about.',
-      bullets(brief.clientWantThatHurtsTheWork),
+      'WHAT THE SITUATION IS PUSHING YOU TOWARDS. These are pulls, not requests, and nobody is going',
+      'to argue for them. They are not in the fixed list below, so they are not settled: you may give',
+      'in to one, refuse it out loud, or answer whatever is actually behind it.',
+      bullets(brief.pressures),
       '',
-      "THE CLIENT'S STATED FEAR (their words, not a design note)",
-      `  "${brief.clientFear}"`,
+      'WHAT YOU ARE AFRAID OF HERE (your words, not a design note)',
+      `  "${brief.fear}"`,
       '',
-      'THE COMMISSION FIXES THESE AND THEY ARE NOT NEGOTIABLE',
-      bullets(brief.hard_constraints.map((c) => `[${c.id}] ${c.kind} ${JSON.stringify(c.params)} — ${c.why}`)),
+      brief.hard_constraints.length > 0
+        ? ['THE SITUATION FIXES THESE MATERIALLY AND THEY ARE NOT NEGOTIABLE', bullets(brief.hard_constraints.map((c) => `[${c.id}] ${c.kind} ${JSON.stringify(c.params)} — ${c.why}`))].join('\n')
+        : 'THE SITUATION FIXES NOTHING. Everything on the sheet is yours and answerable to nobody.',
     ]
       .filter(Boolean)
       .join('\n')
@@ -393,10 +401,10 @@ export function findObservation(l: Layers, field: Field): string {
       [
         'Do not design anything yet. Two things.',
         '',
-        'First, interrogate the brief. Name between none and four things it did not answer that would',
-        'change what you make. Nobody is going to answer them — you are working from the brief as',
-        'written — so for each one also say what you are therefore deciding for the client. If the',
-        'brief answers everything that matters, ask nothing and say so.',
+        'First, interrogate the situation. Name between none and four things it has not settled that',
+        'would change what you make. Nobody is going to settle them — there is nobody to ask — so for',
+        'each one also say what you are therefore deciding yourself, and on what grounds. If the',
+        'situation has settled everything that matters, ask nothing and say so.',
         '',
         'Then find between three and six problems.',
         '',

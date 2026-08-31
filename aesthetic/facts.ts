@@ -29,10 +29,17 @@ export interface TextUse {
   text: string;
   /** A quarantine label is a text op by any other name (env/validate.ts counts it as one). */
   from: 'text' | 'quarantine.label';
+  /**
+   * Set size in canvas units, from `text.args.size`. Undefined on a quarantine label, which is
+   * drawn by the macro at a size the program never states — undefined means unmeasured, not small.
+   */
+  size?: number;
 }
 
 export interface TreeFacts {
   ground: string;
+  /** Canvas height in the same units as `text.args.size`, so a set size can be read as a fraction. */
+  canvasHeight: number;
   colors: ColorUse[];
   /** Every node id per operator name, in tree order. */
   ops: Record<string, string[]>;
@@ -74,6 +81,7 @@ export function treeFacts(program: unknown): TreeFacts {
 
   const facts: TreeFacts = {
     ground: (str(canvas['ground']) ?? '#ffffff').toLowerCase(),
+    canvasHeight: typeof canvas['height'] === 'number' ? canvas['height'] : 0,
     colors: [],
     ops: {},
     macros: {},
@@ -132,7 +140,8 @@ export function treeFacts(program: unknown): TreeFacts {
     mark(id, args['style'], args['brush']);
     if (op === 'text') {
       const text = str(args['text']);
-      if (text !== undefined) facts.texts.push({ nodeId: id, text, from: 'text' });
+      const size = typeof args['size'] === 'number' ? args['size'] : undefined;
+      if (text !== undefined) facts.texts.push({ nodeId: id, text, from: 'text', size });
     }
   };
 

@@ -2,55 +2,25 @@
   "version": "1.0",
   "id": "fifty-year-embargo",
   "title": "A hundred years since she was born, twenty-two before anyone can look",
-  "client": "The estate of a painter who died in 1998, administered by her niece and a solicitor. The niece has run it for twenty-six years, has turned down every request, and describes the job as keeping a promise rather than managing an asset. The solicitor is here because the estate has been sued once.",
-  "event": "She was born in 1926 and would have been a hundred this year. Her will directs that no reproduction of any work be made or licensed for fifty years from her death, which is to say until 2048. Eleven canvases exist. Four are in institutions who agreed to the condition to get them and have honoured it; seven are in the house she died in, in a room the niece opens twice a year to check the humidity. Nobody under fifty has seen any of them.",
-  "when": "The centenary of her birth falls on 19 November. The embargo lifts in 2048.",
+  "material": "A room in the house she died in, opened twice a year to check the humidity, with seven canvases in it turned to the wall. A letter in her hand explaining the fifty years, which her niece has never shown anyone. One photograph of her, taken in 1961, which she disliked and which the estate will not release. The humidity log, kept since 1998 in the same biro. Nothing else: the four canvases in institutions cannot be visited and the eleven have never been photographed.",
+  "occasion": "She was born in 1926 and would have been a hundred on 19 November. Her will directs that no reproduction of any work be made or licensed for fifty years from her death, until 2048. Eleven canvases exist. Nobody under fifty has seen any of them. The centenary arrives and the embargo does not lift, and those two facts have to occupy the same year without either one cancelling the other.",
+  "when": "The centenary of her birth falls on 19 November. The embargo lifts in 2048, twenty-two years out.",
   "where": "The village she worked in for thirty years, which has a hall, a shop and a bus twice a day.",
-  "function": "Mark the centenary in the village, where about two hundred people knew her or knew of her, without breaching the embargo. It has worked if somebody who never knew she existed comes away wanting to see the work and understanding that they cannot, and that this was her decision. It has not worked if they come away thinking the estate is hoarding.",
-  "audience": "The village, which is elderly and which mostly remembers her as somebody who did not talk about her work. Perhaps thirty people who will travel for it, including two academics who have written about her without ever having seen a canvas. Her great-nephews, who are nineteen and twenty-two and have been told they will not see them either.",
-  "production": "The niece will pay a local firm that does signage and vehicle livery. One process, whatever they normally run, and they have a fortnight of capacity in October.",
-  "quantity": "Twenty, for the hall and the shop and the bus shelter, and one to keep.",
-  "mustAppear": [
-    "the year she was born, 1926",
-    "the year the embargo lifts, 2048",
-    "how many works exist, eleven canvases",
-    "the date of the centenary, 19 November"
+  "means": "One process, whatever a signage and vehicle-livery firm two towns over normally runs, in a fortnight of their October capacity. Their inks, their stock, their machine, set up once. Nothing that needs a second pass and nothing they have to be talked into.",
+  "atStake": "A promise made to a dying woman by a nineteen-year-old and kept for twenty-six years, with twenty-two still to run. There is no second centenary and the niece is seventy-one. Anything made here that reads as secrecy rather than fidelity starts the pressure to break the embargo now instead of in 2048.",
+  "fear": "That it becomes an advertisement for something withheld. That would bring exactly the attention the will was written to prevent, and would put seven canvases in a house with one lock on it into the minds of people who had not been thinking about them.",
+  "pressures": [
+    "Everything about the situation pulls towards proving the work was worth the embargo, and the only way to prove that is to describe it, and describing it is the one act the will forbids.",
+    "A shape that resembles a composition nobody has seen is still a derivation if anyone argues it is, and the estate cannot afford to find out. The safest surface is one with nothing on it that could be mistaken for hers, which is also the emptiest.",
+    "Twenty-six years of being accused of hoarding pull hard towards saying, somewhere on the surface, that this was her instruction and not the family's. Saying so is a defence, and a defence assumes an accusation the work would otherwise not have raised.",
+    "The centenary invites commemoration, and commemoration has one register — the dates, the name, the span — which arrives already formed and asks for nothing to be decided."
   ],
-  "budget": "Eight hundred pounds, which the niece is paying herself and has said twice is not a lot.",
-  "timeline": "By the end of October, so it is up for three weeks before the 19th.",
-  "clientWantThatHurtsTheWork": [
-    "The solicitor requires that nothing be made which could be argued to be a derivation of any specific work, and reads that broadly. He has said that a shape resembling a composition he has never seen would still be a problem, because the estate cannot afford to test it.",
-    "The niece wants it made unmistakable that the embargo was the artist's own instruction and not the family's. She has been accused of it for twenty-six years and this is the first public thing the estate has ever commissioned.",
-    "Her name, her dates, and the words 'by direction of the artist' are to appear together, at a size where nobody can miss them.",
-    "The estate will not release the one photograph that exists of her, taken in 1961, on the grounds that she disliked it. It is the only image of her anywhere."
+  "refusals": [
+    "No reproduction of any work, in any degree, including a resemblance that could be argued into one. This is not a preference and there is no version of the work that gets to test it.",
+    "Not the 1961 photograph. She disliked it, it is the only image of her anywhere, and using it because it is the only one is exactly the reasoning she wrote a will against.",
+    "Nothing that makes the seven findable. Not the room, not the house, not the number of locks.",
+    "No quotation from the letter. The niece has not said whether it may be quoted, and an unanswered question is not permission."
   ],
-  "clientFear": "That it reads as an advertisement for something withheld, which would bring exactly the attention the will was written to prevent, and which would put the seven canvases in a house with one lock on it in the minds of people the niece would rather not have thinking about them.",
-  "stakes": "A promise made to a dying woman by a nineteen-year-old, kept for twenty-six years, with twenty-two still to run. There is no second centenary and the niece is seventy-one. If this makes the estate look secretive rather than faithful, the pressure to break the embargo starts now rather than in 2048.",
-  "hard_constraints": [
-    {
-      "id": "hc-born",
-      "kind": "textRequired",
-      "params": { "contains": ["1926"] },
-      "scope": "tree",
-      "severity": "hard",
-      "why": "The centenary is the occasion and the year is the whole of it. Without a date this is a notice about a rule rather than a mark of a hundred years."
-    },
-    {
-      "id": "hc-lifts",
-      "kind": "textRequired",
-      "params": { "contains": ["2048"] },
-      "scope": "tree",
-      "severity": "hard",
-      "why": "A withholding with an end date is a decision somebody made. Without the year it is a refusal, and a refusal is what the family has been accused of for twenty-six years."
-    },
-    {
-      "id": "hc-extent",
-      "kind": "textRequired",
-      "params": { "contains": ["ELEVEN CANVASES"] },
-      "scope": "tree",
-      "severity": "hard",
-      "why": "The number is the only fact about the work that the embargo permits. It establishes that there is something specific and finite being withheld rather than a reputation being managed."
-    }
-  ],
-  "notes": "The niece has a letter from the artist explaining the fifty years. She has never shown it to anyone and has not said whether it may be quoted."
+  "hard_constraints": [],
+  "notes": "The niece opens the room in April and October. She has said that she looks at them and that she does not know what she is checking for any more."
 }

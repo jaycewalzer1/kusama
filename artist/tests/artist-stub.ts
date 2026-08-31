@@ -25,13 +25,19 @@ export interface StubCall {
  */
 const TEXTS = ['1961', '2.1 MILLION', '14 JANUARY'];
 
+/**
+ * 48 on the 700-unit seed canvas is 0.069 of the height, clear of withheld's `p-no-caption` floor
+ * of 0.05. It was 34, which is 0.0486 — under the floor by a unit and a half, and the whole loop
+ * test failed the day the caption ban landed. The size is scaffolding and has never carried a
+ * claim; the margin above the floor does, so do not shave it back.
+ */
 function textNode(id: string, y: number, text: string): Record<string, unknown> {
   return {
     id,
     type: 'op',
     op: 'text',
     rngKey: id,
-    args: { x: 40, y, size: 34, text, font: 'special-elite', color: 'ink', align: 'left' },
+    args: { x: 40, y, size: 48, text, font: 'special-elite', color: 'ink', align: 'left' },
   };
 }
 

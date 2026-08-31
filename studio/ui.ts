@@ -184,56 +184,52 @@ function documentErrors(kind: string, id: string, doc: Record<string, unknown>, 
     return bad;
   }
 
-  for (const key of [
-    'title',
-    'client',
-    'event',
-    'when',
-    'where',
-    'function',
-    'audience',
-    'production',
-    'quantity',
-    'budget',
-    'timeline',
-    'clientFear',
-    'stakes',
-  ]) {
+  for (const key of ['title', 'material', 'occasion', 'when', 'where', 'means', 'atStake', 'fear']) {
     if (typeof doc?.[key] !== 'string' || !(doc[key] as string).trim()) bad.push(`${key} is required and must say something`);
   }
-  const mustAppear = doc?.['mustAppear'];
-  if (!Array.isArray(mustAppear) || mustAppear.length === 0) {
-    bad.push('mustAppear must list the facts that have to be legible; a commission that requires nothing is not one');
+  const refusals = doc?.['refusals'];
+  if (!Array.isArray(refusals) || refusals.length === 0) {
+    bad.push('refusals must name at least one thing this situation will not permit; a condition that permits everything is not one');
   }
-  // Without one of these there is nothing in the commission to decline, so an artist that complies
+  // Without one of these there is nothing in the situation to decline, so an artist that complies
   // and an artist that judges leave the same trace and the run cannot tell them apart.
-  const hurts = doc?.['clientWantThatHurtsTheWork'];
+  const hurts = doc?.['pressures'];
   if (!Array.isArray(hurts) || hurts.length === 0) {
     bad.push(
-      'clientWantThatHurtsTheWork must name at least one thing the client has asked for that damages the piece; ' +
-        'a commission with nothing to resist measures compliance rather than judgment'
+      'pressures must name at least one pull this situation exerts that damages the work; ' +
+        'a condition with nothing to resist measures compliance rather than judgment'
     );
   }
-  // The kind of object is the third axis, chosen at launch. A commission that names one is wrong in
+  // The kind of object is the third axis, chosen at launch. A condition that names one is wrong in
   // every cell that runs it as something else, and it hands the artist a fact L3 may contradict.
   const named = namesDeliverable(doc as unknown as Brief);
   if (named.length > 0) {
     bad.push(
-      `which kind of object this becomes is chosen when the run is launched, not by the client, and ${named.join('; ')}. ` +
-        'Say what the job has to achieve instead.'
+      `which kind of object this becomes is chosen when the run is launched, not here, and ${named.join('; ')}. ` +
+        'Say what the situation is instead.'
     );
   }
-  // The one editorial rule that is enforced mechanically. A brief carrying style words is not a
-  // worse brief, it is a different experiment, and letting one be saved here would silently make
+  // The one editorial rule that is enforced mechanically. A condition carrying style words is not a
+  // worse condition, it is a different experiment, and letting one be saved here would silently make
   // every run against it non-comparable with every run against the others.
   const contamination = aestheticDirection(doc as unknown as Brief);
   if (contamination.length > 0) {
     bad.push(
-      `the commission tells the artist what it should look like, which is not the client's to decide: ${contamination.join(', ')}`
+      `the condition tells the artist what it should look like, which is not the situation's to decide: ${contamination.join(', ')}`
     );
   }
-  if (!Array.isArray(doc?.['hard_constraints'])) bad.push('hard_constraints must be a list, empty if the commission fixes nothing');
-  if (!field) bad.push('a commission without a field cannot be run: FIND reads the problem out of the field, and given none it invents one');
+  const fixed = doc?.['hard_constraints'];
+  if (!Array.isArray(fixed)) bad.push('hard_constraints must be a list, empty if the situation fixes nothing');
+  // A condition may bind the work materially — one ink, because there is one ink. It may not require
+  // a string. A fact that has to come off the surface is a message, a surface that owes somebody a
+  // message is a poster, and that is the commission this layer was rewritten to remove coming back
+  // in through the constraint list.
+  else if (fixed.some((c) => (c as { kind?: unknown })?.kind === 'textRequired')) {
+    bad.push(
+      'a condition may not use textRequired: constrain what there is to work with, not what it has to say'
+    );
+  }
+  if (!field) bad.push('a condition without a field cannot be run: FIND reads the problem out of the field, and given none it invents one');
   else {
     if (field['briefId'] !== id) bad.push(`the field says briefId ${JSON.stringify(field['briefId'])}, not ${id}`);
     for (const key of ['whenAndWhere', 'stakesLevelWhy']) {

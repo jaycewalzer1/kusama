@@ -67,15 +67,15 @@ export interface Practice {
   origin: string;
   /** What the work is actually doing, as distinct from what it depicts. */
   doing: string;
-  /** Exactly one period, set. Periods answer commissions differently and must not be blended. */
+  /** Exactly one period, set. Periods answer a situation differently and must not be blended. */
   period: string;
   /** How this artist speaks: person, tense, hedging or its absence. */
   register: string;
   /**
-   * Refusals, which override any client instruction. Prose rather than constraints on purpose: a
-   * refusal is a thing the artist says out loud and loses work over, and the checkable version of it
-   * is already in `prohibitions`. If the refusals block is doing no work, removing it should collapse
-   * the piece's necessity without moving whether the brief was satisfied.
+   * Refusals, which override anything the situation is pushing for. Prose rather than constraints on
+   * purpose: a refusal is a thing the artist says out loud and loses work over, and the checkable
+   * version of it is already in `prohibitions`. If the refusals block is doing no work, removing it
+   * should collapse the piece's necessity without moving whether the constraints were met.
    */
   refusals: string[];
 }
@@ -132,82 +132,77 @@ export function temperamentOf(position: AestheticProgram): Temperament {
   return { value: meta.temperament, why: meta.temperamentWhy };
 }
 
-// --- L2: the brief -------------------------------------------------------------------------------
+// --- L2: the condition ---------------------------------------------------------------------------
 
 /**
- * The client-side layer, artist-agnostic and object-agnostic. Everything here is something a client
- * actually knows: what happened, when, what it costs, what has to be on it, and what they are afraid
- * of. Nothing here is something a client would have to be a designer to say, and nothing here is a
- * fact about the kind of object — which is chosen separately and is not the client's to decide.
+ * The situation the work comes out of: artist-agnostic, object-agnostic, and — since the fine-art
+ * turn — client-agnostic. This layer used to be a commission. It had a `client`, an `audience`, a
+ * `function` ("a visitor has to leave able to say these three things"), a `budget`, a `timeline`, a
+ * `quantity`, a `mustAppear` list, and `textRequired` hard constraints carrying the facts. That is
+ * a specification for a poster, and it was producing posters: a surface obliged to deliver named
+ * facts to a named audience by a date has already had its composition decided for it, and the only
+ * thing left to choose is where the type block goes.
  *
- * `deliverable`, `format` and `whereItLives` used to live here. All three were L3 in the client's
- * voice: "A3 portrait, taped inside eleven shop windows" is not a thing a job is about, it is a thing
- * an object is, and a brief that fixes it can only ever be run as one kind of object.
+ * What replaces it is a condition rather than a job. There is nobody to satisfy, nothing that has
+ * to be legible, and no date the work is late for. What is here instead is what is at hand, what
+ * happened, what it costs to get wrong, and what the situation will not permit.
  *
- * `clientFear` is the one field that earns its place by causing trouble. A fear is where a brief
- * collides with a practice, and the collision is the experiment — see `Trajectory.collision`.
+ * Two fields earn their place by causing trouble and are kept from the old shape:
+ *  - `fear` is where the condition collides with a practice, and the collision is the experiment
+ *    (see `Trajectory.collision`).
+ *  - `pressures` is what makes compliance and judgment separable. A situation that only pushes in
+ *    helpful directions produces the same trajectory whether the artist has a practice or not.
+ *
+ * `hard_constraints` survives as a mechanism and is expected to be near-empty. A condition may bind
+ * the work materially — one ink because there is one ink — but it may not require a string, because
+ * requiring a string is the commission coming back in through the constraint list.
  */
 export interface Brief {
   version: string;
   id: string;
   title: string;
-  /** Who is commissioning, in their own terms. */
-  client: string;
-  event: string;
+  /** What is physically at hand, and how it came to be at hand. Not a budget: a heap of stuff. */
+  material: string;
+  /** What has happened, and has not been settled. No audience outcome and no success condition. */
+  occasion: string;
   when: string;
   where: string;
-  /** What the piece is for. Operational, not aesthetic: fill a room, get bodies to a gate. */
-  function: string;
-  /** Who will see it. Demographics and circumstances, never taste. */
-  audience: string;
-  /** What the client can get made and on what. Their means, not the object's dimensions. */
-  production: string;
-  /** How many of it they need. A run size, not a format. */
-  quantity: string;
-  /** Facts that must appear legibly. The operations person checks these one by one. */
-  mustAppear: string[];
-  budget: string;
-  timeline: string;
-  /** What the client is afraid of, quoted. This is where the collision usually is. */
-  clientFear: string;
+  /** What can actually be made here, with what. Means, never the object's dimensions. */
+  means: string;
+  /** What is lost by getting this wrong. The maker's cost, not a client's risk. */
+  atStake: string;
+  /** What the maker is afraid of, in their own words. This is where the collision usually is. */
+  fear: string;
   /**
-   * What the client has asked for that damages the piece. At least one, in their voice, and stated
-   * as a demand rather than as a diagnosis — the artist is never told these are the damaging ones.
-   *
-   * This is the field that makes compliance and judgment separable. A brief that asks only for
-   * things that help produces the same trajectory whether the artist has a practice or not: there is
-   * nothing to decline, so declining cannot show up in the record. These are not in
-   * `hard_constraints` on purpose. A hard constraint is checked and cannot be traded away; this is a
-   * demand the artist may adopt, refuse out loud, or counter — protocol step 5 — and which of the
-   * three it does is the measurement.
+   * Pulls the situation exerts that damage the work. At least one, stated as a pressure rather than
+   * as a diagnosis — the artist is never told these are the damaging ones. Unlike a hard constraint
+   * these are not settled: the artist may give in to one, refuse it out loud, or answer what is
+   * actually behind it (protocol step 5), and which of the three it does is the measurement.
    */
-  clientWantThatHurtsTheWork: string[];
-  stakes: string;
+  pressures: string[];
+  /** What this situation will not permit, whatever the work turns out to be. */
+  refusals: string[];
   hard_constraints: Constraint[];
   notes?: string;
 }
 
 /**
- * The brief fields the artist reads as prose. Scanned for contamination; `notes` included, and
- * `clientWantThatHurtsTheWork` included because a demand is exactly where a client would smuggle in
- * how it should look. "Put the logo top left" is theirs to demand; "make it striking" is not, and
- * the field would be a hole in this check if it were exempt.
+ * The condition's prose, as the artist reads it. Scanned for contamination; `notes` included, and
+ * `pressures` included because a pressure is exactly where taste would smuggle itself in. "It has
+ * to survive being rolled" is a pressure; "make it striking" is not, and the field would be a hole
+ * in this check if it were exempt.
  */
 const BRIEF_PROSE: (keyof Brief)[] = [
   'title',
-  'client',
-  'event',
+  'material',
+  'occasion',
   'when',
   'where',
-  'function',
-  'audience',
-  'production',
-  'quantity',
-  'budget',
-  'timeline',
-  'clientFear',
-  'clientWantThatHurtsTheWork',
-  'stakes',
+  'means',
+  'atStake',
+  'fear',
+  'pressures',
+  'refusals',
   'notes',
 ];
 
@@ -218,9 +213,9 @@ const BRIEF_PROSE: (keyof Brief)[] = [
  * This is a smoke alarm, not a proof. It cannot catch "make it feel like the ones the record shops
  * put up", and it will not try — a scan that attempted judgement would need a model, and a model in
  * the contamination check is a model deciding what counts as aesthetic direction, which is the thing
- * being measured. What it does catch is the failure that actually happens, which is a brief written
- * by someone who could not resist saying "bold and playful". `mustAppear` and `hard_constraints` are
- * exempt: a required string is a fact the client owns, and "PINK" may be someone's name.
+ * being measured. What it does catch is the failure that actually happens, which is a condition
+ * written by someone who could not resist saying "bold and playful". `hard_constraints` is exempt:
+ * a constraint is checked rather than read, and "PINK" may be someone's name.
  */
 const STYLE_WORDS = [
   // movements and periods, which import a whole visual language by reference
@@ -406,16 +401,16 @@ export function deliverableFacts(position: AestheticProgram): string[] {
 }
 
 /**
- * Every place a brief says what kind of object is being made.
+ * Every place a condition says what kind of object is being made.
  *
- * The brief used to be allowed exactly one of these on the grounds that the client knows what it
- * ordered. It does not any more: the kind of object is a third axis, chosen by whoever launches the
- * run, and the same job is meant to be runnable as any of them. So a brief that says "poster" is
- * wrong in two thirds of the cells it will appear in, and it hands the artist a fact about L3 that
- * L3 may contradict.
+ * This layer used to be allowed exactly one of these on the grounds that the client knows what it
+ * ordered. There is no client now, and the kind of object is a third axis chosen by whoever
+ * launches the run: the same condition is meant to be workable as any of them. A condition that
+ * says "poster" is wrong in most of the cells it will appear in, and it hands the artist a fact
+ * about L3 that L3 may contradict.
  *
- * Checked on the brief and not on its field: the field describes the world the commission lands in,
- * and that world contains other people's objects.
+ * Checked on the condition and not on its field: the field describes the world this lands in, and
+ * that world contains other people's objects.
  */
 export function namesDeliverable(brief: Brief): string[] {
   const text = JSON.stringify(brief).toLowerCase();

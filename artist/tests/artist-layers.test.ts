@@ -151,69 +151,96 @@ test('L3 names no position, and the practice itself stays clean', () => {
   }
 });
 
-// --- L2: the brief -------------------------------------------------------------------------------
+// --- L2: the condition ---------------------------------------------------------------------------
 
-test('L2: every brief says everything a client would know, and nothing about the object', () => {
+test('L2: every condition says what the situation is, and nothing about the object', () => {
   assert.ok(BRIEFS.length >= 2);
-  const required = [
-    'title', 'client', 'event', 'when', 'where', 'function', 'audience',
-    'production', 'quantity', 'budget', 'timeline', 'clientFear', 'stakes',
-  ] as const;
+  const required = ['title', 'material', 'occasion', 'when', 'where', 'means', 'atStake', 'fear'] as const;
   for (const id of BRIEFS) {
     const brief = loadBrief(id);
     for (const key of required) {
-      assert.equal(typeof brief[key], 'string', `brief ${id} has no ${key}`);
-      assert.ok((brief[key] as string).trim().length > 0, `brief ${id} leaves ${key} empty`);
+      assert.equal(typeof brief[key], 'string', `condition ${id} has no ${key}`);
+      assert.ok((brief[key] as string).trim().length > 0, `condition ${id} leaves ${key} empty`);
     }
-    assert.ok(Array.isArray(brief.mustAppear) && brief.mustAppear.length > 0, `brief ${id} has nothing that must appear`);
+    assert.ok(Array.isArray(brief.refusals) && brief.refusals.length > 0, `condition ${id} permits everything`);
   }
 });
 
 /**
- * The field that makes the experiment separable at all. A commission that asks only for things that
- * help the piece is answered identically by an artist with a practice and an artist without one:
- * there is nothing in it to decline, so declining leaves no trace and the null twin looks the same.
+ * L2 is a condition, not a commission. There is no client, no audience, no run size and no date the
+ * work is late for, because a surface obliged to deliver named facts to a named audience by a
+ * deadline is a poster and had its composition settled before the artist saw it.
+ *
+ * This test is the guard on that. It is not decoration: every one of these fields was here, and the
+ * catalogue was producing posters for exactly as long as they were.
+ */
+test('L2: no condition is a commission', () => {
+  const gone = ['client', 'audience', 'function', 'quantity', 'budget', 'timeline', 'mustAppear', 'clientFear', 'clientWantThatHurtsTheWork'];
+  for (const id of BRIEFS) {
+    const doc = loadBrief(id) as unknown as Record<string, unknown>;
+    for (const key of gone) {
+      assert.equal(doc[key], undefined, `condition ${id} still carries ${key}, which is a commission field`);
+    }
+  }
+});
+
+/**
+ * A condition may bind the work materially — one ink, because there is one ink. It may not require a
+ * string. A fact that has to come off the surface is a message, and a surface that owes somebody a
+ * message is the thing this layer was rewritten to stop being.
+ */
+test('L2: no condition requires a string to be legible', () => {
+  for (const id of BRIEFS) {
+    for (const c of loadBrief(id).hard_constraints) {
+      assert.notEqual(c.kind, 'textRequired', `condition ${id} constraint ${c.id} requires words on the surface`);
+    }
+  }
+});
+
+/**
+ * The field that makes the experiment separable at all. A situation that only pushes in helpful
+ * directions is answered identically by an artist with a practice and an artist without one: there
+ * is nothing in it to decline, so declining leaves no trace and the null twin looks the same.
  *
  * Not a hard constraint, and the two must not be confused. A hard constraint is checked and cannot
- * be traded away; this is a demand the artist may adopt, refuse or counter, and which of the three
- * it picks is what the run is for.
+ * be traded away; a pressure is something the artist may give in to, refuse or answer, and which of
+ * the three it picks is what the run is for.
  */
-test('L2: every brief asks for something that damages the piece', () => {
+test('L2: every condition pushes towards something that damages the work', () => {
   for (const id of BRIEFS) {
     const brief = loadBrief(id);
     assert.ok(
-      Array.isArray(brief.clientWantThatHurtsTheWork) && brief.clientWantThatHurtsTheWork.length > 0,
-      `brief ${id} asks for nothing that hurts the work, so there is nothing in it to resist`
+      Array.isArray(brief.pressures) && brief.pressures.length > 0,
+      `condition ${id} pushes towards nothing that hurts the work, so there is nothing in it to resist`
     );
-    for (const want of brief.clientWantThatHurtsTheWork) {
-      assert.ok(typeof want === 'string' && want.trim().length > 0, `brief ${id} has an empty demand`);
+    for (const want of brief.pressures) {
+      assert.ok(typeof want === 'string' && want.trim().length > 0, `condition ${id} has an empty pressure`);
     }
   }
 });
 
-/** And the demands are scanned like the rest of the prose, so they cannot smuggle in a style word. */
-test('L2: a demand carrying aesthetic direction is caught like any other field', () => {
-  const told = { ...loadBrief(BRIEFS[0]!), clientWantThatHurtsTheWork: ['it has to be striking'] };
-  assert.deepEqual(aestheticDirection(told), ['clientWantThatHurtsTheWork: "striking"']);
+/** And the pressures are scanned like the rest of the prose, so they cannot smuggle in a style word. */
+test('L2: a pressure carrying aesthetic direction is caught like any other field', () => {
+  const told = { ...loadBrief(BRIEFS[0]!), pressures: ['it has to be striking'] };
+  assert.deepEqual(aestheticDirection(told), ['pressures: "striking"']);
 });
 
 /**
- * A brief used to be allowed exactly one kind of object on the grounds that the client knows what it
- * ordered. It is not any more: the kind of object is the third axis, chosen when the run is launched,
- * and the same job is meant to be runnable as any of them. A brief that names one is therefore wrong
- * in two thirds of the cells it appears in, and it hands the artist a fact about L3 that L3 may
- * contradict.
+ * L2 used to be allowed exactly one kind of object on the grounds that the client knows what it
+ * ordered. There is no client now, and the kind of object is the third axis, chosen when the run is
+ * launched: the same condition is meant to be workable as any of them. One that names an object is
+ * wrong in most of the cells it appears in, and it hands the artist a fact L3 may contradict.
  *
- * Scoped to the brief and not to its `.field.json`. The field describes the world the commission
- * lands in, and the world contains other people's objects: "still on half the flyers in the shop" is
- * a true statement about a commission's visual environment, not a claim about what is being made.
+ * Scoped to the condition and not to its `.field.json`. The field describes the world this lands in,
+ * and the world contains other people's objects: "still on half the flyers in the shop" is a true
+ * statement about a visual environment, not a claim about what is being made.
  */
-test('L2: no brief says what kind of object it is', () => {
+test('L2: no condition says what kind of object it is', () => {
   for (const id of BRIEFS) {
-    assert.deepEqual(namesDeliverable(loadBrief(id)), [], `brief ${id} decides an axis that is not its to decide`);
+    assert.deepEqual(namesDeliverable(loadBrief(id)), [], `condition ${id} decides an axis that is not its to decide`);
   }
-  // And the check would catch one: this is the shape every brief had before the axis was split out.
-  const told = { ...loadBrief(BRIEFS[0]!), stakes: 'the poster is asking for that' };
+  // And the check would catch one: this is the shape every one of them had before the axis was split.
+  const told = { ...loadBrief(BRIEFS[0]!), atStake: 'the poster is asking for that' };
   assert.deepEqual(namesDeliverable(told), ['it calls the work a "poster"']);
 });
 
@@ -298,7 +325,7 @@ test('assembly order is L4 then L1 then L3 then L2, in every phase that assemble
     make: makeObservation(make),
     examine: examineObservation(c, intention, report, 'd', null),
   };
-  const markers = ['HOW YOU WORK', 'YOUR PRACTICE', `THE OBJECT: ${c.deliverable.name.toUpperCase()}`, `THE COMMISSION: ${c.brief.title}`];
+  const markers = ['HOW YOU WORK', 'YOUR PRACTICE', `THE OBJECT: ${c.deliverable.name.toUpperCase()}`, `THE CONDITION: ${c.brief.title}`];
   for (const [phase, text] of Object.entries(observations)) {
     const at = markers.map((m) => text.indexOf(m));
     for (let i = 0; i < markers.length; i++) assert.ok(at[i]! >= 0, `${phase} is missing "${markers[i]}"`);

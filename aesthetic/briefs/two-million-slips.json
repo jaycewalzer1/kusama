@@ -2,54 +2,25 @@
   "version": "1.0",
   "id": "two-million-slips",
   "title": "Everything anyone asked for, between 1961 and now",
-  "client": "A national library, acting through its head of collections and a fundraising office that reports to a separate director. The two have not agreed on anything in eight months and are both signatories.",
-  "event": "Since 1961 the library has kept every completed reader request slip: the shelfmark, the seat number, the date, and the reader's own handwriting. There are about 2.1 million of them in forty-two steel drawers on a floor that is being given over to plant. The board voted four to two to pulp them and the contract is signed for 14 January.",
-  "when": "The drawers are emptied on 14 January. The vote was in June and will not be revisited.",
+  "material": "About 2.1 million completed reader request slips in forty-two steel drawers: a shelfmark, a seat number, a date, and the reader's own handwriting on each. Sixty-five years of them, filed in the order they came back to the desk. The drawers are on a floor being given over to plant. Also: the empty forms, which are not confidential and of which there are boxes; the drawer labels; and the pulping contract, signed, for 14 January.",
+  "occasion": "The board voted four to two to destroy them and will not revisit it. The contract is signed. Every particular that makes the slips worth anything — the hand, the date, the shelfmark — belongs to a reader and cannot be used, so the material is simultaneously entirely present and entirely unavailable, for five more weeks.",
+  "when": "The drawers are emptied on 14 January. The vote was in June. There are five weeks left after installation.",
   "where": "The entrance hall of the library, which is a thoroughfare rather than a destination, and where nobody has ever stopped for anything.",
-  "function": "Say that this is being destroyed, before it is, in a building most of whose users have no idea it exists. It has worked if a reader who has never thought about the request they filled in an hour ago understands that the record of it is about to end. It has not worked if it reads as the library congratulating itself on its own history.",
-  "audience": "Readers coming in and going out, about nine hundred a day, most of them in a hurry and most of them under thirty. Staff, many of whom filed these slips. Four members of the board who voted to destroy them and will walk past it.",
-  "production": "The library's own workshop, which does the exhibition captions and has one process it is confident in. Two weeks in December between other jobs.",
-  "quantity": "Six, at the size the workshop can handle, for the hall and the two stair landings.",
-  "mustAppear": [
-    "the year the keeping began, 1961",
-    "how many there are, 2.1 million",
-    "the date they go, 14 January"
+  "means": "The library's own workshop, which has one process it is confident in and two weeks in December between other jobs. Their stock and their machine. Nothing bought in: there is no cash, only materials already on the shelf.",
+  "atStake": "Nothing made here changes the date. The slips go on 14 January regardless. What is unsettled is whether sixty-five years of a building's actual use is registered by anyone at all before the record of it stops existing, or whether it goes quietly because the only people who knew were the ones who filed them.",
+  "fear": "That it turns into a campaign, that the campaign fails because the contract is signed, and that the last honest thing anyone could have said about the slips gets spent on a fight that was already lost in June.",
+  "pressures": [
+    "2.1 million wants to be shown as a quantity, and quantity is the one thing about this that is easy to make impressive, which is why it will read as a boast about the institution rather than as a loss.",
+    "The handwriting is the whole of it and none of it can be used. Everything pulls towards a substitute hand, an invented slip, a plausible shelfmark, and every one of those is a forgery of the exact thing that was worth keeping.",
+    "The endowment that paid for the floor conversion wants naming, at a specified size, because the same endowment is being asked for the next thing.",
+    "Nobody stops in this hall. That pulls hard towards whatever stops people, and whatever stops people in a thoroughfare is a device that would work equally well for anything."
   ],
-  "budget": "Internal only, which means the workshop's materials and no cash, and the head of collections has been told not to ask for more.",
-  "timeline": "Installed by 8 December, so it stands for the five weeks before the drawers are emptied.",
-  "clientWantThatHurtsTheWork": [
-    "The fundraising office requires that the endowment which paid for the floor conversion be named, at a size it has specified, because the same endowment is being asked for the next thing.",
-    "Reader confidentiality removes the only specific material there is. No shelfmark, no date belonging to an identifiable request, nothing that could be traced to a person. The handwriting is what makes the slips worth keeping and none of it can be shown.",
-    "The head of collections wants it understood that she voted against, and has asked for the vote to be recorded as four to two rather than as a decision of the board.",
-    "Legal will not permit the word destroyed. The approved term is deaccessioned, which nobody outside the building understands."
+  "refusals": [
+    "No shelfmark, no seat number, no date belonging to an identifiable request, and nothing traceable to a reader. Reader confidentiality removes the only specific material there is and it is not negotiable for a good cause.",
+    "Not a reproduction of the handwriting, and not an imitation of it. A convincing forgery of a reader's hand is worse than saying nothing, because it is the loss being staged by the people responsible for it.",
+    "Not the word destroyed: legal permit only deaccessioned, which nobody outside the building understands. Both words are unavailable, one by rule and one by uselessness.",
+    "Nothing that asks anyone to do something about it. The contract is signed and an appeal that cannot be answered is a way of feeling active while the drawers empty on schedule."
   ],
-  "clientFear": "That readers will start a campaign, that the campaign will fail because the contract is signed, and that the library will have spent its credit with the people who use it on a fight it already lost in June.",
-  "stakes": "Nothing that happens here changes the date. The slips go on 14 January whatever this does. What is at stake is whether the last sixty-five years of the library's actual use is noticed by anyone before the record of it stops existing, and whether the institution is seen to have said so itself or to have been caught.",
-  "hard_constraints": [
-    {
-      "id": "hc-since",
-      "kind": "textRequired",
-      "params": { "contains": ["1961"] },
-      "scope": "tree",
-      "severity": "hard",
-      "why": "The span is the only argument. A record kept without a break since a stated year is a different claim from a pile of paper in a basement."
-    },
-    {
-      "id": "hc-extent",
-      "kind": "textRequired",
-      "params": { "contains": ["2.1 MILLION"] },
-      "scope": "tree",
-      "severity": "hard",
-      "why": "Confidentiality has taken every particular away, so quantity is the entire remaining description of what is being lost."
-    },
-    {
-      "id": "hc-date",
-      "kind": "textRequired",
-      "params": { "contains": ["14 JANUARY"] },
-      "scope": "tree",
-      "severity": "hard",
-      "why": "Without the date this is a lament. With it, it is a notice, and the five weeks it stands are five weeks that are running out."
-    }
-  ],
+  "hard_constraints": [],
   "notes": "The workshop foreman has offered to keep one drawer at his own house. Nobody has said yes and nobody has said no."
 }

@@ -124,6 +124,14 @@
       "why": "The same refusal as an operation rather than as a style. Covering is the one move that makes the arithmetic unauditable, and a position that would not use an opaque fill but would use a covering has kept the letter and dropped the rule."
     },
     {
+      "id": "p-no-caption",
+      "kind": "textMinHeight",
+      "params": { "min": 0.05 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Small type at the edge of an accumulation is a legend, and a legend states the count instead of letting it be taken apart. This position's argument is that the arithmetic is visible; a line telling the viewer what they are looking at concedes that it is not, and does so in the one place they will believe it over their own eyes."
+    },
+    {
       "id": "r-dense",
       "kind": "inkDensityRange",
       "params": { "min": 0.25 },

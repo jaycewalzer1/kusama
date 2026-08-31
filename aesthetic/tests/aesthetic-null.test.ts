@@ -7,8 +7,13 @@
 //
 // What that measurement found, and what this file pins so it cannot regress unnoticed:
 //
-//   1. The floor is well below 1. An empty sheet does not pass, and a sheet with the text taken out
-//      does not pass. So the checker is not a rubber stamp.
+//   1. The floor is well below 1. An empty sheet does not pass, and neither does a sheet that is
+//      complete except for one class of act. So the checker is not a rubber stamp.
+//      This second probe used to remove the text, because the brief carried three `textRequired`
+//      constraints. Conditions replaced briefs and no longer require anybody to say anything, so a
+//      mute sheet is now legitimately fine and the probe would have been measuring nothing. It now
+//      removes the coverings instead — a demand the position itself makes, which is the more
+//      honest place for it to have been all along.
 //   2. The tree scope is blind to composition. Randomising every coordinate in the tree leaves
 //      treeScore byte-identical, because every tree-scope kind on these positions is an existence or
 //      absence predicate. That is asserted here, deliberately and as a failure recorded rather than
@@ -131,6 +136,13 @@ function withoutText(p: Record<string, unknown>): Record<string, unknown> {
   return q;
 }
 
+/** Everything else intact: the blocks, the seal, the type, the rule. Only the coverings gone. */
+function withoutCovers(p: Record<string, unknown>): Record<string, unknown> {
+  const q = copy(p);
+  (q['root'] as { children: Node[] }).children = kids(q).filter((n) => n['op'] !== 'cover');
+  return q;
+}
+
 function empty(p: Record<string, unknown>): Record<string, unknown> {
   const q = copy(p);
   (q['root'] as { children: Node[] }).children = [];
@@ -150,14 +162,20 @@ test('the passing program does pass, so the rest of this file is measuring a rea
   assert.equal(tree(report), 1);
 });
 
-test('the floor is well below the ceiling: an empty sheet and a mute sheet both score worse', () => {
+test('the floor is well below the ceiling: an empty sheet and an uncovered sheet both score worse', () => {
   const ceiling = tree(checkProgram(passing(), position, null));
   const blank = checkProgram(empty(passing()), position, null);
-  const mute = checkProgram(withoutText(passing()), position, null);
+  const open = checkProgram(withoutCovers(passing()), position, null);
 
   assert.ok(tree(blank) < ceiling * 0.7, `an empty sheet scored ${tree(blank)} against a ceiling of ${ceiling}`);
-  assert.ok(tree(mute) < ceiling, `a sheet with no text scored ${tree(mute)}, the same as one with text`);
-  assert.ok(mute.hardViolations > 0, 'removing every required string violated no hard constraint');
+  assert.ok(tree(open) < ceiling, `a sheet with nothing covered scored ${tree(open)}, the same as one with coverings`);
+  assert.ok(open.hardViolations > 0, 'removing every covering violated no hard constraint');
+
+  // And the counterpart, now that L2 asks for no strings: taking the words out is NOT a failure.
+  // A work is allowed to say nothing. If this ever starts violating something, a commission has
+  // come back in through a constraint list.
+  const mute = checkProgram(withoutText(passing()), position, null);
+  assert.equal(mute.hardViolations, 0, 'a sheet with no words on it violated a hard constraint: something is requiring speech again');
 });
 
 test('the tree scope is blind to composition: scrambling every coordinate changes nothing', () => {

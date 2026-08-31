@@ -56,11 +56,13 @@ export interface GateEvidence {
 }
 
 /**
- * The strings the brief requires to be readable, from its own hard constraints.
+ * The strings L2 requires to be readable, from its own hard constraints.
  *
- * `mustAppear` is prose for a person — "the time of the meeting, 19:00" — and cannot be looked for
- * in a transcript. `textRequired.params.contains` is the same requirement written as the exact
- * characters, which is what a reader either can or cannot make out.
+ * Since the fine-art turn a condition may not use `textRequired` — the studio refuses to save one
+ * that does — so this returns nothing for every condition in the catalogue and the
+ * `unreadable-fact` blocker below never fires from L2. The machinery is kept rather than deleted:
+ * a *position* may still require a word, and the blind transcribe it reads is the only place
+ * anything in the environment asks what actually comes off the sheet.
  */
 export function requiredStrings(brief: Brief): string[] {
   const out: string[] = [];
@@ -104,7 +106,7 @@ export function finishBlockers(e: GateEvidence): Blocker[] {
     for (const missing of unreadable(requiredStrings(e.brief), e.transcript)) {
       out.push({
         kind: 'unreadable-fact',
-        detail: `"${missing}" is required by the commission and a reader looking at the sheet could not read it. It is either not there, or not legible, or rendered as something else.`,
+        detail: `"${missing}" is required and a reader looking at the sheet could not read it. It is either not there, or not legible, or rendered as something else.`,
       });
     }
   }
@@ -115,12 +117,13 @@ export function finishBlockers(e: GateEvidence): Blocker[] {
     out.push({ kind: 'hard-violation', detail: `[${v.id}] is a hard constraint and it is violated: ${v.evidence}` });
   }
 
-  // The brief for this kind of work says what it is for. If the one person watching would walk
-  // past, the piece has not done it — however well it scores on the tree.
+  // The kind of object says what it has to survive. This is not "did it get attention" — there is
+  // nobody to get it from and nothing owed to anyone — it is the weaker and harder claim that a
+  // thing nobody would stop in front of has not yet become an object, however well the tree scores.
   if (e.wouldAct === 'ignore') {
     out.push({
       kind: 'audience-ignores',
-      detail: 'The person this is for said they would walk past it. Whatever else is true of the sheet, it has not done the job it was made for.',
+      detail: 'The one person who looked at this said they would walk past it. Nothing is owed to them, but a surface that stops nobody is not finished being made.',
     });
   }
 

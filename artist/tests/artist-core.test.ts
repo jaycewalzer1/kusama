@@ -40,6 +40,7 @@ import {
   visibleRate,
 } from '../intention.js';
 import { envDrift } from '../env-version.js';
+import { grounded } from '../phases/find.js';
 import { refusalCause, refusalTally } from '../env.js';
 import { declarationOf, unplannedViolation } from '../triggers.js';
 import { StudioLog, readLog, verifyChain } from '../studio-log.js';
@@ -47,7 +48,7 @@ import { loadCommission, effectivePosition, temperamentOf } from '../field.js';
 import { OBSERVATION_HASH, describeObservation, audienceObservation, findObservation } from '../observation.js';
 import { ROOT } from '../../env/browser.js';
 import type { CheckReport, RenderMetrics } from '../../aesthetic/types.js';
-import type { Affect, EdgeEstimate, Field, Intention } from '../types.js';
+import type { Affect, EdgeEstimate, Field, Intention, Problem } from '../types.js';
 
 // --- affect --------------------------------------------------------------------------------------
 
@@ -886,7 +887,7 @@ test('observation: the environment describers are blind to everything but the im
     c.position.name,
     c.position.worldview.slice(0, 40),
     c.brief.title,
-    c.brief.event.slice(0, 40),
+    c.brief.occasion.slice(0, 40),
     c.field.whenAndWhere.slice(0, 40),
   ];
   const describe = describeObservation();
@@ -908,7 +909,9 @@ test('observation: FIND sees the field, because that is where a problem has to c
   assert.ok(obs.includes(c.field.whoIsWatching.adversary));
   assert.ok(obs.includes(c.field.transplants[0]!.ref));
   assert.ok(obs.includes(c.position.worldview.slice(0, 60)));
-  assert.ok(obs.includes(c.brief.hard_constraints[0]!.id));
+  // The position's own constraints, not L2's: a condition fixes nothing by default, so reading the
+  // first of its hard constraints would be reading an empty list on every document in the catalogue.
+  assert.ok(obs.includes(c.position.commitments[0]!.id));
   // The number it is told not to see: stakesLevel is the environment's, not the artist's.
   assert.ok(!obs.includes('stakesLevel'));
 });
@@ -952,4 +955,36 @@ test('env version: a hash the record never carried is not drift', () => {
   // run for a reason that has nothing to do with whether its environment moved.
   const { deliverableHash: _d, fieldHash: _f, ...older } = ENV;
   assert.deepEqual(envDrift(older, ENV), []);
+});
+
+// A citation check that punctuation can defeat is not a citation check. This came off a measured
+// run: `problemsGrounded: 0` on sixteen refs of which six were verbatim, because the model wrapped
+// every quotation in typographic quote marks and the field does not carry them.
+const CITED_FIELD = 'the encounter is involuntary and brief by default. people are crossing the room, not visiting it.';
+
+function problem(...fieldRefs: string[]): Problem {
+  return {
+    id: 'p',
+    text: 't',
+    tension: { between: 'a', and: 'b', claim: 'c' },
+    fieldRefs,
+  };
+}
+
+test('grounded: a verbatim citation counts however the model punctuated it', () => {
+  const bare = 'The encounter is involuntary and brief by default';
+  assert.equal(grounded([problem(bare)], CITED_FIELD), 1, 'an unwrapped citation did not ground');
+  assert.equal(grounded([problem(`\u201c${bare}\u201d`)], CITED_FIELD), 1, 'curly quotes defeated the check');
+  assert.equal(grounded([problem(`"${bare}"`)], CITED_FIELD), 1, 'straight quotes defeated the check');
+});
+
+test('grounded: only the outer marks come off, so a paraphrase still fails', () => {
+  // An elision inside the quote is the model summarising, which is exactly what this refuses.
+  assert.equal(grounded([problem('\u201cThe encounter is involuntary \u2026 not visiting it\u201d')], CITED_FIELD), 0);
+  assert.equal(grounded([problem('\u201cpeople were walking through the room rather than coming to see it\u201d')], CITED_FIELD), 0);
+});
+
+test('grounded: a short quote never counts, wrapped or not', () => {
+  // Under eight words it could match by accident, and an accident is not a citation.
+  assert.equal(grounded([problem('\u201cinvoluntary and brief\u201d')], CITED_FIELD), 0);
 });

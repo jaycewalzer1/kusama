@@ -14,7 +14,14 @@ export type OpName = 'wash' | 'paint' | 'stroke' | 'fragment' | 'text' | 'rule' 
 export type MacroName = 'frame' | 'motif' | 'quarantine';
 export type StyleKind = 'wash' | 'hatch' | 'field' | 'outline' | 'solid';
 
-/** The closed set. Sixteen, and it stays sixteen: a seventeenth costs one of these. */
+/**
+ * The closed set. Seventeen. It was sixteen, and the rule was that a seventeenth costs one of
+ * these; `textMinHeight` was added without spending one because the thing it decides — is this
+ * string set at image scale or is it a caption — was not expressible by any combination of the
+ * other sixteen. `textMaxWords` limits how much is said and `textCase` limits how it is spelled;
+ * neither can tell a title from a credit line, which is the whole difference between a work with
+ * words in it and a work with a label on it.
+ */
 export type ConstraintKind =
   | 'maxDistinctColors'
   | 'palette'
@@ -23,6 +30,7 @@ export type ConstraintKind =
   | 'nodeCount'
   | 'textCase'
   | 'textMaxWords'
+  | 'textMinHeight'
   | 'textRequired'
   | 'maxRepeatDepth'
   | 'forbidMark'

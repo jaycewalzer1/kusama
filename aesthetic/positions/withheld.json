@@ -124,6 +124,14 @@
       "why": "Nothing here explains itself. A sentence long enough to have a clause is long enough to say what is being withheld, and saying it is the one thing that cannot happen."
     },
     {
+      "id": "p-no-caption",
+      "kind": "textMinHeight",
+      "params": { "min": 0.05 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "`p-few-words` limits how much may be said; this limits what saying it can be. A short line set small in a corner is not a mark on the surface, it is a label attached to it, and a label naming what has been covered hands over the content in the one form that fits. Any word here is at the scale of the coverings or it is not there."
+    },
+    {
       "id": "p-no-hatching",
       "kind": "forbidMark",
       "params": { "styles": ["hatch"] },

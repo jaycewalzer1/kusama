@@ -86,21 +86,21 @@ export const FIND_SCHEMA: Schema = {
   additionalProperties: false,
   required: ['questions', 'problems'],
   properties: {
-    // Protocol step 1. Zero is a legal answer and is the honest one when the brief answers
+    // Protocol step 1. Zero is a legal answer and is the honest one when the condition settles
     // everything; the cap is four because the fifth question is always a courtesy.
     questions: {
       type: 'array',
       minItems: 0,
       maxItems: 4,
       description:
-        'What the brief did not answer that would change what you make. Nobody will answer these, ' +
-        'so each one also has to say what you are deciding for the client in its absence.',
+        'What the situation has not settled that would change what you make. There is nobody to ' +
+        'ask, so each one also has to say what you are deciding in its absence.',
       items: {
         type: 'object',
         additionalProperties: false,
         required: ['question', 'whyItChangesTheObject', 'decidingInstead'],
         properties: {
-          question: { type: 'string', minLength: 10, description: 'Addressed to the client, in one sentence.' },
+          question: { type: 'string', minLength: 10, description: 'Put to the situation, in one sentence. Nobody will answer it.' },
           whyItChangesTheObject: {
             type: 'string',
             minLength: 20,
@@ -254,7 +254,7 @@ const COLLISION: Schema = {
     requirement: {
       type: 'string',
       minLength: 10,
-      description: 'The specific thing this commission requires. Quote it from the brief where you can.',
+      description: 'The specific pressure this situation exerts. Quote it from the condition where you can.',
     },
     principle: {
       type: 'string',
@@ -305,7 +305,7 @@ export const CHOOSE_SCHEMA: Schema = {
     cost: {
       type: 'string',
       minLength: 30,
-      description: 'What the client gives up by getting this rather than one of the others. A choice with no cost was not made.',
+      description: 'What is given up by making this rather than one of the others. A choice with no cost was not made.',
     },
     terms: TERMS,
     intention: INTENTION,

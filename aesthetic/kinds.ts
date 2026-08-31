@@ -182,6 +182,33 @@ const treeCheckers: Record<string, (f: TreeFacts, p: Record<string, unknown>) =>
     );
   },
 
+  // The caption test. A caption is not a length and not a wording — it is type set small enough to
+  // be read as apparatus rather than as image, parked where it will not disturb anything. Measured
+  // as a fraction of canvas height so the answer does not change with the size of the sheet.
+  //
+  // Quarantine labels are excluded, not passed: the macro sets them at a size the program never
+  // states, so there is nothing to measure and reporting a guess would be worse than reporting
+  // nothing. A tree whose only strings are labels satisfies this vacuously, and that is correct —
+  // this constraint decides set type, and a label is not set type.
+  textMinHeight(f, p) {
+    const min = num(p, 'min') ?? 0;
+    const set = f.texts.filter((t) => t.size !== undefined);
+    if (f.canvasHeight <= 0) return verdict(false, 'the program declares no canvas height, so no set size can be read as a fraction of it');
+    const floor = min * f.canvasHeight;
+    const under = set.filter((t) => t.size! < floor);
+    const offenders = under.map((t) => `${t.nodeId} set at ${t.size}, ${(t.size! / f.canvasHeight).toFixed(3)} of the height`);
+    const smallest = set.reduce((n, t) => Math.min(n, t.size!), Infinity);
+    return verdict(
+      under.length === 0,
+      under.length === 0
+        ? set.length === 0
+          ? 'no set type on the sheet'
+          : `smallest type is set at ${smallest}, ${(smallest / f.canvasHeight).toFixed(3)} of the height, at least ${min}`
+        : ids(offenders),
+      under.map((t) => t.nodeId)
+    );
+  },
+
   textRequired(f, p) {
     const wanted = list(p, 'contains') ?? [];
     const all = normalizeText(f.texts.map((t) => t.text).join(' '));

@@ -98,7 +98,7 @@
       "properties": {
         "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
         "kind": {
-          "description": "The closed set. Sixteen kinds, each with one pure checker.",
+          "description": "The closed set. Seventeen kinds, each with one pure checker.",
           "enum": [
             "maxDistinctColors",
             "palette",
@@ -107,6 +107,7 @@
             "nodeCount",
             "textCase",
             "textMaxWords",
+            "textMinHeight",
             "textRequired",
             "maxRepeatDepth",
             "forbidMark",
@@ -145,6 +146,7 @@
         { "if": { "properties": { "kind": { "const": "nodeCount" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/nodeCountParams" } } } },
         { "if": { "properties": { "kind": { "const": "textCase" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/textCaseParams" } } } },
         { "if": { "properties": { "kind": { "const": "textMaxWords" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/textMaxWordsParams" } } } },
+        { "if": { "properties": { "kind": { "const": "textMinHeight" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/textMinHeightParams" } } } },
         { "if": { "properties": { "kind": { "const": "textRequired" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/textRequiredParams" } } } },
         { "if": { "properties": { "kind": { "const": "maxRepeatDepth" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/maxRepeatDepthParams" } } } },
         { "if": { "properties": { "kind": { "const": "forbidMark" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/forbidMarkParams" } } } },
@@ -234,6 +236,20 @@
       "required": ["max"],
       "properties": {
         "max": { "description": "Per text op, not per program.", "type": "integer", "minimum": 1, "maximum": 100 }
+      }
+    },
+
+    "textMinHeightParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min"],
+      "properties": {
+        "min": {
+          "description": "Smallest set size any text op may use, as a fraction of canvas height. This is the caption test: type below the floor is apparatus rather than image. 0.05 on a 700-unit sheet is 35 units, which is a headline; a credit line is nearer 0.017. Quarantine labels are drawn at a size the program never states and are excluded rather than passed.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        }
       }
     },
 
