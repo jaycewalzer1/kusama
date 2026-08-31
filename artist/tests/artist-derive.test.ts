@@ -33,19 +33,23 @@ const READING: WorkReading = {
 // A famous work, deliberately. If any of this gets into the prompt the blindness test below finds it.
 const WORK: Work = {
   id: 'cma-fixture',
-  source: {
-    corpus: 'cma',
-    objectId: '424242',
-    url: 'https://example.invalid/art/424242',
-    apiUrl: 'https://example.invalid/api/artworks/424242',
-    title: 'The Starry Night',
-    creator: 'Vincent van Gogh (Dutch, 1853-1890)',
-    date: '1889',
-    rights: 'CC0',
-    imageUrl: 'https://example.invalid/img/424242.jpg',
-  },
-  image: { path: 'corpus/images/cma-fixture.jpg', hash: 'b'.repeat(64), mime: 'image/jpeg', bytes: 1234 },
-  fetchedAt: '2026-08-31T00:00:00.000Z',
+  source: 'cma',
+  object_id: '424242',
+  accession_number: '1889.42',
+  url: 'https://example.invalid/art/424242',
+  rights: 'CC0',
+  title: 'The Starry Night',
+  creator: 'Vincent van Gogh (Dutch, 1853-1890)',
+  date_display: '1889',
+  date_begin: 1889,
+  date_end: 1889,
+  classification: 'Painting',
+  medium: 'oil on canvas',
+  culture: 'Netherlands',
+  department: 'Modern European Painting and Sculpture',
+  image_url: 'https://example.invalid/img/424242.jpg',
+  image: { source_url: 'https://example.invalid/img/424242.jpg', sha256: 'b'.repeat(64), bytes: 1234, width: null, height: null },
+  fetched_at: '2026-08-31T00:00:00.000Z',
 };
 
 const move = (m: Partial<Move> & { move: Move['move'] }): Move => ({ why: 'x'.repeat(40), ...m });

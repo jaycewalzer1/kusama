@@ -16,6 +16,16 @@ out/
 # Render-metrics, env-model, judge and PNG caches (keyed by content hash; regenerable).
 .cache/
 
+# Corpus pixels. corpus/manifest.jsonl and corpus/readings/ ARE tracked — they are the evidence,
+# they are small, and a provenance claim has to be checkable from a clone. The images are neither:
+# every one is refetchable from the `image_url` on its manifest row and verifiable against the
+# sha256 on the same row, which is what `corpus verify` does. Measured across all 41,511 of
+# Cleveland's CC0 records the mean web derivative is 356KB, so tracking them would put 10.7GB in git
+# at a 30,000-work corpus. Untracked at 50 works, while it was still free to do.
+corpus/images/
+corpus/import-failures.jsonl
+corpus/failures.jsonl
+
 # Env / secrets
 .env
 *.env
