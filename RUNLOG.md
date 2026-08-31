@@ -92,3 +92,22 @@ One line per milestone. Written as it happens.
   tested — `pairwise` takes the comparisons and averages both orderings — but *making* a comparison
   is a model call. TODO is in the header of `artist/ratings.ts`, and it names the one rule that must
   not be lost: submit each pair twice with the plates swapped, and average here, not in the caller.
+- Corpus ingest, Tasks 0–8, no model calls (both providers still out of credit). Four commits:
+  `4c6aa23` README, `6677166`+`0ff9fc9` one manifest schema and the pixels out of git, `ac9624e` the
+  measured size report, `abb6b8f` three importers into one pool, `d7a9f7a` stratified selection.
+- Pool `348,983` across three museums; manifest `20,000` selected, seed `20260831`, ids sha256
+  `18deff92377d26e0…`. 541 tests / 0 fail, 11 goldens on the tree that was committed.
+- Six silent API faults found and each fixed against a measured number, not a guess. The pattern is
+  the same every time: **the wrong answer arrived with a 200 and the right row count.** Cleveland's
+  walk returned exactly 41,511 rows containing 40,477 distinct ids; the Art Institute's returned
+  59,042 rows containing 57,701 distinct works. Neither errored. `distinct !== returned` is the only
+  check that caught either, and it is now what the importers print. Full list in
+  `corpus/INGEST_REPORT.md`; the refusals are in `corpus/BLOCKERS.md`.
+- Two designs were wrong and the run said so. (1) The 8% classification cap **never binds** — over
+  6,834 classifications the largest takes 367 of 20,000, 1.8%. Round-robin over 15,526 strata does
+  the work; the cap is insurance, not the fix, and should not be described as the fix. (2) `Sculpture`
+  and `sculpture` were two buckets: three museums are three house styles, and the split was 4,722/373
+  for sculpture and 2,140/6,228 for textile. Bucketing is now case-folded; the manifest still stores
+  what the museum wrote.
+- Left standing, deliberately: 22 works with impossible dates (`1824528600s BCE`, `14865c`) are kept
+  and printed, because a `byPeriod` with no absurdities in it would be one that had been edited.
