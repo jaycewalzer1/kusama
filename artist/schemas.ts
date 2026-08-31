@@ -81,6 +81,24 @@ const TENSION: Schema = {
   },
 };
 
+/**
+ * The weight on one verbalized candidate.
+ *
+ * Asked for as "the chance this is the answer you would have given if you had been asked for one",
+ * not as "how good is it" — a quality rating collapses to a ranking and a ranking has no tail. The
+ * numbers are not required to sum to one and measured ones do not; `normalized()` in ./sampling.ts
+ * renormalizes, and the stated number is what gets logged.
+ */
+const PROBABILITY: Schema = {
+  type: 'number',
+  minimum: 0,
+  maximum: 1,
+  description:
+    'The chance that this is the one you would have named if you had been asked for a single ' +
+    'answer. Do not spread these evenly to look open-minded and do not put 0.9 on the obvious one ' +
+    'to look decisive; state what you actually think.',
+};
+
 export const FIND_SCHEMA: Schema = {
   type: 'object',
   additionalProperties: false,
@@ -114,14 +132,21 @@ export const FIND_SCHEMA: Schema = {
         },
       },
     },
+    // Verbalized: this is a *distribution over* problems, not a shortlist. The run samples from it
+    // and draws three. `minItems` stays at three so a three-problem answer is still legal, but the
+    // description asks for the tail, because the tail is the entire reason the field is weighted.
     problems: {
       type: 'array',
       minItems: 3,
-      maxItems: 6,
+      maxItems: 8,
+      description:
+        'Give at least five, and make the last two ones you do not really believe in. This is a ' +
+        'distribution, not a ranking: three of these will be drawn at random in proportion to the ' +
+        'probabilities you state, so a problem you list at 0.05 can still be the one that gets made.',
       items: {
         type: 'object',
         additionalProperties: false,
-        required: ['id', 'text', 'tension', 'fieldRefs'],
+        required: ['id', 'text', 'tension', 'fieldRefs', 'probability'],
         properties: {
           id: { type: 'string', pattern: '^[a-z][a-z0-9-]{1,40}$' },
           text: {
@@ -136,6 +161,7 @@ export const FIND_SCHEMA: Schema = {
             items: { type: 'string' },
             description: 'The lines of the field this came out of, quoted. A problem with no source is invented.',
           },
+          probability: PROBABILITY,
         },
       },
     },
@@ -397,5 +423,47 @@ export const SKETCH_SCHEMA: Schema = {
   properties: {
     approach: { type: 'string', minLength: 20, description: 'The one idea this sketch is testing.' },
     edits: { type: 'array', minItems: 1, items: editSchema() },
+  },
+};
+
+/**
+ * The distribution the three sketches of a problem are drawn from.
+ *
+ * This is one short call per problem, and it exists because of an arithmetic fact about the loop it
+ * replaced: three sketch calls made independently from one prompt each pick the mode independently,
+ * so "three sketches" bought one idea drawn three times. Naming the alternatives in a single call is
+ * the only place the model can see them side by side and price them against each other.
+ *
+ * Prose only. No edits here — an approach with its edits attached costs five times the tokens and
+ * four fifths of them are thrown away.
+ */
+export const PROPOSE_SCHEMA: Schema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['approaches'],
+  properties: {
+    approaches: {
+      type: 'array',
+      minItems: 3,
+      maxItems: 8,
+      description:
+        'Ways this problem could be drawn, with the chance you would have named each. Include the ' +
+        'obvious one — leaving it out is its own kind of averaging — and include at least two you ' +
+        'think are probably wrong.',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['id', 'approach', 'probability'],
+        properties: {
+          id: { type: 'string', pattern: '^[a-z][a-z0-9-]{1,40}$' },
+          approach: {
+            type: 'string',
+            minLength: 20,
+            description: 'One idea about composition, weight or contrast, stated so a sketch could refute it.',
+          },
+          probability: PROBABILITY,
+        },
+      },
+    },
   },
 };

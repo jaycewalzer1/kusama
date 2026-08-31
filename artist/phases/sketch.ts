@@ -18,7 +18,8 @@ import { decodePng, encodePng } from '../../env/png.js';
 import { contactSheet } from '../../env/sheet.js';
 import { callPolicy, type Spend } from '../call.js';
 import { capabilitySheet } from '../capability-sheet.js';
-import { bareEdit, SKETCH_SCHEMA } from '../schemas.js';
+import { distribution, rng, sampleIndices, streamSeed, tookTheMode } from '../sampling.js';
+import { bareEdit, PROPOSE_SCHEMA, SKETCH_SCHEMA } from '../schemas.js';
 import { stack } from '../observation.js';
 import type { AestheticProgram } from '../../aesthetic/types.js';
 import type { Canvas } from '../canvas.js';
@@ -103,15 +104,82 @@ export interface SketchResult {
   failure: string | null;
 }
 
+export interface ProposedApproach {
+  id: string;
+  approach: string;
+  probability: number;
+}
+
+const PROPOSE_SYSTEM = [
+  'You are about to sketch one problem three times, and you are naming the three before you draw any',
+  'of them.',
+  '',
+  'Spread out. The obvious approach belongs on the list — pretending you did not think of it is its',
+  'own kind of averaging — but so do the ones you suspect will fail, and you should say plainly how',
+  'likely each is rather than flattening them all to the same number.',
+  '',
+  'No edits here. One sentence per approach, said so that a drawing of it could turn out to be wrong.',
+].join('\n');
+
+function proposeObservation(commission: Commission, problem: Problem, n: number): string {
+  return [
+    stack(commission.position, commission.practice, commission.deliverable, commission.brief),
+    `THE PROBLEM YOU ARE ABOUT TO SKETCH\n[${problem.id}] ${problem.text}\ntension: ${problem.tension.between} vs ${problem.tension.and}: ${problem.tension.claim}`,
+    `WHAT HAPPENS TO THIS LIST\n${n} of the approaches you name will be drawn at random, weighted by the\nprobabilities you give. A low number does not remove an approach from the running; it makes it less\nlikely, and it is the only way you get to say that you thought of something and do not back it.`,
+  ].join(`\n${'-'.repeat(88)}\n`);
+}
+
+/**
+ * The three ideas this problem gets sketched as — drawn, not picked.
+ *
+ * One call, before any sketching. The loop it replaces made three independent sketch calls from one
+ * prompt and got the same idea three times, because three independent draws from a preference-tuned
+ * model land on the mode three times. Nothing else about SKETCH changes: it is still one call and one
+ * render per sketch, and a sketch is still allowed to fail.
+ *
+ * Returns both halves. `drawn` is what gets made; `proposed` is the whole distribution, kept so the
+ * caller can log what the run declined.
+ */
+export async function propose(
+  policy: Policy,
+  log: StudioLog,
+  spend: Spend,
+  commission: Commission,
+  problem: Problem,
+  runSeed: number,
+  n: number
+): Promise<{ drawn: ProposedApproach[]; proposed: ProposedApproach[] }> {
+  const result = await callPolicy<{ approaches: ProposedApproach[] }>(policy, log, spend, {
+    name: 'propose',
+    system: PROPOSE_SYSTEM,
+    observation: proposeObservation(commission, problem, n),
+    schema: PROPOSE_SCHEMA,
+    maxTokens: 4000,
+  });
+  const proposed = result.action.approaches;
+  const seed = streamSeed(runSeed, `propose:${problem.id}`);
+  const drawnIdx = sampleIndices(proposed, n, rng(seed));
+  const d = distribution('propose', seed, proposed.map((a) => ({ key: a.id, probability: a.probability })), drawnIdx);
+  log.append('note', { phase: 'sketch', problemId: problem.id, verbalized: d, tookTheMode: tookTheMode(d) });
+  return { drawn: drawnIdx.map((i) => proposed[i]!), proposed };
+}
+
 function observation(
   commission: Commission,
   problem: Problem,
   capabilitySheet: string,
   index: number,
   seed: Program,
-  textOps: { used: number; max: number }
+  textOps: { used: number; max: number },
+  assigned: ProposedApproach | null
 ): string {
   const left = Math.max(0, textOps.max - textOps.used);
+  // The assignment replaces the old closing line rather than sitting beside it: told both "make it
+  // different from a sketch you would draw twice" and "draw this specific idea", the model split the
+  // difference and drew neither.
+  const task = assigned
+    ? `THE IDEA THIS SKETCH IS TESTING\nYou named this one yourself and it was drawn from your own distribution:\n"${assigned.approach}"\nDraw that, not the approach you would have picked. It is sketch ${index + 1} of 3 for this problem\nand the other two are testing different ideas, so do not hedge toward them.`
+    : `This is sketch ${index + 1} of 3 for this problem. Make it different from a sketch you would draw\nfor the same problem twice. One idea, drawn clearly enough to be refuted.`;
   return [
     `THE SUBSTRATE (sketch budgets: profile ${SKETCH_PROFILE})\n${capabilitySheet}`,
     stack(commission.position, commission.practice, commission.deliverable, commission.brief),
@@ -120,7 +188,7 @@ function observation(
     // The remainder, not the cap. The cap is in the capability sheet above and was not enough: a
     // measured run overran it twenty-two times, having been told it and not told what was left.
     `THE BUDGET YOU WILL ACTUALLY HIT\nText ops: ${textOps.used} of ${textOps.max} used on this sheet, ${left} you can still add.\nA ${left + 1}th text op is refused, and the refusal costs you the sketch, not just the op.`,
-    `This is sketch ${index + 1} of 3 for this problem. Make it different from a sketch you would draw\nfor the same problem twice. One idea, drawn clearly enough to be refuted.`,
+    task,
   ].join(`\n${'-'.repeat(88)}\n`);
 }
 
@@ -132,7 +200,8 @@ export async function sketch(
   problem: Problem,
   index: number,
   seed: Program,
-  canvas: Canvas
+  canvas: Canvas,
+  assigned: ProposedApproach | null = null
 ): Promise<SketchResult> {
   const base: SketchResult = {
     problemId: problem.id,
@@ -154,10 +223,15 @@ export async function sketch(
   const result = await callPolicy<{ approach: string; edits: (EditAction & { servesElementId?: string })[] }>(policy, log, spend, {
     name: 'sketch',
     system: SYSTEM,
-    observation: observation(commission, problem, capabilitySheet(profile, pack), index, start, {
-      used: treeFacts(start).texts.length,
-      max: profile.limits.maxTextOps,
-    }),
+    observation: observation(
+      commission,
+      problem,
+      capabilitySheet(profile, pack),
+      index,
+      start,
+      { used: treeFacts(start).texts.length, max: profile.limits.maxTextOps },
+      assigned
+    ),
     schema: SKETCH_SCHEMA,
     maxTokens: 8000,
   });

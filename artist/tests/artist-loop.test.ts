@@ -60,10 +60,16 @@ test('the loop runs a whole trajectory: find, sketch, choose, make, examine, fin
   // The phases happened in the order the design insists on. EXAMINE runs once per ask to finish —
   // this stub asks twice and is refused twice — because the gate needs the artist's own reading of
   // the picture before it can decide whether the artist may stop looking at it.
-  const names = policy.calls.filter((c) => c !== 'sketch' && c !== 'act' && c !== 'replan');
+  const names = policy.calls.filter((c) => c !== 'sketch' && c !== 'act' && c !== 'replan' && c !== 'propose');
   assert.deepEqual(names, ['find', 'choose', 'examine', 'examine']);
   assert.ok(policy.calls.indexOf('sketch') > policy.calls.indexOf('find'));
   assert.ok(policy.calls.indexOf('choose') > policy.calls.lastIndexOf('sketch'));
+
+  // One PROPOSE per problem drawn, and every one of them before any sketching. The count is the
+  // check that matters: a PROPOSE per *sketch* would be the same call made three times over and
+  // would put the three sketches back on three independent draws, which is what it exists to stop.
+  assert.equal(policy.calls.filter((c) => c === 'propose').length, trajectory.problems.length);
+  assert.ok(policy.calls.indexOf('propose') < policy.calls.indexOf('sketch'));
 
   assert.ok(existsSync(path.join(CELL, 'final.png')));
   assert.ok(existsSync(path.join(CELL, 'final.json')));

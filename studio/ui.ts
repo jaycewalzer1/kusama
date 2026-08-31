@@ -428,11 +428,14 @@ function runView(root: string, id: string): RunView | null {
  * number somebody wrote in a README once.
  *
  * The shape of a trajectory is fixed by the loop, not guessed: one FIND, one CHOOSE, one EXAMINE,
- * `sketches` calls per problem found, and per step an ACT and a REPLAN except after the last.
- * That is `2 + sketches * problems + 2 * steps` calls, which reproduces every finished run here
- * exactly. What it cannot know in advance is how many problems FIND will return (the schema allows
- * three to six) and how many steps the artist will use of the budget it is given, so the page turns
- * this into a range and prices the range at the dollars and minutes a call has really taken.
+ * one PROPOSE and `sketches` sketch calls per problem, and per step an ACT and a REPLAN except after
+ * the last — `2 + problems * (1 + sketches) + 2 * steps`. `problems` used to be the unknown (FIND
+ * returned three to six); it is now three, because FIND names a distribution and the run draws three
+ * from it. What is left unknown is how many steps the artist uses of its budget, so the page turns
+ * that into a range and prices it at the dollars and minutes a call has really taken here.
+ *
+ * Runs made before PROPOSE existed are still averaged in. They are the same kind of thing — a call
+ * to the same models at the same sizes — and the rate this returns is per call, not per run.
  */
 function observed(root: string): { runs: number; usdPerCall: number; msPerCall: number; leastSteps: number } {
   let calls = 0;

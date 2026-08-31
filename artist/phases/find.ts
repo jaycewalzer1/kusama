@@ -11,11 +11,22 @@
 
 import { callPolicy, type Spend } from '../call.js';
 import { findObservation } from '../observation.js';
+import { distribution, rng, sampleIndices, streamSeed, tookTheMode } from '../sampling.js';
 import { FIND_SCHEMA } from '../schemas.js';
 import type { Commission } from '../field.js';
 import type { Policy } from '../policy/interface.js';
 import type { StudioLog } from '../studio-log.js';
 import type { Problem, Question } from '../types.js';
+
+/**
+ * How many of the proposed problems are carried into SKETCH.
+ *
+ * Three, which is what the loop always sketched. The change is not how many problems get drawn but
+ * how they are chosen: they used to be the whole of a short answer, and are now a draw from a longer
+ * one. Raising this would raise the sketch bill linearly and narrow the distribution it draws from,
+ * which is the wrong direction on both counts.
+ */
+export const FIND_KEEP = 3;
 
 const SYSTEM = [
   'You are an artist with a fixed position, working in a situation you did not choose. Nobody has',
@@ -34,8 +45,9 @@ export async function find(
   policy: Policy,
   log: StudioLog,
   spend: Spend,
-  commission: Commission
-): Promise<{ questions: Question[]; problems: Problem[] }> {
+  commission: Commission,
+  runSeed: number
+): Promise<{ questions: Question[]; problems: Problem[]; proposed: Problem[] }> {
   log.append('phase', { phase: 'find' });
   const result = await callPolicy<{ questions: Question[]; problems: Problem[] }>(policy, log, spend, {
     name: 'find',
@@ -44,7 +56,22 @@ export async function find(
     schema: FIND_SCHEMA,
     maxTokens: 4000,
   });
-  return { questions: result.action.questions, problems: result.action.problems };
+  const proposed = result.action.problems;
+
+  // The draw. Seeded off the run seed and the phase name, so it is a pure function of things already
+  // in the log and `replay` takes the same three with the model unplugged.
+  const seed = streamSeed(runSeed, 'find');
+  const weighted = proposed.map((p) => ({ probability: p.probability ?? 0 }));
+  const drawn = sampleIndices(weighted, FIND_KEEP, rng(seed));
+  const d = distribution(
+    'find',
+    seed,
+    proposed.map((p) => ({ key: p.id, probability: p.probability ?? 0 })),
+    drawn
+  );
+  log.append('note', { phase: 'find', verbalized: d, tookTheMode: tookTheMode(d) });
+
+  return { questions: result.action.questions, problems: drawn.map((i) => proposed[i]!), proposed };
 }
 
 /**

@@ -52,7 +52,7 @@ import { act, replan } from './phases/act.js';
 import { choose } from './phases/choose.js';
 import { examine } from './phases/examine.js';
 import { find, grounded } from './phases/find.js';
-import { assertTextBudget, SKETCH_PROFILE, sheetNotes, sheetOf, sketch, type SketchResult } from './phases/sketch.js';
+import { assertTextBudget, propose, SKETCH_PROFILE, sheetNotes, sheetOf, sketch, type SketchResult } from './phases/sketch.js';
 import type { Policy } from './policy/interface.js';
 import type {
   Affect,
@@ -376,11 +376,15 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
 
   try {
     // 1. FIND -------------------------------------------------------------------------------------
-    const { questions, problems } = await find(o.policy, log, spend, commission);
+    const { questions, problems, proposed } = await find(o.policy, log, spend, commission, o.seed);
     log.append('note', {
       phase: 'find',
+      // `proposed` is what the artist named; `found` is what the draw kept. Reporting only the
+      // second would make a wide distribution and a narrow one look identical from the log.
+      proposed: proposed.length,
       found: problems.length,
       grounded: grounded(problems, fieldText),
+      groundedProposed: grounded(proposed, fieldText),
       questions: questions.length,
     });
 
@@ -402,8 +406,11 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
     });
     const results: SketchResult[] = [];
     for (const problem of problems) {
+      // One short call names the ideas, then the draw hands one to each sketch. Without it the three
+      // sketch calls are independent draws from the same prompt and come back as one idea three times.
+      const { drawn } = await propose(o.policy, log, spend, commission, problem, o.seed, perProblem);
       for (let i = 0; i < perProblem; i++) {
-        results.push(await sketch(o.policy, log, spend, commission, problem, i, seed, sketchCanvas));
+        results.push(await sketch(o.policy, log, spend, commission, problem, i, seed, sketchCanvas, drawn[i] ?? null));
       }
     }
     await sketchCanvas.close();

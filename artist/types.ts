@@ -60,6 +60,13 @@ export interface Problem {
   tension: Tension;
   /** Which lines of the field this problem was read out of. Free text, quoted back for the record. */
   fieldRefs: string[];
+  /**
+   * The weight the artist put on this problem when it named the whole distribution. Optional because
+   * trajectories collected before verbalized sampling existed do not carry it, and — the standing
+   * trap in this repo — an absent weight must not be read as a confident zero. Check that the field
+   * exists, never that it is non-zero.
+   */
+  probability?: number;
 }
 
 /** A question the brief did not answer, and what the artist decided in the absence of an answer. */

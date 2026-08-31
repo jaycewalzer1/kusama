@@ -87,18 +87,23 @@ function plan() {
 /**
  * What the settings on this panel will cost, priced on the runs in this directory.
  *
- * A trajectory is one FIND, one CHOOSE, one EXAMINE, `sketches` calls for each problem FIND
- * returns, and per step an ACT and a REPLAN except after the last: 2 + sketches * problems +
- * 2 * steps. FIND may return three problems or six, and the artist usually finishes well inside
- * the step budget, so both ends are shown rather than one number that will be wrong.
+ * A trajectory is one FIND, one CHOOSE, one EXAMINE, then per problem one PROPOSE and `sketches`
+ * sketch calls, and per step an ACT and a REPLAN except after the last:
+ * 2 + problems * (1 + sketches) + 2 * steps.
+ *
+ * `problems` is now a constant. FIND still names up to eight, but the run draws three from that
+ * distribution and sketches those, so the only thing left unknown in advance is how many steps the
+ * artist uses of the budget it is given. Both ends are still shown for that.
  */
+const PROBLEMS_SKETCHED = 3;
+
 function estimate(cells) {
   const o = catalog.observed ?? { runs: 0, usdPerCall: 0.08, msPerCall: 55000, leastSteps: 3 };
   const sketches = Math.max(0, Number($('sketches').value) || 0);
   const budget = Math.max(1, Number($('steps').value) || 1);
-  const calls = (problems, steps) => 2 + sketches * problems + 2 * steps;
-  const lo = cells * calls(3, Math.min(o.leastSteps, budget));
-  const hi = cells * calls(6, budget);
+  const calls = (steps) => 2 + PROBLEMS_SKETCHED * (1 + sketches) + 2 * steps;
+  const lo = cells * calls(Math.min(o.leastSteps, budget));
+  const hi = cells * calls(budget);
   const money = (n) => (n * o.usdPerCall).toFixed(n * o.usdPerCall < 10 ? 1 : 0);
   const minutes = (n) => (n * o.msPerCall) / 60000;
   const clock = minutes(hi) < 90 ? `${Math.round(minutes(lo))}-${Math.round(minutes(hi))} min` : `${(minutes(lo) / 60).toFixed(1)}-${(minutes(hi) / 60).toFixed(1)} h`;

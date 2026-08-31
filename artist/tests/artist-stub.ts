@@ -113,19 +113,34 @@ export class StubPolicy implements Policy {
             text: 'The reader has decided this is not for them before any word is read, so legibility is not the problem.',
             tension: { between: 'urgency', and: 'suspicion', claim: 'urgency reads as advertising' },
             fieldRefs: ['the field says the audience is busy and did not ask to see it'],
+            probability: 0.2,
           },
           {
             id: 'p-date',
             text: 'A date is the only part of this that anyone can act on, and a date is the least interesting thing to draw.',
             tension: { between: 'information', and: 'form', claim: 'the actionable part is the dull part' },
             fieldRefs: ['a date he can put in a diary would stop him'],
+            probability: 0.55,
           },
           {
             id: 'p-exhausted',
             text: 'Every image this subject suggests has already been used until it stopped meaning anything at all.',
             tension: { between: 'recognition', and: 'exhaustion', claim: 'recognisable is used up' },
             fieldRefs: ['what is exhausted'],
+            probability: 0.25,
           },
+        ],
+      };
+    }
+
+    // The stub proposes exactly as many approaches as will be drawn, so the draw is a permutation and
+    // the loop test stays deterministic in what it sketches while still exercising the sampler.
+    if (request.name === 'propose') {
+      return {
+        approaches: [
+          { id: 'a-date-alone', approach: 'One date, set large, with nothing else on the sheet at all.', probability: 0.6 },
+          { id: 'a-two-dates', approach: 'Both dates, one over the other, so the gap between them is the picture.', probability: 0.25 },
+          { id: 'a-edge', approach: 'The date run off the edge so it can only be read by standing close.', probability: 0.15 },
         ],
       };
     }
