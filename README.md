@@ -30,13 +30,13 @@ The pinned configuration is:
 
 | pin | value |
 | --- | --- |
-| p5.js | 2.2.0, `vendor/p5.min.js`, sha256 `994ad504…47522c` |
-| p5.brush | 2.1.0-beta, `vendor/p5.brush.js`, sha256 `05584f62…761190` |
+| p5.js | 2.2.0, `renderer/vendor/p5.min.js`, sha256 `994ad504…47522c` |
+| p5.brush | 2.1.0-beta, `renderer/vendor/p5.brush.js`, sha256 `05584f62…761190` |
 | Chromium | playwright 1.55.0's `chromium-1187` (Chrome 140.0.7339.16), installed into `.browsers/` |
 | launch flags | `--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader` |
 | GL | software WebGL2 through ANGLE + SwiftShader; no host GPU is used |
 | antialiasing | off — the page calls `setAttributes('antialias', false)` and `pixelDensity(1)` |
-| fonts | all under `assets/fonts/`: `grotesque.ttf` (PT Sans) `9cc83149…6d0f10a`, `serif.ttf` (PT Serif) `a4951fad…a2557a`, plus 34 more faces, each hashed in the pack |
+| fonts | declared by the pack as `assets/fonts/…`, resolved under `renderer/`: `grotesque.ttf` (PT Sans) `9cc83149…6d0f10a`, `serif.ttf` (PT Serif) `a4951fad…a2557a`, plus 34 more faces, each hashed in the pack |
 | asset pack | content-hashed; `core@003e484d9602` (15 fragments, 1 motif) or `core-v1@6d0d9e8f2ccf` (the same shapes plus 36 faces) |
 | profile | content-hashed; `default-v0@15ad87c16095` or `default-v1@be50e7c6f0a6` |
 | OS / arch | the same one; recorded per render as e.g. `darwin` / `arm64` |
@@ -63,10 +63,10 @@ What is **not** claimed:
   claimed. That is why `artist grid` takes `--k` and reports a within-cell spread. See
   `docs/artist/MEASUREMENT.md`.
 
-Determinism *within* one machine and configuration is the property that has been measured. See
-`NOTES.md` (R1, R4, R6, R7) for the measurements and for the three separate non-determinism sources
-that had to be eliminated to get it: a cold browser process, a partially composited frame, and the
-multisample resolve.
+Determinism *within* one machine and configuration is the property that has been measured. Three
+separate non-determinism sources had to be eliminated to get it: a cold browser process, a partially
+composited frame, and the multisample resolve. The measurements behind each are in `NOTES.md` as of
+commit `0855844`; the file was removed after that, so read it out of git history.
 
 ## The two safeguards
 
@@ -310,8 +310,8 @@ match what the pack declares. Adding a second name for one field would have been
 thing.
 
 ```bash
-node assets/fonts/fetch.mjs --check   # re-hash the vendored type against manifest.json
-node assets/fonts/fetch.mjs           # fetch anything missing and rewrite the manifest
+node renderer/assets/fonts/fetch.mjs --check   # re-hash the vendored type against manifest.json
+node renderer/assets/fonts/fetch.mjs           # fetch anything missing and rewrite the manifest
 ```
 
 `fetch.mjs` is a build-time tool and the only thing in the repo that touches the network. It is
@@ -322,8 +322,8 @@ Both halves of the face gate, which is how a face earns its way into the pack:
 
 ```bash
 node docs/substrate-test/tools/face-programs.mjs out/faces        # one dense program per face
-node dist/cli/golden.js -e out/faces -g out/faces-goldens --update  # process 1: pin
-node dist/cli/golden.js -e out/faces -g out/faces-goldens --check   # process 2: agree
+node dist/studio/golden.js -e out/faces -g out/faces-goldens --update  # process 1: pin
+node dist/studio/golden.js -e out/faces -g out/faces-goldens --check   # process 2: agree
 node docs/substrate-test/tools/face-ink.mjs out/faces-goldens       # and did anything happen
 ```
 
@@ -439,15 +439,17 @@ launched.** Nothing unvalidated is ever rendered.
 ## Quickstart
 
 ```bash
-cd medium
 npm install
 
 # Fetch the pinned Chromium into the repo, not into the user-wide Playwright cache.
+# This step is not optional: `.browsers/` is gitignored, and without it a fresh clone
+# fails 35 tests from this one cause.
 PLAYWRIGHT_BROWSERS_PATH=$PWD/.browsers npx playwright install chromium
 ```
 
 The browser lives in `.browsers/` (currently `chromium-1187`). Nothing else needs to be
-installed: p5, p5.brush and every font are committed under `vendor/` and `assets/fonts/`,
+installed: p5, p5.brush and every font are committed under `renderer/vendor/` and
+`renderer/assets/fonts/`,
 and the page is served from disk over a fake `http://medium.invalid` origin with `page.route()`, so
 renders are hermetic and work offline (NOTES O3). `Renderer.launch()` defaults
 `PLAYWRIGHT_BROWSERS_PATH` to `.browsers` itself, so once installed you do not have to set it
@@ -491,7 +493,7 @@ npm run contact-sheet -- out/canonical.png other/canonical.png -o sheet.png --co
 npm run fragments-sheet -- --pack core -o fragments-sheet.png
 
 # Verify the vendored type against its manifest. No network unless a file is missing.
-node assets/fonts/fetch.mjs --check
+node renderer/assets/fonts/fetch.mjs --check
 
 # Tests. These launch real browsers and render, so they are not fast.
 npm test
@@ -541,20 +543,21 @@ reading the program against a medium other than the one it declares.
 
 ## Layout
 
-Three layers, and the import arrows only ever point one way:
-`renderer/` <- `env/` <- `aesthetic/` <- `artist/` <- `cli/`. The substrate never imports the layer
-that has taste, and neither of them imports the layer that has a model in it.
+Five layers, and the import arrows only ever point one way:
+`renderer/` <- `env/` <- `aesthetic/` <- `artist/` <- `studio/`. The substrate never imports the layer
+that has taste, and neither of them imports the layer that has a model in it. Each layer holds its own
+`tests/`; there is no top-level `tests/`.
 
 ```
 renderer/    plain ESM shared with the browser: resolve, draw, ops, macros, compositing, rng, page
-env/         Node side: browser control, validation, profiles, packs, edits, diffing, PNG, print, presentation
-schema/      program, paintstyle, edit and profile JSON Schemas
-profiles/    medium profiles; default-v0 and default-v1 are the shipped ones
-assets/packs/core/     the content-hashed asset pack (15 fragments, 1 motif) and the script that authors it
-assets/packs/core-v1/  core's shapes read straight out of core, plus the 36-face type library
-assets/fonts/          all 36 vendored faces and their licence texts: the two from V0, and the 34
-                       fetched from Google Fonts, which manifest.json and fetch.mjs cover
-vendor/      p5, p5.brush, and VERSIONS.md with the pinned versions and hashes
+  vendor/               p5, p5.brush, and VERSIONS.md with the pinned versions and hashes
+  assets/packs/core/    the content-hashed asset pack (15 fragments, 1 motif) and the script that authors it
+  assets/packs/core-v1/ core's shapes read straight out of core, plus the 36-face type library
+  assets/fonts/         all 36 vendored faces and their licence texts: the two from V0, and the 34
+                        fetched from Google Fonts, which manifest.json and fetch.mjs cover
+env/         Node side: browser control, validation, packs, edits, diffing, PNG, print, presentation
+  profiles/             medium profiles; default-v0 and default-v1 are the shipped ones
+schema/      program, paintstyle, edit and profile JSON Schemas — frozen, and must not move
 examples/    the eleven programs the goldens are pinned to, split by profile: v0/ four, v1/ seven
 goldens/     the committed evidence that this medium still renders what it used to, v0/ and v1/
 
@@ -562,27 +565,32 @@ aesthetic/   the layer above the medium: what a program is *for*, and whether it
   check.ts facts.ts kinds.ts types.ts   pure, synchronous, no browser and no LLM, ever
   measure.ts                            the one part that needs a browser
   aesthetic-program.schema.json         the gate a position must pass
-  positions/   six aesthetic programs
-  briefs/      five commissions
-  fixtures/    twelve trees, a pass and a fail per position
+  positions/     three aesthetic programs: interference, many-hands, withheld
+  briefs/        three conditions, each with a .json and a .field.json
+  deliverables/  five kinds of object: for-one, panel, print, underpainting, unshown
+  elements/      the lineage pack
+  fixtures/      six trees, a pass and a fail per position
 
 artist/      the layer above the aesthetic: the loop that has a model in it
   run.ts phases/    find -> choose -> sketch -> act -> examine
   policy/           the trainable half; the only files here allowed to import a model SDK
   env*.ts           the environment half, and the on-disk cache that makes replay cheap
   studio-log.ts     the hash-chained studio.jsonl every run writes
-  reward.ts replay.ts export.ts
+  judge.ts          L5: three offline critics over a finished trajectory
+  breaks.ts provenance.ts archive.ts ratings.ts   readers of a finished run
+  corpus.ts element-derive.ts                     the CC0 source works and what is derived from them
+  reward.ts replay.ts export.ts twin.ts
 
-cli/         the commands above
-tests/       node:test suites, including the standing determinism and isolation checks
+studio/      the commands above, and ui.ts + ui/ for the console at :4321
+corpus/      50 CC0 works: works/ records, images/ bytes, readings/ what was read from them
 docs/        constraints.md (the constraint language), the substrate-test write-up, artist/NEEDS.md
-ui/          the studio's page and studio.js; see cli/ui.ts
 ```
 
 `aesthetic/check.ts` and its pure siblings must never import `measure.ts` or `env/browser.ts`. That
 line is what keeps a constraint check cheap enough to run on every candidate edit instead of only at
 the end of a run; crossing it would drag Playwright into the search loop.
 
-`NOTES.md` records the library surprises, the measurements behind the determinism protocol, and the
-operators that were wanted but deliberately not built. Read it before changing anything in
-`renderer/` or `env/browser.ts`. `docs/constraints.md` does the same for the constraint language.
+The library surprises, the measurements behind the determinism protocol, and the operators that were
+wanted but deliberately not built were recorded in `NOTES.md`, which was removed after commit
+`0855844` and survives only in git history. Read it there before changing anything in `renderer/` or
+`env/browser.ts`. `docs/constraints.md` does the same for the constraint language and is current.
