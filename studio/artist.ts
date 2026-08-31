@@ -6,6 +6,7 @@
 //   artist steps <dir>                   one record per step: before, action, after, what it moved
 //   artist breaks <dir>                  which commitment broke, what forced it, declared or not
 //   artist provenance <dir>              has this combination of lineages been made before?
+//   artist archive <runs>                finished plates filed by what they look like, in a grid
 //   artist filmstrip <dir> [--story]     the piece rebuilt step by step, and the survival curve
 //                                        --story adds index.html: each frame next to why it happened
 //   artist twin <arm> <control>          does the position steer, or is it decoration? the two arms
@@ -49,6 +50,7 @@ import { readLog } from '../artist/studio-log.js';
 import { processOf, processText } from '../artist/transition.js';
 import { breakRecordOf, breakText } from '../artist/breaks.js';
 import { provenanceOf, provenanceText } from '../artist/provenance.js';
+import { archive, archiveText, measureRuns, DEFAULT_AXES, DEFAULT_BINS, DESCRIPTORS, type Descriptor } from '../artist/archive.js';
 import { twinOf, twinText } from '../artist/twin.js';
 import { walkthroughOf, walkthroughHtml } from '../artist/walkthrough.js';
 import { sftLines, toJsonl } from '../artist/export.js';
@@ -370,6 +372,26 @@ program
     const r = provenanceOf(dir, (start.data as { elementIds?: string[] }).elementIds ?? []);
     writeFileSync(path.join(dir, 'provenance.json'), `${JSON.stringify(r, null, 2)}\n`);
     console.log(provenanceText(r));
+  });
+
+program
+  .command('archive')
+  .description('finished plates filed by what they look like — the MAP-Elites grid, storage and inspection only')
+  .argument('<runs>', 'the directory holding the run directories')
+  .option('--x <descriptor>', `x axis, one of: ${DESCRIPTORS.join(' ')}`, DEFAULT_AXES[0])
+  .option('--y <descriptor>', `y axis, one of: ${DESCRIPTORS.join(' ')}`, DEFAULT_AXES[1])
+  .option('--bins <n>', 'cells per side', String(DEFAULT_BINS))
+  .action((runs: string, opts: { x: string; y: string; bins: string }) => {
+    for (const d of [opts.x, opts.y]) {
+      if (!(DESCRIPTORS as readonly string[]).includes(d)) {
+        throw new Error(`"${d}" is not measured. The axes come from RenderMetrics: ${DESCRIPTORS.join(', ')}`);
+      }
+    }
+    const { measured, skipped } = measureRuns(runs);
+    const a = archive(measured, [opts.x as Descriptor, opts.y as Descriptor], Number(opts.bins));
+    writeFileSync(path.join(runs, 'archive.json'), `${JSON.stringify(a, null, 2)}\n`);
+    console.log(archiveText(a));
+    for (const s of skipped) console.log(`skipped, not a readable finished run: ${s}`);
   });
 
 program
