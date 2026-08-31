@@ -106,33 +106,30 @@ export function strip(dir: string, cell = 220): { png: Buffer | null; frames: nu
 export interface Cell {
   positionId: string;
   briefId: string;
-  deliverableId: string;
   /** The null-twin arm: L1 stripped, still graded against the real position. */
   control: boolean;
 }
 
 /**
- * `position:brief:deliverable` with an optional trailing `:control`.
+ * `position:brief` with an optional trailing `:control`.
  *
- * Deliberately strict about arity. A three-part cell spec that silently defaulted its deliverable
- * would run a different experiment than the one written on the command line, and the difference
- * would not show up until the scores were already collected.
+ * Deliberately strict about arity. A cell spec with a part nobody reads would run a different
+ * experiment than the one written on the command line, and the difference would not show up until
+ * the scores were already collected.
  */
 export function parseCell(spec: string): Cell {
   const parts = spec.split(':');
-  const control = parts.length === 4 && parts[3] === 'control';
-  if (parts.length !== 3 && !control) {
-    throw new Error(
-      `cell "${spec}" is not position:brief:deliverable[:control] — got ${parts.length} part(s)`
-    );
+  const control = parts.length === 3 && parts[2] === 'control';
+  if (parts.length !== 2 && !control) {
+    throw new Error(`cell "${spec}" is not position:brief[:control] — got ${parts.length} part(s)`);
   }
-  const [positionId, briefId, deliverableId] = parts as [string, string, string];
-  if (!positionId || !briefId || !deliverableId) throw new Error(`cell "${spec}" has an empty part`);
-  return { positionId, briefId, deliverableId, control };
+  const [positionId, briefId] = parts as [string, string];
+  if (!positionId || !briefId) throw new Error(`cell "${spec}" has an empty part`);
+  return { positionId, briefId, control };
 }
 
 export function cellName(c: Cell): string {
-  return `${c.positionId}__${c.briefId}__${c.deliverableId}${c.control ? '__control' : ''}`;
+  return `${c.positionId}__${c.briefId}${c.control ? '__control' : ''}`;
 }
 
 /** Where one seed of one cell lives. Stable, so an interrupted batch can find what it already did. */

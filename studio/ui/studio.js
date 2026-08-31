@@ -7,7 +7,7 @@
 
 const $ = (id) => document.getElementById(id);
 
-let catalog = { positions: [], briefs: [], deliverables: [], hasKey: false };
+let catalog = { positions: [], briefs: [], hasKey: false };
 let selected = null;
 let plates = [];
 let pinned = null;
@@ -28,18 +28,13 @@ function checked(container) {
   return [...container.querySelectorAll('input:checked')].map((i) => i.value);
 }
 
-/**
- * `single` makes the layer an either/or rather than a set. The kind of object is one axis of a run
- * and one axis of a grid alike — the grid crosses positions with conditions, never with objects —
- * so offering it as a checkbox would offer a cross that cannot be run.
- */
-function picks(container, items, label, kind, single = false) {
+function picks(container, items, label, kind) {
   const was = new Set(checked(container));
   container.innerHTML = '';
   for (const item of items) {
     const row = document.createElement('div');
     const box = document.createElement('input');
-    box.type = single ? 'radio' : 'checkbox';
+    box.type = 'checkbox';
     box.name = kind;
     box.value = item.id;
     box.checked = was.has(item.id);
@@ -57,7 +52,7 @@ function picks(container, items, label, kind, single = false) {
     });
     row.append(document.createTextNode(item.id), name, read);
     row.addEventListener('click', (e) => {
-      if (e.target !== box) box.checked = single ? true : !box.checked;
+      if (e.target !== box) box.checked = !box.checked;
       plan();
     });
     container.append(row);
@@ -69,10 +64,9 @@ function picks(container, items, label, kind, single = false) {
 function plan() {
   const p = checked($('positions')).length;
   const b = checked($('briefs')).length;
-  const d = checked($('deliverables')).length;
   const control = $('control').value ? 1 : 0;
   const cells = p === 1 && b === 1 ? 1 : p * (b + control);
-  $('start').disabled = p === 0 || b === 0 || d === 0;
+  $('start').disabled = p === 0 || b === 0;
   $('start').textContent = cells <= 1 ? 'Start run' : `Start grid — ${cells} runs`;
   const note = $('plan');
   if (!catalog.hasKey) {
@@ -81,7 +75,7 @@ function plan() {
     return;
   }
   note.className = 'note';
-  note.textContent = p === 0 || b === 0 || d === 0 ? 'pick a position, a condition and a kind of object' : estimate(cells);
+  note.textContent = p === 0 || b === 0 ? 'pick a position and a condition' : estimate(cells);
 }
 
 /**
@@ -119,7 +113,6 @@ async function start() {
     kind: single ? 'run' : 'grid',
     position: positions[0],
     brief: briefs[0],
-    deliverable: checked($('deliverables'))[0],
     positions,
     briefs,
     seed: Number($('seed').value),
@@ -553,8 +546,8 @@ async function preview(kind, id) {
 // is the reason the runs kept coming back as posters. A condition is not a job. It says what is at
 // hand, what has happened and has not been settled, what the maker stands to lose and what the
 // situation will not permit; there is nobody paying and nobody owed an outcome. It still says
-// nothing about what the thing should look like or what kind of object it is: those are the
-// artist's and the launcher's, and the server refuses the save if one turns up.
+// nothing about what the thing should look like or what kind of object it is: nobody has ordered an
+// object of a particular type, so that is the artist's to decide.
 //
 // `[name, label, hint, tall]`.
 const BRIEF_FORM = [
@@ -604,7 +597,7 @@ function newBrief() {
   docHeader('new condition');
   const nodes = [
     el('p', 'A condition is the situation the artist is working in, and the field it reads. Both are hand-written: the run hashes them, and FIND takes its problem out of the field rather than out of the model.', 'doc-note'),
-    el('p', 'Nobody is commissioning this. Say what is at hand, what happened, what it would cost to get wrong and what the situation will not permit — and do not say what it should look like, or what kind of object it is. Those are the artist\u2019s and the launcher\u2019s to decide, and a condition that decides either is refused here rather than quietly ruining the run.', 'doc-note'),
+    el('p', 'Nobody is commissioning this. Say what is at hand, what happened, what it would cost to get wrong and what the situation will not permit — and do not say what it should look like, or what kind of object it is. Nobody has ordered an object of a particular type, so both are the artist\u2019s to decide, and a condition that decides either has answered a question the run exists to watch the artist answer.', 'doc-note'),
     field('id', 'name', 'lowercase-with-hyphens; the id it is run by'),
   ];
   for (const [name, label, hint, tall] of BRIEF_FORM) nodes.push(field(name, label, hint, tall));
@@ -672,7 +665,7 @@ async function newPosition() {
   const data = from ? await (await fetch(`/api/doc?kind=position&id=${from}`)).json() : { doc: {} };
   const nodes = [
     el('p', `A position is an aesthetic program — commitments, prohibitions, and the constraint kinds that decide them. This starts as a copy of ${from}. Change its id, its name, what it is committed to, and every word of meta.practice: the practice is the artist's account of its own work and is the whole of what a copy leaves behind.`, 'doc-note'),
-    el('p', 'Say what this way of working believes about a medium. Do not say what the object does — that it is read at fifteen feet, that it is A3, that a copier crushes the midtones. Those are facts the artist could be wrong about, they belong to the deliverable, and a position that states them has answered a question the run exists to watch the artist answer. The save is refused if one turns up outside lineage.', 'doc-note'),
+    el('p', 'Say what this way of working believes about a medium. Do not say what the object physically is — that it is read at fifteen feet, that it is A3, that a copier crushes the midtones. Nobody has ordered an object of a particular type, so what the thing has to be is the artist\'s to decide, and a position that states it has answered a question the run exists to watch the artist answer.', 'doc-note'),
     field('id', 'name', 'lowercase-with-hyphens'),
   ];
   const area = el('textarea');
@@ -719,7 +712,6 @@ async function write(body, note) {
 function fillLists() {
   picks($('positions'), catalog.positions, (p) => p.name, 'position');
   picks($('briefs'), catalog.briefs, (b) => b.title, 'brief');
-  picks($('deliverables'), catalog.deliverables, (d) => d.name, 'deliverable', true);
 }
 
 // --- start up ---------------------------------------------------------------------------------

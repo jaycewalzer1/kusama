@@ -1,6 +1,9 @@
 // `corpus` — fetch real works, read them blind, and say how many the model already knew.
 //
-//   corpus import [-n 50] [--skip 0]   fetch works and their rights into corpus/
+//   corpus import [-n 50] [--skip 0] [--type T] [--department D]
+//                                      fetch works and their rights into corpus/manifest.jsonl
+//   corpus images                      refetch pixels for works whose images are missing
+//   corpus verify                      every row against the bytes on disk: present, and the right ones
 //   corpus read                        one blind reading and one leakage probe per unread work
 //   corpus status                      what is on disk, and the canonical count
 //
@@ -9,19 +12,28 @@
 // withdrawn for everybody. `read` is idempotent: the environment model caches on request content, so
 // re-running it costs nothing and returns exactly what the first run got.
 
+import { appendFileSync, createReadStream, existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import path from 'node:path';
 import { Command } from 'commander';
 import { derivedIds, loadElement } from '../aesthetic/elements/pack.js';
 import {
+  CORPUS_DIR,
+  MANIFEST,
+  SOURCE_CORPUS,
   corpusSummary,
+  hasImage,
   importWork,
   listCandidates,
   listWorks,
   loadReading,
   readWork,
   readingProtocolHash,
+  refetchImage,
   saveReading,
-  workId,
+  saveWorks,
 } from '../artist/corpus.js';
+import { type Work, imagePath, readManifest, workId } from '../artist/manifest.js';
 import { deriveElement, deriveProtocolHash, saveDerived } from '../artist/element-derive.js';
 
 const program = new Command();
@@ -29,42 +41,166 @@ program.name('corpus').description('the corpus of real works the lineage element
 
 const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/** Append-only, gitignored. What was lost and when, for a run too long to watch. */
+const FAILURES = path.join(CORPUS_DIR, 'import-failures.jsonl');
+
 program
   .command('import')
   .description('fetch works with a CC0 licence and an image, and store their provenance')
   .option('-n, --number <n>', 'how many works to end up with', '50')
   .option('--skip <n>', 'how far into the source list to start, so a second import is not the first', '0')
-  .action(async (opts: { number: string; skip: string }) => {
+  .option('--type <type>', 'server-side filter, e.g. Textile, Print, Painting, Ceramic')
+  .option('--department <name>', 'server-side filter, e.g. "Islamic Art", "Chinese Art"')
+  .option('--pause <ms>', 'delay between requests', '500')
+  .action(async (opts: { number: string; skip: string; type?: string; department?: string; pause: string }) => {
     const want = Number(opts.number);
+    const gap = Number(opts.pause);
+    const filters = { type: opts.type ?? '', department: opts.department ?? '' };
+    // Cheap to recompute and it is what makes a restart safe: an import that was killed at work
+    // 9,000 walks the list pages again (a hundred records a request, seconds) and fetches no image
+    // it already has. There is no cursor file to go stale.
     const have = new Set(listWorks().map((w) => w.id));
     let skip = Number(opts.skip);
     let added = 0;
+    let failed = 0;
+    // The manifest is written whole, sorted, so it is flushed per batch rather than per work — but
+    // it *is* flushed per batch, because a run killed after eight hours with everything still in
+    // memory is eight hours of somebody else's bandwidth spent for nothing.
+    let pending: Work[] = [];
+    const flush = () => {
+      if (pending.length === 0) return;
+      saveWorks(pending);
+      pending = [];
+    };
 
     // Overfetch: the licence filter is server-side and reliable, but a record can still turn up with
     // no usable image, and a run that asked for fifty and stopped at forty-one because nine records
     // were thin is a corpus nobody can reason about the size of.
     while (added < want) {
-      const batch = await listCandidates(Math.min(100, (want - added) * 2), skip);
+      const batch = await listCandidates(Math.min(100, (want - added) * 2), skip, filters);
       if (batch.length === 0) break;
       skip += batch.length;
       for (const record of batch) {
         if (added >= want) break;
-        if (have.has(workId(record.id))) continue;
+        if (have.has(workId(SOURCE_CORPUS, record.id))) continue;
         try {
           const work = await importWork(record);
           if (!work) continue;
           have.add(work.id);
+          pending.push(work);
           added++;
-          process.stdout.write(`${String(added).padStart(3)}  ${work.id}  ${work.image.hash.slice(0, 12)}  ${work.source.title.slice(0, 58)}\n`);
+          process.stdout.write(`${String(added).padStart(5)}  ${work.id}  ${work.image?.sha256.slice(0, 12)}  ${work.title.slice(0, 58)}\n`);
         } catch (e) {
-          process.stdout.write(`     skipped ${record.id}: ${(e as Error).message}\n`);
+          // Written down rather than printed and lost. Over a run of hours the failures are the
+          // only part of the output a person will actually want afterwards, and a scrollback is
+          // not a record: whether the losses were forty scattered timeouts or four hundred
+          // consecutive ones from the moment the museum started refusing us is the whole question,
+          // and it is unanswerable from a summary count.
+          failed++;
+          appendFileSync(
+            FAILURES,
+            `${JSON.stringify({ at: new Date().toISOString(), objectId: String(record.id), error: (e as Error).message })}\n`,
+          );
+          process.stdout.write(`       failed ${record.id}: ${(e as Error).message}\n`);
         }
-        await pause(120);
+        await pause(gap);
       }
+      flush();
     }
+    flush();
     const s = corpusSummary();
     process.stdout.write(`\nimported ${added}; corpus now holds ${s.works} works\n`);
+    if (failed) process.stdout.write(`${failed} failed; see ${FAILURES}\n`);
   });
+
+program
+  .command('images')
+  .description('refetch the pixels for works whose images are not on this machine')
+  .option('--pause <ms>', 'delay between requests', '500')
+  .action(async (opts: { pause: string }) => {
+    // corpus/images/ is gitignored, so a fresh clone has every work record and no bytes. This is
+    // the command that makes that trade honest: each image comes back from the URL in its own
+    // record and has to hash to what the record says, or it is an error.
+    const missing = listWorks().filter((w) => !hasImage(w));
+    if (missing.length === 0) {
+      process.stdout.write(`all ${listWorks().length} works have their images\n`);
+      return;
+    }
+    let got = 0;
+    let failed = 0;
+    for (const work of missing) {
+      try {
+        await refetchImage(work);
+        got++;
+        process.stdout.write(`${String(got).padStart(5)}/${missing.length}  ${work.id}  ${work.image?.sha256.slice(0, 12)}\n`);
+      } catch (e) {
+        failed++;
+        appendFileSync(FAILURES, `${JSON.stringify({ at: new Date().toISOString(), objectId: work.id, error: (e as Error).message })}\n`);
+        process.stdout.write(`       failed ${work.id}: ${(e as Error).message}\n`);
+      }
+      await pause(Number(opts.pause));
+    }
+    process.stdout.write(`\nrefetched ${got}/${missing.length}${failed ? `; ${failed} failed, see ${FAILURES}` : ''}\n`);
+  });
+
+program
+  .command('verify')
+  .description('check every manifest row against the bytes on disk')
+  .option('--quick', 'check only that the files exist, without rehashing them', false)
+  .action(async (opts: { quick: boolean }) => {
+    // The manifest is the evidence and the images are not, which is only true if the manifest can
+    // be *checked* against the images. Existence is the cheap half; the hash is the half that
+    // catches a truncated download, a Cloudflare page written as a .jpg, or a museum that requoted
+    // its own derivative at a different quality after the reading was made. Both are reported
+    // separately because they have different remedies: missing is `corpus images`, mismatched is a
+    // decision somebody has to make.
+    const { works, faults } = readManifest(MANIFEST);
+    const missing: string[] = [];
+    const mismatched: string[] = [];
+    const pending: string[] = [];
+    let checked = 0;
+
+    for (const work of works) {
+      const rel = imagePath(work);
+      if (!work.image || !rel) {
+        pending.push(work.id);
+        continue;
+      }
+      const file = path.join(CORPUS_DIR, rel);
+      if (!existsSync(file)) {
+        missing.push(work.id);
+        continue;
+      }
+      if (opts.quick) {
+        checked++;
+        continue;
+      }
+      const got = await sha256OfFile(file);
+      if (got === work.image.sha256) checked++;
+      else mismatched.push(`${work.id} — on disk ${got.slice(0, 12)}, manifest says ${work.image.sha256.slice(0, 12)}`);
+    }
+
+    const withImages = works.length - pending.length;
+    process.stdout.write(`${checked}/${withImages} images present${opts.quick ? '' : ' and hashing to what the manifest claims'}\n`);
+    if (pending.length) process.stdout.write(`${pending.length} rows are metadata only (no image fetched yet)\n`);
+    if (faults.length) process.stdout.write(`${faults.length} malformed manifest rows, first at line ${faults[0]?.line}: ${faults[0]?.why}\n`);
+    for (const id of missing) process.stdout.write(`missing     ${id}\n`);
+    for (const m of mismatched) process.stdout.write(`MISMATCH    ${m}\n`);
+    if (missing.length) process.stdout.write(`\n${missing.length} missing; \`corpus images\` will refetch them.\n`);
+    // A mismatch is not a warning. Something that was read is not what the record says was read.
+    if (mismatched.length || faults.length) process.exitCode = 1;
+  });
+
+/** Streamed, because the whole corpus is gigabytes and this walks all of it. */
+function sha256OfFile(file: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const h = createHash('sha256');
+    createReadStream(file)
+      .on('data', (c) => h.update(c))
+      .on('error', reject)
+      .on('end', () => resolve(h.digest('hex')));
+  });
+}
 
 program
   .command('read')

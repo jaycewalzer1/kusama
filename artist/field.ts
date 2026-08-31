@@ -1,34 +1,28 @@
-// The four layers the artist is held to, loaded off disk and hashed.
+// The layers the artist is held to, loaded off disk and hashed.
 //
-// A commission is assembled from four independent documents, and the whole design rests on their
-// independence. Each answers exactly one of two questions and never both:
+// A commission is assembled from independent documents, and the whole design rests on their
+// independence. Each answers exactly one question and never two:
 //
 //   L1 PRACTICE     varies with the artist, never with the job   -> aesthetic/positions/<id>.json
 //   L2 BRIEF        varies with the job, never with the artist   -> aesthetic/briefs/<id>.json
-//   L3 DELIVERABLE  varies with the kind of object, and nothing else
-//                                                                -> aesthetic/deliverables/<id>.json
 //   L4 PROTOCOL     varies with nothing at all                   -> observation.ts, one constant
 //
-// The three that vary are three independent axes, chosen one at a time by whoever launches a run.
-// The brief used to carry its own deliverable, which quietly collapsed two axes into one: there was
-// no such thing as running the same job as a different kind of object, and the brief's `format` and
-// `whereItLives` were L3's facts wearing the client's voice. Now the caller picks all three, every
-// triple is coherent, and the grid is a real cross.
+// The two that vary are two independent axes, chosen one at a time by whoever launches a run.
 //
-// A document that answers yes to more than one of the three columns is two documents wearing a
-// trenchcoat, and the failure it produces is invisible: the artist appears to derive an object from
-// its practice when in fact it was told what to draw. So three rules are mechanical rather than
-// editorial:
+// There used to be a third: L3, the deliverable, a document per kind of object saying what a poster
+// or a panel or a print has to do to function. It is gone. There is one kind of commission now and
+// it is art — nobody has ordered an object of a particular type, so nothing states what type it is,
+// and what the thing physically has to be is the artist's to decide out of L1 and L2.
+//
+// A document that answers yes to more than one of the columns is two documents wearing a trenchcoat,
+// and the failure it produces is invisible: the artist appears to derive an object from its practice
+// when in fact it was told what to draw. So one rule is mechanical rather than editorial:
 //
 //   - L2 may contain no aesthetic direction. `aestheticDirection` scans for it, the studio refuses to
 //     write a brief that trips it, and a run that trips it anyway records the fact — its results are
 //     not comparable with a run that did not.
-//   - L1 and L3 never mention each other. A practice that says "on a flyer, do X" has done the
-//     deriving that the whole arrangement exists to test. Enforced in tests/artist-layers.test.ts.
-//   - L2 names no kind of object at all. It is not the client's to say any more, and a brief that
-//     says one contradicts two thirds of the grid it will be run in. `namesDeliverable` scans for it.
 //
-// All four are hand-written, hashed, and never produced by a model. If two trajectories quote
+// All of them are hand-written, hashed, and never produced by a model. If two trajectories quote
 // different hashes here they were not run against the same world and their scores are not comparable.
 //
 // The one piece of assembly that happens here is `effectivePosition`: a brief's `hard_constraints`
@@ -37,7 +31,7 @@
 // position's own plus the brief's, and hands that to the unmodified checker. The composition is
 // deterministic, so it hashes.
 
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { ROOT } from '../env/browser.js';
 import { canonicalJson, contentHash } from '../env/profile.js';
@@ -47,6 +41,7 @@ import { compose } from '../aesthetic/elements/compose.js';
 import { elementPackHash, loadElements } from '../aesthetic/elements/pack.js';
 import { qualify, type Composition } from '../aesthetic/elements/types.js';
 import type { AestheticProgram, Constraint } from '../aesthetic/types.js';
+import type { Layers } from './observation.js';
 import type { Field } from './types.js';
 
 // --- L1: the practice ----------------------------------------------------------------------------
@@ -252,36 +247,27 @@ export function aestheticDirection(brief: Brief): string[] {
   return found;
 }
 
-// --- L3: the deliverable -------------------------------------------------------------------------
-
-/**
- * What this kind of object has to do to function, independent of who makes it and what it is about.
- *
- * This is the layer the arrangement is really testing. Given L1 and L3 separately and never joined,
- * the artist has to derive "so the shout has to resolve at ten metres" for itself. A practice that
- * already said that would be doing L3's job, and the derivation — the thing being measured — would
- * have been supplied rather than performed.
- */
-export interface Deliverable {
-  version: string;
-  id: string;
-  name: string;
-  function: string;
-  consequences: string[];
-  doesNotDecide: string;
-}
-
 // --- the whole commission ------------------------------------------------------------------------
 
 export interface Commission {
-  position: AestheticProgram;
+  /**
+   * The position document exactly as it sits on disk — before the brief's hard constraints and
+   * before any element. This is what `positionHash` is over, and it is what an audit reads.
+   *
+   * It is deliberately NOT called `position`. It was, and the name was load-bearing in the wrong
+   * direction: `Layers` (observation.ts) also has a `position`, so a `Commission` structurally
+   * satisfied it and `findObservation(commission, ...)` compiled, quietly handing the artist the
+   * uncomposed document. Seven call sites did that, and the measured result was that a run adopting
+   * two lineage elements composed 21 constraints and 4 conflicts of which the artist saw exactly
+   * none. The elements were graded and never read. Renaming the field is what makes that a compile
+   * error instead of a silent one; `artistLayers` is the only supported way to build `Layers`.
+   */
+  positionAsWritten: AestheticProgram;
   positionHash: string;
   practice: Practice;
   temperament: Temperament;
   brief: Brief;
   briefHash: string;
-  deliverable: Deliverable;
-  deliverableHash: string;
   field: Field;
   fieldHash: string;
   /** Every place L2 did L1's job. Empty on a clean run; recorded, never silently tolerated. */
@@ -298,7 +284,7 @@ export interface Commission {
   elementIds: string[];
   /**
    * The identity of that set. Always present, including for the empty set, and it goes into
-   * `envVersion` as a tenth field. Two runs under different element packs are different experiments
+   * `envVersion` as a ninth field. Two runs under different element packs are different experiments
    * and must not compare as the same one — the same defect `dynamicsHash` was added to close.
    */
   elementPackHash: string;
@@ -325,98 +311,6 @@ export function loadPosition(idOrPath: string): AestheticProgram {
 export function loadBrief(idOrPath: string): Brief {
   const file = resolveIn('aesthetic/briefs', idOrPath);
   return JSON.parse(readFileSync(file, 'utf8')) as Brief;
-}
-
-/**
- * Absent is an error rather than an empty layer. An artist given no account of what a poster has to
- * survive will assume a screen, and the resulting piece will be judged by a checker that assumes
- * paste and rain.
- */
-export function loadDeliverable(id: string): Deliverable {
-  const file = path.join(ROOT, 'aesthetic/deliverables', `${id}.json`);
-  if (!existsSync(file)) {
-    throw new Error(`no deliverable ${id}: expected aesthetic/deliverables/${id}.json`);
-  }
-  const deliverable = JSON.parse(readFileSync(file, 'utf8')) as Deliverable;
-  if (deliverable.id !== id) throw new Error(`${file} declares id ${deliverable.id}, not ${id}`);
-  return deliverable;
-}
-
-export function listDeliverables(): Deliverable[] {
-  const dir = path.join(ROOT, 'aesthetic/deliverables');
-  if (!existsSync(dir)) return [];
-  return readdirSync(dir)
-    .filter((f) => f.endsWith('.json'))
-    .sort()
-    .map((f) => JSON.parse(readFileSync(path.join(dir, f), 'utf8')) as Deliverable);
-}
-
-// --- the boundary between L1 and L3 --------------------------------------------------------------
-
-/**
- * The catalog's own ids, plus the nouns a document reaches for instead of one. Deduped, because the
- * two sources overlap the moment a deliverable is called what people call it.
- */
-const objectWords = () => [
-  ...new Set([
-    ...listDeliverables().map((d) => d.id),
-    'poster',
-    'flyer',
-    'handbill',
-    'placard',
-    'leaflet',
-    'sticker',
-  ]),
-];
-
-/** Plural-aware and whole-word, so it fires on "flyers" and not on "flyered". */
-const names = (text: string, word: string) => new RegExp(`\\b${word}s?\\b`).test(text);
-
-/**
- * Every place a position states a fact about a kind of object instead of a belief about a medium.
- *
- * L1 may hold beliefs about a medium. L1 may not contain facts about one, and a fact is anything the
- * artist could be wrong about. "A thing on a wall is assembled, not designed" is a stance and belongs
- * here; "it is read at fifteen feet, it is 24x36, photocopying crushes the midtones" is L3's to
- * state, and a position that states it has done L3's job. The artist then appears to derive the
- * object's behaviour from its own vocabulary when in fact it was told, and that derivation is the
- * thing the run exists to measure.
- *
- * This is worse than untidiness. Five of six positions once argued with a poster in their worldview
- * and their tensions, which the artist reads in full on every phase, so every flyer commission run
- * against them degraded for a reason that had nothing to do with the artist model — a confound
- * sitting directly across the axis the layers exist to isolate.
- *
- * `lineage` is the allowlist, and the only one: an entry naming a real 1977 sleeve cites an object
- * that existed, and stripping the noun out of it would falsify the record for a checker's
- * convenience. The id is deliberately not exempt — an id that named the deliverable is how this went
- * unnoticed the first time, and it cost a rename to fix.
- */
-export function deliverableFacts(position: AestheticProgram): string[] {
-  const { lineage: _cited, ...rest } = position;
-  const text = JSON.stringify(rest).toLowerCase();
-  return objectWords()
-    .filter((word) => names(text, word))
-    .map((word) => `it names the deliverable "${word}"`);
-}
-
-/**
- * Every place a condition says what kind of object is being made.
- *
- * This layer used to be allowed exactly one of these on the grounds that the client knows what it
- * ordered. There is no client now, and the kind of object is a third axis chosen by whoever
- * launches the run: the same condition is meant to be workable as any of them. A condition that
- * says "poster" is wrong in most of the cells it will appear in, and it hands the artist a fact
- * about L3 that L3 may contradict.
- *
- * Checked on the condition and not on its field: the field describes the world this lands in, and
- * that world contains other people's objects.
- */
-export function namesDeliverable(brief: Brief): string[] {
-  const text = JSON.stringify(brief).toLowerCase();
-  return objectWords()
-    .filter((word) => names(text, word))
-    .map((word) => `it calls the work a "${word}"`);
 }
 
 /**
@@ -510,6 +404,18 @@ export function withElements(
       // The stance each element carries, appended so the artist is shown what it adopted rather than
       // only being checked against it. A lineage the artist cannot read is a parameter bundle.
       worldview: [effective.worldview, ...elements.map((e) => e.worldviewFragment)].join('\n\n'),
+      // What the source work left unresolved, carried forward as this artist's own. Unattributed, in
+      // the same way the worldview fragments and the cliches are: the artist holds them, it does not
+      // administer them. Which element supplied which is recoverable from `elementIds` plus the pack,
+      // and nothing in the loop needs it before that point.
+      //
+      // This is the field FIND grounds every problem in — see `practiceSection` and the FIND system
+      // prompt, which ask for the place the situation rubs against a tension already held. Without
+      // this line an adopted lineage can only ever forbid things; it cannot make the artist read the
+      // situation differently, which is the entire claim the elements layer exists to test. NOTE that
+      // the four hand-authored elements in the pack carry no `tensions`, so today this merges nothing
+      // and waits for `corpus derive`.
+      tensions: [...effective.tensions, ...elements.flatMap((e) => e.tensions ?? [])],
       cliches: [...effective.cliches, ...elements.flatMap((e) => e.cliches)],
     },
     composition,
@@ -521,20 +427,14 @@ export function packHashFor(elementIds: string[]): string {
   return elementPackHash(loadElements(elementIds));
 }
 
-/**
- * The three variable layers, chosen independently. The deliverable is an argument rather than a
- * property of the brief: which kind of object a job becomes is the third axis of the grid, and a
- * commission that carried its own would make two thirds of that grid unreachable.
- */
+/** The two variable layers, chosen independently. */
 export function loadCommission(
   positionIdOrPath: string,
   briefIdOrPath: string,
-  deliverableId: string,
   elementIds: string[] = []
 ): Commission {
   const position = loadPosition(positionIdOrPath);
   const brief = loadBrief(briefIdOrPath);
-  const deliverable = loadDeliverable(deliverableId);
   const field = loadField(brief.id);
   const composed = withElements(effectivePosition(position, brief), elementIds);
   const effective = composed.position;
@@ -542,14 +442,12 @@ export function loadCommission(
     elementIds: [...elementIds].sort(),
     elementPackHash: packHashFor(elementIds),
     composition: composed.composition,
-    position,
+    positionAsWritten: position,
     positionHash: contentHash(canonicalJson(position)),
     practice: practiceOf(position),
     temperament: temperamentOf(position),
     brief,
     briefHash: contentHash(canonicalJson(brief)),
-    deliverable,
-    deliverableHash: contentHash(canonicalJson(deliverable)),
     field,
     fieldHash: contentHash(canonicalJson(field)),
     contamination: aestheticDirection(brief),
@@ -558,5 +456,33 @@ export function loadCommission(
     // its own is checked against the half of the rubric that cannot conflict with it.
     unsatisfiable: contradictions(effective),
     effective,
+  };
+}
+
+/**
+ * The layers as the artist is shown them — and the *composed* position, not the raw one.
+ *
+ * This exists because `Commission` structurally satisfies `Layers` already: it has a `position`, so
+ * `findObservation(commission, ...)` compiles, reads `commission.position`, and shows the artist the
+ * document on disk. Seven call sites did exactly that, and the effect was measured, not guessed: a
+ * run adopting `ma-interval` and `rodchenko-red-black` composed 21 constraints and 4 conflicts, and
+ * *none* of the two elements' worldview fragments, cliches, constraints or reasons appeared anywhere
+ * in the FIND prompt. The elements were graded and never read. `withElements` says in its own comment
+ * that a lineage the artist cannot read is a parameter bundle; that is what they were.
+ *
+ * So the answer to "what is the artist shown" is written once, here, and every phase asks for it
+ * rather than reaching into a commission for a field that happens to have the right name.
+ *
+ * It lives in field.ts and not beside `Layers` in observation.ts on purpose: observation.ts hashes
+ * its own bytes into `envVersion.observationHash`, so putting it there would declare a new
+ * environment for every run including the ones this does not change. It changes nothing for a run
+ * that adopts no element and whose condition fixes no hard constraint — which is all three conditions
+ * on disk — and a test pins that byte-for-byte.
+ */
+export function artistLayers(c: Commission): Layers {
+  return {
+    position: c.effective,
+    practice: c.practice,
+    brief: c.brief,
   };
 }

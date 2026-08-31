@@ -27,7 +27,7 @@ import { capabilitySheet } from './capability-sheet.js';
 import { Canvas, check } from './canvas.js';
 import { newSpend, type Spend } from './call.js';
 import { ArtistEnv, refusalTally } from './env.js';
-import { loadCommission, type Commission } from './field.js';
+import { artistLayers, loadCommission, type Commission } from './field.js';
 import { blockerLines, finishBlockers } from './gate.js';
 import { provenanceOf } from './provenance.js';
 import type { Fired } from './triggers.js';
@@ -78,8 +78,6 @@ export interface RunOptions {
   policy: Policy;
   positionId: string;
   briefId: string;
-  /** L3, chosen here rather than read off the brief: the kind of object is its own axis. */
-  deliverableId: string;
   /**
    * Lineage elements this run composes into the position. Empty by default, and the empty case is
    * byte-identical to the run before this option existed — see `withElements`. Non-empty puts the
@@ -128,18 +126,18 @@ export interface RunOptions {
 
 /**
  * L1 removed, everything else intact. The brief's hard constraints stay, because a commission is a
- * fact about the job rather than a part of the artist; L3 and L4 stay too, since the control arm is
- * meant to isolate *having a practice* and an arm that also lost the protocol and the object would
- * be measuring three things at once.
+ * fact about the job rather than a part of the artist; L4 stays too, since the control arm is meant
+ * to isolate *having a practice* and an arm that also lost the protocol would be measuring two
+ * things at once.
  *
  * The practice's refusals go with it. A control artist that kept them would refuse on grounds it was
  * never given, which is the one thing the arm exists to show the real artist doing.
  */
 function stripped(commission: Commission): Commission {
   const bare = {
-    ...commission.position,
-    id: `${commission.position.id}-control`,
-    name: `${commission.position.name} (control)`,
+    ...commission.positionAsWritten,
+    id: `${commission.positionAsWritten.id}-control`,
+    name: `${commission.positionAsWritten.name} (control)`,
     worldview: 'You have no fixed position. Make the best object you can for this commission.',
     lineage: [],
     tensions: [],
@@ -150,7 +148,7 @@ function stripped(commission: Commission): Commission {
   };
   return {
     ...commission,
-    position: bare,
+    positionAsWritten: bare,
     practice: {
       origin: 'You have no particular training and no inherited vocabulary. You have the job in front of you.',
       doing: 'Serving the commission.',
@@ -173,10 +171,7 @@ function makeContext(
 ): MakeContext {
   return {
     capabilitySheet: sheet,
-    position: commission.position,
-    practice: commission.practice,
-    deliverable: commission.deliverable,
-    brief: commission.brief,
+    ...artistLayers(commission),
     program: env.program,
     report: env.look.checkReport,
     description: env.look.description,
@@ -304,7 +299,7 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
   const hardStop = o.hardStop ?? 20;
 
   const elementIds = o.elementIds ?? [];
-  const loaded = loadCommission(o.positionId, o.briefId, o.deliverableId, elementIds);
+  const loaded = loadCommission(o.positionId, o.briefId, elementIds);
   const commission = o.control ? stripped(loaded) : loaded;
   const fieldText = canonicalJson(loaded.field);
 
@@ -320,14 +315,14 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
   // The element set is in the id: two runs of the same cell under different lineages are different
   // runs, and a shared id would make them overwrite each other in a resumable grid.
   const id = contentHash(
-    [o.positionId, o.briefId, o.deliverableId, o.seed, o.control ?? false, loaded.elementPackHash].join('|')
+    [o.positionId, o.briefId, o.seed, o.control ?? false, loaded.elementPackHash].join('|')
   ).slice(0, 16);
   // The same ten hashes on the start line and on the finished trajectory, from one place. They
   // used to be two object literals that happened to agree.
-  const envVersion = envVersionNow(o.positionId, o.briefId, o.deliverableId, o.seed, elementIds);
+  const envVersion = envVersionNow(o.positionId, o.briefId, o.seed, elementIds);
   log.append('trajectory-start', {
     id,
-    positionId: loaded.position.id,
+    positionId: loaded.positionAsWritten.id,
     briefId: loaded.brief.id,
     elementIds: loaded.elementIds,
     // The composed constraint list and the conflicts inside it, whole, or null when no element was
@@ -348,7 +343,6 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
     // The ablation arm. It changes the observation text as well as the images, so a replay that
     // did not carry it would rebuild every MAKE observation wrong and report the arm as a divergence.
     showCanvas: o.showCanvas ?? true,
-    deliverableId: loaded.deliverable.id,
     ...envVersion,
     // Style words found in L2. Non-empty does not stop the run — it marks it non-comparable, which
     // is a different and more useful thing than a crash on a brief somebody is still drafting.
@@ -649,10 +643,9 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
     // Scored against the real position even in the control arm, which is the whole comparison.
     const trajectory: Trajectory = {
       id,
-      positionId: loaded.position.id,
+      positionId: loaded.positionAsWritten.id,
       positionHash: loaded.positionHash,
       briefId: loaded.brief.id,
-      deliverableId: loaded.deliverable.id,
       elementIds: loaded.elementIds,
       control: o.control ?? false,
       fieldHash: loaded.fieldHash,

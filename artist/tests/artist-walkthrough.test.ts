@@ -30,7 +30,7 @@ const state = (programHash: string, standing: number) => ({
 function run(): LogLine[] {
   seq = 0;
   return [
-    line('trajectory-start', { positionId: 'many-hands', briefId: 'nine-returned', deliverableId: 'print', control: false, seed: 7 }),
+    line('trajectory-start', { positionId: 'many-hands', briefId: 'nine-returned', control: false, seed: 7 }),
     line('phase', { phase: 'reset' }),
     line('render', state('blank', 0.1)),
     line('phase', { phase: 'make' }),

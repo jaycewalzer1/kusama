@@ -7,6 +7,7 @@
 // cases that actually occurred in the first fifty works, including the eight that went wrong.
 
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
@@ -17,29 +18,33 @@ import {
   readingProtocolHash,
   readWork,
   verdict,
-  workId,
   type Leakage,
   type Work,
 } from '../corpus.js';
+import { imagePath, workId } from '../manifest.js';
 import { recentEnvRequests, setEnvModel, type EnvRequest, type EnvResponse } from '../env-model.js';
 
 const leak = (artist: string | null, work: string | null = null): Leakage => ({ artist, work, year: null, recognised: artist !== null });
 
 const workOf = (creator: string | null, title: string): Work => ({
   id: 'cma-1',
-  source: {
-    corpus: 'cma',
-    objectId: '1',
-    url: 'https://example.invalid/1',
-    apiUrl: 'https://example.invalid/api/1',
-    title,
-    creator,
-    date: '1889',
-    rights: 'CC0',
-    imageUrl: 'https://example.invalid/1.jpg',
-  },
-  image: { path: 'images/deadbeef.jpg', hash: 'deadbeef', mime: 'image/jpeg', bytes: 3 },
-  fetchedAt: '2026-08-31T00:00:00.000Z',
+  source: 'cma',
+  object_id: '1',
+  accession_number: '1889.1',
+  url: 'https://example.invalid/1',
+  rights: 'CC0',
+  title,
+  creator,
+  date_display: '1889',
+  date_begin: 1889,
+  date_end: 1889,
+  classification: 'Painting',
+  medium: 'oil on canvas',
+  culture: 'America',
+  department: 'Modern European Painting and Sculpture',
+  image_url: 'https://example.invalid/1.jpg',
+  image: { source_url: 'https://example.invalid/1.jpg', sha256: 'a'.repeat(64), bytes: 3, width: 900, height: 700 },
+  fetched_at: '2026-08-31T00:00:00.000Z',
 });
 
 test('naming it right is canonical', () => {
@@ -123,19 +128,30 @@ test("the model's own recognised flag does not decide", () => {
   assert.equal(verdict(workOf('Winslow Homer', 'The Sponge Diver'), empty).claimedCanonical, false);
 });
 
+/**
+ * Put bytes where `imagePath` will look for them, and point the work at them.
+ *
+ * The path is no longer stored on the record — it is derived from the sha256 — so a fixture cannot
+ * be given an arbitrary filename any more. Hashing the bytes it actually writes is the only way to
+ * keep the record and the file agreeing, which is exactly the property the change was made for.
+ */
+function putFixture(work: Work, bytes: Buffer): string {
+  const sha256 = createHash('sha256').update(bytes).digest('hex');
+  work.image = { source_url: work.image_url as string, sha256, bytes: bytes.length, width: null, height: null };
+  const rel = imagePath(work) as string;
+  mkdirSync(path.join(CORPUS_DIR, 'images'), { recursive: true });
+  writeFileSync(path.join(CORPUS_DIR, rel), bytes);
+  return rel;
+}
+
 test('a reading is made from the picture and nothing else', async () => {
   // The load-bearing test of this module, asserted against what was actually sent. Handed a famous
   // work *with its label*, a frontier model returns the accumulated critical literature on it, and
   // everything derived downstream would be art history rather than a reading of a surface.
-  const dir = path.join(CORPUS_DIR, 'images');
-  const rel = path.join('images', 'blindness-test-fixture.jpg');
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(path.join(CORPUS_DIR, rel), Buffer.from([0xff, 0xd8, 0xff]));
-
   const work = workOf('Vincent van Gogh (Dutch, 1853-1890)', 'The Starry Night');
-  work.image.path = rel;
-  work.source.date = 'June 1889';
-  work.source.url = 'https://example.invalid/starry-night';
+  work.date_display = 'June 1889';
+  work.url = 'https://example.invalid/starry-night';
+  const rel = putFixture(work, Buffer.from([0xff, 0xd8, 0xff, 0x01]));
 
   const before = recentEnvRequests.length;
   setEnvModel(async <T>(request: EnvRequest): Promise<EnvResponse<T>> => {
@@ -168,13 +184,8 @@ test('a reading is made from the picture and nothing else', async () => {
 test('the identification is a separate call from the reading', async () => {
   // Asked in one breath, the identification conditions the reading and the reading conditions the
   // identification. This asserts the probe was not shown the reading it is supposed to be blind to.
-  const dir = path.join(CORPUS_DIR, 'images');
-  const rel = path.join('images', 'separation-test-fixture.jpg');
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(path.join(CORPUS_DIR, rel), Buffer.from([0xff, 0xd8, 0xff]));
-
   const work = workOf('Anon', 'A Thing');
-  work.image.path = rel;
+  const rel = putFixture(work, Buffer.from([0xff, 0xd8, 0xff, 0x02]));
   const before = recentEnvRequests.length;
   setEnvModel(async <T>(request: EnvRequest): Promise<EnvResponse<T>> => {
     const value =
@@ -207,12 +218,15 @@ test('every work on disk carries its rights and a content hash', () => {
   const works = listWorks();
   if (works.length === 0) return;
   for (const w of works) {
-    assert.equal(w.id, workId(w.source.objectId));
-    assert.equal(w.source.rights, 'CC0', `${w.id} is on disk without a CC0 grant`);
-    assert.match(w.image.hash, /^[0-9a-f]{64}$/, `${w.id} has no content hash`);
-    assert.equal(w.image.path, path.join('images', `${w.image.hash}.jpg`));
-    assert.ok(existsSync(path.join(CORPUS_DIR, w.image.path)), `${w.id} names an image that is not there`);
-    assert.ok(w.source.url.length > 0 && w.source.objectId.length > 0);
+    assert.equal(w.id, workId(w.source, w.object_id));
+    assert.ok(w.rights.length > 0, `${w.id} is on disk without a rights statement`);
+    assert.ok(w.url.length > 0 && w.object_id.length > 0);
+    // A metadata-only row is legitimate; a row that claims bytes must be able to produce them.
+    if (!w.image) continue;
+    assert.match(w.image.sha256, /^[0-9a-f]{64}$/, `${w.id} has no content hash`);
+    const rel = imagePath(w) as string;
+    assert.equal(rel, path.join('images', `${w.image.sha256}.jpg`));
+    assert.ok(existsSync(path.join(CORPUS_DIR, rel)), `${w.id} names an image that is not there`);
   }
 });
 

@@ -41,13 +41,12 @@ import { envVersionNow } from '../../artist/env-version.js';
 
 const POSITIONS = ['interference', 'many-hands', 'withheld'];
 const BRIEF = 'fifty-year-embargo';
-const DELIVERABLE = 'panel';
 
 /** Every position x element pairing, composed. Loading is the test: `compose` may not refuse. */
 function grid() {
   return POSITIONS.flatMap((position) =>
     elementIds().map((element) => {
-      const c = loadCommission(position, BRIEF, DELIVERABLE, [element]);
+      const c = loadCommission(position, BRIEF, [element]);
       return {
         position,
         element,
@@ -97,7 +96,7 @@ test('live catalogue: the unsatisfiable pairings are refused with a proof, not a
     blocked.map((r) => `${r.position}+${r.element}`).sort(),
     ['interference+ma-interval', 'many-hands+kuba-shoowa-surface', 'withheld+ma-interval']
   );
-  const withheld = loadCommission('withheld', BRIEF, DELIVERABLE, ['ma-interval']).unsatisfiable;
+  const withheld = loadCommission('withheld', BRIEF, ['ma-interval']).unsatisfiable;
   assert.equal(withheld.length, 1);
   assert.equal(withheld[0]!.a, 'position:withheld+fifty-year-embargo/r-heavy');
   assert.equal(withheld[0]!.b, 'element:ma-interval/e-not-filled');
@@ -108,7 +107,7 @@ test('live catalogue: the whole pack at once is unsatisfiable against all three 
   // Worth pinning because it is the obvious thing to try first and it never works. The elements were
   // picked to be selective; four selective vocabularies at once leave nothing.
   for (const position of POSITIONS) {
-    const c = loadCommission(position, BRIEF, DELIVERABLE, elementIds());
+    const c = loadCommission(position, BRIEF, elementIds());
     assert.ok(c.unsatisfiable.length > 0, `${position} + the whole pack should not be runnable`);
   }
 });
@@ -117,7 +116,7 @@ test('adopting no element leaves the commission byte-identical to before element
   // The reason the feature could be added without moving a single golden or fixture. `compose`
   // namespaces every id, which is right with two sources and noise with one, so the empty case is
   // not composed at all.
-  const bare = loadCommission('withheld', BRIEF, DELIVERABLE);
+  const bare = loadCommission('withheld', BRIEF);
   assert.equal(bare.composition, null);
   assert.deepEqual(bare.elementIds, []);
   assert.equal(bare.effective.id, 'withheld+fifty-year-embargo');
@@ -127,20 +126,20 @@ test('adopting no element leaves the commission byte-identical to before element
   );
 });
 
-test('elementPackHash is a tenth field and it moves when the element set does', () => {
+test('elementPackHash is a ninth field and it moves when the element set does', () => {
   // The version bug this had to close: two runs under different lineages comparing as the same
   // experiment, exactly as two runs under different affect rules did before `dynamicsHash`.
-  const bare = envVersionNow('withheld', BRIEF, DELIVERABLE, 1);
-  const withOne = envVersionNow('withheld', BRIEF, DELIVERABLE, 1, ['rodchenko-red-black']);
-  assert.equal(Object.keys(bare).length, 10);
+  const bare = envVersionNow('withheld', BRIEF, 1);
+  const withOne = envVersionNow('withheld', BRIEF, 1, ['rodchenko-red-black']);
+  assert.equal(Object.keys(bare).length, 9);
   assert.notEqual(bare.elementPackHash, withOne.elementPackHash);
   // And it is its own field rather than folded into the asset pack's, because a run that changed
   // which brushes exist is a different fact from a run that changed which traditions it drew on.
   assert.equal(bare.packHash, withOne.packHash);
   // Order-independent: the identity is of the set, not of the argument list.
   assert.equal(
-    envVersionNow('withheld', BRIEF, DELIVERABLE, 1, ['ma-interval', 'rodchenko-red-black']).elementPackHash,
-    envVersionNow('withheld', BRIEF, DELIVERABLE, 1, ['rodchenko-red-black', 'ma-interval']).elementPackHash
+    envVersionNow('withheld', BRIEF, 1, ['ma-interval', 'rodchenko-red-black']).elementPackHash,
+    envVersionNow('withheld', BRIEF, 1, ['rodchenko-red-black', 'ma-interval']).elementPackHash
   );
 });
 
@@ -148,15 +147,15 @@ test('the empty pack hashes to a real value, so an ordinary run carries the fiel
   // A null here would make "this run adopted nothing" and "this log predates elements" the same
   // reading, and `envDrift` skips absent fields — so every pre-element run would silently compare
   // as equal to every element run.
-  const bare = envVersionNow('withheld', BRIEF, DELIVERABLE, 1);
+  const bare = envVersionNow('withheld', BRIEF, 1);
   assert.match(bare.elementPackHash, /^[0-9a-f]{8,}$/);
 });
 
 test('a composed position carries the elements the artist adopted, not just their constraints', () => {
   // A lineage the artist is checked against but never shown is a parameter bundle wearing the word
   // lineage. The stance and the cliches go in with the rules.
-  const c = loadCommission('many-hands', BRIEF, DELIVERABLE, ['ma-interval']);
-  const bare = loadCommission('many-hands', BRIEF, DELIVERABLE);
+  const c = loadCommission('many-hands', BRIEF, ['ma-interval']);
+  const bare = loadCommission('many-hands', BRIEF);
   assert.ok(c.effective.worldview.length > bare.effective.worldview.length, 'the stance was not carried');
   assert.ok(c.effective.cliches.length > bare.effective.cliches.length, 'the cliches were not carried');
   assert.equal(c.effective.id, 'many-hands+fifty-year-embargo+ma-interval');

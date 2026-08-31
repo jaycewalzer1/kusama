@@ -132,7 +132,6 @@ interface GateLine {
 interface StartLine {
   positionId: string;
   briefId: string;
-  deliverableId: string;
   seed: number;
   control: boolean;
   /** Absent in logs written before elements existed, and those runs composed none. */
@@ -195,7 +194,7 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
   // The elements the run adopted, not today's pack: a rescore has to grade the piece against the
   // rubric it was made under, and re-deriving the set here would let a change to the pack silently
   // rewrite the scores of runs collected before it.
-  const commission = loadCommission(start.positionId, start.briefId, start.deliverableId, start.elementIds ?? []);
+  const commission = loadCommission(start.positionId, start.briefId, start.elementIds ?? []);
   const fieldText = canonicalJson(commission.field);
 
   // The seed is data, not a decision, so it is rebuilt rather than read back from final.json.

@@ -16,6 +16,14 @@ out/
 # Render-metrics, env-model, judge and PNG caches (keyed by content hash; regenerable).
 .cache/
 
+# Corpus pixels. corpus/works/ and corpus/readings/ ARE tracked — they are the evidence, they are
+# small, and a provenance claim has to be checkable from a clone. The images are neither: every one
+# is refetchable from the `imageUrl` in its work record and verifiable against the sha256 in the
+# same record, and at a measured 372KB mean they would be 7GB in git at 20k works and 15GB at CMA's
+# whole 41k. Untracked here at 50 works, when it was still free to do.
+corpus/images/
+corpus/import-failures.jsonl
+
 # Env / secrets
 .env
 *.env

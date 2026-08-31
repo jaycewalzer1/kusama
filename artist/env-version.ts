@@ -1,4 +1,4 @@
-// The ten hashes that say which environment a trajectory was collected in.
+// The nine hashes that say which environment a trajectory was collected in.
 //
 // Written once here and read by everything that either stamps a run or compares two of them. It was
 // previously built inline in run.ts, twice — once onto the log's start line and once onto the
@@ -23,7 +23,7 @@ import type { EnvVersion } from './types.js';
 /**
  * The environment's mechanical response rules: how affect updates, and the two knobs that read it.
  *
- * The other eight hashes cover what the policy is shown and what the medium does with a program.
+ * The other seven hashes cover what the policy is shown and what the medium does with a program.
  * None of them covered how the environment reacts, so `editsPerStep` could go from returning 4 to
  * returning 3 — changing both the loop's behaviour and a number written into every observation —
  * without a single hash moving. That is the same defect as the one that let a schema edit change
@@ -47,13 +47,12 @@ export const DYNAMICS_HASH = contentHash(readFileSync(dynamicsFile, 'utf8'));
 export function envVersionNow(
   positionId: string,
   briefId: string,
-  deliverableId: string,
   seed: number,
   elementIds: string[] = []
 ): EnvVersion {
   const program = seedProgram(seed);
   const { hash: profileHash } = loadProfileFor(program);
-  const loaded = loadCommission(positionId, briefId, deliverableId, elementIds);
+  const loaded = loadCommission(positionId, briefId, elementIds);
   return {
     observationHash: OBSERVATION_HASH,
     dynamicsHash: DYNAMICS_HASH,
@@ -61,7 +60,6 @@ export function envVersionNow(
     packHash: loadPackFor(program).hash,
     protocolHash: PROTOCOL_HASH,
     positionHash: loaded.positionHash,
-    deliverableHash: loaded.deliverableHash,
     briefHash: loaded.briefHash,
     fieldHash: loaded.fieldHash,
     elementPackHash: loaded.elementPackHash,
@@ -75,7 +73,7 @@ export interface EnvDrift {
 }
 
 /**
- * Which of the nine moved. A field the record does not carry is skipped rather than reported as
+ * Which of them moved. A field the record does not carry is skipped rather than reported as
  * having changed: logs written before a hash existed cannot be said to disagree about it, and
  * calling that drift would refuse every old run for the wrong reason.
  */

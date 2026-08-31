@@ -43,51 +43,25 @@
 // model's pretraining.
 
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { ROOT } from '../env/browser.js';
 import { contentHash } from '../env/profile.js';
 import { ENV_MODEL, envModel } from './env-model.js';
+import { type ManifestImage, type Work, imagePath, readManifest, workId, writeManifest } from './manifest.js';
 
 export const CORPUS_DIR = path.join(ROOT, 'corpus');
-const WORKS = path.join(CORPUS_DIR, 'works');
+export const MANIFEST = path.join(CORPUS_DIR, 'manifest.jsonl');
 const IMAGES = path.join(CORPUS_DIR, 'images');
 const READINGS = path.join(CORPUS_DIR, 'readings');
 
-/** The one source. Named in the record so a second one can never be silently mixed in. */
+/** The source this module imports from. Another museum gets its own importer, mapping at the edge. */
 export const SOURCE_CORPUS = 'cma';
 
-// --- what is on disk ---------------------------------------------------------------------------
-
-export interface WorkSource {
-  corpus: string;
-  objectId: string;
-  /** The human-facing record page, so a provenance claim can be checked by a person. */
-  url: string;
-  apiUrl: string;
-  title: string;
-  creator: string | null;
-  date: string;
-  /** Verbatim from the source. Never inferred, never normalised into a shorter code. */
-  rights: string;
-  imageUrl: string;
-}
-
-export interface WorkImage {
-  /** Relative to the corpus directory, so a record is portable. */
-  path: string;
-  /** sha256 of the bytes. The image is addressed by content, so a re-import cannot silently swap it. */
-  hash: string;
-  mime: string;
-  bytes: number;
-}
-
-export interface Work {
-  id: string;
-  source: WorkSource;
-  image: WorkImage;
-  fetchedAt: string;
-}
+// The record shape lives in manifest.ts, source-agnostic, and is re-exported here so that the
+// existing consumers keep importing the corpus from one place.
+export type { Work } from './manifest.js';
+export { imagePath, workId } from './manifest.js';
 
 /**
  * What a reading is allowed to say.
@@ -209,14 +183,19 @@ export function readingText(): string {
 }
 
 export async function readWork(work: Work): Promise<WorkReading> {
-  const base64 = readFileSync(path.join(CORPUS_DIR, work.image.path)).toString('base64');
+  const rel = imagePath(work);
+  // A metadata-only row is a legitimate state in the manifest and an impossible one here: the whole
+  // protocol is a reading made from pixels and nothing else, so there is no degraded mode to fall
+  // back to. Refusing loudly beats a reading made from a filename.
+  if (!rel) throw new Error(`${work.id} has no image; a blind reading has nothing to read`);
+  const base64 = readFileSync(path.join(CORPUS_DIR, rel)).toString('base64');
 
   const reading = await envModel<Reading>({
     name: 'read-work',
     system: READ_SYSTEM,
     text: readingText(),
     imageBase64: base64,
-    imageMime: work.image.mime,
+    imageMime: 'image/jpeg',
     // A structured reading of a painting does not fit in the environment's usual 1024.
     maxTokens: 1500,
     schema: READ_SCHEMA,
@@ -230,7 +209,7 @@ export async function readWork(work: Work): Promise<WorkReading> {
     system: IDENTIFY_SYSTEM,
     text: 'What is this?',
     imageBase64: base64,
-    imageMime: work.image.mime,
+    imageMime: 'image/jpeg',
     schema: IDENTIFY_SCHEMA,
   });
 
@@ -260,8 +239,8 @@ export async function readWork(work: Work): Promise<WorkReading> {
  * naive number, `canonical` is the one that gates a research claim, and `misattributed` is kept
  * because a confident wrong name is its own finding about what the probe is worth.
  *
- * The ground truth comes off `work.source`, which is on disk and never enters a prompt, so checking
- * the answer costs nothing and breaks no blindness.
+ * The ground truth comes off the manifest row, which is on disk and never enters a prompt, so
+ * checking the answer costs nothing and breaks no blindness.
  */
 export function verdict(work: Work, leak: Leakage): { claimedCanonical: boolean; canonical: boolean; misattributed: boolean } {
   const claimedCanonical = Boolean(leak.work) || Boolean(leak.artist);
@@ -274,7 +253,7 @@ export function verdict(work: Work, leak: Leakage): { claimedCanonical: boolean;
   // separates naming an object from naming its subject, and it still passes the case the title rule
   // exists for: an anonymous bronze has no maker, and "Nataraja, Shiva as the Lord of Dance" shares
   // four words with what the probe said.
-  const canonical = shares(work.source.creator, leak.artist, 1) || shares(work.source.title, leak.work, 2);
+  const canonical = shares(work.creator, leak.artist, 1) || shares(work.title, leak.work, 2);
   return { claimedCanonical, canonical, misattributed: !canonical };
 }
 
@@ -304,13 +283,28 @@ interface CmaImage {
   height?: string;
 }
 
+/**
+ * What the list endpoint actually returns, as measured rather than as documented.
+ *
+ * Three fields do not match the shape a reader would guess. `type` is the classification word and
+ * `technique` is the medium, so neither name says what it holds. `culture` is an **array**
+ * (`["America"]`), not a string. And `api_link` is simply absent from list responses, so the
+ * canonical record URL has to be reconstructed. Every one of these is a place a plausible-looking
+ * mapping would have written the wrong thing into the manifest and been believed.
+ */
 interface CmaRecord {
   id: number;
+  accession_number?: string;
   title?: string;
   creation_date?: string;
+  creation_date_earliest?: number | null;
+  creation_date_latest?: number | null;
   share_license_status?: string;
   url?: string;
-  api_link?: string;
+  type?: string;
+  technique?: string;
+  culture?: string[];
+  department?: string;
   creators?: { description?: string }[];
   images?: { web?: CmaImage; print?: CmaImage; full?: CmaImage };
 }
@@ -318,76 +312,214 @@ interface CmaRecord {
 const LIST_URL = 'https://openaccess-api.clevelandart.org/api/artworks/';
 
 /**
- * One request for the whole list. The whole point of preferring this API: the licence and the image
- * are both filterable server-side, so nothing is fetched that then has to be thrown away for having
- * the wrong rights.
- *
- * `skip` is exposed because a corpus is grown, not built once, and the second fifty must not be the
- * first fifty again.
+ * Who is knocking. An open-access API is a courtesy, and a courtesy is extended to somebody rather
+ * than to an anonymous socket; a museum that can see who is pulling and why can raise a limit or
+ * send a mail instead of a block.
  */
-export async function listCandidates(limit: number, skip = 0): Promise<CmaRecord[]> {
-  const url = `${LIST_URL}?cc0=1&has_image=1&limit=${limit}&skip=${skip}`;
-  const res = await fetch(url, { headers: { accept: 'application/json' } });
-  if (!res.ok) throw new Error(`the corpus source answered ${res.status} for ${url}`);
-  const body = (await res.json()) as { data: CmaRecord[] };
-  return body.data;
+const USER_AGENT = 'kusama-corpus/0.2 (research; deriving lineage elements from open-access works)';
+
+/**
+ * One request, with the patience a run measured in hours needs.
+ *
+ * The importer used to be a bare `fetch`, which is correct for fifty works and wrong for twenty
+ * thousand: over that many requests a 429 or a 502 stops being an anomaly and becomes an
+ * arithmetic certainty, and a crawl that dies on the first one has to be babysat. Retries are
+ * bounded and only cover the answers that mean "later" — a 404 is not a transient condition and
+ * retrying it four times is just four more requests the museum did not ask for.
+ *
+ * The `try` around `fetch` is not defensive tidying. An earlier version retried on status codes
+ * only, and a throwaway copy of exactly this logic died on `ETIMEDOUT` at record 25,000 of 41,511 —
+ * `fetch` *throws* on a dropped socket rather than returning a status, so the whole retry ladder was
+ * unreachable for the one failure mode that a long crawl is guaranteed to hit. The timeout is here
+ * for the same reason: without it a half-open connection hangs the run indefinitely, which is worse
+ * than an error because nothing reports it.
+ */
+async function politely(url: string, accept = 'application/json', tries = 4): Promise<Response> {
+  for (let attempt = 1; ; attempt++) {
+    // Honour what the server asked for if it asked for anything; otherwise back off geometrically
+    // from a second. `Retry-After` is the museum telling us its own limit, and guessing over the
+    // top of it is how a slow crawl becomes a blocked one.
+    const wait = (res?: Response) => {
+      const after = Number(res?.headers.get('retry-after'));
+      return new Promise((r) => setTimeout(r, Number.isFinite(after) && after > 0 ? after * 1000 : 1000 * 2 ** (attempt - 1)));
+    };
+    let res: Response;
+    try {
+      res = await fetch(url, { headers: { accept, 'user-agent': USER_AGENT }, signal: AbortSignal.timeout(60_000) });
+    } catch (e) {
+      if (attempt >= tries) throw new Error(`${url} could not be reached after ${tries} attempts: ${(e as Error).message}`);
+      await wait();
+      continue;
+    }
+    if (res.ok) return res;
+    const transient = res.status === 429 || res.status >= 500;
+    if (!transient || attempt >= tries) throw new Error(`the corpus source answered ${res.status} for ${url}`);
+    await wait(res);
+  }
 }
 
-/** A stable, readable, filesystem-safe id. The accession-style object id is unique within a corpus. */
-export function workId(objectId: string | number): string {
-  return `${SOURCE_CORPUS}-${String(objectId)}`;
+/**
+ * One request for a page of the list. The whole point of preferring this API: the licence and the
+ * image are both filterable server-side, so nothing is fetched that then has to be thrown away for
+ * having the wrong rights.
+ *
+ * `skip` is exposed because a corpus is grown, not built once, and the second fifty must not be the
+ * first fifty again. `filters` is exposed because the first twenty thousand records in accession
+ * order are not a corpus anybody chose — they are whatever the museum happens to have numbered
+ * first. `type=Textile` and `department=Islamic Art` are server-side, so choosing the range costs
+ * the same as not choosing it.
+ */
+export async function listCandidates(limit: number, skip = 0, filters: Record<string, string> = {}): Promise<CmaRecord[]> {
+  const query = new URLSearchParams({ cc0: '1', has_image: '1', limit: String(limit), skip: String(skip) });
+  for (const [k, v] of Object.entries(filters)) if (v) query.set(k, v);
+  const res = await politely(`${LIST_URL}?${query}`);
+  const body = (await res.json()) as { data: CmaRecord[] };
+  return body.data;
 }
 
 function pickImage(record: CmaRecord): CmaImage | null {
   // `web` on purpose: around 800px on the long edge, which is what the reader is shown. Fetching the
   // print master would cost fifty times the bytes to be downsampled before it reaches the model.
+  // Measured across all 41,511 CC0 records, no `web` derivative exceeds 1263px, so this tier is
+  // under the reader's ceiling everywhere rather than usually.
   return record.images?.web ?? record.images?.full ?? record.images?.print ?? null;
 }
 
-export async function importWork(record: CmaRecord): Promise<Work | null> {
+/**
+ * One CMA record as a manifest row, with no image yet.
+ *
+ * Separate from fetching the pixels because metadata is cheap and pixels are not: 41,511 records is
+ * about forty requests, and the same set of images is 14.6GB. Deciding which works to keep should
+ * happen between those two facts, not after both.
+ *
+ * Returns null rather than throwing for a record this corpus may not hold — the licence check is
+ * here and not in the caller so that no path exists which writes a row without it.
+ */
+export function metadataFrom(record: CmaRecord): Work | null {
+  if (record.share_license_status !== 'CC0') return null;
   const image = pickImage(record);
   if (!image?.url) return null;
-  if (record.share_license_status !== 'CC0') return null;
 
-  const res = await fetch(image.url);
-  if (!res.ok) throw new Error(`image fetch answered ${res.status} for ${image.url}`);
+  // Both bounds or neither. CMA reports 0 for "not known", which is a sentinel and not a year, and a
+  // corpus stratified on a band of 0–0 is stratified on a bug.
+  const begin = record.creation_date_earliest ?? null;
+  const end = record.creation_date_latest ?? null;
+  const dated = typeof begin === 'number' && typeof end === 'number' && begin !== 0 && begin <= end;
+
+  return {
+    id: workId(SOURCE_CORPUS, record.id),
+    source: SOURCE_CORPUS,
+    object_id: String(record.id),
+    accession_number: record.accession_number ?? null,
+    url: record.url ?? `https://www.clevelandart.org/art/${record.id}`,
+    rights: record.share_license_status,
+    title: record.title ?? '(untitled)',
+    creator: record.creators?.[0]?.description ?? null,
+    date_display: record.creation_date ?? '',
+    date_begin: dated ? begin : null,
+    date_end: dated ? end : null,
+    classification: record.type ?? '(unclassified)',
+    medium: record.technique ?? '',
+    culture: record.culture?.[0] ?? null,
+    department: record.department ?? '(no department)',
+    image_url: image.url,
+    image: null,
+    fetched_at: new Date().toISOString(),
+  };
+}
+
+/** CMA reports dimensions as strings. Anything that is not a positive number is absent, not zero. */
+function num(v: string | undefined): number | null {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/** The dimensions the source claims for the tier we take, kept only when it claims any. */
+function claimedSize(record: CmaRecord): { width: number | null; height: number | null } {
+  const i = pickImage(record);
+  return { width: num(i?.width), height: num(i?.height) };
+}
+
+/** Metadata plus pixels, for the fifty-works case where doing both at once is simply easier. */
+export async function importWork(record: CmaRecord): Promise<Work | null> {
+  const work = metadataFrom(record);
+  if (!work) return null;
+  await fetchImage(work, claimedSize(record));
+  return work;
+}
+
+/**
+ * Fetch one work's pixels and write the row that will be verified against them forever after.
+ *
+ * Mutates `work.image` because the sha256 is not knowable until the bytes arrive — until then the
+ * field is null, which is precisely the state `corpus verify` and the resumable fetcher look for.
+ * `claimed` carries the source's own dimensions when the caller has the source record in hand; it is
+ * left null rather than measured off the file, on the same rule as every other field here.
+ */
+export async function fetchImage(work: Work, claimed: { width: number | null; height: number | null } = { width: null, height: null }): Promise<void> {
+  if (!work.image_url) throw new Error(`${work.id} has no image url to fetch`);
+  const res = await politely(work.image_url, 'image/*');
   const bytes = Buffer.from(await res.arrayBuffer());
-  const hash = createHash('sha256').update(bytes).digest('hex');
+  // A Cloudflare challenge is an HTML page, and an HTML page written to `<hash>.jpg` is a file that
+  // hashes fine, verifies fine, and is not a picture. The magic number is the only check that tells
+  // a JPEG from an apology, and it is cheap enough that there is no argument for skipping it.
+  if (!isJpeg(bytes)) throw new Error(`${work.id}: ${work.image_url} did not return a JPEG (${bytes.length} bytes)`);
+  const sha256 = createHash('sha256').update(bytes).digest('hex');
 
   mkdirSync(IMAGES, { recursive: true });
-  const rel = path.join('images', `${hash}.jpg`);
-  writeFileSync(path.join(CORPUS_DIR, rel), bytes);
+  writeFileSync(path.join(IMAGES, `${sha256}.jpg`), bytes);
+  work.image = { source_url: work.image_url, sha256, bytes: bytes.length, ...claimed };
+}
 
-  const work: Work = {
-    id: workId(record.id),
-    source: {
-      corpus: SOURCE_CORPUS,
-      objectId: String(record.id),
-      url: record.url ?? `https://www.clevelandart.org/art/${record.id}`,
-      apiUrl: record.api_link ?? `${LIST_URL}${record.id}`,
-      title: record.title ?? '(untitled)',
-      creator: record.creators?.[0]?.description ?? null,
-      date: record.creation_date ?? '',
-      rights: record.share_license_status ?? '',
-      imageUrl: image.url,
-    },
-    image: { path: rel, hash, mime: 'image/jpeg', bytes: bytes.length },
-    fetchedAt: new Date().toISOString(),
-  };
+/** `FF D8 FF` — the SOI marker every JPEG starts with, and no HTML error page does. */
+export function isJpeg(bytes: Buffer): boolean {
+  return bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+}
 
-  mkdirSync(WORKS, { recursive: true });
-  writeFileSync(path.join(WORKS, `${work.id}.json`), `${JSON.stringify(work, null, 2)}\n`);
-  return work;
+/** Whether this work's pixels are on this machine. Manifest rows are tracked; images are not. */
+export function hasImage(work: Work): boolean {
+  const rel = imagePath(work);
+  return rel !== null && existsSync(path.join(CORPUS_DIR, rel));
+}
+
+/**
+ * Put back one work's pixels from the URL its manifest row already carries.
+ *
+ * The images are content-addressed and gitignored, so a clone has every provenance record and none
+ * of the bytes. That is only a safe trade if the bytes come back *identical*, which is exactly what
+ * a sha256 in the row lets us insist on rather than hope for — a museum that requotes its own
+ * derivative at a different quality would otherwise silently change what every reading was made
+ * from. A mismatch is an error, not a warning.
+ */
+export async function refetchImage(work: Work): Promise<void> {
+  if (!work.image) throw new Error(`${work.id} has no image to refetch`);
+  const want = work.image.sha256;
+  const copy: Work = { ...work, image: null };
+  await fetchImage(copy);
+  const got = copy.image as ManifestImage;
+  if (got.sha256 !== want) {
+    throw new Error(`${work.id}: the source now serves ${got.sha256.slice(0, 12)}, but the row was made from ${want.slice(0, 12)}`);
+  }
 }
 
 // --- reading the corpus back ---------------------------------------------------------------------
 
 export function listWorks(): Work[] {
-  if (!existsSync(WORKS)) return [];
-  return readdirSync(WORKS)
-    .filter((f) => f.endsWith('.json'))
-    .sort()
-    .map((f) => JSON.parse(readFileSync(path.join(WORKS, f), 'utf8')) as Work);
+  return readManifest(MANIFEST).works;
+}
+
+/**
+ * Merge rows into the manifest, newest wins on id.
+ *
+ * Whole-file because the file is sorted and the sort is what keeps a re-import from reading as a
+ * total rewrite in git. At 250,000 rows this is a few hundred milliseconds and it is called once per
+ * batch, not once per work.
+ */
+export function saveWorks(works: Work[]): void {
+  const by = new Map(readManifest(MANIFEST).works.map((w) => [w.id, w]));
+  for (const w of works) by.set(w.id, w);
+  mkdirSync(CORPUS_DIR, { recursive: true });
+  writeManifest(MANIFEST, [...by.values()]);
 }
 
 export function loadReading(id: string): WorkReading | null {

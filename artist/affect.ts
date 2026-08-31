@@ -110,7 +110,7 @@ const between = (lo: number, hi: number, n: number): number => Math.min(hi, Math
  * The named cost: `editsPerStep` no longer varies across briefs. Under the level reading a
  * 0.9-stakes brief got 5 edits a step and a 0.8-stakes brief got 4 — the only behavioural effect
  * `stakesLevel` ever had. That was a constant of the commission wearing affect's clothes, and it is
- * now gone. If per-brief step size is wanted back it belongs in the deliverable or the protocol,
+ * now gone. If per-brief step size is wanted back it belongs in the protocol,
  * where it can be read as the constant it is.
  */
 

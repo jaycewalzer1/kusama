@@ -37,6 +37,7 @@ import type { DerivedFrom, LineageElement } from '../aesthetic/elements/types.js
 import type { Constraint, Tension } from '../aesthetic/types.js';
 import type { Reading, Work, WorkReading } from './corpus.js';
 import { ENV_MODEL, envModel } from './env-model.js';
+import { imagePath } from './manifest.js';
 
 // --- the closed move list -----------------------------------------------------------------------
 //
@@ -291,15 +292,21 @@ export async function deriveElement(work: Work, reading: WorkReading): Promise<D
   // Provenance is the one place metadata belongs, and it is deliberately not normative: culture,
   // period and citation say where the object is and who to ask about it. Nothing in the four
   // normative fields above was allowed to see any of it.
+  // Every value here is written into `aesthetic/elements/*.json`, and that pack is hashed into
+  // `envVersion`. The manifest refactor changed the *shape* these come from and must not change a
+  // single character of what lands: `corpus` is still the museum's short name, `imagePath` is still
+  // `images/<sha256>.jpg`. Moving any of them silently invalidates comparability with every
+  // trajectory already on disk.
+  if (!work.image) throw new Error(`${work.id} has no image; an element cannot cite bytes that were never fetched`);
   const from: DerivedFrom = {
-    corpus: work.source.corpus,
-    objectId: work.source.objectId,
-    url: work.source.url,
-    date: work.source.date,
-    creator: work.source.creator,
-    rights: work.source.rights,
-    imagePath: work.image.path,
-    imageHash: work.image.hash,
+    corpus: work.source,
+    objectId: work.object_id,
+    url: work.url,
+    date: work.date_display,
+    creator: work.creator,
+    rights: work.rights,
+    imagePath: imagePath(work) as string,
+    imageHash: work.image.sha256,
     readingProtocol: reading.promptHash,
     deriveProtocol: deriveProtocolHash(),
     model: ENV_MODEL,
@@ -310,10 +317,10 @@ export async function deriveElement(work: Work, reading: WorkReading): Promise<D
     id: work.id,
     name: draft.name,
     provenance: {
-      culture: work.source.creator ?? 'maker not recorded',
-      period: work.source.date || 'date not recorded',
+      culture: work.creator ?? 'maker not recorded',
+      period: work.date_display || 'date not recorded',
       note: `Derived from a blind reading of one work. The reading saw the picture and no label; this element saw the reading and not the picture. Neither saw the line above.`,
-      citation: `${work.source.title} — ${work.source.url} (${work.source.rights}, ${work.source.corpus})`,
+      citation: `${work.title} — ${work.url} (${work.rights}, ${work.source})`,
     },
     worldviewFragment: draft.worldview,
     commitments: commitments.kept,

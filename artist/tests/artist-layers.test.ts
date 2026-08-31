@@ -1,14 +1,13 @@
-// The five-layer stack, asserted where it would otherwise decay silently.
+// The prompt stack, asserted where it would otherwise decay silently.
 //
 // The arrangement only measures anything if each layer answers exactly one question. L1 varies with
-// the artist and never with the job; L2 varies with the job and never with the artist; L3 varies
-// with the kind of object and nothing else; L4 varies with nothing. A layer that answers two of
-// those has not broken anything visible — the run still completes and still scores — it has quietly
-// supplied the derivation the run exists to watch the artist perform. Nothing but a test notices.
+// the artist and never with the job; L2 varies with the job and never with the artist; L4 varies
+// with nothing. A layer that answers two of those has not broken anything visible — the run still
+// completes and still scores — it has quietly supplied the derivation the run exists to watch the
+// artist perform. Nothing but a test notices.
 //
-// So: the documents are checked for completeness, the brief is checked for aesthetic direction, the
-// practice is checked for knowing what kind of object it is making, and the assembly order is
-// checked in every phase that assembles it.
+// So: the documents are checked for completeness, the brief is checked for aesthetic direction, and
+// the assembly order is checked in every phase that assembles it.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -17,12 +16,9 @@ import path from 'node:path';
 import { ROOT } from '../../env/browser.js';
 import {
   aestheticDirection,
-  deliverableFacts,
-  listDeliverables,
+  artistLayers,
   loadBrief,
   loadCommission,
-  loadDeliverable,
-  namesDeliverable,
   practiceOf,
 } from '../field.js';
 import {
@@ -46,7 +42,6 @@ const ids = (dir: string, suffix = '.json') =>
 
 const POSITIONS = ids('positions');
 const BRIEFS = ids('briefs');
-const DELIVERABLES = ids('deliverables');
 
 // --- L1: the practice ----------------------------------------------------------------------------
 
@@ -67,39 +62,6 @@ test('L1: every position carries a practice, and the practice says something', (
 const position = (id: string) => loadAestheticProgram(path.join(ROOT, 'aesthetic/positions', `${id}.json`));
 
 /**
- * The rule the whole arrangement rests on, checked through the same function the studio refuses a
- * save with. `deliverableFacts` carries the argument; this asserts the catalog on disk obeys it.
- *
- * Sharing the function is the point. The rule lived in this file alone once, which meant the studio
- * would happily write the next position with the defect in it and nothing would say so until a test
- * run long afterwards — by which time the file is on disk and every run against it is confounded.
- */
-test('L1 holds no facts about L3: no position names a deliverable outside its lineage', () => {
-  for (const id of POSITIONS) {
-    assert.deepEqual(
-      deliverableFacts(position(id)),
-      [],
-      `position ${id}: L1 may hold beliefs about a medium but not facts about one`
-    );
-  }
-});
-
-/** The predicate has to fail on something, or it is asserting that a regex found nothing. */
-test('L1 holds no facts about L3: and the check would catch one', () => {
-  const clean = position(POSITIONS[0]!);
-  assert.deepEqual(deliverableFacts(clean), []);
-  assert.deepEqual(deliverableFacts({ ...clean, worldview: 'A poster is read at fifteen feet.' }), [
-    'it names the deliverable "poster"',
-  ]);
-  // Cited rather than asserted: the same sentence inside lineage is a reference to an object that
-  // existed, and it stays legal.
-  assert.deepEqual(
-    deliverableFacts({ ...clean, lineage: [{ ref: 'A poster, 1977', why: 'a poster that existed' }] }),
-    []
-  );
-});
-
-/**
  * Lineage is a record, not an instruction.
  *
  * Every position cites five or six real works by real people, and `aesthetic-fixtures.test.ts`
@@ -116,38 +78,18 @@ test('L1 holds no facts about L3: and the check would catch one', () => {
  */
 test('L1 sends no proper nouns: neither the position name nor its lineage enters the prompt', () => {
   for (const id of POSITIONS) {
-    const c = loadCommission(id, BRIEFS[0]!, DELIVERABLES[0]!);
-    const prompt = findObservation(c, c.field);
+    const c = loadCommission(id, BRIEFS[0]!);
+    const prompt = findObservation(artistLayers(c), c.field);
 
-    assert.ok(!prompt.includes(c.position.name), `${id}: the prompt names the position "${c.position.name}"`);
-    for (const l of c.position.lineage) {
+    const p = c.positionAsWritten;
+    assert.ok(!prompt.includes(p.name), `${id}: the prompt names the position "${p.name}"`);
+    for (const l of p.lineage) {
       assert.ok(!prompt.includes(l.ref), `${id}: the prompt cites lineage "${l.ref}"`);
       assert.ok(!prompt.includes(l.why), `${id}: the prompt carries the lineage note for "${l.ref}"`);
     }
     // The lineage still has to exist to have been excluded — otherwise this passes vacuously the day
     // someone empties the field.
-    assert.ok(c.position.lineage.length > 0, `${id}: no lineage, so this test proved nothing`);
-  }
-});
-
-test('L3 names no position, and the practice itself stays clean', () => {
-  const OBJECT_WORDS = [...DELIVERABLES, 'poster', 'flyer', 'handbill', 'placard', 'leaflet', 'sticker'];
-  for (const id of POSITIONS) {
-    const practice = practiceOf(position(id));
-    const text = [practice.origin, practice.doing, practice.period, practice.register, ...practice.refusals]
-      .join(' ')
-      .toLowerCase();
-    for (const word of OBJECT_WORDS) {
-      assert.ok(!new RegExp(`\\b${word}s?\\b`).test(text), `position ${id} practice names the deliverable: "${word}"`);
-    }
-  }
-  for (const id of DELIVERABLES) {
-    const d = loadDeliverable(id);
-    const text = JSON.stringify(d).toLowerCase();
-    for (const p of POSITIONS) {
-      assert.ok(!text.includes(p), `deliverable ${id} names position ${p}`);
-      assert.ok(!text.includes(position(p).name.toLowerCase()), `deliverable ${id} names position ${position(p).name}`);
-    }
+    assert.ok(p.lineage.length > 0, `${id}: no lineage, so this test proved nothing`);
   }
 });
 
@@ -226,25 +168,6 @@ test('L2: a pressure carrying aesthetic direction is caught like any other field
 });
 
 /**
- * L2 used to be allowed exactly one kind of object on the grounds that the client knows what it
- * ordered. There is no client now, and the kind of object is the third axis, chosen when the run is
- * launched: the same condition is meant to be workable as any of them. One that names an object is
- * wrong in most of the cells it appears in, and it hands the artist a fact L3 may contradict.
- *
- * Scoped to the condition and not to its `.field.json`. The field describes the world this lands in,
- * and the world contains other people's objects: "still on half the flyers in the shop" is a true
- * statement about a visual environment, not a claim about what is being made.
- */
-test('L2: no condition says what kind of object it is', () => {
-  for (const id of BRIEFS) {
-    assert.deepEqual(namesDeliverable(loadBrief(id)), [], `condition ${id} decides an axis that is not its to decide`);
-  }
-  // And the check would catch one: this is the shape every one of them had before the axis was split.
-  const told = { ...loadBrief(BRIEFS[0]!), atStake: 'the poster is asking for that' };
-  assert.deepEqual(namesDeliverable(told), ['it calls the work a "poster"']);
-});
-
-/**
  * The mechanical half of the L2 rule. It is a smoke alarm rather than a proof — see `STYLE_WORDS` —
  * but the failure it catches is the one that actually happens, which is a brief that could not
  * resist telling the artist what the thing should look like.
@@ -256,19 +179,6 @@ test('L2: no brief tells the artist what it should look like', () => {
   }
 });
 
-// --- L3: the deliverable -------------------------------------------------------------------------
-
-test('L3: every deliverable says what the object has to do and what it does not decide', () => {
-  const all = listDeliverables();
-  assert.equal(all.length, DELIVERABLES.length);
-  for (const d of all) {
-    assert.ok(d.name.length > 0, `${d.id} has no name`);
-    assert.ok(d.function.length > 60, `${d.id}: function is too short to be a function`);
-    assert.ok(d.consequences.length >= 3, `${d.id}: ${d.consequences.length} consequences; physics has more`);
-    assert.ok(d.doesNotDecide.length > 40, `${d.id}: doesNotDecide is the line that keeps L3 out of L1's job`);
-  }
-});
-
 // --- L4 and the assembly -------------------------------------------------------------------------
 
 test('L4: the protocol hashes, so an edit to it is a version bump', () => {
@@ -276,14 +186,14 @@ test('L4: the protocol hashes, so an edit to it is a version bump', () => {
 });
 
 /**
- * Context assembly order: L4, then L1, then L3, then L2. Every artist-side phase goes through
- * `stack`, so this is really a test that no phase assembles the four itself — but it is asserted per
- * phase rather than on `stack` alone, because the failure mode is a new phase that does.
+ * Context assembly order: L4, then L1, then L2. Every artist-side phase goes through `stack`, so
+ * this is really a test that no phase assembles the three itself — but it is asserted per phase
+ * rather than on `stack` alone, because the failure mode is a new phase that does.
  */
-test('assembly order is L4 then L1 then L3 then L2, in every phase that assembles it', () => {
-  const c = loadCommission(POSITIONS[0]!, BRIEFS[0]!, DELIVERABLES[0]!);
+test('assembly order is L4 then L1 then L2, in every phase that assembles it', () => {
+  const c = loadCommission(POSITIONS[0]!, BRIEFS[0]!);
   const report: CheckReport = {
-    aesthetic: c.position.id,
+    aesthetic: c.positionAsWritten.id,
     hardViolations: 0,
     softViolations: 0,
     treeScore: null,
@@ -300,10 +210,7 @@ test('assembly order is L4 then L1 then L3 then L2, in every phase that assemble
     riskMove: null,
   };
   const make: MakeContext = {
-    position: c.position,
-    practice: c.practice,
-    deliverable: c.deliverable,
-    brief: c.brief,
+    ...artistLayers(c),
     capabilitySheet: 'sheet',
     program: {},
     report,
@@ -320,12 +227,12 @@ test('assembly order is L4 then L1 then L3 then L2, in every phase that assemble
   };
 
   const observations = {
-    find: findObservation(c, c.field),
-    choose: chooseObservation(c, [], 'none'),
+    find: findObservation(artistLayers(c), c.field),
+    choose: chooseObservation(artistLayers(c), [], 'none'),
     make: makeObservation(make),
-    examine: examineObservation(c, intention, report, 'd', null),
+    examine: examineObservation(artistLayers(c), intention, report, 'd', null),
   };
-  const markers = ['HOW YOU WORK', 'YOUR PRACTICE', `THE OBJECT: ${c.deliverable.name.toUpperCase()}`, `THE CONDITION: ${c.brief.title}`];
+  const markers = ['HOW YOU WORK', 'YOUR PRACTICE', `THE CONDITION: ${c.brief.title}`];
   for (const [phase, text] of Object.entries(observations)) {
     const at = markers.map((m) => text.indexOf(m));
     for (let i = 0; i < markers.length; i++) assert.ok(at[i]! >= 0, `${phase} is missing "${markers[i]}"`);
@@ -354,10 +261,120 @@ test('assembly order is L4 then L1 then L3 then L2, in every phase that assemble
   assert.throws(() => framesOf(seeing, null, png), /no plate/);
 });
 
-test('the four layer files are four files; nothing generates them', () => {
+// --- the elements have to reach the artist, not only the checker ---------------------------------
+//
+// The bug these two pin was silent for the whole life of the elements layer, and it was not in the
+// elements layer. `Layers` has a `position` and `Commission` used to have one too, so every phase
+// that wrote `findObservation(commission, ...)` compiled, read the document off disk, and showed the
+// artist a position with none of the adopted lineage in it. Measured before the fix: a commission
+// adopting `ma-interval` and `rodchenko-red-black` composed 21 constraints and 4 conflicts, and not
+// one of the two elements' worldview fragments, cliches, constraint ids or reasons appeared anywhere
+// in the FIND prompt. The run was graded on lineages it had never been told about.
+//
+// The rename of `Commission.position` to `positionAsWritten` is what makes the mistake a compile
+// error. These are what make the fix visible as behaviour rather than as a diff.
+
+/** Two elements with real constraints, adopted together, against a position that is not theirs. */
+const WITH_ELEMENTS = ['ma-interval', 'rodchenko-red-black'];
+
+test('an adopted element reaches every artist-facing prompt, not just the checker', () => {
+  const c = loadCommission('withheld', BRIEFS[0]!, WITH_ELEMENTS);
+  assert.ok(c.composition, 'the fixture adopted no elements, so this test proves nothing');
+  assert.ok(c.composition.constraints.length > 0, 'the composition is empty');
+
+  const prompt = findObservation(artistLayers(c), c.field);
+  const pack = path.join(ROOT, 'aesthetic', 'elements', 'pack');
+  for (const id of WITH_ELEMENTS) {
+    const e = JSON.parse(readFileSync(path.join(pack, `${id}.json`), 'utf8')) as {
+      worldviewFragment: string;
+      cliches: string[];
+      commitments?: { id: string; why: string }[];
+      prohibitions: { id: string; why: string }[];
+      generativeRules: { id: string; why: string }[];
+    };
+    assert.ok(prompt.includes(e.worldviewFragment), `${id}: the stance it carries never reaches the artist`);
+    for (const cliche of e.cliches) {
+      assert.ok(prompt.includes(cliche), `${id}: the artist is not told it refuses "${cliche}"`);
+    }
+    // The reasons, not the ids: an id is namespaced on the way into the composition, so matching one
+    // would be matching `qualify`, and `why` is the sentence the artist actually has to read.
+    for (const k of [...(e.commitments ?? []), ...e.prohibitions, ...e.generativeRules]) {
+      assert.ok(prompt.includes(k.why), `${id}: rule ${k.id} is graded but never stated to the artist`);
+    }
+  }
+});
+
+/**
+ * The tensions an element carries are merged into the position the artist reads.
+ *
+ * This is the one FIND grounds every problem in: the system prompt asks for the place the situation
+ * rubs against a tension already held, so a lineage whose tensions are not in that list can forbid
+ * things but cannot change how the situation is read — which is the claim the elements layer exists
+ * to test.
+ *
+ * NOTHING IS BEING MEASURED HERE YET, and the test says so rather than passing quietly. All four
+ * hand-authored elements predate the `tensions` field and carry none, so the merge currently merges
+ * an empty list. The assertion below is written as an equality against the pack read independently,
+ * so that it starts doing real work the moment `corpus derive` writes an element that has them —
+ * and the explicit count is what stops "0 elements with tensions" from reading as a pass.
+ */
+test('element tensions are merged into what the artist holds (today: none exist, stated)', () => {
+  const pack = path.join(ROOT, 'aesthetic', 'elements', 'pack');
+  const elements = WITH_ELEMENTS.map(
+    (id) => JSON.parse(readFileSync(path.join(pack, `${id}.json`), 'utf8')) as { tensions?: unknown[] }
+  );
+  const carried = elements.flatMap((e) => e.tensions ?? []);
+
+  const c = loadCommission('withheld', BRIEFS[0]!, WITH_ELEMENTS);
+  assert.deepEqual(
+    c.effective.tensions,
+    [...c.positionAsWritten.tensions, ...carried],
+    'the composed position does not hold the position tensions followed by the elements own'
+  );
+
+  const withTensions = elements.filter((e) => (e.tensions ?? []).length > 0).length;
+  if (withTensions === 0) {
+    // Deliberately not an assertion failure — it is the true state of the pack. It is a statement,
+    // so that a reader of a green run does not conclude the merge was exercised.
+    assert.equal(carried.length, 0, 'an element grew tensions; delete this branch, the test is live now');
+  } else {
+    const prompt = findObservation(artistLayers(c), c.field);
+    for (const t of carried as { between: string; and: string; claim: string }[]) {
+      assert.ok(prompt.includes(t.claim), `a tension the artist inherited never reaches the prompt: ${t.claim}`);
+    }
+  }
+});
+
+/**
+ * The other half, and the reason this change is not a version bump. `artistLayers` hands over
+ * `effective` rather than the document on disk, and `effective` is the document plus the condition's
+ * hard constraints plus any element. With no element and a condition that fixes nothing — which is
+ * every condition in the catalogue today — those are the same object, so every prompt is unchanged
+ * byte for byte and `observationHash` did not have to move.
+ *
+ * If a condition ever does fix a constraint materially this test starts failing, and that failure is
+ * correct: it means the artist has begun to see something it did not see before, and the runs
+ * collected before that are a different experiment.
+ */
+test('an element-free commission is shown byte-for-byte what it was shown before', () => {
+  for (const id of POSITIONS) {
+    for (const b of BRIEFS) {
+      const c = loadCommission(id, b);
+      assert.equal(c.brief.hard_constraints.length, 0, `${b} now fixes constraints; see the note above`);
+      const asWritten = { ...artistLayers(c), position: c.positionAsWritten };
+      assert.equal(
+        findObservation(artistLayers(c), c.field),
+        findObservation(asWritten, c.field),
+        `${id}+${b}: the prompt moved for a commission that adopted nothing`
+      );
+    }
+  }
+});
+
+test('the layer files are files; nothing generates them', () => {
   // A layer produced by a model is a layer whose hash means nothing, so the documents have to be on
   // disk and parseable without running anything.
-  for (const [dir, list] of [['positions', POSITIONS], ['briefs', BRIEFS], ['deliverables', DELIVERABLES]] as const) {
+  for (const [dir, list] of [['positions', POSITIONS], ['briefs', BRIEFS]] as const) {
     for (const id of list) {
       const raw = readFileSync(path.join(ROOT, 'aesthetic', dir, `${id}.json`), 'utf8');
       assert.equal((JSON.parse(raw) as { id: string }).id, id, `${dir}/${id}.json declares a different id`);

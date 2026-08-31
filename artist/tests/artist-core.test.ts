@@ -44,7 +44,7 @@ import { grounded } from '../phases/find.js';
 import { refusalCause, refusalTally } from '../env.js';
 import { declarationOf, unplannedViolation } from '../triggers.js';
 import { StudioLog, readLog, verifyChain } from '../studio-log.js';
-import { loadCommission, effectivePosition, temperamentOf } from '../field.js';
+import { artistLayers, loadCommission, effectivePosition, temperamentOf } from '../field.js';
 import { OBSERVATION_HASH, describeObservation, audienceObservation, findObservation } from '../observation.js';
 import { ROOT } from '../../env/browser.js';
 import type { CheckReport, RenderMetrics } from '../../aesthetic/types.js';
@@ -843,11 +843,10 @@ const catalog = (dir: string, suffix = '.json') =>
 test('commission: every position carries a temperament and every brief carries a field', () => {
   const positions = catalog('positions');
   const briefs = catalog('briefs');
-  const deliverable = catalog('deliverables')[0]!;
   assert.ok(positions.length >= 2 && briefs.length >= 2);
   for (const p of positions) {
     for (const b of briefs) {
-      const c = loadCommission(p, b, deliverable);
+      const c = loadCommission(p, b);
       assert.ok(c.temperament.value >= -1 && c.temperament.value <= 1, `${p} temperament`);
       assert.ok(c.temperament.why.length > 40, `${p} temperament needs a reason`);
       assert.ok(c.field.stakesLevel >= 0 && c.field.stakesLevel <= 1, `${b} stakesLevel`);
@@ -856,7 +855,7 @@ test('commission: every position carries a temperament and every brief carries a
       // The brief's hard constraints are in the position the checker actually sees.
       assert.equal(
         c.effective.commitments.length,
-        c.position.commitments.length + c.brief.hard_constraints.length
+        c.positionAsWritten.commitments.length + c.brief.hard_constraints.length
       );
     }
   }
@@ -888,10 +887,10 @@ test('observation: the serializer hashes its own bytes, so an edit is a version 
 });
 
 test('observation: the environment describers are blind to everything but the image', () => {
-  const c = loadCommission('many-hands', 'nine-returned', 'panel');
+  const c = loadCommission('many-hands', 'nine-returned');
   const leak = [
-    c.position.name,
-    c.position.worldview.slice(0, 40),
+    c.positionAsWritten.name,
+    c.positionAsWritten.worldview.slice(0, 40),
     c.brief.title,
     c.brief.occasion.slice(0, 40),
     c.field.whenAndWhere.slice(0, 40),
@@ -903,21 +902,25 @@ test('observation: the environment describers are blind to everything but the im
   // AUDIENCE gets exactly one paragraph of the field and nothing else from it.
   const audience = audienceObservation(c.field.whoIsWatching.audience);
   assert.ok(audience.includes(c.field.whoIsWatching.audience));
-  assert.ok(!audience.includes(c.position.name));
+  assert.ok(!audience.includes(c.positionAsWritten.name));
   assert.ok(!audience.includes(c.brief.title));
   assert.ok(!audience.includes(c.field.whoIsWatching.adversary));
   for (const line of c.field.inTheAir) assert.ok(!audience.includes(line));
 });
 
 test('observation: FIND sees the field, because that is where a problem has to come from', () => {
-  const c = loadCommission('many-hands', 'nine-returned', 'panel');
-  const obs = findObservation(c, c.field);
+  const c = loadCommission('many-hands', 'nine-returned');
+  const obs = findObservation(artistLayers(c), c.field);
   assert.ok(obs.includes(c.field.whoIsWatching.adversary));
   assert.ok(obs.includes(c.field.transplants[0]!.ref));
-  assert.ok(obs.includes(c.position.worldview.slice(0, 60)));
+  // Read off `effective`, which is what `artistLayers` hands over — not off the document on disk.
+  // With no element adopted and a condition that fixes nothing the two are equal, and the test named
+  // "an element-free commission is shown byte-for-byte what it was shown before" is what proves that,
+  // rather than this test quietly assuming it.
+  assert.ok(obs.includes(c.effective.worldview.slice(0, 60)));
   // The position's own constraints, not L2's: a condition fixes nothing by default, so reading the
   // first of its hard constraints would be reading an empty list on every document in the catalogue.
-  assert.ok(obs.includes(c.position.commitments[0]!.id));
+  assert.ok(obs.includes(c.effective.commitments[0]!.id));
   // The number it is told not to see: stakesLevel is the environment's, not the artist's.
   assert.ok(!obs.includes('stakesLevel'));
 });
@@ -936,7 +939,6 @@ const ENV = {
   packHash: 'c',
   protocolHash: 'd',
   positionHash: 'e',
-  deliverableHash: 'f',
   briefHash: 'g',
   fieldHash: 'h',
   elementPackHash: 'j',
@@ -959,7 +961,7 @@ test('env version: each hash that moved is named, and only the ones that moved',
 test('env version: a hash the record never carried is not drift', () => {
   // Logs predate several of these fields. Reading absence as disagreement would refuse every old
   // run for a reason that has nothing to do with whether its environment moved.
-  const { deliverableHash: _d, fieldHash: _f, ...older } = ENV;
+  const { elementPackHash: _e, fieldHash: _f, ...older } = ENV;
   assert.deepEqual(envDrift(older, ENV), []);
 });
 

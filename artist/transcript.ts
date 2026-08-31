@@ -115,7 +115,6 @@ export function transcriptMarkdown(id: string, lines: LogLine[]): string {
     `# ${s(head['positionId']) || '?'} x ${s(head['briefId']) || '?'}${head['control'] ? ' (control)' : ''}`,
     [
       `\`${id}\``,
-      s(head['deliverableId']),
       `seed ${n(head['seed'])}`,
       `${t.steps} steps`,
       `${t.calls} calls`,

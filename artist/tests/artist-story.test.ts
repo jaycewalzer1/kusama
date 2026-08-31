@@ -19,7 +19,7 @@ function line(kind: string, data: Record<string, unknown>): Entry {
 function run(): Entry[] {
   seq = 0;
   return [
-    line('trajectory-start', { positionId: 'withheld', briefId: 'two-million-slips', deliverableId: 'panel', seed: 7, maxSteps: 12 }),
+    line('trajectory-start', { positionId: 'withheld', briefId: 'two-million-slips', seed: 7, maxSteps: 12 }),
     line('phase', { phase: 'find' }),
     line('policy-call', { name: 'find', ok: true, usage: { usd: 0.09 }, action: { problems: [{ text: 'the poster shouts' }] } }),
     line('phase', { phase: 'sketch' }),

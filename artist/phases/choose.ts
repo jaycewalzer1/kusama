@@ -8,6 +8,7 @@
 import { callPolicy, type Spend } from '../call.js';
 import { chooseObservation } from '../observation.js';
 import { CHOOSE_SCHEMA } from '../schemas.js';
+import { artistLayers } from '../field.js';
 import type { Commission } from '../field.js';
 import type { Policy, PolicyImage } from '../policy/interface.js';
 import type { StudioLog } from '../studio-log.js';
@@ -60,7 +61,7 @@ export async function choose(
   const result = await callPolicy<Chosen>(policy, log, spend, {
     name: 'choose',
     system: SYSTEM,
-    observation: chooseObservation(commission, problems, note),
+    observation: chooseObservation(artistLayers(commission), problems, note),
     schema: CHOOSE_SCHEMA,
     images,
     maxTokens: 4000,
