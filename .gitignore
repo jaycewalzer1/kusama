@@ -23,8 +23,15 @@ out/
 # Cleveland's CC0 records the mean web derivative is 356KB, so tracking them would put 10.7GB in git
 # at a 30,000-work corpus. Untracked at 50 works, while it was still free to do.
 corpus/images/
-corpus/import-failures.jsonl
 corpus/failures.jsonl
+
+# The candidate pool: a quarter of a million rows across three museums, ~110MB, regenerable by
+# re-running `corpus metadata`. It is a fact about three public APIs rather than about this corpus.
+# The argument for tracking the manifest was that the manifest is small; a file that is not small
+# does not inherit that argument by having a similar name. What the pool would have justified — what
+# was available, and why these works were chosen out of it — is in corpus/selection.json, which IS
+# tracked.
+corpus/pool.jsonl
 
 # Env / secrets
 .env

@@ -1,7 +1,10 @@
 // `corpus` — fetch real works, read them blind, and say how many the model already knew.
 //
+//   corpus metadata <cma|met|aic>      pull a whole source's metadata into corpus/pool.jsonl
 //   corpus import [-n 50] [--skip 0] [--type T] [--department D]
 //                                      fetch works and their rights into corpus/manifest.jsonl
+//   corpus select [--target N] [--seed N] [--dry-run]
+//                                      stratify the pool into the corpus, and record why
 //   corpus images                      refetch pixels for works whose images are missing
 //   corpus verify                      every row against the bytes on disk: present, and the right ones
 //   corpus read                        one blind reading and one leakage probe per unread work
@@ -12,7 +15,7 @@
 // withdrawn for everybody. `read` is idempotent: the environment model caches on request content, so
 // re-running it costs nothing and returns exactly what the first run got.
 
-import { appendFileSync, createReadStream, existsSync } from 'node:fs';
+import { appendFileSync, createReadStream, existsSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { Command } from 'commander';
@@ -22,18 +25,28 @@ import {
   MANIFEST,
   SOURCE_CORPUS,
   corpusSummary,
+  fetchImage,
   hasImage,
   importWork,
+  POOL,
+  SELECTION,
   listCandidates,
+  listPage,
+  listPool,
   listWorks,
   loadReading,
+  metadataFrom as cmaFrom,
+  politely,
   readWork,
   readingProtocolHash,
   refetchImage,
   saveReading,
   saveWorks,
 } from '../artist/corpus.js';
-import { type Work, imagePath, readManifest, workId } from '../artist/manifest.js';
+import { type AicRecord, metadataFrom as aicFrom, searchUrl, walkPublicDomain } from '../artist/aic.js';
+import { type Source, type Work, imagePath, readManifest, workId } from '../artist/manifest.js';
+import { csvRows, metadataFrom as metFrom, resolveImageUrl } from '../artist/met.js';
+import { DEFAULT_TARGET, MAX_CLASSIFICATION_SHARE, MAX_SOURCE_SHARE, select } from '../artist/selection.js';
 import { deriveElement, deriveProtocolHash, saveDerived } from '../artist/element-derive.js';
 
 const program = new Command();
@@ -41,8 +54,12 @@ program.name('corpus').description('the corpus of real works the lineage element
 
 const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** Append-only, gitignored. What was lost and when, for a run too long to watch. */
-const FAILURES = path.join(CORPUS_DIR, 'import-failures.jsonl');
+/**
+ * Append-only, gitignored. What was lost and when, for a run too long to watch. One file for both
+ * the importer and the image fetcher, because the question a person asks it is "what did this
+ * machine fail to get", and each line already carries the id and the reason.
+ */
+const FAILURES = path.join(CORPUS_DIR, 'failures.jsonl');
 
 program
   .command('import')
@@ -113,34 +130,270 @@ program
     if (failed) process.stdout.write(`${failed} failed; see ${FAILURES}\n`);
   });
 
+/** Per-source politeness. Cleveland's CDN is a CDN; the Met and the AIC answer from their own APIs. */
+const PAUSE_MS: Record<Source, number> = { cma: 250, met: 400, aic: 700 };
+
 program
   .command('images')
-  .description('refetch the pixels for works whose images are not on this machine')
-  .option('--pause <ms>', 'delay between requests', '500')
-  .action(async (opts: { pause: string }) => {
-    // corpus/images/ is gitignored, so a fresh clone has every work record and no bytes. This is
-    // the command that makes that trade honest: each image comes back from the URL in its own
-    // record and has to hash to what the record says, or it is an error.
-    const missing = listWorks().filter((w) => !hasImage(w));
-    if (missing.length === 0) {
+  .description('fetch the pixels for every manifest row that has not got them, resumably')
+  .option('--pause <ms>', 'override the per-source delay between requests')
+  .option('--limit <n>', 'stop after this many works, for a smoke test', '0')
+  .action(async (opts: { pause?: string; limit: string }) => {
+    // This is the long one — twenty thousand downloads, hours, unattended. Three things follow from
+    // that and none of them are optional.
+    //
+    // **It resumes.** The work list is recomputed from the manifest and the disk every run, and the
+    // manifest is checkpointed as it goes, so a kill at work 12,000 costs the current image and
+    // nothing else. Content addressing is what makes this free: the file is named by its own hash,
+    // so a work fetched twice writes the same path twice and there is no partial state to reconcile.
+    //
+    // **A failure is data, not a stop.** A 404 on one work out of twenty thousand is a fact about
+    // that work. It goes to corpus/failures.jsonl with the reason and the run continues.
+    //
+    // **Rates are per source.** Three museums are three courtesies, and one of them has blocked us
+    // before.
+    const pending = listWorks().filter((w) => !hasImage(w));
+    const cap = Number(opts.limit) || Number.POSITIVE_INFINITY;
+    const todo = Number.isFinite(cap) ? pending.slice(0, cap) : pending;
+    if (todo.length === 0) {
       process.stdout.write(`all ${listWorks().length} works have their images\n`);
       return;
     }
+    process.stdout.write(`${todo.length} works to fetch (of ${listWorks().length} in the manifest)\n`);
+
     let got = 0;
     let failed = 0;
-    for (const work of missing) {
+    let noImage = 0;
+    const done: Work[] = [];
+    const started = Date.now();
+    // Checkpoint rather than write once at the end: `saveWorks` rereads and rewrites the whole
+    // sorted file, which is seconds at manifest scale, so doing it per work would dominate the run —
+    // and doing it never would throw away every hash if the process is killed.
+    const checkpoint = () => {
+      if (done.length) saveWorks(done.splice(0), MANIFEST);
+    };
+
+    for (const [i, work] of todo.entries()) {
+      const gap = opts.pause ? Number(opts.pause) : PAUSE_MS[work.source];
       try {
-        await refetchImage(work);
+        if (work.image) {
+          // The row already claims a hash: this is a re-fetch into an empty corpus/images/, and the
+          // bytes have to come back identical or the evidence and the pixels have parted company.
+          await refetchImage(work);
+        } else {
+          // The Met's CSV carries no image URL at all, so it is resolved here — after selection,
+          // for the works that were chosen, rather than before it for the quarter of a million
+          // that were not.
+          if (!work.image_url && work.source === 'met') work.image_url = await resolveImageUrl(work.object_id);
+          if (!work.image_url) {
+            // A public-domain object with no published image is common and is not an error. The row
+            // stays, metadata-only, and says so.
+            noImage++;
+            done.push(work);
+            continue;
+          }
+          await fetchImage(work);
+        }
         got++;
-        process.stdout.write(`${String(got).padStart(5)}/${missing.length}  ${work.id}  ${work.image?.sha256.slice(0, 12)}\n`);
+        done.push(work);
+        const rate = got / ((Date.now() - started) / 1000);
+        if (got % 25 === 0 || got === 1) {
+          process.stdout.write(`${String(i + 1).padStart(6)}/${todo.length}  ${work.id.padEnd(14)} ${work.image?.sha256.slice(0, 12)}  ${rate.toFixed(1)}/s\n`);
+        }
       } catch (e) {
         failed++;
-        appendFileSync(FAILURES, `${JSON.stringify({ at: new Date().toISOString(), objectId: work.id, error: (e as Error).message })}\n`);
+        appendFileSync(FAILURES, `${JSON.stringify({ at: new Date().toISOString(), id: work.id, source: work.source, url: work.image_url, error: (e as Error).message })}\n`);
         process.stdout.write(`       failed ${work.id}: ${(e as Error).message}\n`);
       }
-      await pause(Number(opts.pause));
+      if (done.length >= 200) checkpoint();
+      await pause(gap);
     }
-    process.stdout.write(`\nrefetched ${got}/${missing.length}${failed ? `; ${failed} failed, see ${FAILURES}` : ''}\n`);
+    checkpoint();
+    process.stdout.write(
+      `\nfetched ${got}/${todo.length} in ${Math.round((Date.now() - started) / 1000)}s\n` +
+        `${noImage} works publish no image (metadata-only rows, not failures)\n` +
+        `${failed ? `${failed} failed; see ${FAILURES}. Re-running this command retries exactly those.\n` : ''}`,
+    );
+  });
+
+program
+  .command('metadata')
+  .description('pull a whole source\'s metadata into the manifest, with no images')
+  .argument('<source>', 'cma, met or aic')
+  .option('--csv <path>', 'for met: the MetObjects.csv to read instead of calling the API')
+  .option('--limit <n>', 'stop after this many rows, for a smoke test', '0')
+  .option('--pause <ms>', 'delay between requests', '250')
+  .action(async (source: string, opts: { csv?: string; limit: string; pause: string }) => {
+    // Metadata first, pixels later, deliberately. Cleveland's entire CC0 set is about forty requests
+    // and the same set of images is 14.6GB; the Met's whole collection is one file they publish and
+    // 485,000 API calls otherwise. Deciding *which* works to keep belongs between those two facts,
+    // not after both. So this writes rows with `image: null` and nothing else touches the network.
+    const cap = Number(opts.limit) || Number.POSITIVE_INFINITY;
+    const gap = Number(opts.pause);
+    const rows: Work[] = [];
+    const started = Date.now();
+
+    if (source === 'met') {
+      const csv = opts.csv;
+      if (!csv) throw new Error('met needs --csv <MetObjects.csv>; see corpus/README.md for where to get it');
+      let seen = 0;
+      for await (const row of csvRows(csv)) {
+        seen++;
+        const w = metFrom(row);
+        if (w) rows.push(w);
+        if (seen % 50000 === 0) process.stdout.write(`  read ${seen} rows, kept ${rows.length}\n`);
+        if (rows.length >= cap) break;
+      }
+      process.stdout.write(`  read ${seen} CSV rows, kept ${rows.length} public domain\n`);
+    } else if (source === 'cma') {
+      // Cleveland has no usable sort, and its result order shifts *while a walk is running*. A
+      // straight walk of the 41,511 matching records returns exactly 41,511 rows containing only
+      // 40,477 distinct ids — the offsets slide underneath it, so some works are served twice and
+      // others never. Repeating the same walk does not help: the second pass added zero, because
+      // the records it slides past are largely the same ones.
+      //
+      // What does work is making each walk short enough that the index cannot move much under it.
+      // Department is an exact partition — the 21 departments' totals sum to 41,511 with nothing
+      // left over — and the largest is a quarter of the whole. The department names are discovered
+      // from the first pass rather than hardcoded, so a twenty-second department does not silently
+      // vanish, and each one is re-walked until its distinct count reaches its own reported total.
+      const held = new Map<string, Work>();
+      const departments = new Set<string>();
+      let total = 0;
+      // A *set* of rejected ids, not a counter: the same unmappable record is served again on every
+      // re-sweep of its department, and a counter would report the museum's 42 broken records as
+      // several hundred.
+      const rejected = new Set<number>();
+
+      const sweep = async (filters: Record<string, string>, label: string): Promise<number> => {
+        let reported = 0;
+        for (let skip = 0; held.size < cap; skip += 100) {
+          const page = await listPage(100, skip, filters);
+          reported = page.total || reported;
+          if (page.records.length === 0) break;
+          for (const r of page.records) {
+            if (r.department) departments.add(r.department);
+            const w = cmaFrom(r);
+            if (w) held.set(w.id, w);
+            else rejected.add(r.id);
+          }
+          if (skip % 10000 === 0 && !filters.department) process.stdout.write(`  ${label}: ${held.size} distinct (skip ${skip})\n`);
+          await pause(gap);
+        }
+        return reported;
+      };
+
+      total = await sweep({}, 'sweep');
+      process.stdout.write(`  first sweep: ${held.size} distinct of ${total}, across ${departments.size} departments\n`);
+
+      // Now the shortfall, department by department, only where there is one.
+      for (const department of [...departments].sort()) {
+        if (held.size >= cap) break;
+        const have = () => [...held.values()].filter((w) => w.department === department).length;
+        for (let pass = 1; pass <= 3; pass++) {
+          const before = have();
+          const reported = await sweep({ department }, department);
+          const now = have();
+          if (pass === 1 && now >= reported) break;
+          process.stdout.write(`  ${department}: ${now} of ${reported} (+${now - before} on pass ${pass})\n`);
+          if (now >= reported || now === before) break;
+        }
+      }
+
+      // The gap that is left is printed, not smoothed. Measured: the first sweep reached 40,865 of
+      // 41,511, three departments were short, one re-sweep each recovered 319 of the 646 missing,
+      // and a second re-sweep of those three recovered **zero** — so the loop stops rather than
+      // spending another eight minutes proving the same thing. That leaves 41,446, and 42 of the
+      // remaining 65 are records that match `has_image=1` and carry no image object at all, which is
+      // the museum's own inconsistency. The other 23 are not accounted for and this line says so.
+      process.stdout.write(
+        `  ${held.size} distinct of ${total} reported; ${total - held.size} short, of which ` +
+          `${rejected.size} are records with no usable image or licence\n`,
+      );
+      rows.push(...held.values());
+    } else if (source === 'aic') {
+      const get = async (url: string) => {
+        await pause(gap);
+        return (await politely(url).then((r) => r.json())) as { data: AicRecord[]; pagination: { total: number } };
+      };
+      const walk = walkPublicDomain(
+        // `limit=1`, not `limit=0`. Only `pagination.total` is read from this response, but the API
+        // answers 400 to a zero limit, so the cheapest legal page is one row.
+        async (range) => (await get(searchUrl(1, 1, range))).pagination.total,
+        async (range, n) => (await get(searchUrl(n, 100, range))).data ?? [],
+      );
+      for await (const r of walk) {
+        const w = aicFrom(r);
+        if (w) rows.push(w);
+        if (rows.length % 2000 === 0) process.stdout.write(`  ${rows.length} rows\n`);
+        if (rows.length >= cap) break;
+      }
+    } else {
+      throw new Error(`unknown source ${source}; expected cma, met or aic`);
+    }
+
+    saveWorks(rows, POOL);
+    const all = listPool();
+    const dated = rows.filter((r) => r.date_begin !== null).length;
+    const withUrl = rows.filter((r) => r.image_url !== null).length;
+    process.stdout.write(
+      `\n${source}: ${rows.length} rows in ${Math.round((Date.now() - started) / 1000)}s\n` +
+        `  dated       ${dated}/${rows.length}\n` +
+        `  image url   ${withUrl}/${rows.length}${source === 'met' ? '  (the CSV has none; resolved after selection)' : ''}\n` +
+        `pool now holds ${all.length} candidates\n`,
+    );
+  });
+
+program
+  .command('select')
+  .description('choose a stratified corpus out of the candidate pool, and record why')
+  .option('--target <n>', 'how many works to end up with', String(DEFAULT_TARGET))
+  .option('--seed <n>', 'the draw. Changing it changes which works, not how many', '20260831')
+  .option('--dry-run', 'print the census without writing the manifest or selection.json', false)
+  .action((opts: { target: string; seed: string; dryRun: boolean }) => {
+    // Runs entirely offline over corpus/pool.jsonl. Nothing is fetched here: this command decides
+    // which works the corpus is *about*, and that decision should be re-runnable and arguable
+    // without spending anybody's bandwidth on it.
+    const pool = listPool();
+    if (pool.length === 0) throw new Error(`${POOL} is empty; run \`corpus metadata <source>\` first`);
+    const held = new Set(listWorks().map((w) => w.id));
+    const rules = {
+      seed: Number(opts.seed),
+      target: Number(opts.target),
+      maxClassificationShare: MAX_CLASSIFICATION_SHARE,
+      maxSourceShare: MAX_SOURCE_SHARE,
+    };
+    const { works, selection } = select(pool, held, rules);
+
+    process.stdout.write(
+      `pool ${selection.poolSize}  ->  selected ${selection.selected}  (${selection.carriedOver} carried over from the manifest)\n\n` +
+        `by source\n${Object.entries(selection.bySource)
+          .map(([k, v]) => `  ${k.padEnd(6)} ${String(v).padStart(6)}`)
+          .join('\n')}\n\n` +
+        `by period\n${Object.entries(selection.byPeriod)
+          .map(([k, v]) => `  ${k.padEnd(10)} ${String(v).padStart(6)}`)
+          .join('\n')}\n\n` +
+        `classifications, taken of available (top 20 of ${selection.byClassification.length})\n${selection.byClassification
+          .slice(0, 20)
+          .map((c) => `  ${c.classification.slice(0, 40).padEnd(42)} ${String(c.taken).padStart(5)} of ${c.available}`)
+          .join('\n')}\n\n` +
+        `${selection.strata.length} strata; ids sha256 ${selection.idsSha256.slice(0, 16)}\n`,
+    );
+
+    if (opts.dryRun) {
+      process.stdout.write('\n--dry-run: nothing written\n');
+      return;
+    }
+    // Additive by construction — `select` carries every held id through — but written with
+    // `saveWorks` rather than `writeManifest` so that a row already carrying fetched image evidence
+    // keeps it instead of being replaced by its metadata-only twin from the pool.
+    const heldById = new Map(listWorks().map((w) => [w.id, w]));
+    saveWorks(
+      works.map((w) => heldById.get(w.id) ?? w),
+      MANIFEST,
+    );
+    writeFileSync(SELECTION, `${JSON.stringify({ ...selection, strata: selection.strata.slice(0, 400) }, null, 2)}\n`);
+    process.stdout.write(`\nwrote ${works.length} rows to ${MANIFEST}\nwrote ${SELECTION}\n`);
   });
 
 program

@@ -10,8 +10,10 @@ Real works, fetched with their rights, read without their names. Everything the 
 | `manifest.jsonl` | yes | one line per work. The evidence. A few hundred bytes each. |
 | `readings/` | yes | the blind reading and leakage probe per work. Expensive to make, small to store. |
 | `selection.json` | yes | which works were chosen, and by what deterministic rule. |
+| `size-report.md`, `BLOCKERS.md` | yes | what the images cost, measured, and what each API refused. |
 | `images/` | **no** | regenerable from the manifest, and 10.7GB at a 30,000-work corpus. |
-| `failures.jsonl`, `import-failures.jsonl` | **no** | a log of one machine's run, not a fact about the works. |
+| `pool.jsonl` | **no** | 347,000 candidate rows, ~160MB. A fact about three public APIs, not about this corpus. |
+| `failures.jsonl` | **no** | a log of one machine's run, not a fact about the works. |
 
 The rule is not "big things are ignored". It is that **the manifest is the part a person needs in
 order to check a claim** — what the work is, who holds it, what licence it was published under, and
@@ -20,6 +22,33 @@ not. Measured across all 41,511 of Cleveland's CC0 records the mean `web` deriva
 30,000 works that is 10.7GB, which is not a thing to put in git history for a file that can be
 fetched again.
 
+The argument for tracking the manifest was that the manifest is small. `pool.jsonl` does not inherit
+that argument by having a similar name — it is the whole candidate set from all three museums, and
+what it would justify (what was available, and why these works were chosen out of it) is in
+`selection.json`, which is tracked.
+
+## Building it from nothing
+
+```
+npm run corpus -- metadata cma                  # ~41,500 CC0 records, about four minutes
+npm run corpus -- metadata met --csv MetObjects.csv   # 248,472 public-domain rows, offline
+npm run corpus -- metadata aic                  # ~59,000 public-domain records with images
+npm run corpus -- select --target 20000         # stratify the pool into the manifest
+npm run corpus -- images                        # the long one: fetch the pixels
+npm run corpus -- verify                        # every row against the bytes on disk
+npm run corpus -- read                          # the blind reading and the leakage probe
+```
+
+Each stage is resumable and each is a separate command on purpose, because they fail differently.
+`metadata` is cheap and idempotent. `select` is offline and deterministic. `images` is hours of
+somebody else's bandwidth. `read` is the only one that costs money.
+
+`MetObjects.csv` is the Met's own published dump of the whole collection (317MB, 484,956 rows), from
+`github.com/metmuseum/openaccess`. It is filtered locally rather than by walking their object API,
+which would be 484,956 requests to learn that 236,484 of them are not public domain. The CSV carries
+no image URL, so those are resolved one call at a time — after selection, for the works that were
+chosen, rather than before it for the quarter of a million that were not.
+
 ## Getting the images back
 
 A fresh clone has every manifest row and no bytes:
@@ -27,7 +56,7 @@ A fresh clone has every manifest row and no bytes:
 ```
 npm run corpus -- verify        # says how many are missing
 npm run corpus -- images        # refetches them, one at a time, politely
-npm run corpus -- verify        # says 50/50 present and hashing to what the manifest claims
+npm run corpus -- verify        # says N/N present and hashing to what the manifest claims
 ```
 
 `images` refetches from the `image_url` on each row and **insists the bytes hash to the sha256 the
@@ -55,6 +84,28 @@ Two fields are load-bearing rather than tidy:
 `image_url` and `image` are deliberately two fields. The URL is known from metadata, before anything
 has been downloaded; the hash cannot exist until the bytes arrive. So `image: null` means exactly
 "not fetched yet", and a non-null `image` is always a complete claim about bytes that existed.
+
+## How the works were chosen
+
+`selection.json` is the decision record. The pool is not a sample of art — it is the union of three
+institutions' cataloguing habits, and those habits are lopsided in ways that survive into anything
+taken off the top of the file. Of the Met's 248,472 public-domain rows, 32,761 are Prints and 13,054
+are Drawings; paintings are 2.1%. A corpus in file order would be a corpus of European prints, and
+every element derived from it would inherit that without anybody having decided it.
+
+So `corpus select` strata on **source × classification × period**, round-robins over the strata with
+equal weight, and caps any one classification at 8% of the corpus and any one source at 50%. Within
+a stratum it spreads across cultures before spreading within one. Three properties make it
+checkable, and `artist/selection.ts` explains each at the point it is enforced:
+
+- **Deterministic from a seed** — no `Math.random`, no clock. The file carries a sha256 of the
+  chosen ids, so a later run either reproduces it or has changed something.
+- **Additive** — a work already in the manifest is carried over whatever the caps say. Readings cost
+  money; dropping a work that has been read to tidy a distribution throws away evidence.
+- **Nothing silently excluded** — undated works get an `(undated)` bucket, and a work with no
+  classification carries the source's own object name.
+
+`select --dry-run` prints the whole census without writing anything.
 
 ## Why the readings are blind
 
