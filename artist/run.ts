@@ -29,6 +29,7 @@ import { newSpend, type Spend } from './call.js';
 import { ArtistEnv, refusalTally } from './env.js';
 import { loadCommission, type Commission } from './field.js';
 import { blockerLines, finishBlockers } from './gate.js';
+import { provenanceOf } from './provenance.js';
 import type { Fired } from './triggers.js';
 import {
   carryNodeIds,
@@ -714,6 +715,13 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
     writeFileSync(
       path.join(o.outDir, 'breaks.json'),
       `${JSON.stringify(breakRecordOf(written), null, 2)}\n`
+    );
+    // Whether this combination of lineages has been made before, off the corpus record and the
+    // sibling runs. Written last because it is the only artifact here that looks outside this
+    // directory, and so the only one whose answer can change without this run changing.
+    writeFileSync(
+      path.join(o.outDir, 'provenance.json'),
+      `${JSON.stringify(provenanceOf(o.outDir, loaded.elementIds), null, 2)}\n`
     );
     return trajectory;
   } finally {

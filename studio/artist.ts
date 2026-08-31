@@ -4,6 +4,8 @@
 //                                        one trajectory into a directory
 //   artist grid <dir>                    the whole grid, serially, plus the control column
 //   artist steps <dir>                   one record per step: before, action, after, what it moved
+//   artist breaks <dir>                  which commitment broke, what forced it, declared or not
+//   artist provenance <dir>              has this combination of lineages been made before?
 //   artist filmstrip <dir> [--story]     the piece rebuilt step by step, and the survival curve
 //                                        --story adds index.html: each frame next to why it happened
 //   artist twin <arm> <control>          does the position steer, or is it decoration? the two arms
@@ -46,6 +48,7 @@ import { storyOf, storyText, summarise as summariseLine } from '../artist/story.
 import { readLog } from '../artist/studio-log.js';
 import { processOf, processText } from '../artist/transition.js';
 import { breakRecordOf, breakText } from '../artist/breaks.js';
+import { provenanceOf, provenanceText } from '../artist/provenance.js';
 import { twinOf, twinText } from '../artist/twin.js';
 import { walkthroughOf, walkthroughHtml } from '../artist/walkthrough.js';
 import { sftLines, toJsonl } from '../artist/export.js';
@@ -355,6 +358,18 @@ program
     const r = breakRecordOf(readLog(path.join(dir, 'studio.jsonl')));
     writeFileSync(path.join(dir, 'breaks.json'), `${JSON.stringify(r, null, 2)}\n`);
     console.log(breakText(r));
+  });
+
+program
+  .command('provenance')
+  .description('whether this combination of lineages has been made before — written as provenance.json')
+  .argument('<dir>')
+  .action((dir: string) => {
+    const start = readLog(path.join(dir, 'studio.jsonl')).find((l) => l.kind === 'trajectory-start');
+    if (!start) throw new Error('no trajectory-start line: this is not a trajectory log');
+    const r = provenanceOf(dir, (start.data as { elementIds?: string[] }).elementIds ?? []);
+    writeFileSync(path.join(dir, 'provenance.json'), `${JSON.stringify(r, null, 2)}\n`);
+    console.log(provenanceText(r));
   });
 
 program
