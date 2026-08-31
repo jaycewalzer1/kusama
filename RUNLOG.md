@@ -71,3 +71,24 @@ One line per milestone. Written as it happens.
 - Stage 3, not built on purpose: the 50 elements are not derived. That needs one model call per work
   and there is no credit. `artist/element-derive.ts` and its 8 tests are done and green against a
   stand-in; `corpus derive` is one command away from real data.
+- Stage 6, the offline three of the four, committed as `fac698e`. `artist/ratings.ts` +
+  `studio/rate.ts` + `artist rate` + `artist validate-reward`. Append-only JSONL pool at repo root
+  (**not** under gitignored `out/` — it is the artifact everything else is validated against);
+  `artist rate --set <plate> <tier>` exists because these notes record that the user's desktop build
+  has **no PTY**, so a keyboard-only rating tool is one they cannot use. The 0.8 component-
+  correlation gate throws with every offending pair named. Jaccard@5/@10/@20 and nothing aggregate.
+  `pairwise()` refuses a pair seen in only one ordering and reports `orderBias` separately.
+  **496 tests / 0 fail, 11 goldens** after `rm -rf dist`.
+- Stage 6 finding, and it is the exactly-0 rule a fourth time, caught by running the thing rather
+  than by reading it: over the real `out/` (2 plates) the gate printed `no pair over the limit` —
+  across **45 components and zero measurable pairs**, because `pearson` returns null under three
+  points. A gate that passes because it has been emptied is worse than no gate. It now prints
+  `NOTHING MEASURED — 2 rated plate(s) is not enough to correlate anything. This is not a pass.`
+- Stage 6 also found a false positive in an existing test: `invariant: exactly one file in artist/
+  reaches the elements layer` scanned for the path *anywhere in the file*, so a comment saying "this
+  copies a trick from `aesthetic/elements/pack.ts`" counted as an import. It now scans `from '...'`.
+  The invariant had been widened twice already; at least one of those widenings should be re-checked.
+- Stage 6, not built: the pairwise comparator itself. Every part that decides anything is done and
+  tested — `pairwise` takes the comparisons and averages both orderings — but *making* a comparison
+  is a model call. TODO is in the header of `artist/ratings.ts`, and it names the one rule that must
+  not be lost: submit each pair twice with the plates swapped, and average here, not in the caller.
