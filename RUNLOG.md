@@ -111,3 +111,52 @@ One line per milestone. Written as it happens.
   what the museum wrote.
 - Left standing, deliberately: 22 works with impossible dates (`1824528600s BCE`, `14865c`) are kept
   and printed, because a `byPeriod` with no absurdities in it would be one that had been edited.
+
+## 2026-08-31 (later) — the pixels, and a map that grades itself
+
+- Two commits: `24b4dec` measured image dimensions and the IIIF upscale fix, `0bcebdd` the atlas,
+  `6925dc3` the Art Institute finished and the two ingest documents corrected.
+  **553 tests / 0 fail, 11 goldens**, recounted after `rm -rf dist`.
+- **The Art Institute's residual 403s were never Cloudflare.** They had been written up as CDN
+  residue for a day — a 403 from a host that had genuinely blocked us before is a very easy thing to
+  stop investigating. What settled it cost one request: `full/400,/0/default.jpg` returns **200** on
+  the same image id in the same second that `full/843,` returns 403. A block does not care about the
+  size in the path. `info.json` then said it plainly — `"width":770,"height":779` — and 843 is the
+  Art Institute's own viewer width, so it is an *upscale* for every work narrower than itself, and
+  the IIIF spec permits a server to decline to enlarge. Asking for `full/!843,843` (fit inside, never
+  enlarge) **only after 843 has been refused** recovered **203 of 203**. The general form is worth
+  keeping: *a status code is not a diagnosis; ask the same host for something slightly different.*
+- Pixels now: **aic 6,817/6,817, cma 3,183/3,183, met 64/10,000.** The Met's object API serves an
+  Akamai challenge after roughly two hundred requests, for our user agent, a browser user agent and
+  no user agent alike — so it is the address, not the headers. Probes five minutes apart return 200
+  forever, which is exactly why this looks repeatedly like it has lifted.
+- Every fetched row now carries `image.width`/`height` **measured from the JPEG's own SOF marker**.
+  That is a measurement of the bytes we hashed, not a claim about the work, which is the only reason
+  it is allowed into a file whose rule is that facts are copied and never invented. The marker is
+  found by **walking the segment chain**, never by scanning for `FF C0` — that byte pair occurs
+  constantly inside entropy-coded scan data, and there is now a fixture with a decoy in it that a
+  scanning parser reports as 500x600 and a walking one reports as 200x100.
+- **`artist/atlas.ts` + `corpus atlas`** lays all 20,000 works out in two dimensions from metadata
+  alone: 91 columns, PCA by power iteration, no new dependency, about three seconds, no model.
+  It reports **40.8x chance** on k-neighbourhood preservation, so the neighbourhoods on it are real —
+  and then it says the more useful thing, which is what the axes are made of. **Both axes are museum
+  identity**, and `file:have-pixels` loads on the first axis about as heavily as `source:met`. A large
+  part of the strongest structure in our corpus is an artefact of the Met download not having
+  happened. Finishing that download is not housekeeping; it removes a confound the map found.
+- The viewer is `corpus/atlas.html`, one self-contained file, and the verdict and the axis loadings
+  are printed **above** the plot. A scatter plot is read in a second and its caveats are read never.
+  It is not the notebook that was asked for because there is no numpy, matplotlib or jupyter on this
+  machine and no shell to install them with; a notebook that cannot be executed is a picture of an
+  analysis rather than one.
+- **The Met half exists after all, and the museum supplied it itself.** The object API is the only
+  live route to `primaryImageSmall`, and it is blocked; but the Met also publishes the same columns
+  as a parquet dump, which is a file download and therefore not rate-anything. Scanning 259,874 rows
+  resolved **9,956 of our 10,000** selected works (99.6%). Taking a fact from a second source is only
+  allowed if the two sources agree, and they do: the 64 works resolved through the live API before
+  the block came down are the control, and **all 64 URLs match exactly, 0 differ**. That check is not
+  in a scratch script — it is `corpus met-urls <file>`, it runs against the manifest, and it refuses
+  to write anything at all if a single URL disagrees. `--write` is a separate flag so a person reads
+  the comparison once before ten thousand rows change.
+- `images.metmuseum.org` is a plain CDN and was never the thing blocking us; only
+  `collectionapi.metmuseum.org` was. The download runs past two hundred works without a single 403,
+  which is the number at which the object API had failed twice.

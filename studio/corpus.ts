@@ -165,6 +165,80 @@ program
     );
   });
 
+program
+  .command('met-urls')
+  .argument('<file>', 'JSON object mapping Met objectID to [primaryImageSmall, primaryImage]')
+  .description("fill in the Met's image URLs from its own published dump instead of its blocked API")
+  .option('--write', 'actually change the manifest; without this it only reports')
+  .action((file: string, opts: { write?: boolean }) => {
+    // The Met's object API is the only route to `primaryImageSmall`, and it IP-blocks by volume: an
+    // Akamai challenge after roughly two hundred requests, for our user agent, a browser's, and none
+    // at all alike. Ten thousand works cannot be resolved through it.
+    //
+    // The Met also publishes the same fields itself, as a parquet dump, which is a file download and
+    // therefore not rate-anything. Taking the URLs from there is not a workaround of a limit — it is
+    // the same museum's same answer, obtained the way the museum offers it in bulk.
+    //
+    // What licenses trusting it is the overlap, and that is why this command reports before it
+    // writes. 64 Met works were resolved through the live API before the block came down. Those rows
+    // are the control: if the dump's URL for a work disagrees with the URL the API gave for that same
+    // work, then the two sources are not interchangeable and none of the other ten thousand should be
+    // believed either. `--write` is a separate flag so that check is read by a person, once.
+    //
+    // The dump carries both of the Met's image columns and this keeps the **first**, which is
+    // `primaryImageSmall` — the same one `resolveImageUrl` picks, for the same reason: the second is
+    // the print master, tens of megabytes to be downsampled before it ever reaches a model. Taking a
+    // different tier here than the live API took would mean the 64 works already on disk were fetched
+    // at one size and the other ten thousand at another.
+    const published = JSON.parse(readFileSync(file, 'utf8')) as Record<string, [string, string] | null>;
+    const smallOf = (id: string): string | null => published[id]?.[0] ?? null;
+    const works = listWorks();
+    const done: Work[] = [];
+    let filled = 0;
+    let absent = 0;
+    let agreed = 0;
+    const disagreed: string[] = [];
+
+    for (const work of works) {
+      if (work.source !== 'met') continue;
+      const url = smallOf(work.object_id);
+      if (work.image_url) {
+        // Already resolved live. Never overwritten — the live API is the more direct source, and a
+        // row whose pixels are already hashed must keep the URL those pixels came from.
+        if (url === work.image_url) agreed++;
+        else if (url) disagreed.push(`${work.id}\n    api: ${work.image_url}\n    dump: ${url}`);
+        continue;
+      }
+      if (!url) {
+        // Public domain does not imply photographed. A work the Met has no image of is a fact about
+        // the work, and it stays null rather than becoming a failure later.
+        absent++;
+        continue;
+      }
+      work.image_url = url;
+      done.push(work);
+      filled++;
+    }
+
+    process.stdout.write(
+      `cross-check against the ${agreed + disagreed.length} works resolved through the live API:\n` +
+        `  ${agreed} agree exactly, ${disagreed.length} disagree\n` +
+        `${disagreed.length ? `${disagreed.map((d) => `  ${d}`).join('\n')}\n` : ''}` +
+        `\n${filled} rows would gain a URL, ${absent} Met works have no image published\n`,
+    );
+    if (disagreed.length) {
+      process.stdout.write('\nDISAGREEMENT. The two sources are not interchangeable; nothing written.\n');
+      process.exitCode = 1;
+      return;
+    }
+    if (!opts.write) {
+      process.stdout.write('\nreport only — pass --write to change the manifest\n');
+      return;
+    }
+    if (done.length) saveWorks(done, MANIFEST);
+    process.stdout.write(`wrote ${done.length} URLs into the manifest\n`);
+  });
+
 /** Per-source politeness. Cleveland's CDN is a CDN; the Met and the AIC answer from their own APIs. */
 const PAUSE_MS: Record<Source, number> = { cma: 250, met: 400, aic: 700 };
 
