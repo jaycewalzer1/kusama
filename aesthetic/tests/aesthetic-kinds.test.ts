@@ -56,7 +56,15 @@ function constraint(kind: ConstraintKind, params: Record<string, unknown>, scope
 }
 
 function metrics(over: Partial<RenderMetrics> = {}): RenderMetrics {
-  return { inkDensity: 0.3, coverage: 0.5, inkOffset: 0.2, symmetry: { vertical: 0.2, horizontal: 0.2 }, pixelHash: 'deadbeef', ...over };
+  return {
+    inkDensity: 0.3,
+    coverage: 0.5,
+    inkOffset: 0.2,
+    symmetry: { vertical: 0.2, horizontal: 0.2 },
+    edgeContact: { top: 0.2, right: 0.2, bottom: 0.2, left: 0.2 },
+    pixelHash: 'deadbeef',
+    ...over,
+  };
 }
 
 /** Every kind is asserted both ways in one call, so a kind that always returns the same verdict fails. */
@@ -76,9 +84,9 @@ function bothWays(
   assert.ok(bad.evidence.length > 0, `${kind} must say why`);
 }
 
-test('the constraint language is closed at seventeen kinds', () => {
-  assert.equal(CONSTRAINT_KINDS.length, 17);
-  assert.equal(new Set(CONSTRAINT_KINDS).size, 17);
+test('the constraint language is closed at eighteen kinds', () => {
+  assert.equal(CONSTRAINT_KINDS.length, 18);
+  assert.equal(new Set(CONSTRAINT_KINDS).size, 18);
 });
 
 /**
@@ -248,8 +256,49 @@ test('inkDensityRange, coverageRange, symmetryMax and inkOffsetRange read the me
   );
 });
 
+/**
+ * The kind that exists because of a real run: four untouched margins, and nothing in the other
+ * seventeen could name it. Density and coverage are quantities of ink, not places, and a picture can
+ * satisfy any offset while stopping short of the border on every side.
+ */
+test('edgeContactRange demands every side by default, so an all-round margin cannot pass', () => {
+  const tree = prog([solid('a')]);
+  const at = (top: number, right: number, bottom: number, left: number) =>
+    metrics({ edgeContact: { top, right, bottom, left } });
+  const need = constraint('edgeContactRange', { min: 0.1 }, 'render');
+
+  assert.equal(checkConstraint(need, tree, at(0.4, 0.4, 0.4, 0.4)).status, 'satisfied');
+  // The motivating failure. A clean band all the way round.
+  assert.equal(checkConstraint(need, tree, at(0, 0, 0, 0)).status, 'violated');
+  // And the one a `minSides: 3` default would have let through: three sides run off, one is clean.
+  const three = checkConstraint(need, tree, at(0.4, 0.4, 0.4, 0));
+  assert.equal(three.status, 'violated', 'a single untouched side is still an untouched side');
+  assert.match(three.evidence, /3 of 4 sides/);
+  assert.match(three.evidence, /left 0\.0000/, 'the evidence names the side and its value');
+});
+
+test('edgeContactRange can be asked about some sides, and about how many of them must hold', () => {
+  const tree = prog([solid('a')]);
+  const at = (top: number, right: number, bottom: number, left: number) =>
+    metrics({ edgeContact: { top, right, bottom, left } });
+
+  // Asymmetry is the whole point of four numbers: run off the bottom, leave the top alone.
+  const bleedBottom = constraint('edgeContactRange', { sides: ['bottom'], min: 0.5 }, 'render');
+  const keepTop = constraint('edgeContactRange', { sides: ['top'], max: 0.01 }, 'render');
+  const m = at(0, 0.3, 0.9, 0.3);
+  assert.equal(checkConstraint(bleedBottom, tree, m).status, 'satisfied');
+  assert.equal(checkConstraint(keepTop, tree, m).status, 'satisfied');
+  // The named side is the one that decides: a clean top does not fail a question about the bottom.
+  assert.equal(checkConstraint(bleedBottom, tree, at(0.9, 0.9, 0, 0.9)).status, 'violated');
+
+  // minSides asks for a count without saying which — "reach the edge somewhere, twice".
+  const anyTwo = constraint('edgeContactRange', { min: 0.5, minSides: 2 }, 'render');
+  assert.equal(checkConstraint(anyTwo, tree, at(0.9, 0.9, 0, 0)).status, 'satisfied');
+  assert.equal(checkConstraint(anyTwo, tree, at(0.9, 0, 0, 0)).status, 'violated');
+});
+
 test('render kinds come back unverified without metrics, never assumed', () => {
-  for (const kind of ['inkDensityRange', 'coverageRange', 'symmetryMax', 'inkOffsetRange'] as const) {
+  for (const kind of ['inkDensityRange', 'coverageRange', 'symmetryMax', 'inkOffsetRange', 'edgeContactRange'] as const) {
     const v = checkConstraint(constraint(kind, { min: 0, max: 1 }, 'render'), prog([solid('a')]), null);
     assert.equal(v.status, 'unverified', `${kind} must not guess`);
     assert.match(v.evidence, /no render metrics/);

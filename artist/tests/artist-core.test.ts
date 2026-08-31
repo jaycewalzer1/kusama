@@ -365,11 +365,17 @@ test('intention: the render-measure vocabulary is the aesthetic layer own', () =
     coverage: 0,
     inkOffset: 0,
     symmetry: { vertical: 0, horizontal: 0 },
+    edgeContact: { top: 0, right: 0, bottom: 0, left: 0 },
     pixelHash: '',
   };
-  const names = Object.keys(metrics)
-    .filter((k) => k !== 'pixelHash')
-    .flatMap((k) => (k === 'symmetry' ? ['symmetry.vertical', 'symmetry.horizontal'] : [k]));
+  // The nested names are walked out of the literal rather than listed per field. The old version
+  // special-cased `symmetry`, which meant a sixth metric arriving as an object would contribute only
+  // its bare name — and would then agree with a RENDER_MEASURES that had never heard of its parts.
+  const names = Object.entries(metrics)
+    .filter(([k]) => k !== 'pixelHash')
+    .flatMap(([k, v]) =>
+      typeof v === 'object' && v !== null ? Object.keys(v).map((sub) => `${k}.${sub}`) : [k]
+    );
   assert.deepEqual(names.sort(), [...RENDER_MEASURES].sort());
 });
 

@@ -293,6 +293,31 @@ const renderCheckers: Record<string, (m: RenderMetrics, p: Record<string, unknow
     const max = num(p, 'max');
     return verdict(within(m.inkOffset, min, max), `ink offset ${m.inkOffset.toFixed(4)}, wanted ${rangeLabel(min, max)}`);
   },
+
+  /**
+   * Contact with the sheet's edge, per side, and how many sides have to satisfy it.
+   *
+   * `sides` defaults to all four and `minSides` to all of the ones named, so the plain form of this
+   * constraint is the strict one: every side must be in range. That is deliberate — the failure it
+   * was written for is a margin left on all four sides, and a default that accepted three would have
+   * passed the run that motivated it.
+   *
+   * The message names the sides that failed and the value each of them had. A verdict that said only
+   * "edge contact out of range" would send an artist to look at all four.
+   */
+  edgeContactRange(m, p) {
+    const named = list(p, 'sides') ?? ['top', 'right', 'bottom', 'left'];
+    const sides = named.filter((s): s is keyof RenderMetrics['edgeContact'] => s in m.edgeContact);
+    const min = num(p, 'min');
+    const max = num(p, 'max');
+    const held = sides.filter((s) => within(m.edgeContact[s], min, max));
+    const need = num(p, 'minSides') ?? sides.length;
+    const shown = sides.map((s) => `${s} ${m.edgeContact[s].toFixed(4)}`).join(', ');
+    return verdict(
+      held.length >= need,
+      `${held.length} of ${sides.length} sides within ${rangeLabel(min, max)}, needed ${need} — ${shown}`
+    );
+  },
 };
 
 /**

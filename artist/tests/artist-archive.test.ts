@@ -19,6 +19,7 @@ function metrics(inkDensity: number, inkOffset: number, rest: Partial<RenderMetr
     coverage: 0.5,
     inkOffset,
     symmetry: { vertical: 0.5, horizontal: 0.5 },
+    edgeContact: { top: 0.5, right: 0.5, bottom: 0.5, left: 0.5 },
     pixelHash: `h${inkDensity}-${inkOffset}`,
     ...rest,
   };
@@ -34,8 +35,18 @@ const cand = (id: string, ink: number, off: number, hard = 0): Measured => ({
 test('every axis offered is a quantity the checker already measures', () => {
   // The fence. A descriptor invented for the archive would be one nothing else in the system can
   // see, and the grid would start reporting on itself.
+  // Derived from the literal rather than listed, so that a seventh metric arriving as an object
+  // cannot be special-cased into the allowed set by hand and then agree with itself.
   const m = metrics(0.1, 0.2);
-  const available = new Set([...Object.keys(m).filter((k) => k !== 'symmetry' && k !== 'pixelHash'), 'symmetryVertical', 'symmetryHorizontal']);
+  const available = new Set(
+    Object.entries(m)
+      .filter(([k]) => k !== 'pixelHash')
+      .flatMap(([k, v]) =>
+        typeof v === 'object' && v !== null
+          ? Object.keys(v).map((sub) => k + sub[0]!.toUpperCase() + sub.slice(1))
+          : [k]
+      )
+  );
   for (const d of DESCRIPTORS) assert.ok(available.has(d), `${d} is not in RenderMetrics`);
   assert.ok(DEFAULT_AXES.every((d) => (DESCRIPTORS as readonly string[]).includes(d)));
 });
@@ -120,7 +131,7 @@ test('an empty archive is zero occupied cells, not thirty-six empty ones', () =>
   assert.equal(a.summary.fill, 0);
 });
 
-test('changing the axes re-bins without needing pixels: all five descriptors are on every candidate', () => {
+test('changing the axes re-bins without needing pixels: every descriptor is on every candidate', () => {
   const a = archive([cand('x', 0.1, 0.9)]);
   assert.deepEqual(Object.keys(a.candidates[0]!.descriptors).sort(), [...DESCRIPTORS].sort());
 });

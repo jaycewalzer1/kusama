@@ -25,13 +25,19 @@
 //
 // ## Why the default axes are inkDensity x inkOffset
 //
-// Five quantities are available and two get to be axes. The pair chosen is a mass and a position:
+// Nine quantities are available and two get to be axes. The pair chosen is a mass and a position:
 // how much ink there is, and how far from the centre it sits. Those are close to independent by
 // construction — you can put a little ink anywhere and a lot of ink anywhere — which is the property
 // a grid needs. `inkDensity` x `coverage` is the obvious pair and is the wrong one: both count ink,
 // one per pixel and one per cell of a 16x16 grid, and two axes that measure the same thing make a
 // 6x6 grid into a 6-cell diagonal. The archive reports the correlation between its own two axes for
 // exactly this reason; see `summary.axisCorrelation`.
+//
+// The four `edgeContact` descriptors are the strongest candidates to replace `inkOffset`, and are
+// deliberately not the default yet. On the two runs that exist they separate what the default pair
+// could not -- both plates land in one cell on inkDensity x inkOffset, while `edgeContactBottom`
+// reads 0.0000 and 0.3675 -- but two runs is not evidence for a default, it is an anecdote. Pass
+// `--axes` and measure it when there are enough plates to measure anything.
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
@@ -39,8 +45,18 @@ import { metricsFromRgba } from '../aesthetic/measure.js';
 import type { RenderMetrics } from '../aesthetic/types.js';
 import { decodePng } from '../env/png.js';
 
-/** The five bounded quantities the checker already measures. Nothing else may be an axis. */
-export const DESCRIPTORS = ['inkDensity', 'coverage', 'inkOffset', 'symmetryVertical', 'symmetryHorizontal'] as const;
+/** The bounded quantities the checker already measures. Nothing else may be an axis. */
+export const DESCRIPTORS = [
+  'inkDensity',
+  'coverage',
+  'inkOffset',
+  'symmetryVertical',
+  'symmetryHorizontal',
+  'edgeContactTop',
+  'edgeContactRight',
+  'edgeContactBottom',
+  'edgeContactLeft',
+] as const;
 export type Descriptor = (typeof DESCRIPTORS)[number];
 
 export const DEFAULT_AXES: [Descriptor, Descriptor] = ['inkDensity', 'inkOffset'];
@@ -53,6 +69,10 @@ export function descriptorsOf(m: RenderMetrics): Record<Descriptor, number> {
     inkOffset: m.inkOffset,
     symmetryVertical: m.symmetry.vertical,
     symmetryHorizontal: m.symmetry.horizontal,
+    edgeContactTop: m.edgeContact.top,
+    edgeContactRight: m.edgeContact.right,
+    edgeContactBottom: m.edgeContact.bottom,
+    edgeContactLeft: m.edgeContact.left,
   };
 }
 

@@ -672,6 +672,7 @@ test('invariant: composing adds no judge-pending constraints, so the pending sha
     coverage: 0.45,
     inkOffset: 0.3,
     symmetry: { vertical: 0.5, horizontal: 0.5 },
+    edgeContact: { top: 0.5, right: 0.5, bottom: 0.5, left: 0.5 },
     pixelHash: 'x'.repeat(64),
   };
   const measured = checkProgram(tree, asProgram(c.constraints), metrics);

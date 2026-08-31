@@ -148,6 +148,14 @@
       "why": "Most of the surface is taken. A sheet that is mostly open has withheld nothing; it has left room, and leaving room is generosity of exactly the kind this position does not extend."
     },
     {
+      "id": "r-runs-off",
+      "kind": "edgeContactRange",
+      "params": { "min": 0.1, "minSides": 2 },
+      "scope": "render",
+      "severity": "hard",
+      "why": "The covering reaches the sheet's edge on at least two sides. A dark region bounded on all four sides hands the viewer its dimensions, and a measurement is a description with the middle taken out. It is also the difference the second rubric asks a reader to find: a shape placed on an empty surface is bounded, a covering laid over something already there runs out past where you can follow it. Two sides and not four, because a covering that bleeds on every side is a ground, and there has to be something left to withhold it from."
+    },
+    {
       "id": "r-not-centred",
       "kind": "inkOffsetRange",
       "params": { "max": 0.5 },

@@ -15,12 +15,20 @@ export type MacroName = 'frame' | 'motif' | 'quarantine';
 export type StyleKind = 'wash' | 'hatch' | 'field' | 'outline' | 'solid';
 
 /**
- * The closed set. Seventeen. It was sixteen, and the rule was that a seventeenth costs one of
+ * The closed set. Eighteen. It was sixteen, and the rule was that a seventeenth costs one of
  * these; `textMinHeight` was added without spending one because the thing it decides — is this
  * string set at image scale or is it a caption — was not expressible by any combination of the
  * other sixteen. `textMaxWords` limits how much is said and `textCase` limits how it is spelled;
  * neither can tell a title from a credit line, which is the whole difference between a work with
  * words in it and a work with a label on it.
+ *
+ * `edgeContactRange` is the eighteenth and was not free either. It was added because a measured
+ * failure had no rule behind it: run after run left an untouched margin on all four sides while
+ * every constraint passed, and prose in the protocol asking the artist to work to the edge did not
+ * take. `inkDensityRange` and `coverageRange` are both satisfied by a picture that fills the middle
+ * and stops — density and coverage are quantities of ink, not places — and `inkOffsetRange` moves
+ * the centroid without ever requiring the sheet's border to be reached. None of the seventeen can
+ * say "this must touch the edge", so the environment could not refuse a work for not touching it.
  */
 export type ConstraintKind =
   | 'maxDistinctColors'
@@ -39,6 +47,7 @@ export type ConstraintKind =
   | 'symmetryMax'
   | 'inkOffsetRange'
   | 'coverageRange'
+  | 'edgeContactRange'
   | 'rubric';
 
 export interface Constraint {
@@ -148,6 +157,17 @@ export interface RenderMetrics {
   inkOffset: number;
   /** Ink-mask agreement with its own mirror, as intersection over union. 0 when there is no ink. */
   symmetry: { vertical: number; horizontal: number };
+  /**
+   * Per side, the fraction of a band along that edge of the sheet that carries ink. 0 is an
+   * untouched margin, 1 is a band inked wall to wall.
+   *
+   * Four numbers rather than one on purpose. A picture that runs off three sides and leaves the
+   * fourth clean is the interesting case, and any scalar — a mean, a max, a count of sides touched —
+   * reports it as the same thing as a picture that leaves all four alone or none. The margin problem
+   * that made this field necessary was exactly that asymmetry, and a fused number could not have
+   * shown it.
+   */
+  edgeContact: { top: number; right: number; bottom: number; left: number };
   /** The pixel hash the metrics were taken over, so a report can say which image it means. */
   pixelHash: string;
 }

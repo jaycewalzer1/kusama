@@ -146,6 +146,10 @@ export const RENDER_MEASURES: ReadonlySet<string> = new Set([
   'inkOffset',
   'symmetry.vertical',
   'symmetry.horizontal',
+  'edgeContact.top',
+  'edgeContact.right',
+  'edgeContact.bottom',
+  'edgeContact.left',
 ]);
 
 interface Rect {

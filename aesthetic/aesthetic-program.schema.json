@@ -98,7 +98,7 @@
       "properties": {
         "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
         "kind": {
-          "description": "The closed set. Seventeen kinds, each with one pure checker.",
+          "description": "The closed set. Eighteen kinds, each with one pure checker.",
           "enum": [
             "maxDistinctColors",
             "palette",
@@ -116,6 +116,7 @@
             "symmetryMax",
             "inkOffsetRange",
             "coverageRange",
+            "edgeContactRange",
             "rubric"
           ]
         },
@@ -155,6 +156,7 @@
         { "if": { "properties": { "kind": { "const": "symmetryMax" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "render" }, "params": { "$ref": "#/$defs/symmetryMaxParams" } } } },
         { "if": { "properties": { "kind": { "const": "inkOffsetRange" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "render" }, "params": { "$ref": "#/$defs/rangeParams" } } } },
         { "if": { "properties": { "kind": { "const": "coverageRange" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "render" }, "params": { "$ref": "#/$defs/rangeParams" } } } },
+        { "if": { "properties": { "kind": { "const": "edgeContactRange" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "render" }, "params": { "$ref": "#/$defs/edgeContactRangeParams" } } } },
         { "if": { "properties": { "kind": { "const": "rubric" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "judge" }, "params": { "$ref": "#/$defs/rubricParams" } } } }
       ]
     },
@@ -302,6 +304,24 @@
       "properties": {
         "min": { "type": "number", "minimum": 0, "maximum": 1 },
         "max": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+
+    "edgeContactRangeParams": {
+      "description": "Per-side contact with the sheet edge. `sides` defaults to all four and `minSides` to all of the ones named, so the plain form is the strict one: every side must be in range.",
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "min": { "type": "number", "minimum": 0, "maximum": 1 },
+        "max": { "type": "number", "minimum": 0, "maximum": 1 },
+        "sides": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["top", "right", "bottom", "left"] }
+        },
+        "minSides": { "type": "integer", "minimum": 1, "maximum": 4 }
       }
     },
 

@@ -24,6 +24,8 @@ const INK_THRESHOLD = 8;
 const GRID = 16;
 /** A cell counts as covered once this fraction of it is ink. */
 const CELL_INK = 0.01;
+/** The edge band's width, as a fraction of the sheet's shorter side. */
+const EDGE_BAND = 0.05;
 
 const CACHE_DIR = path.join(ROOT, '.cache', 'aesthetic-metrics');
 /**
@@ -42,13 +44,16 @@ const CACHE_DIR = path.join(ROOT, '.cache', 'aesthetic-metrics');
  * 2: added inkOffset.
  * 3: 6b7601e moved text, so inkOffset/coverage/symmetry for any program with an untracked,
  *    unjittered text node were measured off superseded pixels.
+ * 4: added edgeContact. Every v3 entry is missing the field entirely, and a checker handed
+ *    `undefined` reads it as inside every bound — the exact failure the first rule above exists to
+ *    prevent.
  *
  * TODO: this is a human remembering, and the human did not. The cache key wants the renderer's
  * identity folded into it -- a hash over `renderer/*.js` alongside the program hash -- so that a
  * change like 6b7601e invalidates these entries whether or not anyone thinks to edit this line.
  * Deliberately not done here: it is a second change riding along with the one that was asked for.
  */
-const METRICS_VERSION = 3;
+const METRICS_VERSION = 4;
 
 function hexToRgb(hex: string): [number, number, number] {
   return [
@@ -93,6 +98,37 @@ function symmetry(ink: Uint8Array, width: number, height: number, axis: 'vertica
     }
   }
   return either === 0 ? 0 : both / either;
+}
+
+/**
+ * Per side, the share of a band along that edge that carries ink.
+ *
+ * The band, not the single outermost row. A one-pixel test answers a question about the renderer's
+ * clipping rather than about the picture: a mark that stops one pixel short reads as an untouched
+ * margin, and a mark that bleeds one pixel past reads as a full edge. `EDGE_BAND` of the shorter
+ * side is a width a person would call "the margin" when looking at the sheet.
+ *
+ * The denominator is the band's own area, so each of the four numbers is 0..1 and the four are
+ * comparable with each other on a sheet that is not square. Corners fall in two bands and are
+ * counted in both; they are genuinely contact with both edges.
+ */
+function edgeContact(
+  ink: Uint8Array,
+  width: number,
+  height: number
+): { top: number; right: number; bottom: number; left: number } {
+  const band = Math.max(1, Math.round(EDGE_BAND * Math.min(width, height)));
+  const share = (x0: number, x1: number, y0: number, y1: number): number => {
+    let inked = 0;
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) if (ink[y * width + x]! !== 0) inked++;
+    return inked / Math.max(1, (x1 - x0) * (y1 - y0));
+  };
+  return {
+    top: share(0, width, 0, Math.min(band, height)),
+    right: share(Math.max(0, width - band), width, 0, height),
+    bottom: share(0, width, Math.max(0, height - band), height),
+    left: share(0, Math.min(band, width), 0, height),
+  };
 }
 
 /**
@@ -161,6 +197,7 @@ export function metricsFromRgba(rgba: Buffer, width: number, height: number, gro
       vertical: symmetry(ink, width, height, 'vertical'),
       horizontal: symmetry(ink, width, height, 'horizontal'),
     },
+    edgeContact: edgeContact(ink, width, height),
     pixelHash: pixelHash(rgba),
   };
 }

@@ -1,7 +1,7 @@
 # The constraint language
 
-Sixteen kinds, closed. Eleven decide from the program tree alone, four from the canonical PNG, one
-decides nothing and says so. A seventeenth kind costs one of these.
+Eighteen kinds, closed. Twelve decide from the program tree alone, five from the canonical PNG, one
+decides nothing and says so. A nineteenth kind costs one of these.
 
 Every kind is a pure function. Tree-scope checkers read `treeFacts()` — one walk over the **source**
 JSON — and return `{status, evidence, nodeIds}`. Render-scope checkers read a `RenderMetrics` and
@@ -101,6 +101,15 @@ spans two unrelated text ops. It cannot check that the string is legible, large 
 or not covered by a later block. **This is the one kind briefs use, and it is the weakest guarantee
 in the file**: a poster can contain "14 NOVEMBER" at 6pt behind a solid rectangle and pass.
 
+### `textMinHeight`
+`{ min: number }` — every text op's `size` as a fraction of the sheet's **height**. The caption test:
+type set small enough to read as apparatus rather than as image.
+
+*Blind spots.* `size` is a declared unit, not a measured cap height, so it does not know what the face
+actually renders at, and the two fonts differ. A `quarantine` label is set by the macro at a size the
+program never states, so it is excluded rather than failed — unmeasured, not small. It says nothing
+about where on the sheet the type sits, so a huge string tucked into a corner passes.
+
 ### `maxRepeatDepth`
 `{ max: number }` — deepest nesting of `repeat` nodes. 0 for a tree with none.
 
@@ -127,7 +136,7 @@ no solid — a shape the positions here deliberately do not use.
 
 ## Render scope
 
-All four read a `RenderMetrics` produced by `aesthetic/measure.ts` from the **canonical** RGBA:
+All five read a `RenderMetrics` produced by `aesthetic/measure.ts` from the **canonical** RGBA:
 the deterministic path, hermetic Chromium, antialiasing off, cached by program hash. With no metrics
 they are `unverified`. They never launch a browser themselves.
 
@@ -190,6 +199,25 @@ degeneracy — `symmetryMax` would read a flat 1.0 and measure nothing at all �
 this with `inkDensityRange {min}` up near 1.0 is working in the last few percent of the measure's
 useful range. **If you raise an ink floor, re-measure this; the headroom does not travel.**
 
+### `edgeContactRange`
+`{ min?: number, max?: number, sides?: ('top'|'right'|'bottom'|'left')[], minSides?: number }` — per
+side, the fraction of a band 5% of the sheet's shorter side wide that carries ink. `sides` defaults to
+all four and `minSides` to all of the ones named, so the plain form is the strict one: **every side
+must be in range**. Four numbers and not one, because a picture that runs off three sides and leaves
+the fourth clean is the interesting case and any scalar reports it as the same thing as a picture that
+leaves all four alone.
+
+The kind exists because nothing else could say "this must reach the sheet". `inkDensityRange` and
+`coverageRange` are quantities of ink, not places; `inkOffsetRange` moves the centroid without ever
+requiring the border. Measured on the two finished runs that motivated it: `openai-withheld` reads
+`0.0000` on all four sides with 31% of its pixels inked, and `condition-withheld` reaches one side.
+
+*Blind spots.* A band, not a row: a one-pixel test would be asking about the renderer's clipping
+rather than about the picture, but 5% is a choice and a mark that stops 6% short reads as no contact
+at all. Corners are counted in two bands, so a single inked corner raises two numbers. It cannot tell
+a deliberate bleed from an overflow, and it says nothing about *what* reaches the edge — a hairline
+rule along the border satisfies it exactly as well as a full-bleed field does at the same fraction.
+
 ---
 
 ## Judge scope
@@ -217,6 +245,8 @@ fifteen by these moves, and later at sixteen when `inkOffsetRange` was added:
 | `maxNodes`, `minNodes` | `nodeCount` | One kind with optional `min` and `max`, matching `inkDensityRange` and `coverageRange`, which already had that shape. |
 | `requireCover` | *dropped* | It is `requireNode {op: 'cover'}`. A kind whose whole content is one argument value is not a kind. |
 | — | **`forbidMark`, `requireMark`** *(new)* | Style kind and brush are the strongest aesthetic levers this substrate has — `solid` versus `wash` is the whole difference between a printed block and a painted one (probes: xerox-zine, ikeda-austerity), and `rotring` versus `charcoal` decides whether a hand was in the room. The suggested list had no way to reach either. Four freed slots bought these two. |
+| — | **`edgeContactRange`** *(new, eighteenth)* | Nothing in the other seventeen could name the sheet's border. A run came back with 31% of its pixels inked and an untouched margin on all four sides, and every constraint on it was satisfied — density and coverage count ink without caring where it is, and offset moves the centroid without requiring the edge to be reached. Nothing was given up: the four slots freed by the merges above had one left. |
+| — | **`textMinHeight`** *(new, seventeenth)* | The caption ban. `textMaxWords` limits how much may be said and nothing limited what saying it could *be* — a short line set small in a corner is a label attached to a work rather than a mark on it, and no combination of the other sixteen could tell those apart. |
 | — | **`inkOffsetRange`** *(new, sixteenth)* | `symmetryMax` is the only asymmetry measure the set had and it degenerates to 1 as the sheet fills, so a position holding both `inkDensityRange {min}` and `symmetryMax {max}` had written a contradiction with no picture in it. Nothing was given up for this one, because `symmetryMax` is still the right measure on a sparse page and two positions use it that way. The count went to sixteen and the language is closed there. |
 
 Kinds considered and **not** added, because the tree cannot support them:
