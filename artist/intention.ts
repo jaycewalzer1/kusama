@@ -303,6 +303,18 @@ export function estimateEdge(
   return { ...base, status: 'violated', evidence: 'no coordinate in common on either axis' };
 }
 
+/**
+ * Drop node ids that no longer name anything in the tree. An element is the nodes it is *currently*
+ * made of, not every node it was ever built out of: the artist deleting a node it once used is
+ * ordinary revision, and without this an element that was worked on and then tidied reads as unmade,
+ * because `elementsMade` requires every attached id to still exist. Handles cascades for free — a
+ * deleted group takes its children out of the tree, so they stop being found here too.
+ */
+export function pruneDeadNodes(intention: Intention, program: unknown): void {
+  const live = geometry(program).ids;
+  for (const e of intention.elements) e.nodeIds = e.nodeIds.filter((id) => live.has(id));
+}
+
 export function estimateEdges(intention: Intention, program: unknown): EdgeEstimate[] {
   const geo = geometry(program);
   const sig = signatures(program);

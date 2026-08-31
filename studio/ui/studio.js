@@ -137,8 +137,15 @@ async function start() {
 
 // --- the run list ---------------------------------------------------------------------------
 
+let lastRuns = '';
+
 async function runs() {
-  const list = await (await fetch('/api/runs')).json();
+  const raw = await (await fetch('/api/runs')).text();
+  // The list is rebuilt whole, which throws away scroll position and whatever the pointer was over,
+  // so it is only worth doing when the answer changed. With no run in progress it never changes.
+  if (raw === lastRuns) return;
+  lastRuns = raw;
+  const list = JSON.parse(raw);
   const box = $('runs');
   box.innerHTML = '';
   for (const r of list) {
@@ -730,4 +737,7 @@ $('stop').addEventListener('click', async () => {
 catalog = await (await fetch('/api/catalog')).json();
 fillLists();
 await runs();
-setInterval(runs, 5000);
+// Every poll re-walks the runs directory and re-reads a scores.json per run, and nothing arrives
+// while the tab is hidden that will not still be there when it is shown again.
+setInterval(() => void (document.hidden || runs()), 5000);
+document.addEventListener('visibilitychange', () => void (document.hidden || runs()));

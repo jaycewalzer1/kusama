@@ -32,6 +32,7 @@ import {
   examineAgreement,
   fusedRealization,
   gradientOf,
+  pruneDeadNodes,
   purposeChurn,
   realization,
   riskDeclared,
@@ -254,7 +255,10 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
     }
     if (step.accepted) {
       program = candidate;
-      if (intention) attach(intention, landed);
+      if (intention) {
+        attach(intention, landed);
+        pruneDeadNodes(intention, program);
+      }
     }
     pending = [];
   }

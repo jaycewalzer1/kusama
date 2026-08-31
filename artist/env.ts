@@ -19,6 +19,7 @@ import { editsPerStep, onAcceptImproved, onRevert, onStall, stallThreshold } fro
 import { Canvas, InvalidProgramError, changeSince, check, type Change } from './canvas.js';
 import { describe, audience, transcribe, type ReadString } from './env-calls.js';
 import { bareEdit, servedNodeIds } from './schemas.js';
+import { pruneDeadNodes } from './intention.js';
 import { treeFacts } from '../aesthetic/facts.js';
 import {
   descriptionDisagrees,
@@ -499,6 +500,9 @@ export class ArtistEnv {
       }
       for (const id of ids) if (!element.nodeIds.includes(id)) element.nodeIds.push(id);
     }
+    // Attaching is only half of it. A step that adds nodes to one element and deletes nodes from
+    // another leaves the second holding ids for a tree that no longer contains them.
+    pruneDeadNodes(this.intention, this.program);
     void action;
   }
 

@@ -31,6 +31,7 @@ import {
   estimateEdges,
   examineAgreement,
   PENDING_CAP,
+  pruneDeadNodes,
   purposeChurn,
   realization,
   riskDeclared,
@@ -277,6 +278,33 @@ test('intention: a declared absence is judged, not marked missing', () => {
   assert.equal(r.elementsMade, 1);
   // And binding everything away from the tree earns nothing: null, never 1.
   assert.equal(r.score, null);
+});
+
+test('an element is the nodes it still has, not every node it was ever built from', () => {
+  // `title` was built out of two nodes and one of them was later deleted. `elementsMade` asks that
+  // EVERY attached id still exist, so without pruning the deletion retroactively unmakes an element
+  // that is sitting in the picture — and deleting a node you once used is ordinary revision, not a
+  // failure to realize the plan. Measured on run 6a6706cbc86ebc58: `ground-ledger` held `ledger_r1`,
+  // which the artist deleted at step 6, and the element read as unbuilt with `erase_1` and `erase_4`
+  // both present on the sheet.
+  const i = intention({
+    elements: [{ id: 'title', role: 'the shout', nodeIds: ['t1', 'gone'], binding: { kind: 'node' } }],
+    edges: [],
+  });
+  assert.equal(realization(i, oneNode()).elementsMade, 0, 'the dead id drags a live element down');
+  pruneDeadNodes(i, oneNode());
+  assert.deepEqual(i.elements[0]!.nodeIds, ['t1']);
+  assert.equal(realization(i, oneNode()).elementsMade, 1);
+
+  // MUST NOT MOVE: pruning is not a way to be made out of nothing. An element whose every node was
+  // deleted keeps an empty list and stays unmade, rather than passing vacuously on `every`.
+  const wiped = intention({
+    elements: [{ id: 'title', role: 'the shout', nodeIds: ['gone'], binding: { kind: 'node' } }],
+    edges: [],
+  });
+  pruneDeadNodes(wiped, oneNode());
+  assert.deepEqual(wiped.elements[0]!.nodeIds, []);
+  assert.equal(realization(wiped, oneNode()).elementsMade, 0);
 });
 
 // MUST MOVE. This is the case `locatable: false` could not see: an element that claims to be a
