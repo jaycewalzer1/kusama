@@ -44,6 +44,30 @@ One line per milestone. Written as it happens.
   it. The exclusion is gone, so all three tiers now ask the same question, and the cross-source rule
   lives in `breaks.ts` where it means something (what *forced* a break). A scan is a hypothesis; the
   pack was the measurement.
+- Stage 5 done and committed as `de0b84c`. `artist/provenance.ts` + `artist provenance <dir>` +
+  `provenance.json` per run. Corpus co-occurrence is three verdicts (`same-hand` / `same-period` /
+  `novel`) plus a fourth non-verdict `unknown` for hand-authored elements, which is never added to
+  `novel`; prior-run co-occurrence names the sibling runs. CSD+CSLS left as a TODO in the header with
+  the 15/91 -> 4/91 number, because CSD alone inverts for exactly the same-tradition pairs this repo
+  composes. **453 tests / 0 fail, 11 goldens.**
+- Stage 5 caveat, recorded rather than smoothed: the period test parses four-digit years out of
+  museum date prose, so "18th century" contributes nothing and the pair still reads `novel`. Reported
+  in the note rather than fixed, because inventing a span is worse than admitting the gap. And with
+  the derived set empty (no credit), every pair the shipped pack can produce is `unknown` — the
+  three real verdicts are reachable only through the injected lookup, which is what the tests use and
+  what the last test pins to the real disk.
+- Stage 7 done and committed as `7befd11`. `artist/archive.ts` + `artist archive <runs>` +
+  `archive.json`. 6x6 MAP-Elites, axes `inkDensity` x `inkOffset` from `RenderMetrics` (a test
+  asserts every offered descriptor is a field of it), hard-violation gate with the rejections kept,
+  no elite because there is no pairwise judge. Over `out/`: 2/2 admitted, 1/36 cells, both runs in
+  the same cell — which is exactly what a same-seed A/B should look like. **467 tests / 0 fail.**
+- Stage 7 finding, and it is the exactly-0 rule again: the constant-axis guard tested a sum of
+  squares for `=== 0`, and three identical floats do not sum to zero because their mean is off by an
+  ulp. It emitted `axisCorrelation: 0` — which reads as "independent" — for an axis that never moved.
+  The test that asked for a constant axis caught it. Now tested on the spread.
+- Stage 7, partial: "inspectable from `studio/`" is satisfied by the CLI, which lives in `studio/`.
+  There is no page in the studio console. Left deliberately: the console is where the untested bugs
+  live, and a grid view is not worth the surface tonight.
 - Stage 3, not built on purpose: the 50 elements are not derived. That needs one model call per work
   and there is no credit. `artist/element-derive.ts` and its 8 tests are done and green against a
   stand-in; `corpus derive` is one command away from real data.
