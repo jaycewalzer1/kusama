@@ -247,6 +247,16 @@ export class ArtistEnv {
       description: look.description,
       audienceRead: look.audienceRead ?? null,
       wouldAct: look.wouldAct ?? null,
+      // Which constraints held and which did not, by id, in this state. Two lists and not one:
+      // `Status` has a third value, so "absent from `violated`" is not "held" — and the observed
+      // conflict tier is built on the difference. The counts above are kept because they are what
+      // `standing` was computed from; these are the evidence behind them.
+      //
+      // A log written before this existed has neither field. Every reader must treat that as "this
+      // run did not record it" and not as "nothing was violated", which is the same trap absent
+      // `pixelsMoved` set: see transition.ts.
+      satisfied: report.results.filter((r) => r.status === 'satisfied').map((r) => r.id),
+      violated: report.results.filter((r) => r.status === 'violated').map((r) => r.id),
     });
     return look;
   }

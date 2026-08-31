@@ -490,7 +490,10 @@ export function withElements(
     position: {
       ...effective,
       id: `${effective.id}+${[...elementIds].sort().join('+')}`,
-      commitments: effective.commitments.map(requalify),
+      commitments: [
+        ...effective.commitments.map(requalify),
+        ...elements.flatMap((e) => (e.commitments ?? []).map((c) => ({ ...c, id: qualify({ kind: 'element', id: e.id }, c.id) }))),
+      ],
       prohibitions: [
         ...effective.prohibitions.map(requalify),
         ...elements.flatMap((e) => e.prohibitions.map((c) => ({ ...c, id: qualify({ kind: 'element', id: e.id }, c.id) }))),

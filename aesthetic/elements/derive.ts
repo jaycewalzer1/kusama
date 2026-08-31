@@ -24,7 +24,7 @@
 // Each of those is a case where the obvious rule is wrong, and each was cheaper to find here than in
 // a report that confidently named a conflict nobody could have resolved.
 
-import type { Constraint } from '../types.js';
+import type { Constraint, ConstraintResult } from '../types.js';
 import type { Conflict, ConflictSide, SourceRef } from './types.js';
 import { contentHash } from './hash.js';
 
@@ -32,6 +32,13 @@ import { contentHash } from './hash.js';
 export interface Sourced {
   constraint: Constraint;
   source: SourceRef;
+  /**
+   * Which of the three parts it was stated in. Nothing in this file reads it — a proof is about
+   * parameters, not about where a rule was written — but the break record does: a commitment that
+   * broke and a generative rule that stopped applying are different events, and only this tells
+   * them apart.
+   */
+  part: ConstraintResult['part'];
 }
 
 function side(s: Sourced): ConflictSide {

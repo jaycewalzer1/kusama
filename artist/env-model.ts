@@ -57,7 +57,10 @@ export type EnvCallName =
   // a different model is not comparable with a reading made with this one, and the whole corpus is
   // supposed to stay comparable with itself for as long as the elements derived from it are in use.
   | 'read-work'
-  | 'identify-work';
+  | 'identify-work'
+  // And the step that turns a reading into normative rules. Carries no image and no metadata: its
+  // whole input is the words `read-work` produced. See element-derive.ts.
+  | 'derive-element';
 
 export interface EnvRequest {
   name: EnvCallName;

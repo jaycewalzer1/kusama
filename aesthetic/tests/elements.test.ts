@@ -21,7 +21,7 @@ import { compose } from '../elements/compose.js';
 import { conflictId, deriveConflicts } from '../elements/derive.js';
 import { declaredConflicts, matchDeclared, observedConflicts } from '../elements/conflicts.js';
 import { elementIds, elementPackHash, loadElement, loadElements } from '../elements/pack.js';
-import { qualify, type Composition, type LineageElement, type SourceRef } from '../elements/types.js';
+import { qualify, type Composition, type Conflict, type LineageElement, type SourceRef } from '../elements/types.js';
 import { ROOT, Renderer } from '../../env/browser.js';
 import { pixelDiff, structuralDiff, changedRegions } from '../../env/diff.js';
 import { EMPTY_PACK, program, resolve, solidNode, strokeNode } from '../../env/tests/helpers.js';
@@ -389,8 +389,177 @@ test('invariant: compose reads no clock, no environment and no randomness — th
   assert.equal(JSON.stringify(b), JSON.stringify(a));
 });
 
-test('the observed tier is a signature and nothing else', () => {
-  assert.throws(() => observedConflicts({}), /NotImplemented/);
+// --- the observed tier --------------------------------------------------------------------------
+//
+// Built against a hand-written state sequence rather than a trajectory. Not a shortcut: the
+// function's whole input is "which ids held and which broke, per state", and a real run supplies
+// exactly that and nothing more — artist/env.ts logs both lists on every render. Driving it from a
+// trajectory would be testing the fold in artist/breaks.ts, which is a different file's job.
+
+const composed = (): Composition => compose(position(), loadElements(['ma-interval', 'rodchenko-red-black']));
+
+/** Two ids from different sources that `compose` does not already have a conflict for. */
+function twoUnconflicted(c: Composition): [string, string] {
+  const known = new Set(c.conflicts.flatMap((k) => [qualify(k.a.source, k.a.constraintId), qualify(k.b.source, k.b.constraintId)]));
+  const pos = c.constraints.find((x) => x.source.kind === 'position' && !known.has(x.id))!;
+  const el = c.constraints.find((x) => x.source.kind === 'element' && !known.has(x.id))!;
+  return [pos.id, el.id];
+}
+
+test('an observed conflict needs each side held while the other broke, and no state holding both', () => {
+  const c = composed();
+  const [a, b] = twoUnconflicted(c);
+  const found = observedConflicts(c, [
+    { k: 0, satisfied: [a], violated: [b] },
+    { k: 1, satisfied: [b], violated: [a] },
+  ]);
+  assert.equal(found.length, 1);
+  assert.equal(found[0]!.tier, 'observed');
+  assert.match(found[0]!.note, /held at k0/);
+  assert.match(found[0]!.note, /the 2 observed held both/);
+});
+
+test('one state holding both is enough to withdraw the claim', () => {
+  const c = composed();
+  const [a, b] = twoUnconflicted(c);
+  assert.deepEqual(
+    observedConflicts(c, [
+      { k: 0, satisfied: [a], violated: [b] },
+      { k: 1, satisfied: [b], violated: [a] },
+      { k: 2, satisfied: [a, b], violated: [] },
+    ]),
+    []
+  );
+});
+
+test('a trade in one direction only is not a conflict', () => {
+  // b broke every time a held, and a was never held while b broke. That is a to-do list, not a
+  // dilemma: nothing here shows the run could not have had both.
+  const c = composed();
+  const [a, b] = twoUnconflicted(c);
+  assert.deepEqual(
+    observedConflicts(c, [
+      { k: 0, satisfied: [a], violated: [b] },
+      { k: 1, satisfied: [a], violated: [b] },
+    ]),
+    []
+  );
+});
+
+test('an unverified constraint is not evidence in either direction', () => {
+  // Absent from both lists is the checker saying it could not decide. Counting that as held is the
+  // one mistake that would let an unobservable pair read as compatible.
+  const c = composed();
+  const [a, b] = twoUnconflicted(c);
+  assert.deepEqual(
+    observedConflicts(c, [
+      { k: 0, satisfied: [a], violated: [] },
+      { k: 1, satisfied: [b], violated: [a] },
+    ]),
+    []
+  );
+});
+
+test('a source that cannot hold itself is reported, the same as a proof of one would be', () => {
+  // `deriveConflicts` already reports position:withheld/c-covered x position:withheld/g-few — a
+  // position provably in conflict with its own node budget. If the observed tier silently skipped
+  // same-source pairs it would be answering a narrower question than the other two tiers, and no
+  // report would say which question had been asked. The cross-source rule lives in artist/breaks.ts,
+  // where it decides what *forced* a break, and it is tested there.
+  const c = composed();
+  const known = new Set(c.conflicts.flatMap((k) => [qualify(k.a.source, k.a.constraintId), qualify(k.b.source, k.b.constraintId)]));
+  const ma = c.constraints.filter((x) => x.source.kind === 'element' && x.source.id === 'ma-interval' && !known.has(x.id));
+  assert.ok(ma.length >= 2, 'the fixture needs one element with two constraints nothing already conflicts');
+  const found = observedConflicts(c, [
+    { k: 0, satisfied: [ma[0]!.id], violated: [ma[1]!.id] },
+    { k: 1, satisfied: [ma[1]!.id], violated: [ma[0]!.id] },
+  ]);
+  assert.equal(found.length, 1);
+  assert.deepEqual(found[0]!.a.source, found[0]!.b.source);
+});
+
+test('a pair already proven or declared is not re-reported as a sample', () => {
+  const c = composed();
+  const known = c.conflicts[0];
+  assert.ok(known, 'the fixture needs at least one derived or declared conflict');
+  const a = qualify(known.a.source, known.a.constraintId);
+  const b = qualify(known.b.source, known.b.constraintId);
+  assert.deepEqual(
+    observedConflicts(c, [
+      { k: 0, satisfied: [a], violated: [b] },
+      { k: 1, satisfied: [b], violated: [a] },
+    ]),
+    []
+  );
+});
+
+// --- one named pair per tier ---------------------------------------------------------------------
+//
+// The tests above drive the mechanism with whatever pair happens to be handy. These three name a real
+// pair from the shipped pack for each tier, so that a report saying `derived` can be read back to a
+// specific pair of rules and checked by hand. All three pairs are element-to-element, so they do not
+// depend on which position is composed and an edit to the catalogue cannot move them.
+
+const FOUR = (): Composition => compose(position(), loadElements(elementIds()));
+
+const DERIVED_PAIR: [string, string] = ['element:chromolith-broadside/e-no-quiet-corner', 'element:ma-interval/e-interval-holds'];
+const DECLARED_PAIR: [string, string] = ['element:kuba-shoowa-surface/e-worked-through', 'element:ma-interval/e-interval-holds'];
+// Nothing proves these two incompatible and nobody has measured them: a broadside naming the night
+// and a Kuba surface refusing a centre are about different things. Only a run can put them in
+// tension, which is what the observed tier is for.
+const OBSERVED_PAIR: [string, string] = ['element:chromolith-broadside/e-names-the-night', 'element:kuba-shoowa-surface/e-no-centre'];
+
+/** The one conflict over exactly this pair, in either order, or undefined. */
+function conflictOver(c: Composition, [x, y]: [string, string]): Conflict | undefined {
+  return c.conflicts.find((k) => {
+    const a = qualify(k.a.source, k.a.constraintId);
+    const b = qualify(k.b.source, k.b.constraintId);
+    return (a === x && b === y) || (a === y && b === x);
+  });
+}
+
+test('fixture, derived tier: two coverage floors that cannot both be met', () => {
+  const k = conflictOver(FOUR(), DERIVED_PAIR);
+  assert.equal(k?.tier, 'derived');
+  // A derived note has to carry the arithmetic, or the tier is an assertion wearing a proof's name.
+  assert.match(k!.note, /coverageRange/);
+  assert.match(k!.note, /0\.7/);
+  assert.match(k!.note, /0\.3/);
+});
+
+test('fixture, declared tier: horror vacui against the charged interval, and the note cites the measurement', () => {
+  const k = conflictOver(FOUR(), DECLARED_PAIR);
+  assert.equal(k?.tier, 'declared');
+  assert.match(k!.note, /element-preflight/, 'a declared conflict without a citation is an assertion');
+});
+
+test('fixture, observed tier: a pair no proof and no table reaches, put in tension by a run', () => {
+  const c = FOUR();
+  const [x, y] = OBSERVED_PAIR;
+  assert.ok(
+    c.constraints.some((q) => q.id === x) && c.constraints.some((q) => q.id === y),
+    'the fixture pair must actually be in the composition'
+  );
+  assert.equal(conflictOver(c, OBSERVED_PAIR), undefined, 'this pair must reach neither of the other two tiers');
+
+  // Empty first, and that is the honest default: with no run behind it there is no evidence, and
+  // "no observed conflict" must never read as "compatible".
+  assert.deepEqual(observedConflicts(c, []), []);
+
+  const found = observedConflicts(c, [
+    { k: 0, satisfied: [x], violated: [y] },
+    { k: 3, satisfied: [y], violated: [x] },
+  ]);
+  assert.equal(found.length, 1);
+  assert.equal(found[0]!.tier, 'observed');
+  assert.match(found[0]!.note, /the 2 observed held both/);
+});
+
+test('fewer than two states cannot show a trade, and say so by finding nothing', () => {
+  const c = composed();
+  const [a, b] = twoUnconflicted(c);
+  assert.deepEqual(observedConflicts(c, [{ k: 0, satisfied: [a], violated: [b] }]), []);
+  assert.deepEqual(observedConflicts(c, []), []);
 });
 
 // --- invariant 3: conflicts do not shrink the denominator ---------------------------------------
@@ -532,8 +701,18 @@ test('invariant: exactly one file in artist/ reaches the elements layer, and it 
   assert.ok(files.length >= 5, 'the scan found almost nothing, so it is scanning the wrong tree');
   const importers = files
     .filter((f) => /aesthetic\/elements\//.test(readFileSync(f, 'utf8')))
-    .map((f) => path.relative(artist, f));
-  assert.deepEqual(importers, ['field.ts']);
+    .map((f) => path.relative(artist, f))
+    .sort();
+  // Three files now, and only one of them is a door. The invariant is about how elements *enter a
+  // run*; the other two sit on either side of one and cannot.
+  //   breaks.ts         reads a finished log. There is no run left to put an element into, and it
+  //                     takes the composition off the log rather than recomposing from the pack.
+  //   element-derive.ts writes elements to disk, offline, one per corpus work. It never loads one.
+  // Before widening this again, check which of those two things the new file is doing.
+  assert.deepEqual(importers, ['breaks.ts', 'element-derive.ts', 'field.ts']);
+  // The door itself, asserted separately so the list above cannot quietly become the invariant.
+  const composers = files.filter((f) => /\bcompose\(/.test(readFileSync(f, 'utf8'))).map((f) => path.relative(artist, f));
+  assert.deepEqual(composers, ['field.ts'], 'elements enter a run through the commission and nowhere else');
 });
 
 // --- invariant 5: determinism, three layers ------------------------------------------------------
@@ -641,12 +820,13 @@ test('deriveConflicts is stable under its own input order and never pairs a cons
   const p = position();
   const els = ALL();
   const flat = [
-    ...p.commitments.map((constraint) => ({ constraint, source: { kind: 'position' as const, id: p.id } })),
-    ...p.prohibitions.map((constraint) => ({ constraint, source: { kind: 'position' as const, id: p.id } })),
+    ...p.commitments.map((constraint) => ({ constraint, source: { kind: 'position' as const, id: p.id }, part: 'commitment' as const })),
+    ...p.prohibitions.map((constraint) => ({ constraint, source: { kind: 'position' as const, id: p.id }, part: 'prohibition' as const })),
     ...els.flatMap((e) =>
       [...e.generativeRules, ...e.prohibitions].map((constraint) => ({
         constraint,
         source: { kind: 'element' as const, id: e.id },
+        part: 'generative_rule' as const,
       }))
     ),
   ];
@@ -675,6 +855,7 @@ test('matchDeclared ignores rows it cannot ground in the composition it was give
   const flat = p.prohibitions.map((constraint) => ({
     constraint,
     source: { kind: 'position' as const, id: p.id },
+    part: 'prohibition' as const,
   }));
   assert.deepEqual(matchDeclared(flat, rows), []);
 });

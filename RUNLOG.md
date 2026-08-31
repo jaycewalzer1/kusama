@@ -20,3 +20,12 @@ One line per milestone. Written as it happens.
   Dora Wheeler" match "Portrait of Emilie Ambre", and "Saint John the Baptist" match "Saint Mary
   Magdalene" — 34/4 instead of 31/7. Titles are subjects and subjects repeat, so a title now needs two
   shared words and a maker needs one. Both wrong versions are pinned as tests.
+- **HARD BLOCKER, external: both providers are out of credit.** OpenAI answers `429
+  insufficient_quota` / `credit_balance_exhausted`; Anthropic answers `400` "Your credit balance is
+  too low". The whole stack is offline: the artist policy, the environment (`gpt-4o-2024-11-20`) and
+  the judge (`gpt-4.1-2025-04-14`) all read `OPENAI_API_KEY`. **Nothing that needs a model call can
+  be done tonight**, and the $30 cap was never the constraint — spend through Stage 2 was under $1.
+  Stage 2 survived only because `corpus read --force` was 100% cache hits. Dead until credit is
+  added: deriving the 50 elements (Stage 3's one call per work), Stage 4's trajectory, Stage 6's
+  pairwise judge, Stage 8's noise floor. Continuing with every part of the design that is pure and
+  offline — which, per the brief, is where "the break record is the point" lives anyway.

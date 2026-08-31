@@ -22,6 +22,7 @@ import path from 'node:path';
 import { loadPackFor } from '../env/pack.js';
 import { canonicalJson, contentHash, loadProfile, loadProfileFor } from '../env/profile.js';
 import { affectArmed, affectSentence, initialAffect } from './affect.js';
+import { breakRecordOf } from './breaks.js';
 import { capabilitySheet } from './capability-sheet.js';
 import { Canvas, check } from './canvas.js';
 import { newSpend, type Spend } from './call.js';
@@ -328,6 +329,12 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
     positionId: loaded.position.id,
     briefId: loaded.brief.id,
     elementIds: loaded.elementIds,
+    // The composed constraint list and the conflicts inside it, whole, or null when no element was
+    // adopted. Logged rather than left to be recomposed later: recomposing reads today's element
+    // pack, and an element edited after the run would silently rewrite what that run is said to
+    // have broken. This is the only place the composition reaches disk, and breaks.ts reads it from
+    // here so that a break record is a view of the log rather than a join against the working tree.
+    composition: loaded.composition,
     control: o.control ?? false,
     mode,
     seed: o.seed,
@@ -700,9 +707,13 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
     // scope. It costs a file read and it buys the guarantee that matters: transitions.json is a
     // view of studio.jsonl and cannot contain anything the log does not, so the same command run
     // over an old trajectory produces the same artifact.
+    const written = readLog(log.file);
+    writeFileSync(path.join(o.outDir, 'transitions.json'), `${JSON.stringify(processOf(written), null, 2)}\n`);
+    // Its own file, beside scores.json rather than inside it. A break record read as a component of
+    // a score is read as something to make go up, and it is the one artifact here that is not.
     writeFileSync(
-      path.join(o.outDir, 'transitions.json'),
-      `${JSON.stringify(processOf(readLog(log.file)), null, 2)}\n`
+      path.join(o.outDir, 'breaks.json'),
+      `${JSON.stringify(breakRecordOf(written), null, 2)}\n`
     );
     return trajectory;
   } finally {

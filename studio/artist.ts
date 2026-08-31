@@ -45,6 +45,7 @@ import { runTrajectory } from '../artist/run.js';
 import { storyOf, storyText, summarise as summariseLine } from '../artist/story.js';
 import { readLog } from '../artist/studio-log.js';
 import { processOf, processText } from '../artist/transition.js';
+import { breakRecordOf, breakText } from '../artist/breaks.js';
 import { twinOf, twinText } from '../artist/twin.js';
 import { walkthroughOf, walkthroughHtml } from '../artist/walkthrough.js';
 import { sftLines, toJsonl } from '../artist/export.js';
@@ -344,6 +345,16 @@ program
     const p = processOf(readLog(path.join(dir, 'studio.jsonl')));
     writeFileSync(path.join(dir, 'transitions.json'), `${JSON.stringify(p, null, 2)}\n`);
     console.log(processText(p));
+  });
+
+program
+  .command('breaks')
+  .description('which commitment broke, what forced it, and whether it was declared — written as breaks.json')
+  .argument('<dir>')
+  .action((dir: string) => {
+    const r = breakRecordOf(readLog(path.join(dir, 'studio.jsonl')));
+    writeFileSync(path.join(dir, 'breaks.json'), `${JSON.stringify(r, null, 2)}\n`);
+    console.log(breakText(r));
   });
 
 program

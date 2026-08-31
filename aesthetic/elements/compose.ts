@@ -23,16 +23,16 @@ import type { AestheticProgram, Constraint } from '../types.js';
 import { deriveConflicts, type Sourced } from './derive.js';
 import { declaredConflicts, matchDeclared, type DeclaredConflict } from './conflicts.js';
 import { elementPackHash } from './pack.js';
-import { qualify, type Composition, type Conflict, type LineageElement, type SourceRef } from './types.js';
+import { elementConstraints, qualify, type Composition, type Conflict, type LineageElement, type SourceRef } from './types.js';
 
 /** Constraints in source order: the position first, then each element as it was passed. */
 function flatten(position: AestheticProgram, elements: LineageElement[]): Sourced[] {
   const out: Sourced[] = [];
   const from: SourceRef = { kind: 'position', id: position.id };
-  for (const { constraint } of constraintsOf(position)) out.push({ constraint, source: from });
+  for (const { constraint, part } of constraintsOf(position)) out.push({ constraint, source: from, part });
   for (const e of elements) {
     const src: SourceRef = { kind: 'element', id: e.id };
-    for (const c of [...e.generativeRules, ...e.prohibitions]) out.push({ constraint: c, source: src });
+    for (const { constraint, part } of elementConstraints(e)) out.push({ constraint, source: src, part });
   }
   return out;
 }
@@ -49,10 +49,11 @@ export function compose(
 ): Composition {
   const sourced = flatten(position, elements);
 
-  const constraints: Array<Constraint & { source: SourceRef }> = sourced.map(({ constraint, source }) => ({
+  const constraints: Composition['constraints'] = sourced.map(({ constraint, source, part }) => ({
     ...constraint,
     id: qualify(source, constraint.id),
     source,
+    part,
   }));
 
   // Derived first, then declared, and a pair already proven is not re-reported as a claim: a proof

@@ -28,6 +28,20 @@ const ROOT = (() => {
 
 export const PACK_DIR = path.join(ROOT, 'aesthetic', 'elements', 'pack');
 
+/**
+ * Elements derived from corpus works, kept in their own directory.
+ *
+ * Two directories rather than one, because the two are not the same kind of claim. A pack element is
+ * a person's reading of a tradition with a citation somebody can check. A derived element is one
+ * model's reading of one picture, and there are fifty of them — poured into the same folder they
+ * would outnumber the authored ones twelve to one, and every count in `elements-live.test.ts` would
+ * quietly start measuring the corpus instead of the pack.
+ *
+ * They compose identically. `loadElement` looks in both, so `--elements cma-102578` works exactly as
+ * `--elements ma-interval` does; only the enumeration is kept separate.
+ */
+export const DERIVED_DIR = path.join(ROOT, 'aesthetic', 'elements', 'derived');
+
 const CONSTRAINT_KEYS = new Set(['id', 'kind', 'params', 'scope', 'severity', 'why', 'blocked_by']);
 
 function checkConstraintShape(where: string, value: unknown): asserts value is Constraint {
@@ -72,25 +86,60 @@ export function checkElementShape(value: unknown, expectedId?: string): LineageE
     if (!Array.isArray(arr)) throw new Error(`${id}: ${part} must be an array`);
     for (const c of arr) checkConstraintShape(`${id}/${part}`, c);
   }
-  if ((e['generativeRules'] as unknown[]).length === 0 && (e['prohibitions'] as unknown[]).length === 0) {
-    throw new Error(`${id}: an element that carries no constraint is a note, not an element`);
+  // Optional, because the four authored elements predate it and giving them one would move
+  // `elementPackHash` and retire runs that have nothing wrong with them. Checked when present.
+  if (e['commitments'] !== undefined) {
+    if (!Array.isArray(e['commitments'])) throw new Error(`${id}: commitments must be an array`);
+    for (const c of e['commitments']) checkConstraintShape(`${id}/commitments`, c);
   }
+  if (e['tensions'] !== undefined) {
+    if (!Array.isArray(e['tensions'])) throw new Error(`${id}: tensions must be an array`);
+    for (const t of e['tensions'] as Record<string, unknown>[]) {
+      for (const key of ['between', 'and', 'claim']) {
+        if (typeof t?.[key] !== 'string' || (t[key] as string).trim().length === 0) {
+          throw new Error(`${id}: every tension needs a non-empty ${key}`);
+        }
+      }
+    }
+  }
+  const carried =
+    (e['generativeRules'] as unknown[]).length +
+    (e['prohibitions'] as unknown[]).length +
+    ((e['commitments'] as unknown[] | undefined)?.length ?? 0);
+  if (carried === 0) throw new Error(`${id}: an element that carries no constraint is a note, not an element`);
   if (!Array.isArray(e['cliches']) || (e['cliches'] as unknown[]).some((c) => typeof c !== 'string')) {
     throw new Error(`${id}: cliches must be strings`);
   }
   return e as unknown as LineageElement;
 }
 
-/** Every element id on disk, sorted. Read off the directory so a new file cannot go unnoticed. */
-export function elementIds(): string[] {
-  return readdirSync(PACK_DIR)
+function idsIn(dir: string): string[] {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
     .filter((f) => f.endsWith('.json') && f !== 'conflicts.json')
     .map((f) => f.slice(0, -'.json'.length))
     .sort();
 }
 
+/** The hand-authored pack, sorted. Read off the directory so a new file cannot go unnoticed. */
+export function elementIds(): string[] {
+  return idsIn(PACK_DIR);
+}
+
+/** The elements derived from corpus works. Empty before `corpus derive` has been run. */
+export function derivedIds(): string[] {
+  return idsIn(DERIVED_DIR);
+}
+
 export function loadElement(id: string): LineageElement {
-  return checkElementShape(JSON.parse(readFileSync(path.join(PACK_DIR, `${id}.json`), 'utf8')), id);
+  // The authored pack wins a name collision. A derived element is named after its object id, which
+  // no authored element can be, so the two namespaces cannot actually meet — but if they ever did,
+  // the file a person wrote is the one that should answer.
+  for (const dir of [PACK_DIR, DERIVED_DIR]) {
+    const file = path.join(dir, `${id}.json`);
+    if (existsSync(file)) return checkElementShape(JSON.parse(readFileSync(file, 'utf8')), id);
+  }
+  throw new Error(`no element "${id}" in the pack or the derived set`);
 }
 
 export function loadElements(ids: string[]): LineageElement[] {

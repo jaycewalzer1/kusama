@@ -10,6 +10,7 @@
 // re-running it costs nothing and returns exactly what the first run got.
 
 import { Command } from 'commander';
+import { derivedIds, loadElement } from '../aesthetic/elements/pack.js';
 import {
   corpusSummary,
   importWork,
@@ -21,6 +22,7 @@ import {
   saveReading,
   workId,
 } from '../artist/corpus.js';
+import { deriveElement, deriveProtocolHash, saveDerived } from '../artist/element-derive.js';
 
 const program = new Command();
 program.name('corpus').description('the corpus of real works the lineage elements are derived from');
@@ -94,6 +96,42 @@ program
     process.stdout.write(`named something      : ${s.claimed}/${s.read}\n`);
     process.stdout.write(`canonical (and right): ${s.canonical}/${s.read}\n`);
     process.stdout.write(`misattributed        : ${s.misattributed}/${s.read}\n`);
+  });
+
+program
+  .command('derive')
+  .description('turn each blind reading into a lineage element, from the reading alone')
+  .option('--force', 'redo elements already derived under this protocol', false)
+  .action(async (opts: { force: boolean }) => {
+    const protocol = deriveProtocolHash();
+    let made = 0;
+    let dropped = 0;
+    let skipped = 0;
+    for (const work of listWorks()) {
+      const reading = loadReading(work.id);
+      if (!reading) {
+        process.stdout.write(`${work.id}  no reading yet; run \`corpus read\` first\n`);
+        skipped++;
+        continue;
+      }
+      if (!opts.force && derivedIds().includes(work.id)) {
+        // A protocol change is a different question, so an element derived under an older one is
+        // redone rather than kept. Same rule as `read`.
+        const existing = loadElement(work.id);
+        if (existing.derivedFrom?.deriveProtocol === protocol) continue;
+      }
+      const { element, dropped: bad } = await deriveElement(work, reading);
+      saveDerived(element);
+      made++;
+      dropped += bad;
+      const n = (element.commitments?.length ?? 0) + element.generativeRules.length + element.prohibitions.length;
+      process.stdout.write(`${work.id}  ${n} rules${bad ? ` (${bad} dropped)` : ''}  ${element.name}\n`);
+      await pause(120);
+    }
+    process.stdout.write(`\nderived ${made} this run; ${derivedIds().length} elements on disk.\n`);
+    if (dropped) process.stdout.write(`dropped ${dropped} malformed moves rather than repairing them.\n`);
+    if (skipped) process.stdout.write(`skipped ${skipped} works with no reading.\n`);
+    process.stdout.write(`protocol ${protocol.slice(0, 12)}\n`);
   });
 
 program

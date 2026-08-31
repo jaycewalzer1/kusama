@@ -58,11 +58,12 @@ test('the policy has one door: only call.ts invokes it', () => {
 test('policy calls and environment calls do not share a path', () => {
   // Nothing that reaches envModel may also reach the policy, and vice versa. If these ever merge,
   // the artist is being trained against a signal it can move, which is the one unrecoverable mistake.
-  // `corpus.ts` is on this list and is not part of a trajectory: it reads works offline, once, when
-  // they are imported. It is here rather than exempted because the property being asserted is not
-  // "few files call the environment" but "no file calls both", and the loop below is what checks it.
+  // `corpus.ts` and `element-derive.ts` are on this list and neither is part of a trajectory: they
+  // run offline, once, when a work is imported and when an element is derived from it. They are
+  // here rather than exempted because the property being asserted is not "few files call the
+  // environment" but "no file calls both", and the loop below is what checks that.
   const envCallers = FILES.filter((f) => /\benvModel[<(]/.test(read(f))).map(rel).sort();
-  assert.deepEqual(envCallers, ['corpus.ts', 'env-calls.ts', 'env-model.ts']);
+  assert.deepEqual(envCallers, ['corpus.ts', 'element-derive.ts', 'env-calls.ts', 'env-model.ts']);
 
   for (const file of FILES.filter((f) => envCallers.includes(rel(f)))) {
     assert.ok(!/policy\.call</.test(read(file)), `${rel(file)} reaches both the policy and the environment`);
