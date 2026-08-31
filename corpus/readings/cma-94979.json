@@ -1,0 +1,35 @@
+{
+  "id": "cma-94979",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Draws attention to the subject's face with soft lighting and a warm color palette.",
+      "Uses texture and detail to emphasize the folds of fabric and the sheen of the clothing."
+    ],
+    "refuses": [
+      "Include a complex background or setting.",
+      "Depict the subject in an active or dynamic pose."
+    ],
+    "tension": "The subject's direct gaze and relaxed posture create a balance between formality and intimacy, leaving the viewer to interpret the mood.",
+    "materialFacts": [
+      "The surface shows smooth blending of paint to create realistic skin tones.",
+      "The fabric textures are rendered with visible brushstrokes to suggest weight and material.",
+      "The background is dark and plain, contrasting with the illuminated figure."
+    ],
+    "structuralMoves": [
+      "The composition centers the subject, with the face positioned slightly above the midpoint.",
+      "The hands are placed prominently in the foreground, adding depth.",
+      "The books on the table anchor the lower left corner, balancing the composition."
+    ]
+  },
+  "leakage": {
+    "recognised": false,
+    "work": null,
+    "artist": null,
+    "year": null
+  },
+  "claimedCanonical": false,
+  "canonical": false,
+  "misattributed": false
+}

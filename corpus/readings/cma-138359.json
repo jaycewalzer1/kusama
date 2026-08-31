@@ -1,0 +1,39 @@
+{
+  "id": "cma-138359",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Draws the viewer's eye to the interplay of light and shadow, emphasizing the reflective surfaces of glass and metal.",
+      "Creates a sense of opulence through the detailed rendering of textures, such as the fruit, fabric, and ornate objects."
+    ],
+    "refuses": [
+      "Flattening the composition into a single plane.",
+      "Using bright, even lighting across the entire surface."
+    ],
+    "tension": "The contrast between the dark, almost void-like background and the illuminated, richly detailed objects creates a sense of mystery and focus.",
+    "materialFacts": [
+      "The surface shows a dark, nearly black background that recedes into shadow.",
+      "The objects are rendered with fine detail, including the reflective surfaces of glass and metal.",
+      "The fruit and fabric are textured to appear tactile and realistic.",
+      "The composition includes a patterned blue-and-white ceramic bowl, a richly colored textile, and ornate metallic elements.",
+      "The light source is directional, highlighting specific areas while leaving others in shadow."
+    ],
+    "structuralMoves": [
+      "The objects are arranged diagonally, leading the eye across the composition.",
+      "The scale of the objects varies, with smaller details like the stem of the glass contrasting with larger elements like the bowl.",
+      "The cropping excludes any surrounding context, focusing entirely on the still life.",
+      "The repetition of reflective surfaces creates visual rhythm.",
+      "The placement of the fruit and bowl at the edge of the table adds a sense of precariousness."
+    ]
+  },
+  "leakage": {
+    "recognised": false,
+    "work": null,
+    "artist": null,
+    "year": null
+  },
+  "claimedCanonical": false,
+  "canonical": false,
+  "misattributed": false
+}

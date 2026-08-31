@@ -58,8 +58,11 @@ test('the policy has one door: only call.ts invokes it', () => {
 test('policy calls and environment calls do not share a path', () => {
   // Nothing that reaches envModel may also reach the policy, and vice versa. If these ever merge,
   // the artist is being trained against a signal it can move, which is the one unrecoverable mistake.
+  // `corpus.ts` is on this list and is not part of a trajectory: it reads works offline, once, when
+  // they are imported. It is here rather than exempted because the property being asserted is not
+  // "few files call the environment" but "no file calls both", and the loop below is what checks it.
   const envCallers = FILES.filter((f) => /\benvModel[<(]/.test(read(f))).map(rel).sort();
-  assert.deepEqual(envCallers, ['env-calls.ts', 'env-model.ts']);
+  assert.deepEqual(envCallers, ['corpus.ts', 'env-calls.ts', 'env-model.ts']);
 
   for (const file of FILES.filter((f) => envCallers.includes(rel(f)))) {
     assert.ok(!/policy\.call</.test(read(file)), `${rel(file)} reaches both the policy and the environment`);
@@ -72,8 +75,11 @@ test('the environment model is frozen in one place and read nowhere else', () =>
   const source = read(path.join(ARTIST, 'env-model.ts'));
   assert.match(source, /export const ENV_MODEL = 'gpt-4o-2024-11-20'/);
   assert.match(source, /export const ENV_TEMPERATURE = 0/);
-  const others = FILES.filter((f) => rel(f) !== 'env-model.ts' && /ENV_MODEL/.test(read(f)));
-  assert.deepEqual(others.map(rel), [], 'nothing else names the environment model');
+  // Named, not chosen: `corpus.ts` stamps ENV_MODEL onto every reading and into the protocol hash so
+  // a reading can say which eyes made it. What matters is that no second file *decides* what the
+  // model is, so the check is that nothing else assigns it.
+  const others = FILES.filter((f) => rel(f) !== 'env-model.ts' && /ENV_MODEL\s*=/.test(read(f)));
+  assert.deepEqual(others.map(rel), [], 'nothing else sets the environment model');
 });
 
 test('the judge shares no door with the artist or its environment', () => {

@@ -1,0 +1,21 @@
+{
+  "id": "cma-102578",
+  "source": {
+    "corpus": "cma",
+    "objectId": "102578",
+    "url": "https://clevelandart.org/art/1921.1239",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/102578",
+    "title": "Portrait of Dora Wheeler",
+    "creator": "William Merritt Chase (American, 1849–1916)",
+    "date": "1882–83",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1921.1239/1921.1239_web.jpg"
+  },
+  "image": {
+    "path": "images/e516121c316dcc420843fbae9710f772903088c5a1977b65bdd3a432bc0f7d54.jpg",
+    "hash": "e516121c316dcc420843fbae9710f772903088c5a1977b65bdd3a432bc0f7d54",
+    "mime": "image/jpeg",
+    "bytes": 179089
+  },
+  "fetchedAt": "2026-08-31T05:49:12.974Z"
+}

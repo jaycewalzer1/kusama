@@ -1,0 +1,21 @@
+{
+  "id": "cma-124089",
+  "source": {
+    "corpus": "cma",
+    "objectId": "124089",
+    "url": "https://clevelandart.org/art/1944.90",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/124089",
+    "title": "Portrait of a Woman",
+    "creator": "Rembrandt van Rijn (Dutch, 1606–1669)",
+    "date": "1635 or earlier",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1944.90/1944.90_web.jpg"
+  },
+  "image": {
+    "path": "images/9c74d0d53702faa4abefb99380fd3dedb69384b60ecc5d4d3b80d3ad1b17adef.jpg",
+    "hash": "9c74d0d53702faa4abefb99380fd3dedb69384b60ecc5d4d3b80d3ad1b17adef",
+    "mime": "image/jpeg",
+    "bytes": 135321
+  },
+  "fetchedAt": "2026-08-31T05:49:23.148Z"
+}

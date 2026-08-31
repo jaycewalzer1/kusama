@@ -1,0 +1,37 @@
+{
+  "id": "cma-149112",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Flattens a cityscape into geometric planes and blocks.",
+      "Uses sharp contrasts of light and shadow to create depth."
+    ],
+    "refuses": [
+      "Include any organic or curved forms.",
+      "Depict human figures or natural elements."
+    ],
+    "tension": "The balance between abstraction and the recognizable urban environment remains unresolved, as the forms are simplified but still suggest buildings and streets.",
+    "materialFacts": [
+      "The surface is divided into angular, flat planes of color.",
+      "The palette is dominated by muted tones of beige, pink, black, and brown.",
+      "Edges are crisp and clean, with no visible brushstrokes.",
+      "The composition is layered, with overlapping shapes creating a sense of depth."
+    ],
+    "structuralMoves": [
+      "The perspective is steeply tilted, looking down from above.",
+      "The space is divided into large, irregular geometric sections.",
+      "Repetition of rectangular forms suggests buildings and windows.",
+      "Cropping excludes the sky, focusing entirely on the urban geometry."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "From the Shelton, Looking West",
+    "artist": "Georgia O'Keeffe",
+    "year": "1928"
+  },
+  "claimedCanonical": true,
+  "canonical": false,
+  "misattributed": true
+}

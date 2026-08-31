@@ -1,0 +1,21 @@
+{
+  "id": "cma-141639",
+  "source": {
+    "corpus": "cma",
+    "objectId": "141639",
+    "url": "https://clevelandart.org/art/1965.233",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/141639",
+    "title": "Twilight in the Wilderness",
+    "creator": "Frederic Edwin Church (American, 1826–1900)",
+    "date": "1860",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1965.233/1965.233_web.jpg"
+  },
+  "image": {
+    "path": "images/14db1b27f27609fd69f458bfc1c1e683286d01158fd0e67e1f9b7b92cb8af07a.jpg",
+    "hash": "14db1b27f27609fd69f458bfc1c1e683286d01158fd0e67e1f9b7b92cb8af07a",
+    "mime": "image/jpeg",
+    "bytes": 245118
+  },
+  "fetchedAt": "2026-08-31T05:49:14.290Z"
+}

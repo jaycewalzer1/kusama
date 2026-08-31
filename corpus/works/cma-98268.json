@@ -1,0 +1,21 @@
+{
+  "id": "cma-98268",
+  "source": {
+    "corpus": "cma",
+    "objectId": "98268",
+    "url": "https://clevelandart.org/art/1917.946",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/98268",
+    "title": "George Washington at Princeton",
+    "creator": "Charles Willson Peale (American, born The Thirteen Colonies, 1741–1827)",
+    "date": "c. 1779",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1917.946/1917.946_web.jpg"
+  },
+  "image": {
+    "path": "images/12be53ba7542483b5d0562d745ebac2afb7e995bd56530e2ef7be09acfc48a4c.jpg",
+    "hash": "12be53ba7542483b5d0562d745ebac2afb7e995bd56530e2ef7be09acfc48a4c",
+    "mime": "image/jpeg",
+    "bytes": 467301
+  },
+  "fetchedAt": "2026-08-31T05:49:20.555Z"
+}

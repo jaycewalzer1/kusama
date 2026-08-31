@@ -1,0 +1,33 @@
+{
+  "id": "cma-93014",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a sense of depth by layering mountains, trees, and clouds.",
+      "Uses light and shadow to emphasize the drama of the landscape."
+    ],
+    "refuses": [
+      "Flattening the scene into a single plane.",
+      "Using abstract or geometric forms."
+    ],
+    "tension": "The interplay between the dark, looming mountain and the vibrant, sunlit foreground creates a dynamic contrast.",
+    "materialFacts": [
+      "The surface shows detailed brushwork in the trees and foliage.",
+      "The sky is painted with soft, blended strokes to depict clouds and light."
+    ],
+    "structuralMoves": [
+      "The composition is divided into foreground, middle ground, and background.",
+      "The central peak is placed slightly off-center to draw the eye upward."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "A View of the Mountain Pass Called the Notch of the White Mountains",
+    "artist": "Thomas Cole",
+    "year": "1839"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

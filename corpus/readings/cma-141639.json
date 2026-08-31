@@ -1,0 +1,45 @@
+{
+  "id": "cma-141639",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a dramatic contrast between the fiery red clouds and the serene landscape below.",
+      "Draws the viewer's eye to the glowing horizon with a gradient of warm yellows and oranges.",
+      "Uses intricate details in the trees and foliage to ground the scene in realism.",
+      "Conveys depth through the layering of mountains and the reflective water surface.",
+      "Balances the composition with the placement of trees on either side of the frame."
+    ],
+    "refuses": [
+      "Flatten the sky into a uniform color.",
+      "Make the landscape abstract or undefined.",
+      "Use muted or monochromatic tones.",
+      "Eliminate the reflective quality of the water.",
+      "Omit the sense of depth in the background."
+    ],
+    "tension": "The intense, almost otherworldly red sky contrasts sharply with the calm, naturalistic landscape below, creating a sense of unease and awe.",
+    "materialFacts": [
+      "The sky is painted with bold, sweeping strokes of red and orange, blending into softer yellows near the horizon.",
+      "The water reflects the colors of the sky, adding a mirror-like quality to the scene.",
+      "The trees and foliage are rendered with fine, detailed brushwork, emphasizing texture.",
+      "The mountains in the background are softly blended, creating a sense of atmospheric perspective.",
+      "The overall surface is smooth, with no visible texture from the paint application."
+    ],
+    "structuralMoves": [
+      "The horizon line is placed low, emphasizing the dramatic expanse of the sky.",
+      "The composition is divided into thirds, with the sky dominating the upper two-thirds.",
+      "The trees on the left and right frame the scene, creating a natural vignette.",
+      "The reflective water leads the viewer's eye toward the distant mountains.",
+      "The glowing horizon acts as a focal point, drawing attention to the center of the image."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "Twilight in the Wilderness",
+    "artist": "Frederic Edwin Church",
+    "year": "1860"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

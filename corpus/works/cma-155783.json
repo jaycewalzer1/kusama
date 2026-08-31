@@ -1,0 +1,21 @@
+{
+  "id": "cma-155783",
+  "source": {
+    "corpus": "cma",
+    "objectId": "155783",
+    "url": "https://clevelandart.org/art/1991.110",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/155783",
+    "title": "The Power of Music",
+    "creator": "William Sidney Mount (American, 1807–1868)",
+    "date": "1847",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1991.110/1991.110_web.jpg"
+  },
+  "image": {
+    "path": "images/4b044f581f99024e95f3b430a4ea0f028f9b5040bda2b32373299dec16e254c9.jpg",
+    "hash": "4b044f581f99024e95f3b430a4ea0f028f9b5040bda2b32373299dec16e254c9",
+    "mime": "image/jpeg",
+    "bytes": 210965
+  },
+  "fetchedAt": "2026-08-31T05:49:23.718Z"
+}

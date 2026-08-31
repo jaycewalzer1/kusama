@@ -1,0 +1,33 @@
+{
+  "id": "cma-125249",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a sense of movement through swirling, textured brushstrokes.",
+      "Uses vibrant, contrasting colors to energize the scene."
+    ],
+    "refuses": [
+      "To use smooth, blended transitions between colors.",
+      "To depict the scene with photographic realism."
+    ],
+    "tension": "The interplay between the organic, twisting forms of the trees and the rigid, geometric shapes of the buildings and stonework.",
+    "materialFacts": [
+      "Thick, visible brushstrokes create texture and depth.",
+      "The paint layers are uneven, emphasizing the tactile quality of the surface."
+    ],
+    "structuralMoves": [
+      "The composition is dominated by the large, twisting tree trunks in the foreground.",
+      "The background buildings and figures are scaled smaller to create depth."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "The Road Menders",
+    "artist": "Vincent van Gogh",
+    "year": "1889"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

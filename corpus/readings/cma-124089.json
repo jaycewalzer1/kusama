@@ -1,0 +1,33 @@
+{
+  "id": "cma-124089",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Draws attention to the intricate lace collar with fine detailing.",
+      "Uses soft lighting to highlight the subject's face and expression."
+    ],
+    "refuses": [
+      "Include a detailed background or setting.",
+      "Use bold or saturated colors."
+    ],
+    "tension": "The contrast between the dark, undefined background and the luminous, detailed figure creates a focus on the subject while leaving the surroundings ambiguous.",
+    "materialFacts": [
+      "The lace collar is rendered with delicate, precise brushstrokes.",
+      "The background is a dark, almost uniform tone with subtle texture."
+    ],
+    "structuralMoves": [
+      "The composition is centered on the subject's face and upper body.",
+      "The oval framing creates a sense of intimacy and focus."
+    ]
+  },
+  "leakage": {
+    "recognised": false,
+    "work": null,
+    "artist": null,
+    "year": null
+  },
+  "claimedCanonical": false,
+  "canonical": false,
+  "misattributed": false
+}

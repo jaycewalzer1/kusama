@@ -1,0 +1,37 @@
+{
+  "id": "cma-140408",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Depicts two birds of prey in a moment of intense focus, with their wings spread and talons gripping their prey.",
+      "Uses detailed textures to emphasize the feathers, the prey's fur, and the rocky terrain."
+    ],
+    "refuses": [
+      "Avoids abstraction or stylization, staying firmly in naturalistic representation.",
+      "Does not include any human presence or artificial elements."
+    ],
+    "tension": "The interaction between the two birds and their prey creates a dynamic moment of life and death, heightened by their intense gazes and the detailed rendering of the prey.",
+    "materialFacts": [
+      "The surface is painted with fine, precise brushstrokes to create realistic textures.",
+      "The background is softly blended, with a pale blue sky and distant hills.",
+      "The prey is rendered with as much detail as the birds, emphasizing its role in the scene."
+    ],
+    "structuralMoves": [
+      "The composition places the birds centrally, with their wings creating diagonal lines that draw the eye.",
+      "The prey is positioned at the bottom center, anchoring the scene.",
+      "The background is kept minimal to focus attention on the foreground action.",
+      "The birds' heads are turned toward the viewer, creating a sense of engagement.",
+      "The light source highlights the birds' feathers and the prey, adding depth."
+    ]
+  },
+  "leakage": {
+    "recognised": false,
+    "work": null,
+    "artist": null,
+    "year": null
+  },
+  "claimedCanonical": false,
+  "canonical": false,
+  "misattributed": false
+}

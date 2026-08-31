@@ -1,0 +1,21 @@
+{
+  "id": "cma-140161",
+  "source": {
+    "corpus": "cma",
+    "objectId": "140161",
+    "url": "https://clevelandart.org/art/1964.160",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/140161",
+    "title": "A Woman's Work",
+    "creator": "John Sloan (American, 1871–1951)",
+    "date": "1912",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1964.160/1964.160_web.jpg"
+  },
+  "image": {
+    "path": "images/ac36b7b670acfb0a94edf2b6f2894be14632cceb7628969a19fd5c6bce5fb7d6.jpg",
+    "hash": "ac36b7b670acfb0a94edf2b6f2894be14632cceb7628969a19fd5c6bce5fb7d6",
+    "mime": "image/jpeg",
+    "bytes": 265808
+  },
+  "fetchedAt": "2026-08-31T05:49:15.740Z"
+}

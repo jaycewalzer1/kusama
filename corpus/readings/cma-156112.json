@@ -1,0 +1,33 @@
+{
+  "id": "cma-156112",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Combines organic and geometric forms to create a sense of elegance and movement.",
+      "Uses a combination of wood and metal to contrast warm and cool tones."
+    ],
+    "refuses": [
+      "Flattening the forms into a purely two-dimensional design.",
+      "Using a single material for the entire structure."
+    ],
+    "tension": "The interplay between the organic curves of the wood and the sharp, metallic accents creates a dynamic balance.",
+    "materialFacts": [
+      "The surface features polished wood with intricate carvings.",
+      "Metallic elements, likely brass, are used for decorative and functional purposes."
+    ],
+    "structuralMoves": [
+      "The legs curve outward and meet at the base, creating a stable yet dynamic structure.",
+      "The upper section is divided into compartments for holding objects, emphasizing functionality."
+    ]
+  },
+  "leakage": {
+    "recognised": false,
+    "work": null,
+    "artist": null,
+    "year": null
+  },
+  "claimedCanonical": false,
+  "canonical": false,
+  "misattributed": false
+}

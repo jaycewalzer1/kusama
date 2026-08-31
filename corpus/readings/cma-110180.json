@@ -1,0 +1,37 @@
+{
+  "id": "cma-110180",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a sense of foreboding through muted, dark tones.",
+      "Uses blurred edges to evoke a dreamlike or ghostly quality."
+    ],
+    "refuses": [
+      "Provide clear, sharp details of the figure or horse.",
+      "Use vibrant or contrasting colors to create energy."
+    ],
+    "tension": "The skeletal rider and the ominous snake coexist in a dim, undefined space, leaving their relationship and purpose ambiguous.",
+    "materialFacts": [
+      "The surface is dominated by dark, earthy tones with minimal highlights.",
+      "The brushstrokes are soft and diffuse, blending forms into the background.",
+      "The sky is textured with layered clouds, adding depth.",
+      "The snake in the foreground is faintly visible, almost merging with the ground."
+    ],
+    "structuralMoves": [
+      "The composition is horizontally divided into sky and land, with the rider and horse bridging the two.",
+      "The curved fence creates a sense of enclosure and movement.",
+      "The skeletal figure is placed off-center, drawing attention but not dominating.",
+      "The snake is positioned low and near the edge, subtly anchoring the foreground."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "Death on a Pale Horse",
+    "artist": "Albert Pinkham Ryder",
+    "year": "c. 1910"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

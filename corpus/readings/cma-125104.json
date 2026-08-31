@@ -1,0 +1,33 @@
+{
+  "id": "cma-125104",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a rhythm through repeated figures in similar poses.",
+      "Uses muted tones with occasional bright accents to guide the eye."
+    ],
+    "refuses": [
+      "To fully detail the background, leaving it abstract and undefined.",
+      "To use sharp outlines, opting for soft, blended edges instead."
+    ],
+    "tension": "The figures are caught in a moment of preparation, their poses dynamic yet introspective, suggesting both movement and stillness.",
+    "materialFacts": [
+      "The surface shows soft, blended brushstrokes with a matte texture.",
+      "The figures are outlined faintly, with emphasis on their gestures and postures."
+    ],
+    "structuralMoves": [
+      "The composition is horizontal, emphasizing the sequence of figures.",
+      "The figures are evenly spaced, creating a sense of balance and rhythm."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "Dancers, Pink and Green",
+    "artist": "Edgar Degas",
+    "year": "1894"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

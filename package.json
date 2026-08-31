@@ -21,7 +21,8 @@
     "ui": "npm run build && node dist/studio/ui.js",
     "check": "npm run build && node dist/studio/check.js",
     "artist": "npm run build && node dist/studio/artist.js",
-    "fonts": "node renderer/assets/fonts/fetch.mjs"
+    "fonts": "node renderer/assets/fonts/fetch.mjs",
+    "corpus": "npm run build && node dist/studio/corpus.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.65.0",

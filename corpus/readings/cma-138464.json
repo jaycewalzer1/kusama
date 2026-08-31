@@ -1,0 +1,33 @@
+{
+  "id": "cma-138464",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a sense of intimacy through the intertwined figures and their relaxed postures.",
+      "Balances warm and cool tones to guide the viewer's eye across the composition."
+    ],
+    "refuses": [
+      "Overcrowding the scene with unnecessary elements.",
+      "Using abstract or non-representational forms."
+    ],
+    "tension": "The contrast between the serene intimacy of the figures and the dramatic, almost theatrical backdrop creates a dynamic interplay.",
+    "materialFacts": [
+      "The surface is smooth and polished, with meticulous attention to detail in the rendering of skin and fabric.",
+      "The drapery is painted with rich, deep folds that suggest weight and texture."
+    ],
+    "structuralMoves": [
+      "The figures are centrally placed, dominating the composition and drawing immediate focus.",
+      "The background is framed by a window, creating depth and a sense of place."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "Cupid and Psyche",
+    "artist": "Jacques-Louis David",
+    "year": "1817"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

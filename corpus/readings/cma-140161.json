@@ -1,0 +1,45 @@
+{
+  "id": "cma-140161",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a sense of intimacy by focusing on a domestic scene.",
+      "Uses warm and cool tones to contrast light and shadow.",
+      "Draws attention to the figure through placement and color.",
+      "Conveys texture in the fabric of the hanging laundry.",
+      "Establishes depth through overlapping architectural elements."
+    ],
+    "refuses": [
+      "Depicting a wide, open landscape.",
+      "Using abstract or non-representational forms.",
+      "Employing bright, saturated colors throughout.",
+      "Including multiple figures or a crowded composition.",
+      "Focusing on a grand or monumental subject."
+    ],
+    "tension": "The balance between the mundane activity of hanging laundry and the dramatic interplay of light and shadow creates a quiet yet dynamic moment.",
+    "materialFacts": [
+      "The surface shows visible brushstrokes, especially in the fabric and brick textures.",
+      "The paint application is smooth in the sky but more textured in the architectural details.",
+      "The colors are muted, with a focus on earthy tones and soft whites.",
+      "The composition is layered, with the laundry in the foreground and buildings receding into the background.",
+      "The light source is directional, casting strong shadows on the walls and laundry."
+    ],
+    "structuralMoves": [
+      "The figure is placed off-center, drawing the eye naturally to her activity.",
+      "The laundry lines create diagonal movement across the composition.",
+      "The buildings frame the scene, creating a sense of enclosure.",
+      "The fire escape ladder adds a vertical element that contrasts with the horizontal lines of the laundry.",
+      "The window in the background provides a secondary focal point, adding depth."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "A Woman's Work",
+    "artist": "John Sloan",
+    "year": "1912"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

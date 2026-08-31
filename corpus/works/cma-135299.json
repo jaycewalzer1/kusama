@@ -1,0 +1,21 @@
+{
+  "id": "cma-135299",
+  "source": {
+    "corpus": "cma",
+    "objectId": "135299",
+    "url": "https://clevelandart.org/art/1958.31",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/135299",
+    "title": "Adeline Ravoux",
+    "creator": "Vincent van Gogh (Dutch, 1853–1890)",
+    "date": "1890",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1958.31/1958.31_web.jpg"
+  },
+  "image": {
+    "path": "images/110aa4e5a76ae0ddcc6d949285ad375021f4006b8919fe516fe605602a328bcd.jpg",
+    "hash": "110aa4e5a76ae0ddcc6d949285ad375021f4006b8919fe516fe605602a328bcd",
+    "mime": "image/jpeg",
+    "bytes": 441051
+  },
+  "fetchedAt": "2026-08-31T05:49:14.810Z"
+}

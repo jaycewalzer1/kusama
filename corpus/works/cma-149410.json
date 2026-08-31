@@ -1,0 +1,21 @@
+{
+  "id": "cma-149410",
+  "source": {
+    "corpus": "cma",
+    "objectId": "149410",
+    "url": "https://clevelandart.org/art/1978.63",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/149410",
+    "title": "In the Waves (Dans les Vagues)",
+    "creator": "Paul Gauguin (French, 1848–1903)",
+    "date": "1889",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1978.63/1978.63_web.jpg"
+  },
+  "image": {
+    "path": "images/7657cab5166c48ad5ad1bbeae52f7f0f627533949fa0d543b4fd249fb58aa0c9.jpg",
+    "hash": "7657cab5166c48ad5ad1bbeae52f7f0f627533949fa0d543b4fd249fb58aa0c9",
+    "mime": "image/jpeg",
+    "bytes": 267252
+  },
+  "fetchedAt": "2026-08-31T05:49:21.597Z"
+}

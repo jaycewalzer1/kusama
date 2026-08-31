@@ -1,0 +1,33 @@
+{
+  "id": "cma-97155",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Presents two figures in formal, elaborate attire, emphasizing their wealth and status.",
+      "Uses a muted, neutral background to focus attention on the figures and their clothing."
+    ],
+    "refuses": [
+      "Depicting any dynamic or casual movement.",
+      "Including a detailed or elaborate background setting."
+    ],
+    "tension": "The figures are posed formally and close together, yet their expressions and body language suggest a reserved emotional connection.",
+    "materialFacts": [
+      "The surface shows fine detailing in the textures of the clothing, especially the embroidery and lace.",
+      "The figures are rendered with smooth, blended brushstrokes, creating a polished appearance."
+    ],
+    "structuralMoves": [
+      "The composition is symmetrically balanced, with the two figures occupying equal visual weight.",
+      "The placement of hands and accessories draws attention to their gestures and status symbols."
+    ]
+  },
+  "leakage": {
+    "recognised": false,
+    "work": null,
+    "artist": null,
+    "year": null
+  },
+  "claimedCanonical": false,
+  "canonical": false,
+  "misattributed": false
+}

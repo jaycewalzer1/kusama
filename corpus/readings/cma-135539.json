@@ -1,0 +1,33 @@
+{
+  "id": "cma-135539",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a sense of solemnity through the figure's posture and expression.",
+      "Emphasizes texture and weight through the detailed folds of the robe."
+    ],
+    "refuses": [
+      "Include any background details or narrative context.",
+      "Depict movement or dynamic action."
+    ],
+    "tension": "The figure's gaze and clasped hands suggest an internal focus or contemplation, but the reason for this remains ambiguous.",
+    "materialFacts": [
+      "The surface appears to be carved from a pale, smooth material, likely stone or ivory.",
+      "The folds of the robe are deeply incised, creating a sense of depth and weight."
+    ],
+    "structuralMoves": [
+      "The figure is centrally placed, standing upright with a vertical emphasis.",
+      "The composition avoids any extraneous elements, focusing entirely on the figure."
+    ]
+  },
+  "leakage": {
+    "recognised": false,
+    "work": null,
+    "artist": null,
+    "year": null
+  },
+  "claimedCanonical": false,
+  "canonical": false,
+  "misattributed": false
+}

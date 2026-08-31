@@ -1,0 +1,36 @@
+{
+  "id": "cma-160885",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Draws attention to the subject's confident posture and direct gaze.",
+      "Uses sharp contrasts between light and dark to emphasize the figure's form."
+    ],
+    "refuses": [
+      "Include any background details beyond a neutral tone.",
+      "Depict any setting or narrative context."
+    ],
+    "tension": "The interplay between the subject's formal attire and his relaxed, self-assured expression creates a dynamic contrast.",
+    "materialFacts": [
+      "The surface shows smooth, precise brushwork, especially in the rendering of the fabric and lace.",
+      "The background is a muted, gradient tone that contrasts with the dark clothing.",
+      "The white ruff collar is painted with fine detail, standing out against the dark tones."
+    ],
+    "structuralMoves": [
+      "The figure is placed centrally, dominating the composition.",
+      "The scale of the ruff collar is exaggerated to draw attention to the face.",
+      "The hands are positioned to frame the torso, adding balance.",
+      "The cropping avoids any extraneous elements, focusing solely on the figure."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "Portrait of a Man in a Large Black Hat",
+    "artist": "Frans Hals",
+    "year": "1634"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

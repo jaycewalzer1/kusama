@@ -1,0 +1,47 @@
+{
+  "id": "cma-131819",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Draws attention to the rich textures of the fabric through intricate detailing and highlights.",
+      "Creates a sense of hierarchy by positioning the adult figure prominently and the child lower.",
+      "Uses a dark background to emphasize the figures and their clothing.",
+      "Conveys a sense of intimacy through the physical connection between the figures.",
+      "Balances the composition with the interplay of red and blue tones."
+    ],
+    "refuses": [
+      "Flattening the figures into the background.",
+      "Using abstract or non-representational forms.",
+      "Avoiding the depiction of facial expressions.",
+      "Minimizing the importance of clothing details.",
+      "Creating a chaotic or unbalanced composition."
+    ],
+    "tension": "The contrast between the opulence of the clothing and the subdued, intimate interaction between the figures creates a dynamic interplay.",
+    "materialFacts": [
+      "The surface shows fine brushwork, especially in the rendering of the fabric patterns.",
+      "The background is dark and plain, with subtle tonal variations.",
+      "The figures are painted with soft, blended transitions in the skin tones.",
+      "The clothing features intricate embroidery and folds, emphasizing texture.",
+      "The light source is soft, creating gentle highlights and shadows.",
+      "The painting is vertically oriented, focusing on the standing figure."
+    ],
+    "structuralMoves": [
+      "The adult figure is placed centrally and vertically, dominating the composition.",
+      "The child is positioned lower and to the left, creating a diagonal interaction.",
+      "The dark background contrasts sharply with the bright clothing.",
+      "The red of the adult's dress is balanced by the blue of the child's outfit.",
+      "The figures are cropped at the feet, focusing attention on their upper bodies.",
+      "The composition uses a triangular arrangement to guide the viewer's eye."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "Marchesa Elena Grimaldi Cattaneo",
+    "artist": "Anthony van Dyck",
+    "year": "1623"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

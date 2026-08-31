@@ -1,0 +1,21 @@
+{
+  "id": "cma-143602",
+  "source": {
+    "corpus": "cma",
+    "objectId": "143602",
+    "url": "https://clevelandart.org/art/1967.63",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/143602",
+    "title": "Low Waterfall in a Wooded Landscape with a Dead Beech Tree",
+    "creator": "Jacob van Ruisdael (Dutch, 1628/29–1682)",
+    "date": "c. 1660–70",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1967.63/1967.63_web.jpg"
+  },
+  "image": {
+    "path": "images/ac99178598dd06d845bb181a377aeb5299dae95222991cb82e355b46d42bb854.jpg",
+    "hash": "ac99178598dd06d845bb181a377aeb5299dae95222991cb82e355b46d42bb854",
+    "mime": "image/jpeg",
+    "bytes": 708964
+  },
+  "fetchedAt": "2026-08-31T05:49:24.832Z"
+}

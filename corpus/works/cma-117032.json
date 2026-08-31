@@ -1,0 +1,21 @@
+{
+  "id": "cma-117032",
+  "source": {
+    "corpus": "cma",
+    "objectId": "117032",
+    "url": "https://clevelandart.org/art/1937.577",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/117032",
+    "title": "The Sacrifice of Isaac",
+    "creator": "Andrea del Sarto (Italian, 1486–1530)",
+    "date": "c. 1527",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1937.577/1937.577_web.jpg"
+  },
+  "image": {
+    "path": "images/0761a2b91cf2989818ae6328893d19fdc38c5b45801eba264b9e4a12b256a49d.jpg",
+    "hash": "0761a2b91cf2989818ae6328893d19fdc38c5b45801eba264b9e4a12b256a49d",
+    "mime": "image/jpeg",
+    "bytes": 296747
+  },
+  "fetchedAt": "2026-08-31T05:49:18.600Z"
+}

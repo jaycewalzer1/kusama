@@ -1,0 +1,33 @@
+{
+  "id": "cma-117032",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a dramatic tension through the interaction of figures and their gestures.",
+      "Uses vibrant, contrasting colors to draw attention to the central figures."
+    ],
+    "refuses": [
+      "To fully integrate the background with the foreground, leaving a sense of separation.",
+      "To use muted tones, opting instead for bold and saturated hues."
+    ],
+    "tension": "The moment of decision and intervention is frozen, with the raised knife and the angel's interruption creating a charged pause.",
+    "materialFacts": [
+      "The surface shows layered paint with visible brushstrokes, especially in the drapery and background.",
+      "The figures are rendered with a focus on anatomical detail, emphasizing musculature and expression."
+    ],
+    "structuralMoves": [
+      "The composition centers on the interaction between the two main figures, with the angel breaking into the scene from above.",
+      "The background is divided into distinct planes, with a cityscape and natural elements receding into the distance."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "The Sacrifice of Isaac",
+    "artist": "Andrea del Sarto",
+    "year": "1527"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

@@ -1,0 +1,45 @@
+{
+  "id": "cma-136510",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a shimmering effect through layered, semi-transparent brushstrokes.",
+      "Blurs the boundary between water and reflection, merging surface and depth.",
+      "Uses a limited palette of greens, purples, and whites to evoke a tranquil mood.",
+      "Suggests movement with soft, swirling marks.",
+      "Draws the eye to clusters of light-colored shapes that resemble floating objects."
+    ],
+    "refuses": [
+      "Define clear, sharp edges for any object.",
+      "Provide a distinct horizon line or spatial depth.",
+      "Use bold, contrasting colors to create drama.",
+      "Include any human or animal figures.",
+      "Offer a clear narrative or focal point."
+    ],
+    "tension": "The interplay between abstraction and representation leaves the viewer questioning whether they are looking at water, reflections, or an imagined surface.",
+    "materialFacts": [
+      "The surface is built with layered, visible brushstrokes.",
+      "Colors blend softly into one another, avoiding hard separations.",
+      "The paint application varies in density, with some areas appearing more opaque.",
+      "The ground is obscured by the dense layering of paint.",
+      "The composition is dominated by horizontal sweeps and clusters of circular forms."
+    ],
+    "structuralMoves": [
+      "The composition is divided horizontally, with the upper area lighter and the lower area darker.",
+      "Circular, floating shapes are repeated across the surface, creating rhythm.",
+      "The edges of the canvas are left open, suggesting continuation beyond the frame.",
+      "The scale of the shapes varies slightly, adding subtle depth.",
+      "The overall layout avoids symmetry, creating a natural, organic feel."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "Water Lilies",
+    "artist": "Claude Monet",
+    "year": "1916"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

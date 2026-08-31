@@ -1,0 +1,33 @@
+{
+  "id": "cma-135382",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Frames the scene through a window, creating a sense of separation.",
+      "Uses a bright red garment to draw attention to the figure outside."
+    ],
+    "refuses": [
+      "Depicting the figure in full detail or clarity.",
+      "Allowing the interior space to dominate the composition."
+    ],
+    "tension": "The figure outside is partially obscured by the window and curtains, creating a barrier that both connects and separates the viewer from the subject.",
+    "materialFacts": [
+      "The paint is applied with visible, textured brushstrokes.",
+      "The curtains are rendered with soft, semi-transparent strokes to suggest their lightness."
+    ],
+    "structuralMoves": [
+      "The window frame divides the composition into four quadrants.",
+      "The figure is placed slightly off-center, balancing the composition with the surrounding elements."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "The Red Kerchief",
+    "artist": "Claude Monet",
+    "year": "1873"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

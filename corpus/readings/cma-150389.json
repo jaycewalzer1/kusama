@@ -1,0 +1,37 @@
+{
+  "id": "cma-150389",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a sense of depth through architectural elements and atmospheric perspective.",
+      "Uses vibrant, contrasting colors to draw attention to the central figures."
+    ],
+    "refuses": [
+      "Flattening the space into a single plane.",
+      "Using abstract or non-representational forms."
+    ],
+    "tension": "The interaction between the serene expressions of the figures and the dynamic gestures of the children creates a balance between calm and movement.",
+    "materialFacts": [
+      "The surface shows smooth, blended brushstrokes, especially in the skin tones and drapery.",
+      "The background architecture is rendered with precise, linear details.",
+      "The sky is painted with soft gradients of blue and white clouds."
+    ],
+    "structuralMoves": [
+      "The composition is centered around the seated figure in blue, creating a focal point.",
+      "The figures are arranged in a triangular formation, leading the eye upward.",
+      "The steps and architectural elements frame the scene, adding structure.",
+      "The placement of the basket and golden objects in the foreground anchors the composition.",
+      "The use of light and shadow emphasizes the three-dimensionality of the forms."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "The Holy Family on the Steps",
+    "artist": "Nicolas Poussin",
+    "year": "1648"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

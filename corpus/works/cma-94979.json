@@ -1,0 +1,21 @@
+{
+  "id": "cma-94979",
+  "source": {
+    "corpus": "cma",
+    "objectId": "94979",
+    "url": "https://clevelandart.org/art/1915.534",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/94979",
+    "title": "Nathaniel Hurd",
+    "creator": "John Singleton Copley (American, born The Thirteen Colonies, 1738–1815)",
+    "date": "c. 1765",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1915.534/1915.534_web.jpg"
+  },
+  "image": {
+    "path": "images/f370be05796fafde9609f5567e35f16aecbf87537b86a526262694abbce0fa2a.jpg",
+    "hash": "f370be05796fafde9609f5567e35f16aecbf87537b86a526262694abbce0fa2a",
+    "mime": "image/jpeg",
+    "bytes": 405819
+  },
+  "fetchedAt": "2026-08-31T05:49:12.718Z"
+}

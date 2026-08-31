@@ -1,0 +1,34 @@
+{
+  "id": "cma-135214",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a sense of movement through the musician's upward gaze and the angle of the instrument.",
+      "Uses muted, earthy tones to evoke a timeless, subdued atmosphere."
+    ],
+    "refuses": [
+      "To define the background with sharp detail, leaving it impressionistic.",
+      "To use vibrant or saturated colors, keeping the palette restrained."
+    ],
+    "tension": "The figure's upward gaze and the ambiguous expression suggest a moment of emotional intensity, but the lack of facial detail leaves the nature of this emotion unresolved.",
+    "materialFacts": [
+      "The surface is built with loose, visible brushstrokes, especially in the background.",
+      "The figure is outlined with darker tones to separate it from the softer, blurred surroundings."
+    ],
+    "structuralMoves": [
+      "The figure is centrally placed, dominating the composition.",
+      "The background is loosely divided into sky and foliage, framing the figure.",
+      "The instrument is angled diagonally, adding dynamism to the otherwise vertical composition."
+    ]
+  },
+  "leakage": {
+    "recognised": false,
+    "work": null,
+    "artist": null,
+    "year": null
+  },
+  "claimedCanonical": false,
+  "canonical": false,
+  "misattributed": false
+}

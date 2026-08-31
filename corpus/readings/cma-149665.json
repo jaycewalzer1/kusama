@@ -1,0 +1,33 @@
+{
+  "id": "cma-149665",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a dramatic contrast between light and shadow, emphasizing the ruins.",
+      "Uses the flight of birds to add movement and a sense of foreboding."
+    ],
+    "refuses": [
+      "To fully illuminate the ruins, leaving parts in deep shadow.",
+      "To depict the sea in detail, keeping it as a dark, textured backdrop."
+    ],
+    "tension": "The interplay between the decaying ruins and the vibrant light breaking through the clouds creates a sense of both desolation and hope.",
+    "materialFacts": [
+      "The surface shows a textured application of paint to depict the roughness of the ruins.",
+      "The light rays are rendered with soft, diffused strokes, contrasting with the sharp edges of the architecture."
+    ],
+    "structuralMoves": [
+      "The composition is divided into a foreground of ruins and a background of sky and sea.",
+      "The placement of the birds draws the eye upward, emphasizing the verticality of the scene."
+    ]
+  },
+  "leakage": {
+    "recognised": false,
+    "work": null,
+    "artist": null,
+    "year": null
+  },
+  "claimedCanonical": false,
+  "canonical": false,
+  "misattributed": false
+}

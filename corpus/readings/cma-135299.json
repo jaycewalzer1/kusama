@@ -1,0 +1,35 @@
+{
+  "id": "cma-135299",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Uses thick, visible brushstrokes to create texture and movement.",
+      "Contrasts the pale figure against a dark, undefined background."
+    ],
+    "refuses": [
+      "Blending colors smoothly to eliminate brushstroke visibility.",
+      "Providing detailed realism in the facial features or flowers."
+    ],
+    "tension": "The figure's gaze is directed outward, but the surrounding space offers no clear narrative or interaction.",
+    "materialFacts": [
+      "The paint is applied in thick, directional strokes, especially in the hair and clothing.",
+      "The background is dark and loosely painted, with abstracted floral elements.",
+      "The figure's face and clothing are rendered with lighter, cooler tones, contrasting the dark background."
+    ],
+    "structuralMoves": [
+      "The composition places the figure off-center, facing right.",
+      "The flowers are positioned to balance the figure's gaze direction.",
+      "The background is left undefined, emphasizing the figure and flowers."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "Portrait of Adeline Ravoux",
+    "artist": "Vincent van Gogh",
+    "year": "1890"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

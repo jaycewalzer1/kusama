@@ -1,0 +1,21 @@
+{
+  "id": "cma-149768",
+  "source": {
+    "corpus": "cma",
+    "objectId": "149768",
+    "url": "https://clevelandart.org/art/1979.80",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/149768",
+    "title": "Saint John the Baptist in a Landscape",
+    "creator": "Petrus Christus (Netherlandish, c. 1410–1475/76)",
+    "date": "c. 1445",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1979.80/1979.80_web.jpg"
+  },
+  "image": {
+    "path": "images/3ea2e4bc9aa9cadfe3b6dfae1555c088497cd7a555e1bbb0071758280a1b514b.jpg",
+    "hash": "3ea2e4bc9aa9cadfe3b6dfae1555c088497cd7a555e1bbb0071758280a1b514b",
+    "mime": "image/jpeg",
+    "bytes": 65460
+  },
+  "fetchedAt": "2026-08-31T05:49:25.379Z"
+}

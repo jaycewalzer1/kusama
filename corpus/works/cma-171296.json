@@ -1,0 +1,21 @@
+{
+  "id": "cma-171296",
+  "source": {
+    "corpus": "cma",
+    "objectId": "171296",
+    "url": "https://clevelandart.org/art/2014.12",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/171296",
+    "title": "Vale of Kashmir",
+    "creator": "Robert S. Duncanson (American, 1821–1872)",
+    "date": "1867",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/2014.12/2014.12_web.jpg"
+  },
+  "image": {
+    "path": "images/c40c4db7cb70721b5b3e4db333fb9cb740c08dab01d2c7774bb32fdebc509f54.jpg",
+    "hash": "c40c4db7cb70721b5b3e4db333fb9cb740c08dab01d2c7774bb32fdebc509f54",
+    "mime": "image/jpeg",
+    "bytes": 118102
+  },
+  "fetchedAt": "2026-08-31T05:49:27.562Z"
+}

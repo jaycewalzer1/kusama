@@ -1,0 +1,36 @@
+{
+  "id": "cma-137259",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Draws attention to the subject's face with soft lighting and subtle contrast.",
+      "Balances the dark tones of the clothing with the warm hues of the sunset in the background."
+    ],
+    "refuses": [
+      "Overloading the composition with excessive detail.",
+      "Using bright, saturated colors for the entire scene."
+    ],
+    "tension": "The contrast between the somber expression of the subject and the warm, serene background creates an emotional ambiguity.",
+    "materialFacts": [
+      "The surface shows smooth, blended brushstrokes for the skin and face.",
+      "The lace and fabric details are rendered with fine, textured strokes.",
+      "The background transitions from dark greens to warm oranges and pinks, suggesting a sunset."
+    ],
+    "structuralMoves": [
+      "The subject is placed slightly off-center, creating a dynamic composition.",
+      "The figure is cropped at the waist, focusing attention on the upper body and face.",
+      "The bouquet of flowers adds a secondary focal point, balancing the composition.",
+      "The dark clothing contrasts sharply with the lighter skin tones and background."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "Portrait of Jo, the Beautiful Irishwoman",
+    "artist": "Gustave Courbet",
+    "year": "1865"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

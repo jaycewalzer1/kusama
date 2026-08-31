@@ -1,0 +1,21 @@
+{
+  "id": "cma-138359",
+  "source": {
+    "corpus": "cma",
+    "objectId": "138359",
+    "url": "https://clevelandart.org/art/1962.292",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/138359",
+    "title": "Wineglass and a Bowl of Fruit",
+    "creator": "Willem Kalf (Dutch, 1619–1693)",
+    "date": "1663",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1962.292/1962.292_web.jpg"
+  },
+  "image": {
+    "path": "images/2f909ff83699ab851e7fecf8e6a36f64408c2cedc356b99f2ac93c9e752546c1.jpg",
+    "hash": "2f909ff83699ab851e7fecf8e6a36f64408c2cedc356b99f2ac93c9e752546c1",
+    "mime": "image/jpeg",
+    "bytes": 379899
+  },
+  "fetchedAt": "2026-08-31T05:49:20.294Z"
+}

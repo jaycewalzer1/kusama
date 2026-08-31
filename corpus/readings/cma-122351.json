@@ -1,0 +1,35 @@
+{
+  "id": "cma-122351",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Draws the eye to the intense, fiery light at the center, contrasting with the muted tones of the surrounding areas.",
+      "Creates a sense of depth through the layering of smoke, water reflections, and distant structures."
+    ],
+    "refuses": [
+      "To define the figures and architecture with sharp detail, leaving them impressionistic.",
+      "To use a consistent color palette, instead emphasizing the clash of warm and cool tones."
+    ],
+    "tension": "The interplay between the destructive energy of the fire and the calm, reflective surface of the water creates a dynamic yet unresolved contrast.",
+    "materialFacts": [
+      "The surface is dominated by loose, sweeping brushstrokes that blend colors together.",
+      "The paint layers are thin in some areas, allowing the texture of the canvas to show through.",
+      "The reflections in the water are rendered with horizontal strokes, mirroring the fiery sky above."
+    ],
+    "structuralMoves": [
+      "The composition is divided horizontally by the river, with the fire and sky occupying the upper half and the water the lower.",
+      "The bridge acts as a central axis, connecting the foreground to the distant background.",
+      "The crowd on the left and the boats on the right create a balance of activity across the scene."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "The Burning of the Houses of Lords and Commons, October 16, 1834",
+    "artist": "J.M.W. Turner",
+    "year": "1835"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

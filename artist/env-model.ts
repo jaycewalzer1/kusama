@@ -51,14 +51,33 @@ export type EnvCallName =
   | 'transcribe'
   | 'audience'
   | 'description-agrees'
-  | 'audience-agrees';
+  | 'audience-agrees'
+  // The corpus reader. Not part of a trajectory — these run once, offline, when a work is imported —
+  // but they belong to the environment for exactly the reason the four above do: a reading made with
+  // a different model is not comparable with a reading made with this one, and the whole corpus is
+  // supposed to stay comparable with itself for as long as the elements derived from it are in use.
+  | 'read-work'
+  | 'identify-work';
 
 export interface EnvRequest {
   name: EnvCallName;
   system: string;
   text: string;
-  /** base64 PNG. Present for describe and audience, absent for the two text comparisons. */
+  /** base64 image bytes. Present for describe, audience and the corpus reader; absent otherwise. */
   imageBase64?: string;
+  /**
+   * The image's media type. Omitted means PNG, which is what the medium renders and what every call
+   * that predates the corpus sends. It is omitted rather than defaulted to `image/png` on purpose:
+   * `canonicalJson` drops undefined keys, so an absent mime hashes to exactly the key it hashed to
+   * before this field existed and no cache entry in `.cache/artist-env` is invalidated.
+   */
+  imageMime?: string;
+  /**
+   * Completion budget. Omitted means 1024, which is what the four trajectory calls have always used
+   * and must keep using. A structured reading of a painting does not fit in 1024 and truncation here
+   * is reported as "answered without calling the emit tool", which is a lie about the cause.
+   */
+  maxTokens?: number;
   schema: object;
 }
 
@@ -97,6 +116,8 @@ function cacheKey(request: EnvRequest): string {
         system: request.system,
         text: request.text,
         image,
+        imageMime: request.imageMime,
+        maxTokens: request.maxTokens,
         schema: request.schema,
       })
     )
@@ -145,13 +166,14 @@ export async function envModel<T>(request: EnvRequest): Promise<EnvResponse<T>> 
 
   const content: unknown[] = [];
   if (request.imageBase64) {
-    content.push({ type: 'image_url', image_url: { url: `data:image/png;base64,${request.imageBase64}` } });
+    const mime = request.imageMime ?? 'image/png';
+    content.push({ type: 'image_url', image_url: { url: `data:${mime};base64,${request.imageBase64}` } });
   }
   content.push({ type: 'text', text: request.text });
 
   const response = await post({
     model: ENV_MODEL,
-    max_completion_tokens: 1024,
+    max_completion_tokens: request.maxTokens ?? 1024,
     temperature: ENV_TEMPERATURE,
     messages: [
       { role: 'system', content: request.system },

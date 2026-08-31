@@ -1,0 +1,34 @@
+{
+  "id": "cma-136911",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a sense of depth by layering the foreground, middle ground, and background.",
+      "Uses warm light to emphasize the time of day, likely sunset or sunrise."
+    ],
+    "refuses": [
+      "Flattening the perspective into a single plane.",
+      "Using abstract or non-representational forms."
+    ],
+    "tension": "The balance between the detailed architecture of the city and the natural, organic forms of the surrounding landscape.",
+    "materialFacts": [
+      "The surface shows fine, detailed brushwork for the architecture and foliage.",
+      "The sky is rendered with smooth gradients of color, transitioning from warm to cool tones."
+    ],
+    "structuralMoves": [
+      "Places the cityscape centrally, framed by natural elements in the foreground.",
+      "Divides the composition horizontally into thirds: sky, city, and foreground.",
+      "Uses the river as a leading line to guide the viewer's eye through the scene."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "View of Florence from San Miniato",
+    "artist": "Thomas Cole",
+    "year": "1837"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

@@ -1,0 +1,45 @@
+{
+  "id": "cma-147017",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a sense of vastness by contrasting the expansive sky with the detailed foreground.",
+      "Draws attention to the dramatic clouds through their dark, textured forms.",
+      "Balances the composition with a diagonal division between the land and sky.",
+      "Uses subtle color gradations to suggest depth and distance.",
+      "Incorporates human and animal figures to add narrative and scale."
+    ],
+    "refuses": [
+      "Flatten the perspective by ignoring atmospheric depth.",
+      "Use bright, saturated colors to dominate the scene.",
+      "Simplify the sky into a uniform tone.",
+      "Omit the human and animal activity in the foreground.",
+      "Make the land and sky equally detailed."
+    ],
+    "tension": "The contrast between the looming, turbulent sky and the calm, pastoral activity below creates a dynamic interplay of mood.",
+    "materialFacts": [
+      "The surface shows layered brushstrokes, especially in the clouds, creating texture.",
+      "The foreground is detailed with earthy tones and fine marks for vegetation and figures.",
+      "The sky transitions from dark, stormy clouds to lighter, clearer areas.",
+      "The paint application varies, with thicker strokes in the foreground and smoother blending in the background.",
+      "The figures and animals are small but carefully rendered, adding realism."
+    ],
+    "structuralMoves": [
+      "The composition divides diagonally, with the hill on the right and the flat land extending left.",
+      "The horizon line is placed low, emphasizing the sky.",
+      "Figures and animals are clustered in the foreground to anchor the scene.",
+      "The distant buildings and trees are scaled down to enhance depth.",
+      "The light source is diffused, creating soft shadows and highlights."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "Dedham Vale",
+    "artist": "John Constable",
+    "year": "1828"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

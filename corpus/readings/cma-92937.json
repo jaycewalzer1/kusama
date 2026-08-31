@@ -1,0 +1,33 @@
+{
+  "id": "cma-92937",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Captures the intensity of physical struggle through dynamic, overlapping forms.",
+      "Uses dramatic lighting to emphasize the muscular tension and sweat of the fighters."
+    ],
+    "refuses": [
+      "Depicting the scene with calm or static poses.",
+      "Using soft or pastel colors to create a serene atmosphere."
+    ],
+    "tension": "The chaotic energy of the fight contrasts with the focused, almost voyeuristic gaze of the audience.",
+    "materialFacts": [
+      "Thick, expressive brushstrokes define the figures and their movements.",
+      "The background is dark and loosely rendered, pushing the action forward."
+    ],
+    "structuralMoves": [
+      "The composition centers on the fighters, with their bodies forming a diagonal axis.",
+      "The crowd is cropped at the bottom, creating a sense of immediacy and immersion."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "Stag at Sharkey's",
+    "artist": "George Bellows",
+    "year": "1909"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

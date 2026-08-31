@@ -1,0 +1,21 @@
+{
+  "id": "cma-97155",
+  "source": {
+    "corpus": "cma",
+    "objectId": "97155",
+    "url": "https://clevelandart.org/art/1916.793",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/97155",
+    "title": "Portrait of a Couple",
+    "creator": null,
+    "date": "c. 1580–88",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1916.793/1916.793_web.jpg"
+  },
+  "image": {
+    "path": "images/128950342e4580bb28771513754ce54adad3b69bb5c97f89b9656470cf6f52bf.jpg",
+    "hash": "128950342e4580bb28771513754ce54adad3b69bb5c97f89b9656470cf6f52bf",
+    "mime": "image/jpeg",
+    "bytes": 753184
+  },
+  "fetchedAt": "2026-08-31T05:49:22.646Z"
+}

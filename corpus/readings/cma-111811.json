@@ -1,0 +1,33 @@
+{
+  "id": "cma-111811",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a sense of dynamic movement through the figure's pose.",
+      "Establishes a rhythmic balance with the circular frame and radiating flames."
+    ],
+    "refuses": [
+      "Depicting stillness or rigidity.",
+      "Using bright or varied colors."
+    ],
+    "tension": "The figure's poised balance on one leg while encircled by flames creates a dynamic interplay between motion and stability.",
+    "materialFacts": [
+      "The surface is metallic, likely bronze, with a patina that suggests age.",
+      "The circular frame is adorned with evenly spaced flame-like motifs."
+    ],
+    "structuralMoves": [
+      "The figure is centrally placed within the circular frame, emphasizing symmetry.",
+      "The limbs extend outward, breaking the circular boundary and adding dynamism."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "Shiva as Nataraja (Lord of the Dance)",
+    "artist": "Unknown (Chola Dynasty)",
+    "year": "11th century"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

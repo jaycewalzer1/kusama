@@ -1,0 +1,45 @@
+{
+  "id": "cma-135661",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a sense of movement through the dynamic poses of the figures and animals.",
+      "Uses vibrant, warm colors to draw attention to the central figure.",
+      "Balances the composition with a mix of human and animal forms.",
+      "Conveys texture through detailed rendering of fabrics, fur, and skin.",
+      "Establishes depth with a soft, atmospheric background."
+    ],
+    "refuses": [
+      "Flattening the figures into a single plane.",
+      "Using muted or monochromatic colors.",
+      "Avoiding interaction between the characters.",
+      "Simplifying the details of the clothing and animals.",
+      "Leaving the background undefined or abstract."
+    ],
+    "tension": "The central figure's calm and composed demeanor contrasts with the surrounding dynamic and chaotic interactions.",
+    "materialFacts": [
+      "Oil paint is used to create rich textures and vibrant colors.",
+      "The surface shows fine brushwork, especially in the rendering of skin and fabric.",
+      "The background is softly blended, creating a sense of depth.",
+      "The figures are outlined with subtle transitions rather than harsh lines.",
+      "The animals are painted with attention to anatomical detail."
+    ],
+    "structuralMoves": [
+      "The central figure is placed slightly off-center to create balance.",
+      "Diagonal lines formed by the spear and the figures' poses guide the viewer's eye.",
+      "The composition is crowded but organized, with overlapping forms.",
+      "The figures are scaled to emphasize the central character's prominence.",
+      "The background is cropped to focus attention on the foreground action."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "Diana and Her Nymphs",
+    "artist": "Peter Paul Rubens",
+    "year": "1625"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

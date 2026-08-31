@@ -1,0 +1,37 @@
+{
+  "id": "cma-155665",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Uses a black background to make the red and gold figures stand out vividly.",
+      "Creates a sense of depth with overlapping figures and detailed patterns."
+    ],
+    "refuses": [
+      "Depicting figures in a naturalistic, three-dimensional style.",
+      "Using a wide range of colors beyond red, black, and gold."
+    ],
+    "tension": "The central circular motif with radiating lines contrasts with the surrounding narrative scenes, creating a focal point that draws the eye but leaves the relationship between the elements ambiguous.",
+    "materialFacts": [
+      "The surface is painted with a black slip, leaving figures in red-figure technique.",
+      "Details are incised and painted in fine lines, especially in the central chariot and figures.",
+      "The vessel has a wide mouth, two handles, and a pedestal base.",
+      "The decoration includes geometric patterns, such as meanders, framing the narrative scenes."
+    ],
+    "structuralMoves": [
+      "The central circular motif is placed prominently to dominate the composition.",
+      "Figures are arranged in a frieze-like manner around the vessel.",
+      "Handles are integrated into the design but do not disrupt the narrative flow.",
+      "The base and rim are left undecorated to emphasize the painted body."
+    ]
+  },
+  "leakage": {
+    "recognised": false,
+    "work": null,
+    "artist": null,
+    "year": null
+  },
+  "claimedCanonical": false,
+  "canonical": false,
+  "misattributed": false
+}

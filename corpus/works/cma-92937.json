@@ -1,0 +1,21 @@
+{
+  "id": "cma-92937",
+  "source": {
+    "corpus": "cma",
+    "objectId": "92937",
+    "url": "https://clevelandart.org/art/1922.1133",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/92937",
+    "title": "Stag at Sharkey's",
+    "creator": "George Bellows (American, 1882–1925)",
+    "date": "1909",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1922.1133/1922.1133_web.jpg"
+  },
+  "image": {
+    "path": "images/7bac885ab2bae8ba6c79cbbb8a1e5746c64f9bc340e55969028e20408a37a427.jpg",
+    "hash": "7bac885ab2bae8ba6c79cbbb8a1e5746c64f9bc340e55969028e20408a37a427",
+    "mime": "image/jpeg",
+    "bytes": 155757
+  },
+  "fetchedAt": "2026-08-31T05:49:13.212Z"
+}

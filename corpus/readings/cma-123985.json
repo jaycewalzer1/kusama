@@ -1,0 +1,36 @@
+{
+  "id": "cma-123985",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Draws attention to intricate surface patterns through high contrast between polished and matte areas.",
+      "Encourages the viewer to follow the continuous bands of decoration, creating a sense of rhythm."
+    ],
+    "refuses": [
+      "Use bright or varied colors to distract from the metallic surface.",
+      "Include any asymmetry or irregularity in the design."
+    ],
+    "tension": "The balance between the dense, intricate decoration and the smooth, reflective surface creates a dynamic interplay of texture and light.",
+    "materialFacts": [
+      "The surface is metallic, likely bronze or brass, with inlaid silver details.",
+      "The decoration includes bands of calligraphy, figural scenes, and vegetal motifs.",
+      "The bowl has a polished finish that contrasts with the engraved and inlaid areas."
+    ],
+    "structuralMoves": [
+      "The bowl is hemispherical with a flared base for stability.",
+      "The decoration is organized into horizontal bands, each with distinct motifs.",
+      "The scale of the patterns is consistent, ensuring visual harmony.",
+      "The rim is slightly thickened, framing the design and adding structural strength."
+    ]
+  },
+  "leakage": {
+    "recognised": false,
+    "work": null,
+    "artist": null,
+    "year": null
+  },
+  "claimedCanonical": false,
+  "canonical": false,
+  "misattributed": false
+}

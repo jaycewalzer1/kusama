@@ -1,0 +1,33 @@
+{
+  "id": "cma-109245",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a sense of intimacy through the close physical connection between the two figures.",
+      "Uses soft, diffused lighting to emphasize the tenderness of the scene."
+    ],
+    "refuses": [
+      "Include any harsh or angular lines that would disrupt the softness.",
+      "Use bright, saturated colors that would overpower the mood."
+    ],
+    "tension": "The gaze of the child is directed outward, while the adult's gaze is inward and calm, creating a subtle emotional contrast.",
+    "materialFacts": [
+      "The surface is smooth, with fine blending of paint to create soft transitions.",
+      "The background is dark and neutral, pushing the figures forward into focus."
+    ],
+    "structuralMoves": [
+      "The composition is circular, framing the figures tightly and focusing attention on them.",
+      "The figures are placed slightly off-center, creating a natural and dynamic balance."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "Maternal Affection",
+    "artist": "Angelica Kauffman",
+    "year": "1775"
+  },
+  "claimedCanonical": true,
+  "canonical": false,
+  "misattributed": true
+}

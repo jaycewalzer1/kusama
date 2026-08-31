@@ -1,0 +1,21 @@
+{
+  "id": "cma-135539",
+  "source": {
+    "corpus": "cma",
+    "objectId": "135539",
+    "url": "https://clevelandart.org/art/1958.67",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/135539",
+    "title": "Mourner from the Tomb of Philip the Bold, Duke of Burgundy (1364–1404)",
+    "creator": "Claus de Werve (Netherlandish, 1380–1439)",
+    "date": "1404–10",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1958.67/1958.67_web.jpg"
+  },
+  "image": {
+    "path": "images/9e56ec76db0eac4bda354df358ca311e7d6368891678a0ad7544074f10fce5f1.jpg",
+    "hash": "9e56ec76db0eac4bda354df358ca311e7d6368891678a0ad7544074f10fce5f1",
+    "mime": "image/jpeg",
+    "bytes": 140679
+  },
+  "fetchedAt": "2026-08-31T05:49:25.144Z"
+}

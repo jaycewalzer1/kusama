@@ -1,0 +1,37 @@
+{
+  "id": "cma-155783",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a warm, inviting atmosphere through the use of earthy tones and soft lighting.",
+      "Directs attention to the figures through detailed rendering and contrast against the wooden interior."
+    ],
+    "refuses": [
+      "Overloading the scene with excessive objects or clutter.",
+      "Using abstract or non-representational forms."
+    ],
+    "tension": "The interaction between the relaxed, jovial group inside and the solitary figure leaning against the door remains unresolved, suggesting a subtle narrative or emotional divide.",
+    "materialFacts": [
+      "The surface is painted with fine, detailed brushstrokes, especially in the figures and textures of wood and fabric.",
+      "The light source appears to come from the left, casting soft shadows and highlighting the figures.",
+      "The wooden textures of the barn are rendered with visible grain and wear, adding realism."
+    ],
+    "structuralMoves": [
+      "The composition divides the space into an interior and exterior, with the door acting as a boundary.",
+      "Figures are arranged in a triangular grouping inside, creating a sense of unity.",
+      "The solitary figure outside contrasts with the group, emphasizing separation.",
+      "The warm tones of the interior contrast with the cooler tones of the figure outside.",
+      "The placement of tools and objects on the ground adds to the rustic setting."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "The Power of Music",
+    "artist": "William Sidney Mount",
+    "year": "1847"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

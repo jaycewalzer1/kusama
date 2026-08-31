@@ -1,0 +1,47 @@
+{
+  "id": "cma-128391",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a sense of depth through the use of layered spaces, with figures in the foreground, middle ground, and background.",
+      "Balances warm and cool tones, with the warm wood and textiles contrasting against the cool black-and-white tiled floor.",
+      "Draws attention to the central figures through their placement and the use of vibrant colors in their clothing.",
+      "Uses intricate details in textures, such as the wood grain, fabric patterns, and reflective surfaces.",
+      "Conveys a narrative through the interaction of the figures and their activities, such as playing music and observing."
+    ],
+    "refuses": [
+      "Flattening the space into a single plane.",
+      "Using abstract or non-representational forms.",
+      "Employing a monochromatic color scheme.",
+      "Leaving the background undefined or empty.",
+      "Avoiding human presence or interaction."
+    ],
+    "tension": "The interplay between the intimate domestic scene and the formal, almost theatrical arrangement of the figures and objects creates a dynamic balance.",
+    "materialFacts": [
+      "The surface shows fine brushwork, especially in the rendering of textures like fabric and wood.",
+      "The light source is natural, coming from the window in the background, creating soft shadows.",
+      "The composition includes a mix of geometric patterns, such as the tiled floor, and organic forms, like the figures and drapery.",
+      "The painting is layered, with overlapping elements like the furniture, figures, and architectural details.",
+      "The colors are rich and saturated, particularly in the textiles and clothing.",
+      "The perspective is carefully constructed, with receding lines leading to the doorway in the background."
+    ],
+    "structuralMoves": [
+      "The figures are arranged in a semi-circle, creating a focal point in the center of the composition.",
+      "The doorway in the background acts as a visual anchor, drawing the viewer's eye deeper into the space.",
+      "The large wooden cabinet on the right balances the composition and adds weight to the scene.",
+      "The tiled floor provides a strong diagonal rhythm, guiding the viewer's gaze.",
+      "The inclusion of a dog and smaller figures in the background adds layers of narrative detail.",
+      "The painting is cropped to focus on the interior scene, excluding any exterior context."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "The Music Lesson",
+    "artist": "Pieter de Hooch",
+    "year": "1665"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

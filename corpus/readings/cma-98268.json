@@ -1,0 +1,33 @@
+{
+  "id": "cma-98268",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Centers a figure in formal military attire, emphasizing authority and composure.",
+      "Balances the composition with a background of a battlefield and supporting figures."
+    ],
+    "refuses": [
+      "Depicting the figure in a casual or informal setting.",
+      "Using abstract or non-representational forms."
+    ],
+    "tension": "The figure's calm and composed demeanor contrasts with the implied chaos of the battlefield in the background.",
+    "materialFacts": [
+      "The surface shows smooth, detailed brushwork, especially in the figure's face and clothing.",
+      "The background includes a muted, smoky sky and distant figures, creating depth."
+    ],
+    "structuralMoves": [
+      "The figure is placed slightly off-center but dominates the composition.",
+      "The diagonal sash and arm placement guide the viewer's eye across the canvas."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "George Washington at Princeton",
+    "artist": "Charles Willson Peale",
+    "year": "1779"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

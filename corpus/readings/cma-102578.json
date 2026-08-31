@@ -1,0 +1,37 @@
+{
+  "id": "cma-102578",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Draws attention to the seated figure with a vibrant blue dress against a warm yellow background.",
+      "Creates a sense of intimacy through the subject's direct gaze and relaxed pose."
+    ],
+    "refuses": [
+      "Overloading the composition with excessive detail in the background.",
+      "Using harsh contrasts or dramatic lighting."
+    ],
+    "tension": "The contrast between the subject's vibrant blue dress and the muted, patterned yellow background creates a visual and emotional interplay.",
+    "materialFacts": [
+      "The surface shows textured brushstrokes, especially in the fabric of the dress and the floral wallpaper.",
+      "The background is a patterned yellow wall with subtle floral motifs.",
+      "The vase with yellow flowers adds a secondary focal point.",
+      "The chair and table are rendered with dark, solid tones, grounding the composition."
+    ],
+    "structuralMoves": [
+      "The figure is placed slightly off-center, creating balance with the vase on the table.",
+      "The yellow background fills the space, emphasizing the subject's blue dress.",
+      "The composition uses a triangular arrangement between the figure, the vase, and the chair.",
+      "The cropping includes the full figure and furniture, anchoring the scene in a domestic setting."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "Portrait of Emilie Ambre in Blue",
+    "artist": "Joaquín Sorolla",
+    "year": "1880"
+  },
+  "claimedCanonical": true,
+  "canonical": false,
+  "misattributed": true
+}

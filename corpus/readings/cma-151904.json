@@ -1,0 +1,45 @@
+{
+  "id": "cma-151904",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a sense of immediacy by placing the viewer close to the rowers in the foreground.",
+      "Balances the composition with a detailed background of spectators and natural scenery.",
+      "Uses reflections on the water to add depth and realism.",
+      "Employs a warm, diffused light to evoke a specific time of day.",
+      "Conveys motion through the dynamic posture of the rowers."
+    ],
+    "refuses": [
+      "Overloading the scene with unnecessary details.",
+      "Using overly dramatic lighting or shadows.",
+      "Flattening the perspective by omitting the background.",
+      "Abstracting the figures or environment.",
+      "Ignoring the interaction between light and water."
+    ],
+    "tension": "The contrast between the intense focus of the rowers in the foreground and the calm, almost leisurely atmosphere of the spectators and landscape in the background.",
+    "materialFacts": [
+      "The surface shows fine brushwork, especially in the water and reflections.",
+      "The figures are rendered with precise anatomical detail.",
+      "The background trees and spectators are painted with softer, less defined strokes.",
+      "The blue flag and headscarves provide a focal point of color.",
+      "The water's surface is depicted with rippling textures and subtle tonal variations."
+    ],
+    "structuralMoves": [
+      "The composition divides the scene horizontally between water and land.",
+      "The rowers are positioned prominently in the foreground for emphasis.",
+      "The background recedes with diminishing detail to create depth.",
+      "The blue flag acts as a vertical anchor in the composition.",
+      "The placement of boats and figures creates a sense of movement and narrative."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "The Biglin Brothers Racing",
+    "artist": "Thomas Eakins",
+    "year": "1872"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

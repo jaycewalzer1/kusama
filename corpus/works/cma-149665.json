@@ -1,0 +1,21 @@
+{
+  "id": "cma-149665",
+  "source": {
+    "corpus": "cma",
+    "objectId": "149665",
+    "url": "https://clevelandart.org/art/1979.57",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/149665",
+    "title": "Ruin by the Sea",
+    "creator": "Arnold Böcklin (Swiss, 1827–1901)",
+    "date": "1881",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1979.57/1979.57_web.jpg"
+  },
+  "image": {
+    "path": "images/b9c816aafab67c99e9356af68e341bfd3e043ea0d62f27e6337999b7b4fd9769.jpg",
+    "hash": "b9c816aafab67c99e9356af68e341bfd3e043ea0d62f27e6337999b7b4fd9769",
+    "mime": "image/jpeg",
+    "bytes": 372926
+  },
+  "fetchedAt": "2026-08-31T05:49:26.215Z"
+}

@@ -1,0 +1,21 @@
+{
+  "id": "cma-137259",
+  "source": {
+    "corpus": "cma",
+    "objectId": "137259",
+    "url": "https://clevelandart.org/art/1962.2",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/137259",
+    "title": "Mme L . . . (Laure Borreau)",
+    "creator": "Gustave Courbet (French, 1819–1877)",
+    "date": "1863",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1962.2/1962.2_web.jpg"
+  },
+  "image": {
+    "path": "images/cee8eb66321c2f8210feb2cf38e39787d1d6d09b6c714f538f46d41d6e1e3105.jpg",
+    "hash": "cee8eb66321c2f8210feb2cf38e39787d1d6d09b6c714f538f46d41d6e1e3105",
+    "mime": "image/jpeg",
+    "bytes": 349398
+  },
+  "fetchedAt": "2026-08-31T05:49:14.048Z"
+}

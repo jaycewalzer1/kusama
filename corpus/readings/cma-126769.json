@@ -1,0 +1,45 @@
+{
+  "id": "cma-126769",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a dense, layered jungle environment with overlapping foliage.",
+      "Draws attention to the central action of a tiger attacking its prey.",
+      "Uses vibrant greens and yellows to evoke lushness and vitality.",
+      "Balances the composition with a mix of curved and angular plant forms.",
+      "Includes small, bright details like flowers and fruits to add visual interest."
+    ],
+    "refuses": [
+      "Depicting a clear sky or open space.",
+      "Using abstract or non-representational forms.",
+      "Employing a muted or monochromatic color palette.",
+      "Simplifying the scene to a few elements.",
+      "Focusing on human figures or urban settings."
+    ],
+    "tension": "The tiger's aggressive action contrasts with the serene, almost decorative quality of the surrounding jungle, creating a dynamic yet unsettling balance.",
+    "materialFacts": [
+      "The surface is filled with detailed, naturalistic depictions of plants and animals.",
+      "The foliage is painted with fine, precise brushstrokes.",
+      "The tiger and its prey are rendered with a slightly exaggerated, stylized realism.",
+      "The background recedes into a dense thicket, with no visible horizon.",
+      "The colors are rich and saturated, emphasizing greens and yellows."
+    ],
+    "structuralMoves": [
+      "The composition is tightly framed, with no empty space.",
+      "The tiger is placed slightly off-center, drawing the eye to its movement.",
+      "The plants create a layered effect, leading the viewer's gaze deeper into the scene.",
+      "The repetition of leaf shapes and patterns creates rhythm.",
+      "The small fruits and flowers act as accents, breaking up the green dominance."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "Tiger in a Tropical Storm (Surprised!)",
+    "artist": "Henri Rousseau",
+    "year": "1891"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

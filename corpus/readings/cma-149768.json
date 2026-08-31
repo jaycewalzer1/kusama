@@ -1,0 +1,47 @@
+{
+  "id": "cma-149768",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a vertical composition that draws the eye upward from the figure to the distant landscape.",
+      "Balances the earthy tones of the foreground with the cool blues of the sky.",
+      "Uses fine detail to render textures, such as the folds of the robe and the rocky cliff.",
+      "Establishes depth through overlapping elements and atmospheric perspective.",
+      "Places a figure in a contemplative pose, inviting introspection."
+    ],
+    "refuses": [
+      "Flattening the space into a single plane.",
+      "Using abstract or non-representational forms.",
+      "Employing bold, saturated colors.",
+      "Filling the entire frame with action or movement.",
+      "Avoiding naturalistic detail."
+    ],
+    "tension": "The figure's stillness contrasts with the dynamic landscape and the implied narrative of isolation.",
+    "materialFacts": [
+      "The surface shows fine, precise brushwork, especially in the textures of the robe and the rocks.",
+      "The background transitions smoothly from detailed architecture to a hazy, distant horizon.",
+      "The figure is framed by natural elements like rocks and trees, creating a sense of enclosure.",
+      "The colors are muted and naturalistic, with subtle gradations of light and shadow.",
+      "The panel is narrow and tall, emphasizing verticality.",
+      "The paint layers are thin, allowing for intricate detail."
+    ],
+    "structuralMoves": [
+      "The figure is placed slightly off-center, creating asymmetry.",
+      "The composition divides into foreground, middle ground, and background, each with distinct elements.",
+      "The vertical format emphasizes the height of the cliff and the trees.",
+      "The figure's gaze and posture direct attention inward, rather than outward.",
+      "The landscape elements are scaled to create a sense of vastness.",
+      "The architectural elements in the background provide a focal point beyond the figure."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "Saint Mary Magdalene",
+    "artist": "Rogier van der Weyden",
+    "year": "1438-1440"
+  },
+  "claimedCanonical": true,
+  "canonical": false,
+  "misattributed": true
+}

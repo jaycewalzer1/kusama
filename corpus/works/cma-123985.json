@@ -1,0 +1,21 @@
+{
+  "id": "cma-123985",
+  "source": {
+    "corpus": "cma",
+    "objectId": "123985",
+    "url": "https://clevelandart.org/art/1944.485",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/123985",
+    "title": "The Wade Cup with Animated Script",
+    "creator": null,
+    "date": "1200–1221",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1944.485/1944.485_web.jpg"
+  },
+  "image": {
+    "path": "images/bc06ad0081cbd6a1338c47b44706b320a3fd88a60255ff69648dd97b56f497ba.jpg",
+    "hash": "bc06ad0081cbd6a1338c47b44706b320a3fd88a60255ff69648dd97b56f497ba",
+    "mime": "image/jpeg",
+    "bytes": 167596
+  },
+  "fetchedAt": "2026-08-31T05:49:27.327Z"
+}

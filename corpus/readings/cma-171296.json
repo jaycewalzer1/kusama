@@ -1,0 +1,45 @@
+{
+  "id": "cma-171296",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a sense of depth through atmospheric perspective, with distant mountains fading into soft blues.",
+      "Balances the composition with dense foliage on the left and right, framing the central water body.",
+      "Uses warm light to highlight the figures and structures, drawing attention to human activity.",
+      "Blends fine details in the foreground with softer, less defined forms in the background.",
+      "Incorporates reflections in the water to enhance realism and tranquility."
+    ],
+    "refuses": [
+      "Flattening the space by using uniform detail throughout.",
+      "Using harsh or unnatural colors to disrupt the serene mood.",
+      "Focusing solely on the natural landscape without human presence.",
+      "Leaving the sky empty or unvaried in tone.",
+      "Making the water opaque or textureless."
+    ],
+    "tension": "The balance between the untouched natural environment and the subtle human presence creates a dialogue about coexistence.",
+    "materialFacts": [
+      "The surface shows smooth transitions of color, especially in the sky and water.",
+      "Fine brushwork is evident in the foliage and human figures.",
+      "The paint layers are thin, allowing for delicate gradations of light and shadow.",
+      "Edges are soft in the background but sharper in the foreground.",
+      "The ground is evenly prepared, with no visible texture disrupting the image."
+    ],
+    "structuralMoves": [
+      "The composition is divided into foreground, middle ground, and background, creating depth.",
+      "The central water body acts as a visual anchor, reflecting the surrounding elements.",
+      "The placement of human figures and structures is asymmetrical but balanced.",
+      "The tallest trees on the left and right frame the scene, guiding the viewer's eye inward.",
+      "The horizon line is placed low, emphasizing the vastness of the sky and mountains."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "The Heart of the Andes",
+    "artist": "Frederic Edwin Church",
+    "year": "1859"
+  },
+  "claimedCanonical": true,
+  "canonical": false,
+  "misattributed": true
+}

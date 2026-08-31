@@ -1,0 +1,21 @@
+{
+  "id": "cma-122349",
+  "source": {
+    "corpus": "cma",
+    "objectId": "122349",
+    "url": "https://clevelandart.org/art/1942.645",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/122349",
+    "title": "Portrait of the Ladies Amabel and Mary Jemima Yorke",
+    "creator": "Joshua Reynolds (British, 1723–1792)",
+    "date": "c. 1761",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1942.645/1942.645_web.jpg"
+  },
+  "image": {
+    "path": "images/ef99c5bb8f3a09b4c3be852f0f676f5577831e6555829018f5551d4625a5053e.jpg",
+    "hash": "ef99c5bb8f3a09b4c3be852f0f676f5577831e6555829018f5551d4625a5053e",
+    "mime": "image/jpeg",
+    "bytes": 483436
+  },
+  "fetchedAt": "2026-08-31T05:49:17.518Z"
+}

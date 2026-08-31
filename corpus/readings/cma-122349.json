@@ -1,0 +1,39 @@
+{
+  "id": "cma-122349",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a sense of intimacy through the interaction of the figures and their gestures.",
+      "Balances the composition with a mix of soft textures and detailed elements."
+    ],
+    "refuses": [
+      "Overloading the scene with excessive background detail.",
+      "Using harsh or overly dramatic lighting."
+    ],
+    "tension": "The contrast between the formal, composed demeanor of the older figure and the playful, dynamic energy of the younger figure and the dog.",
+    "materialFacts": [
+      "The surface shows fine, smooth brushstrokes for the figures and their clothing.",
+      "The background is rendered with softer, more blended strokes to create depth.",
+      "The light source is diffused, illuminating the figures gently.",
+      "The colors are muted, with a focus on earthy tones and soft whites.",
+      "The details in the clothing and the animals are meticulously rendered."
+    ],
+    "structuralMoves": [
+      "The figures are placed slightly off-center, creating a natural flow.",
+      "The older figure is taller and more upright, anchoring the composition.",
+      "The younger figure and the dog add movement and energy to the lower right.",
+      "The background is divided into architectural and natural elements, providing contrast.",
+      "The gaze of the figures directs attention within the composition."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "The Linley Sisters",
+    "artist": "Thomas Gainsborough",
+    "year": "1772"
+  },
+  "claimedCanonical": true,
+  "canonical": false,
+  "misattributed": true
+}

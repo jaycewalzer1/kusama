@@ -1,0 +1,21 @@
+{
+  "id": "cma-135428",
+  "source": {
+    "corpus": "cma",
+    "objectId": "135428",
+    "url": "https://clevelandart.org/art/1958.425",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/135428",
+    "title": "Hunting near Hartenfels Castle",
+    "creator": "Lucas Cranach (German, 1472–1553)",
+    "date": "1540",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1958.425/1958.425_web.jpg"
+  },
+  "image": {
+    "path": "images/5beb06303dbdd087cbcdc761b45bf504cb4155a0d3a723b3951f9e85fb8d1e73.jpg",
+    "hash": "5beb06303dbdd087cbcdc761b45bf504cb4155a0d3a723b3951f9e85fb8d1e73",
+    "mime": "image/jpeg",
+    "bytes": 1098066
+  },
+  "fetchedAt": "2026-08-31T05:49:18.989Z"
+}

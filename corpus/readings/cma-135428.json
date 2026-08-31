@@ -1,0 +1,46 @@
+{
+  "id": "cma-135428",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a dense, layered narrative with multiple simultaneous actions.",
+      "Uses vibrant colors to differentiate figures, animals, and landscape.",
+      "Draws the viewer's eye to the distant castle as a focal point.",
+      "Balances the composition with a mix of open spaces and dense forest.",
+      "Depicts movement and chaos through dynamic poses of figures and animals."
+    ],
+    "refuses": [
+      "Flattening the scene into a single perspective.",
+      "Using abstract or non-representational forms.",
+      "Leaving the background empty or undefined.",
+      "Focusing on a single subject or action.",
+      "Avoiding intricate detail in the foliage and figures."
+    ],
+    "tension": "The image holds the tension between the chaos of the hunt and the serene, distant castle, creating a contrast between human activity and the stillness of the landscape.",
+    "materialFacts": [
+      "The surface is filled with fine, detailed brushwork, especially in the foliage and figures.",
+      "The colors are rich and saturated, with greens dominating the landscape and bright accents on clothing.",
+      "The composition is divided into distinct zones: the forest, the river, and the distant castle.",
+      "Figures and animals are rendered with precise, realistic proportions and textures.",
+      "The sky is a smooth gradient, providing a calm backdrop to the busy foreground."
+    ],
+    "structuralMoves": [
+      "The scene is divided horizontally into foreground, middle ground, and background.",
+      "Figures and animals are scattered throughout, creating a sense of depth and activity.",
+      "The castle is placed at the top center, anchoring the composition.",
+      "The river cuts diagonally through the scene, guiding the viewer's eye.",
+      "Repetition of trees and figures creates rhythm and unity.",
+      "The use of perspective draws the viewer into the distant landscape."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "Deer Hunt",
+    "artist": "Lucas Cranach the Elder",
+    "year": "1529"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

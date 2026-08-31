@@ -1,0 +1,35 @@
+{
+  "id": "cma-127571",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Directs attention to the figure's gesture and gaze, creating a sense of narrative.",
+      "Balances the rich textures of fabric with the smoothness of the sky and background."
+    ],
+    "refuses": [
+      "To fully integrate the figure with the background, keeping them distinct.",
+      "To use dramatic lighting contrasts, opting for even illumination."
+    ],
+    "tension": "The figure's outward gesture and intense gaze suggest an unresolved interaction or moment beyond the frame.",
+    "materialFacts": [
+      "The surface shows fine brushwork in the rendering of textures, such as the fur and fabric.",
+      "The background is painted with soft gradients, blending sky and landscape seamlessly."
+    ],
+    "structuralMoves": [
+      "The figure is placed slightly off-center, creating dynamic movement.",
+      "The arm's gesture extends outward, breaking the frame's implied boundary.",
+      "The balustrade divides the composition horizontally, separating foreground and background.",
+      "The table anchors the figure in the foreground, adding stability."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "Portrait of a Gentleman in a Landscape",
+    "artist": "Lorenzo Lotto",
+    "year": "1527"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

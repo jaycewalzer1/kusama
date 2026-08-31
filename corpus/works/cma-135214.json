@@ -1,0 +1,21 @@
+{
+  "id": "cma-135214",
+  "source": {
+    "corpus": "cma",
+    "objectId": "135214",
+    "url": "https://clevelandart.org/art/1958.23",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/135214",
+    "title": "The Troubadour",
+    "creator": "Honoré Daumier (French, 1808–1879)",
+    "date": "1868–73",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1958.23/1958.23_web.jpg"
+  },
+  "image": {
+    "path": "images/538a7a380a8ed750e9755740ef56eee46d943dc6cee039783d59c509ca9ce29e.jpg",
+    "hash": "538a7a380a8ed750e9755740ef56eee46d943dc6cee039783d59c509ca9ce29e",
+    "mime": "image/jpeg",
+    "bytes": 415808
+  },
+  "fetchedAt": "2026-08-31T05:49:22.274Z"
+}

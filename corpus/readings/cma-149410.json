@@ -1,0 +1,36 @@
+{
+  "id": "cma-149410",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a dynamic sense of movement through the swirling green background.",
+      "Draws attention to the figure with contrasting warm and cool tones."
+    ],
+    "refuses": [
+      "To include any sharp or rigid lines.",
+      "To depict the figure in a fully detailed or realistic manner."
+    ],
+    "tension": "The figure's interaction with the water is ambiguous, as it is unclear whether she is emerging from or being engulfed by the waves.",
+    "materialFacts": [
+      "The surface is dominated by fluid, curving brushstrokes.",
+      "The figure's skin is rendered with soft, blended tones, contrasting with the textured background.",
+      "The green background is layered with white accents to suggest waves or foam."
+    ],
+    "structuralMoves": [
+      "The composition centers the figure, with her back turned to the viewer.",
+      "The red hair creates a focal point against the green background.",
+      "The figure's pose is diagonal, adding to the sense of motion.",
+      "The background is abstracted, emphasizing color and texture over detail."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "In the Waves",
+    "artist": "Paul Gauguin",
+    "year": "1889"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

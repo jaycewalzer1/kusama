@@ -1,0 +1,33 @@
+{
+  "id": "cma-148758",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Directs attention to the central figure through dramatic lighting and shadow contrasts.",
+      "Creates a sense of physical strain and emotional intensity through detailed anatomy and facial expressions."
+    ],
+    "refuses": [
+      "To use a uniform light source, instead relying on stark chiaroscuro.",
+      "To depict a serene or idealized scene, opting for raw physicality and emotion."
+    ],
+    "tension": "The interplay between the suffering of the central figure and the varied emotional reactions of the surrounding characters creates a charged narrative moment.",
+    "materialFacts": [
+      "The surface shows a rich use of oil paint, with smooth blending in the skin tones and sharp contrasts in the shadows.",
+      "The background is dark and undefined, pushing the figures forward into prominence."
+    ],
+    "structuralMoves": [
+      "The composition centers on the crucified figure, with surrounding characters arranged to guide the viewer's gaze.",
+      "The diagonal lines of the limbs and cross create dynamic tension within the frame."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "The Crucifixion of Saint Andrew",
+    "artist": "Caravaggio",
+    "year": "1607"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

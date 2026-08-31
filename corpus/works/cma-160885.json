@@ -1,0 +1,21 @@
+{
+  "id": "cma-160885",
+  "source": {
+    "corpus": "cma",
+    "objectId": "160885",
+    "url": "https://clevelandart.org/art/1999.173",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/160885",
+    "title": "Portrait of Tieleman Roosterman",
+    "creator": "Frans Hals (Dutch, c. 1581–1666)",
+    "date": "1634",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1999.173/1999.173_web.jpg"
+  },
+  "image": {
+    "path": "images/908e248aa74325862917d5f7eebc02e92668ce36450a123969e20704a535c1c6.jpg",
+    "hash": "908e248aa74325862917d5f7eebc02e92668ce36450a123969e20704a535c1c6",
+    "mime": "image/jpeg",
+    "bytes": 57287
+  },
+  "fetchedAt": "2026-08-31T05:49:17.778Z"
+}

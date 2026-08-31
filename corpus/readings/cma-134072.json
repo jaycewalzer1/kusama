@@ -1,0 +1,35 @@
+{
+  "id": "cma-134072",
+  "model": "gpt-4o-2024-11-20",
+  "promptHash": "2595d0b6863a37471f0f46ba02a2a3ee165e4dcf383fb32ea1222f29fe5e4bec",
+  "reading": {
+    "does": [
+      "Creates a soft, atmospheric effect with blurred edges and muted tones.",
+      "Draws the viewer's eye to the contrast between the dark foreground and the illuminated sky."
+    ],
+    "refuses": [
+      "Define individual leaves or blades of grass with sharp detail.",
+      "Use bold, saturated colors to create a vibrant scene."
+    ],
+    "tension": "The balance between the dark, shadowed foreground and the luminous, cloud-filled sky creates a sense of depth and mood.",
+    "materialFacts": [
+      "The surface is layered with soft, blended brushstrokes.",
+      "The colors transition smoothly, with no harsh lines or abrupt changes."
+    ],
+    "structuralMoves": [
+      "The composition divides the scene horizontally into foreground, middle ground, and sky.",
+      "The trees are placed asymmetrically, creating a natural rhythm.",
+      "The horizon line is low, emphasizing the expansive sky.",
+      "The use of red and orange in the trees contrasts with the cooler tones of the sky."
+    ]
+  },
+  "leakage": {
+    "recognised": true,
+    "work": "Autumn Landscape",
+    "artist": "George Inness",
+    "year": "1892"
+  },
+  "claimedCanonical": true,
+  "canonical": true,
+  "misattributed": false
+}

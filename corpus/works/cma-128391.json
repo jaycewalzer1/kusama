@@ -1,0 +1,21 @@
+{
+  "id": "cma-128391",
+  "source": {
+    "corpus": "cma",
+    "objectId": "128391",
+    "url": "https://clevelandart.org/art/1951.355",
+    "apiUrl": "https://openaccess-api.clevelandart.org/api/artworks/128391",
+    "title": "Portrait of a Family Playing Music",
+    "creator": "Pieter de Hooch (Dutch, 1629–1684)",
+    "date": "1663",
+    "rights": "CC0",
+    "imageUrl": "https://openaccess-cdn.clevelandart.org/1951.355/1951.355_web.jpg"
+  },
+  "image": {
+    "path": "images/1c1882ad925f4eaf6c98cd974be3d0d10a491d3de856f9e9b1d63c30ae069ed8.jpg",
+    "hash": "1c1882ad925f4eaf6c98cd974be3d0d10a491d3de856f9e9b1d63c30ae069ed8",
+    "mime": "image/jpeg",
+    "bytes": 178678
+  },
+  "fetchedAt": "2026-08-31T05:49:15.584Z"
+}
