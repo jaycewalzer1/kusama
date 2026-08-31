@@ -29,3 +29,21 @@ One line per milestone. Written as it happens.
   added: deriving the 50 elements (Stage 3's one call per work), Stage 4's trajectory, Stage 6's
   pairwise judge, Stage 8's noise floor. Continuing with every part of the design that is pure and
   offline — which, per the brief, is where "the break record is the point" lives anyway.
+- Stage 3 done and committed as `7f7fe76`. `artist/breaks.ts` + `artist breaks <dir>` + `breaks.json`
+  written beside `scores.json` at the end of every run; the observed tier in
+  `aesthetic/elements/conflicts.ts`; one named fixture per tier over the shipped pack; element
+  derivation tested offline through `setEnvModel`, including a blindness test that fails on a title,
+  maker, date or source URL in the prompt. **438 tests / 0 fail, 11 goldens unmoved** (`rm -rf dist`
+  first). Two log additions were needed and are deliberate: `render` lines now carry per-constraint
+  `satisfied`/`violated`, and `trajectory-start` carries the whole `Composition` — recomposing from
+  element ids would let an element edited after a run rewrite what that run is said to have broken.
+- Stage 3 finding: **`deriveConflicts` reports same-source pairs, and one is real.**
+  `position:withheld/c-covered` x `position:withheld/g-few` — the `withheld` position is in provable
+  conflict with its own node budget. I had written a comment in `observedConflicts` claiming the
+  derived tier excluded same-source pairs, and excluded them there to match; the live pack falsified
+  it. The exclusion is gone, so all three tiers now ask the same question, and the cross-source rule
+  lives in `breaks.ts` where it means something (what *forced* a break). A scan is a hypothesis; the
+  pack was the measurement.
+- Stage 3, not built on purpose: the 50 elements are not derived. That needs one model call per work
+  and there is no credit. `artist/element-derive.ts` and its 8 tests are done and green against a
+  stand-in; `corpus derive` is one command away from real data.
