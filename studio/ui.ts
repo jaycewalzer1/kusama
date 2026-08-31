@@ -482,7 +482,7 @@ function newRunDir(p: Params): string {
  * process are filled, and only for the child.
  */
 function envFile(): Record<string, string> {
-  const file = path.join(path.dirname(ROOT), '.env');
+  const file = path.join(ROOT, '.env');
   const out: Record<string, string> = {};
   if (!existsSync(file)) return out;
   for (const line of readFileSync(file, 'utf8').split('\n')) {
