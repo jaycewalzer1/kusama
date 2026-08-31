@@ -51,7 +51,27 @@ import { ENV_MODEL, envModel } from './env-model.js';
 import { type ManifestImage, type Work, imagePath, readManifest, workId, writeManifest } from './manifest.js';
 
 export const CORPUS_DIR = path.join(ROOT, 'corpus');
+
+/**
+ * The corpus: the works actually held, with their rights and the hash of the bytes that were read.
+ * Tracked in git, because this is what somebody needs in order to check a claim.
+ */
 export const MANIFEST = path.join(CORPUS_DIR, 'manifest.jsonl');
+
+/**
+ * Everything that was *available* to select from — a quarter of a million rows across three museums.
+ * Not tracked, and the distinction is the same one that keeps the images out: the pool is a fact
+ * about three public APIs, not about this corpus, and it is regenerable by re-running
+ * `corpus metadata`. It is also 110MB, and the argument for tracking the manifest was that the
+ * manifest is small. A file that is not small does not inherit that argument by having a similar
+ * name. What the pool *would* have justified — which works were available and why these were chosen
+ * — is recorded instead in `selection.json`, which is small and is tracked.
+ */
+export const POOL = path.join(CORPUS_DIR, 'pool.jsonl');
+
+/** The decision record: the seed, the caps, and what each of them actually did. Tracked. */
+export const SELECTION = path.join(CORPUS_DIR, 'selection.json');
+
 const IMAGES = path.join(CORPUS_DIR, 'images');
 const READINGS = path.join(CORPUS_DIR, 'readings');
 
@@ -316,7 +336,19 @@ const LIST_URL = 'https://openaccess-api.clevelandart.org/api/artworks/';
  * than to an anonymous socket; a museum that can see who is pulling and why can raise a limit or
  * send a mail instead of a block.
  */
-const USER_AGENT = 'kusama-corpus/0.2 (research; deriving lineage elements from open-access works)';
+export const USER_AGENT = 'kusama-corpus/0.2 (research; deriving lineage elements from open-access works)';
+
+/**
+ * The Art Institute asks, in its own documentation, for an `AIC-User-Agent` header naming who is
+ * calling, and it is the one source here that has ever blocked us. Sent only to artic.edu: a header
+ * a host did not ask for is noise in somebody else's logs, and it would be one more thing that
+ * differs between the request that worked and the request that did not.
+ */
+function headersFor(url: string, accept: string): Record<string, string> {
+  const h: Record<string, string> = { accept, 'user-agent': USER_AGENT };
+  if (url.includes('artic.edu')) h['AIC-User-Agent'] = USER_AGENT;
+  return h;
+}
 
 /**
  * One request, with the patience a run measured in hours needs.
@@ -334,7 +366,7 @@ const USER_AGENT = 'kusama-corpus/0.2 (research; deriving lineage elements from 
  * for the same reason: without it a half-open connection hangs the run indefinitely, which is worse
  * than an error because nothing reports it.
  */
-async function politely(url: string, accept = 'application/json', tries = 4): Promise<Response> {
+export async function politely(url: string, accept = 'application/json', tries = 4): Promise<Response> {
   for (let attempt = 1; ; attempt++) {
     // Honour what the server asked for if it asked for anything; otherwise back off geometrically
     // from a second. `Retry-After` is the museum telling us its own limit, and guessing over the
@@ -345,7 +377,7 @@ async function politely(url: string, accept = 'application/json', tries = 4): Pr
     };
     let res: Response;
     try {
-      res = await fetch(url, { headers: { accept, 'user-agent': USER_AGENT }, signal: AbortSignal.timeout(60_000) });
+      res = await fetch(url, { headers: headersFor(url, accept), signal: AbortSignal.timeout(60_000) });
     } catch (e) {
       if (attempt >= tries) throw new Error(`${url} could not be reached after ${tries} attempts: ${(e as Error).message}`);
       await wait();
@@ -370,11 +402,27 @@ async function politely(url: string, accept = 'application/json', tries = 4): Pr
  * the same as not choosing it.
  */
 export async function listCandidates(limit: number, skip = 0, filters: Record<string, string> = {}): Promise<CmaRecord[]> {
+  return (await listPage(limit, skip, filters)).records;
+}
+
+/**
+ * The same page, plus the museum's own count of how many records match.
+ *
+ * The count is what makes a full walk checkable. Cleveland's paging partitions cleanly at an
+ * instant — two adjacent pages of 100 hold exactly what one page of 200 holds — but the underlying
+ * order drifts as the index refreshes, and over a walk that takes 212 seconds that drift costs
+ * rows: a full pull yielded 41,469 records containing only 40,820 distinct works against a reported
+ * total of 41,511. There is no sort parameter that fixes it (`orderby` is accepted, but
+ * `accession_number_sortable` has ties and the tiebreak is arbitrary), so the walk instead repeats
+ * until what it holds matches what the museum says exists. That is only possible if the walk can
+ * see the total.
+ */
+export async function listPage(limit: number, skip = 0, filters: Record<string, string> = {}): Promise<{ records: CmaRecord[]; total: number }> {
   const query = new URLSearchParams({ cc0: '1', has_image: '1', limit: String(limit), skip: String(skip) });
   for (const [k, v] of Object.entries(filters)) if (v) query.set(k, v);
   const res = await politely(`${LIST_URL}?${query}`);
-  const body = (await res.json()) as { data: CmaRecord[] };
-  return body.data;
+  const body = (await res.json()) as { data: CmaRecord[]; info?: { total?: number } };
+  return { records: body.data, total: body.info?.total ?? 0 };
 }
 
 function pickImage(record: CmaRecord): CmaImage | null {
@@ -508,18 +556,22 @@ export function listWorks(): Work[] {
   return readManifest(MANIFEST).works;
 }
 
+export function listPool(): Work[] {
+  return readManifest(POOL).works;
+}
+
 /**
- * Merge rows into the manifest, newest wins on id.
+ * Merge rows into a manifest file, newest wins on id.
  *
  * Whole-file because the file is sorted and the sort is what keeps a re-import from reading as a
- * total rewrite in git. At 250,000 rows this is a few hundred milliseconds and it is called once per
- * batch, not once per work.
+ * total rewrite in git. At 250,000 rows this is a couple of seconds and it is called once per batch,
+ * not once per work.
  */
-export function saveWorks(works: Work[]): void {
-  const by = new Map(readManifest(MANIFEST).works.map((w) => [w.id, w]));
+export function saveWorks(works: Work[], file: string = MANIFEST): void {
+  const by = new Map(readManifest(file).works.map((w) => [w.id, w]));
   for (const w of works) by.set(w.id, w);
   mkdirSync(CORPUS_DIR, { recursive: true });
-  writeManifest(MANIFEST, [...by.values()]);
+  writeManifest(file, [...by.values()]);
 }
 
 export function loadReading(id: string): WorkReading | null {
