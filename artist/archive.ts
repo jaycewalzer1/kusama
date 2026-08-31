@@ -125,7 +125,11 @@ function varies(vs: number[]): boolean {
   return Math.max(...vs) - Math.min(...vs) > 1e-9;
 }
 
-function pearson(xs: number[], ys: number[]): number | null {
+/**
+ * Pearson, or null when there is no evidence. Exported because `ratings.ts` needs exactly this
+ * function and a second copy would be a second chance to reintroduce the constant-axis bug below.
+ */
+export function pearson(xs: number[], ys: number[]): number | null {
   const n = xs.length;
   if (n < 3) return null;
   // Tested on the spread, not on the sum of squares. Three identical values do not give a variance

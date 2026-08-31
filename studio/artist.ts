@@ -7,6 +7,8 @@
 //   artist breaks <dir>                  which commitment broke, what forced it, declared or not
 //   artist provenance <dir>              has this combination of lineages been made before?
 //   artist archive <runs>                finished plates filed by what they look like, in a grid
+//   artist rate [--set p tier]           hand-rate plates into the pool everything else is checked against
+//   artist validate-reward <runs>        the component-correlation gate and the top-k agreement readout
 //   artist filmstrip <dir> [--story]     the piece rebuilt step by step, and the survival curve
 //                                        --story adds index.html: each frame next to why it happened
 //   artist twin <arm> <control>          does the position steer, or is it decoration? the two arms
@@ -42,7 +44,7 @@ import {
 import { selectPolicy } from '../artist/policy/interface.js';
 import { recomputeMatches, scoresCsv } from '../artist/reward.js';
 import { driftText } from '../artist/env-version.js';
-import { judgeSummary, judgeTrajectory } from '../artist/judge.js';
+import { judgeSummary, judgeTrajectory, type Judgment } from '../artist/judge.js';
 import { replay } from '../artist/replay.js';
 import { runTrajectory } from '../artist/run.js';
 import { storyOf, storyText, summarise as summariseLine } from '../artist/story.js';
@@ -51,6 +53,23 @@ import { processOf, processText } from '../artist/transition.js';
 import { breakRecordOf, breakText } from '../artist/breaks.js';
 import { provenanceOf, provenanceText } from '../artist/provenance.js';
 import { archive, archiveText, measureRuns, DEFAULT_AXES, DEFAULT_BINS, DESCRIPTORS, type Descriptor } from '../artist/archive.js';
+import {
+  CORRELATION_LIMIT,
+  DEFAULT_KS,
+  TIER_NAMES,
+  agreementText,
+  assertIndependent,
+  componentCorrelations,
+  componentRows,
+  correlationText,
+  jaccardAt,
+  pairwise,
+  ratingsAsRanked,
+  readPool,
+  type Comparison,
+  type Tier,
+} from '../artist/ratings.js';
+import { DEFAULT_POOL, rateInteractive, setRating, summary } from './rate.js';
 import { twinOf, twinText } from '../artist/twin.js';
 import { walkthroughOf, walkthroughHtml } from '../artist/walkthrough.js';
 import { sftLines, toJsonl } from '../artist/export.js';
@@ -393,6 +412,92 @@ program
     console.log(archiveText(a));
     for (const s of skipped) console.log(`skipped, not a readable finished run: ${s}`);
   });
+
+program
+  .command('rate')
+  .description('hand-rate plates into the pool every later judge is validated against')
+  .option('--runs <dir>', 'the directory holding the run directories', 'out')
+  .option('--pool <file>', 'the ratings file', DEFAULT_POOL)
+  .option('--rater <name>', 'who is rating', process.env['USER'] ?? 'me')
+  .option('--again', 'go back over plates that already have a rating', false)
+  .option('--open', 'hand each plate to the desktop image viewer', false)
+  .option('--set <plate>', 'rate one plate without a terminal; needs --tier')
+  .option('--tier <tier>', TIER_NAMES.join(' | '))
+  .option('--status', 'print the pool and stop', false)
+  .action(async (opts: Record<string, string | boolean>) => {
+    const o = {
+      runs: String(opts['runs']),
+      pool: String(opts['pool']),
+      rater: String(opts['rater']),
+      again: Boolean(opts['again']),
+      open: Boolean(opts['open']),
+    };
+    if (opts['status']) {
+      console.log(summary(o));
+      return;
+    }
+    if (opts['set']) {
+      const tier = String(opts['tier'] ?? '');
+      if (!(TIER_NAMES as readonly string[]).includes(tier)) {
+        throw new Error(`--tier must be one of: ${TIER_NAMES.join(' ')}`);
+      }
+      console.log(setRating(String(opts['set']), tier as Tier, o));
+      console.log(summary(o));
+      return;
+    }
+    await rateInteractive(o);
+  });
+
+program
+  .command('validate-reward')
+  .description('the two checks that come before any of these numbers is a reward: independence, and top-k agreement')
+  .argument('<runs>', 'the directory holding the run directories')
+  .option('--pool <file>', 'the ratings file', DEFAULT_POOL)
+  .option('--judgments <file>', 'judgments from `artist judge -o`, or a list of pairwise comparisons')
+  .option('--limit <r>', 'the correlation above which two components are one component', String(CORRELATION_LIMIT))
+  .action((runs: string, opts: Record<string, string>) => {
+    const pool = readPool(opts['pool'] ?? DEFAULT_POOL);
+    if (pool.ratings.length === 0) {
+      console.log(`no ratings in ${opts['pool'] ?? DEFAULT_POOL}. Run \`artist rate\` first — this check is against a person.`);
+      process.exitCode = 1;
+      return;
+    }
+
+    // The gate, over the rated plates only. Correlating components across every run on disk would be
+    // a bigger sample and the wrong one: the question is whether these components are independent
+    // over the plates somebody actually looked at, which is the set any reward would be fit to.
+    const { rows, missing } = componentRows(runs, pool.ratings.map((r) => r.plate));
+    const report = componentCorrelations(rows, Number(opts['limit'] ?? CORRELATION_LIMIT));
+    console.log(correlationText(report));
+    if (missing.length) console.log(`  ${missing.length} rated plate(s) have no readable scores: ${missing.join(' ')}`);
+
+    if (opts['judgments']) {
+      const parsed = JSON.parse(readFileSync(opts['judgments'], 'utf8')) as unknown[];
+      const theirs = isComparisons(parsed)
+        ? (() => {
+            const p = pairwise(parsed);
+            console.log(
+              `\n${p.verdicts.length} pair(s) compared both ways, ${p.unpaired.length} seen one way only, ` +
+                `order bias ${p.orderBias === null ? 'unmeasurable' : p.orderBias.toFixed(3)}`
+            );
+            return p.ranked;
+          })()
+        : (parsed as Judgment[]).map((j) => ({ id: path.basename(j.trajectoryId), score: j.necessity.score }));
+      console.log('');
+      console.log(agreementText(DEFAULT_KS.map((k) => jaccardAt(k, ratingsAsRanked(pool.ratings), theirs))));
+    } else {
+      console.log('\nno --judgments: nothing to agree or disagree with yet.');
+    }
+
+    // Loud, and last, so the reason is on screen above it.
+    assertIndependent(report);
+  });
+
+/** A comparisons file names two plates and a winner; a judgments file does not. */
+function isComparisons(xs: unknown[]): xs is Comparison[] {
+  const first = xs[0] as Partial<Comparison> | undefined;
+  return typeof first?.first === 'string' && typeof first.second === 'string';
+}
 
 program
   .command('filmstrip')

@@ -699,8 +699,12 @@ test('invariant: exactly one file in artist/ reaches the elements layer, and it 
     );
   const files = walk(artist);
   assert.ok(files.length >= 5, 'the scan found almost nothing, so it is scanning the wrong tree');
+  // Import statements, not mentions. The scan used to match the path anywhere in the file, which
+  // made a file that names `aesthetic/elements/pack.ts` in a comment — to say it copied a trick from
+  // it — look like an importer. A test that reports a dependency nobody has is a test that will be
+  // widened to accommodate one, and then it is measuring nothing.
   const importers = files
-    .filter((f) => /aesthetic\/elements\//.test(readFileSync(f, 'utf8')))
+    .filter((f) => /from '[^']*aesthetic\/elements\//.test(readFileSync(f, 'utf8')))
     .map((f) => path.relative(artist, f))
     .sort();
   // Four files now, and only one of them is a door. The invariant is about how elements *enter a
