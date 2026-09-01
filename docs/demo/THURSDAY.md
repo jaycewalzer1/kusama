@@ -12,8 +12,14 @@ Read §0 first. It is the part that will bite.
 The corpus is 20,000 works from three museums. What is **tracked in git** is the evidence:
 `corpus/manifest.jsonl` (20,000 rows, one per work, each with a sha256 and a refetchable
 `image_url`), `corpus/readings/`, and `aesthetic/influences/*.resolved.json`. Also tracked, and the
-whole of the fallback: `docs/demo/rendered/` — the eight notebooks as HTML (4.6 MB) and two atlas
-overlay pages (1.8 MB each).
+whole of the fallback: `docs/demo/rendered/` — the eight notebooks as HTML (4.6 MB), two atlas
+overlay pages and both bare maps (1.7 MB each).
+
+**Every command below was run cold from a fresh login shell on 2026-09-02**, in the order printed,
+twice — once to find what was wrong with this file, once after fixing it. All exited 0 both times and
+**not one wrote a single byte to stderr**. Total wall time **7.45 s cold, 6.48 s warm**; the ~0.9 s
+of the difference is `tsc` on a warm cache, and every individual command is under 2 s. Nothing here
+comes close to the ten seconds a live command is allowed.
 
 What is **not** tracked is everything derived from it, because it is large and reproducible:
 
@@ -98,8 +104,9 @@ label made of real works rather than a number:
   axis 0 — 27.5% of the set's variance — calligraphy -> furniture; aic -> met
 ```
 
-The `--sheet` writes a contact sheet plus a **self-contained HTML** — the 1.8 MB PNG is inlined as a
-data URI, so the file opens with no server and can be sent on its own.
+The `--sheet` writes a contact sheet plus a **self-contained HTML** — the 6.0 MB PNG is inlined as a
+data URI, so the file opens with no server and can be sent on its own. The HTML is 8.0 MB and takes
+about 1.8 s to paint; open it *before* you need it.
 
 **Say:** the position is now a region of the corpus, and the region is inspectable.
 
@@ -113,7 +120,7 @@ seven. What *does* separate them is the works themselves, which is why the sheet
 ## 3. What sits between two positions — 0.2 s
 
 ```bash
-node dist/studio/corpus.js influences blend withheld interference
+node dist/studio/corpus.js influences blend interference many-hands
 ```
 
 The midpoint of two resolved sets, and then the part that matters: works near the midpoint but
@@ -121,11 +128,23 @@ The midpoint of two resolved sets, and then the part that matters: works near th
 have reached alone.
 
 ```
-near the midpoint but outside BOTH sets' own spreads (a<0.806, b<0.836):
-  0.8274 (a 0.805 b 0.833)  met-314372   Figure
+blend interference x many-hands — centroids sit at cosine 0.8769
+
+near the midpoint but outside BOTH sets' own spreads (a<0.836, b<0.815):
+  0.8513 (a 0.835 b 0.815)  met-33513    Early Sword
+  0.8474 (a 0.834 b 0.808)  met-26941    Banner
+  0.8465 (a 0.831 b 0.809)  aic-132945   Flowering Plum Blossom 梅花竹柄团扇
 ```
 
 This is the operation that is hard to describe without the corpus and trivial with it.
+
+**Use this pair, not `withheld interference`.** The command refuses to pretend: above a centroid
+cosine of 0.95 it prints *"the two centroids are nearly the same point, so this blend has almost
+nothing to blend"* and `withheld × interference` sits at **0.9598**, so it says exactly that.
+The three pairs are 0.9598, 0.9319 and **0.8769** — `interference × many-hands` is the only one with
+real distance between the two centroids, and it is the one whose far region returns swords, a banner
+and a fan rather than twelve more textile fragments. If someone asks about the other pairs, the
+degenerate warning is a feature and worth showing on purpose.
 
 ---
 
@@ -166,17 +185,20 @@ instead of letting you supply the significance.
 node dist/studio/corpus.js plates out/condition-withheld
 ```
 
-52 plates from three trajectories, embedded with the image tower and measured against the corpus and
-against the position's own influence set. It writes **sidecars only** —
+**17 plates** — one final and sixteen sketches, this one trajectory. (52 is the figure for all three
+trajectory directories at once; pass them all if you want it, but on stage run the one.) Each is
+embedded with the image tower and measured against the corpus and against the position's own
+influence set. It writes **sidecars only** —
 `scores.corpus.json`, `plates.clip.f32`, `plates.clip-index.json`. No byte of any existing
 `scores.json` moves.
 
 The last column is the one to read: percentile against the influence set, where **50.0% means "as
 near this position's influences as a corpus work drawn at random."**
 
-**The honest headline, and it is a negative one:** the two finished finals land at the **46.4th and
-1.5th percentile**. The work this project has made is not near the background the position
-describes. That is a measurement, taken before anything was wired in, and it is the number Stage 5's
+**The honest headline, and it is a negative one:** this run's final lands at the **46.4th
+percentile** — the number on screen. The other finished trajectory (`out/openai-withheld`, add it to
+the command line to see it) lands at the **1.5th**. The work this project has made is not near the
+background the position describes. That is a measurement, taken before anything was wired in, and it is the number Stage 5's
 wiring would have to move.
 
 Two more nulls printed by this command:
@@ -194,8 +216,18 @@ Two more nulls printed by this command:
 ## 5. The map, and the run laid over it — already built, 53 s if it is not
 
 ```bash
-open docs/demo/rendered/atlas-condition-withheld__inf-withheld.html   # tracked, 1.8 MB
-# open corpus/atlas-clip.html                                        # the bare map
+open docs/demo/rendered/atlas-condition-withheld__inf-withheld.html   # tracked, 1.7 MB
+```
+
+The "the same works by metadata →" button top-right now works: `docs/demo/rendered/atlas.html` is
+tracked alongside it, so the two maps sit in one folder and the link between them resolves. Before
+today it pointed at a file that was only ever in `corpus/`, and clicking it on stage would have
+given a file-not-found.
+
+**Do not run the rebuild on stage.** It is 53 s, which is five times the ten seconds anything live is
+allowed to take, and the page it produces is the page already open:
+
+```bash
 # node dist/studio/corpus.js atlas --clip --umap --overlay out/condition-withheld --influences withheld   # 53s
 ```
 
@@ -255,6 +287,41 @@ npm run notebooks
 ```
 
 ---
+
+## 7. Servers, ports, and what to do when one dies
+
+**Nothing in §1–§6 needs a server.** Every page above is opened with `open <file>` over `file://`:
+the atlas pages inline their 19,791 points into one `<script>` and draw to a `<canvas>`, and the
+influences sheet inlines its PNG as a data URI. All six were loaded headless from `file://` and
+**none logged a console error**. This is the whole reason the fallback is credible.
+
+Two servers may be running from earlier work, and **neither is needed**:
+
+```bash
+lsof -nP -iTCP:4321 -sTCP:LISTEN     # the studio UI  (npm run ui)
+lsof -nP -iTCP:4322 -sTCP:LISTEN     # the atlas server (python3 -m http.server)
+```
+
+If you want the atlas served rather than opened as a file — the only reason being that a server lets
+you reload without re-picking the file — then:
+
+```bash
+python3 -m http.server 4322 --directory corpus     # then http://localhost:4322/atlas-clip.html
+```
+
+**If that port is taken or the server dies mid-demo, do not debug it.** Both maps are also sitting in
+the tracked folder as plain files:
+
+```bash
+open docs/demo/rendered/atlas-clip.html    # the appearance map, bare
+open docs/demo/rendered/atlas.html         # the metadata map, bare
+```
+
+and if you want everything behind one URL instead, one line with no install and no repo state:
+
+```bash
+npx serve docs/demo/rendered               # or: python3 -m http.server 8080 --directory docs/demo/rendered
+```
 
 ## The three sentences to have ready
 
