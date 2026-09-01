@@ -314,8 +314,11 @@ test('bizarreness is reported on the set and is not wired into any score', () =>
   const set = applyInfluence(program({}), directions(), 'a-hand', 'palette', 1.5, stats(), WEIGHTS.weights);
   assert.equal(set.bizarreness, 1.5);
   // The prompt's rule, asserted mechanically: nothing that computes a run's reward may read this.
+  // The import path, not the bare word — `influences` was already the name of the corpus works a run
+  // is shown, which reward.ts has always been allowed to talk about, and matching on the word makes
+  // this test fire on a sentence about that instead of on a reachable dependency.
   const reward = readFileSync(path.join(ROOT, 'artist', 'reward.ts'), 'utf8');
-  assert.doesNotMatch(reward, /bizarreness|influence/i, 'reward.ts has learned about the influence layer');
+  assert.doesNotMatch(reward, /bizarreness|influence\//i, 'reward.ts has learned about the influence layer');
 });
 
 // --- the additive-only gate ----------------------------------------------------------------------

@@ -40,6 +40,7 @@ import {
   totalDrift,
   visibleRate,
 } from './intention.js';
+import { moveSummary } from './moves.js';
 import { grounded } from './phases/find.js';
 import { bareEdit, servedNodeIds } from './schemas.js';
 import { readLog, verifyChain, type LogLine } from './studio-log.js';
@@ -48,6 +49,7 @@ import type {
   Control,
   EdgeEstimate,
   Intention,
+  MoveRecord,
   Problem,
   Program,
   RefusalCause,
@@ -119,6 +121,17 @@ interface StepLine {
    * nothing ever improved.
    */
   improved?: boolean | null;
+  /**
+   * The step's size on the page, and its epistemic moves with the environment's audit of their refs.
+   *
+   * `moves` is read off the log rather than re-derived for the same reason `declaration` is: the
+   * grounding check reads what the run showed — the influence set, the plan and the constraint table
+   * as they stood at that step — and rebuilding that offline would mean re-deriving every
+   * intermediate look. Absent on every log written before the action space had moves in it; `null`
+   * on a step logged after and asked. `moveSummary` reads both as "not recorded".
+   */
+  moves?: MoveRecord[] | null;
+  pixelsMoved?: number;
 }
 
 /** A `note` line from the finish gate. `accepted` is the environment's answer, not the artist's. */
@@ -320,6 +333,7 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
       // Read off the logged flag, never recomputed, for the same reason `inertSteps` is: it compares
       // against the running best standing, which the log does not carry per step.
       gradient: gradientOf(steps.map((s) => s.improved)),
+      moves: moveSummary(steps),
       // Null when the gate never ran at all: a log with no gate lines cannot say whether the run
       // would have been refused, and 0 would claim it asked once and was let go.
       finishRefusals: gates.length === 0 ? null : gates.filter((g) => g.accepted === false).length,

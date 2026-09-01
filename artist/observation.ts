@@ -38,6 +38,7 @@ import type { AestheticProgram, CheckReport } from '../aesthetic/types.js';
 import type { Brief, Practice } from './field.js';
 import { affectSentence } from './affect.js';
 import { bindingOf } from './intention.js';
+import { moveLine } from './moves.js';
 import type { Affect, Field, Intention, Problem, Step, TriggerName } from './types.js';
 
 /**
@@ -371,7 +372,11 @@ export function historySection(steps: Step[], keep = 4): string {
   const recent = steps.slice(-keep).map((s) => {
     const verdict = s.accepted ? 'kept' : `reverted (${s.revertedBecause ?? 'no reason recorded'})`;
     const kinds = s.action.edits.map((e) => e.kind).join(' ');
-    return `step ${s.k}: ${verdict} — ${kinds || 'no edits'}\n      you said: ${s.action.think}`;
+    // The moves are echoed back with the environment's audit of their refs attached. A `reject` the
+    // artist cannot see two steps later is one it will make again, and an unfounded ref it is never
+    // shown is one it will keep spelling the same wrong way.
+    const moves = (s.moves ?? []).map((m) => `\n      move: ${moveLine(m)}`).join('');
+    return `step ${s.k}: ${verdict} — ${kinds || 'no edits'}${moves}\n      you said: ${s.action.think}`;
   });
   return section(
     `WHAT YOU HAVE DONE (${steps.length} steps; last ${Math.min(keep, steps.length)} shown)`,
@@ -584,6 +589,14 @@ export function makeObservation(c: MakeContext): string {
         'undecided while you work because the tree cannot answer them. When you ask to stop, each hard',
         'rubric is put to a frozen reader that sees the sheet and the question, but not your position,',
         'brief, plan, or intended answer. Only a visible failure blocks; `cannot-tell` does not.',
+        '',
+        'NOT EVERYTHING YOU DO IS A MARK. Beside the edits there are five moves that touch no pixels,',
+        'and `moves` is where they go: retrieve, reject, copy-as-study, extract-a-relation, reframe.',
+        'The empty list is the ordinary answer — most steps are just painting — and recording one buys',
+        'you nothing here: a move does not reset the stall, does not lift your state, and does not stop',
+        'a step counting as one that changed nothing. Record one when you made one, because a decision',
+        'that exists only inside `think` is not on the record as a decision, and turning something down',
+        'and never having looked at it are the same thing to everyone reading afterwards.',
         '',
         'Every edit must be legal in the medium described at the top. An illegal edit is refused and',
         'costs you the step. If you need a node id, take it from the program above.',

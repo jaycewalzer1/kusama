@@ -248,6 +248,16 @@ test('gate 1: the trajectory replays exactly, with no model and no divergence', 
 });
 
 test('gate 2: scores.json rebuilds exactly from the log alone', async () => {
+  // Checked before the comparison, because `deepEqual(null, null)` passes and would report a
+  // round trip that never happened. The stub declares moves on the step it asks to finish on, so a
+  // null summary here means the record dropped them between the step and the log — which is the
+  // one failure gate 2 exists to catch and the one it cannot see by agreeing with itself.
+  const summary = trajectory.scores.moves;
+  assert.ok(summary, 'the run was asked for epistemic moves and recorded some');
+  assert.ok(summary.total > 0);
+  assert.ok(summary.grounded < summary.total, 'a ref naming nothing shown is on the record as unfounded');
+  assert.ok(summary.pixellessSteps > 0, 'a step that decided something and moved nothing is counted');
+
   const result = await recomputeMatches(CELL);
   assert.deepEqual(result.differences, []);
   // MUST STAY FLAT. A run recorded by this build has every score the recompute produces, so nothing

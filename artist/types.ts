@@ -184,6 +184,50 @@ export interface Affect {
 
 export type Control = 'continue' | 'replan' | 'finished' | 'abandon';
 
+/**
+ * A move that touches no pixels. See ./moves.ts for what each one means and what is checked.
+ *
+ * These live here rather than in moves.ts because `Action` and `Step` are the trajectory's own
+ * vocabulary and `reward.ts` has to rebuild both from the log alone; moves.ts holds the arithmetic
+ * over them, which is a different thing and is allowed to change without changing what a trajectory
+ * is.
+ */
+export type MoveKind = 'retrieve' | 'reject' | 'copy-as-study' | 'extract-a-relation' | 'reframe';
+
+export interface EpistemicMove {
+  kind: MoveKind;
+  /**
+   * What the move is about, as ids the artist was shown, verbatim. `extract-a-relation` names two
+   * or more; the rest name at least one. Never prose — the prose goes in `because`, and a ref field
+   * that accepts a sentence is a ref field nothing can check.
+   */
+  refs: string[];
+  because: string;
+}
+
+/** One move as the environment recorded it: what was claimed, and which refs named nothing. */
+export interface MoveRecord {
+  move: EpistemicMove;
+  /** Refs outside everything the environment put in front of this run. Empty means grounded. */
+  unknownRefs: string[];
+}
+
+/** A run's moves, counted. Built by `moveSummary` in ./moves.ts; carried on `Scores`. */
+export interface MoveSummary {
+  total: number;
+  byKind: Record<MoveKind, number>;
+  /** Moves every ref of which named something the environment actually showed. */
+  grounded: number;
+  /**
+   * Steps that made at least one move and moved no pixels — the reading this exists for. Reported
+   * beside `inertSteps`, never subtracted from it. A high number here against a high `inertSteps`
+   * is the run to look at; it is not by itself a verdict in either direction.
+   */
+  pixellessSteps: number;
+  /** Steps that made at least one move at all, pixels or no pixels. */
+  stepsWithMoves: number;
+}
+
 /** What the artist says and does in one turn. Exactly one policy call produces all of it. */
 export interface Action {
   think: string;
@@ -212,6 +256,16 @@ export interface Action {
    * thing is and the artist named it.
    */
   unrealizable: string | null;
+  /**
+   * What this step did that was not a mark: what it went and got, what it turned down, what it
+   * copied to understand, what relation it lifted, what it re-read the piece as.
+   *
+   * Optional in the type and required in the schema, on exactly the rule `warrant` follows. Every
+   * trajectory recorded before the field existed has none, and `undefined` there reads as "never
+   * asked" — not as "was offered the vocabulary and made no move". `moveSummary` returns null for a
+   * run of them rather than reporting a corpus that retrieved nothing.
+   */
+  moves?: EpistemicMove[];
   edits: (EditAction & { servesElementId?: string })[];
 }
 
@@ -317,6 +371,15 @@ export interface Step {
    * `undefined` on steps recorded before the field existed — see `Action.warrant`.
    */
   warrant?: StepWarrant | null;
+  /**
+   * This step's epistemic moves, each with the refs that named nothing the run was shown.
+   *
+   * Stamped by the environment rather than copied off the action, because the grounding check needs
+   * what was shown, and what was shown is the environment's fact — the action carries the claim and
+   * this carries the claim plus the audit of it. `undefined` on any step logged before the field
+   * existed; the empty array is a real answer and means the step was asked and made no move.
+   */
+  moves?: MoveRecord[];
   /**
    * Whether the plate was actually attached to this step's THINK+ACT call, and the change image
    * with it. Stamped from the context that was built, not from the run's flag: the flag says what
@@ -491,6 +554,17 @@ export interface Scores {
    * `null` when no step recorded `improved`, for the reason `inertSteps` is null there.
    */
   gradient: { improvedSteps: number; trailing: number; longestStall: number } | null;
+  /**
+   * The moves that touched no pixels, counted. `null` on a run that was never asked for them.
+   *
+   * It sits here beside `inertSteps` and `gradient` and is deliberately not folded into either.
+   * `pixellessSteps` inside it counts the same steps `inertSteps` counts, from the other side: one
+   * says the picture did not move, the other says something was decided anyway. Reading them
+   * together is the point; reading either as a correction to the other is not, and subtracting one
+   * from the other would make attaching a sentence to an empty step a way out of the repo's only
+   * reward-hacking counter. See ./moves.ts.
+   */
+  moves: MoveSummary | null;
   /**
    * Times the artist asked to finish and the environment refused. `null` on a run that predates the
    * gate — distinct from 0, which means it asked once and was let go, or never asked at all.

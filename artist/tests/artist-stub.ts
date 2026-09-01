@@ -201,7 +201,22 @@ export class StubPolicy implements Policy {
     // act
     const k = this.acts++;
     if (k >= this.steps) {
-      return { think: 'The dates and the place are all on the sheet and legible. Nothing more is needed.', control: 'finished', risk: null, unrealizable: null, edits: [] };
+      return {
+        think: 'The dates and the place are all on the sheet and legible. Nothing more is needed.',
+        control: 'finished',
+        risk: null,
+        unrealizable: null,
+        // A terminal step with no edits: the one place the stub can produce a step that moves no
+        // pixels and still decides something, which is what `pixellessSteps` counts. The second
+        // move's ref is deliberately not one this run was ever shown, so the round trip through the
+        // log carries an unfounded move as well as a grounded one — otherwise gate 2 would only
+        // ever compare two nulls and the rebuild would be untested.
+        moves: [
+          { kind: 'reframe', refs: ['dates'], because: 'the piece is about the interval, not the two ends of it' },
+          { kind: 'reject', refs: ['met-000000'], because: 'nothing in this run ever put that in front of me' },
+        ],
+        edits: [],
+      };
     }
     if (k === 0) {
       return {
