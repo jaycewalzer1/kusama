@@ -62,7 +62,8 @@ import { aspectAudit, aspectText } from '../artist/aspect.js';
 import { crossing, crossingText } from '../artist/crossing.js';
 import { DINO_MATRIX, unavailableMessage as dinoUnavailableMessage } from '../artist/dino.js';
 import { elementBand, elementBandText, loadResolvedGroups } from '../artist/element-band.js';
-import { secondSpace, secondSpaceText } from '../artist/second-space.js';
+import { alignSpaces, secondSpace, secondSpaceText } from '../artist/second-space.js';
+import { PER_SEED, expansion, expansionText } from '../artist/expand.js';
 import {
   available as resemblanceAvailable,
   embed,
@@ -1691,6 +1692,36 @@ program
       return;
     }
     process.stdout.write(secondSpaceText(secondSpace(Number(opts.k), Number(opts.queries))));
+  });
+
+program
+  .command('expand')
+  .argument('<influences...>', 'resolved influence set ids, or paths to .resolved.json files')
+  .description("would DINOv2 widen a position's shelf somewhere CLIP image-space would not")
+  .option('-p, --per-seed <n>', 'neighbours drawn from each seed work', String(PER_SEED))
+  .action((ids: string[], opts: { perSeed: string }) => {
+    if (!embeddingsAvailable() || !existsSync(DINO_MATRIX)) {
+      process.stdout.write(
+        `${embeddingsAvailable() ? '' : `${embeddingsUnavailableMessage()}\n`}` +
+          `${existsSync(DINO_MATRIX) ? '' : `No second space at corpus/dino.f32 — build it with \`node scripts/dino-embed.mjs\` (~17 min, no API, no key).\n${dinoUnavailableMessage()}\n`}`,
+      );
+      process.exitCode = 1;
+      return;
+    }
+    // Both 19,791-row matrices are joined once and reused, so several sets in one invocation are
+    // compared over exactly the same pool — a second join could silently differ and the difference
+    // would read as a difference between the positions.
+    const shared = alignSpaces();
+    for (const id of ids) {
+      const r = loadResolved(id);
+      if (!r) {
+        process.stdout.write(`no resolved influence set for ${id} — run \`corpus influences resolve ${id}\` first\n`);
+        process.exitCode = 1;
+        continue;
+      }
+      process.stdout.write(expansionText(expansion(r, Number(opts.perSeed), shared)));
+      process.stdout.write('\n');
+    }
   });
 
 await program.parseAsync(process.argv);

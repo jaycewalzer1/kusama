@@ -85,32 +85,57 @@ const sd = (xs: number[], m: number) => Math.sqrt(xs.reduce((s, x) => s + (x - m
  * and never by prefix — the manifest is written grouped by source, so a prefix would measure one
  * museum and report it as the corpus.
  */
+export interface AlignedSpaces {
+  /** Works held in BOTH spaces, in CLIP's order. */
+  entries: CorpusEmbeddings['entries'];
+  /** Repacked into the shared order, so a row index means one thing to every caller. */
+  clipRows: Float32Array;
+  dinoRows: Float32Array;
+  n: number;
+}
+
+/**
+ * The two matrices joined by sha256, not by row.
+ *
+ * Both went through the same loader and the same dedupe, so "the same images in the same order" is
+ * very nearly safe — and this is what turns "very nearly" into a check. A row misalignment shows up
+ * as a small intersection, which is obvious, rather than as a plausible wrong number, which is not.
+ * Exactly one copy of this exists because two callers joining differently would report their
+ * disagreement about the join as a finding about the encoders.
+ */
+export function alignSpaces(
+  clip: CorpusEmbeddings = loadCorpusEmbeddings(),
+  dino: CorpusEmbeddings = loadEmbeddings(DINO_MATRIX, DINO_INDEX, DINO_DIM)
+): AlignedSpaces {
+  const dinoAt = new Map(dino.entries.map((e, i) => [e.sha256, i]));
+  const entries: CorpusEmbeddings['entries'] = [];
+  const dinoRowOf: number[] = [];
+  for (let i = 0; i < clip.entries.length; i++) {
+    const j = dinoAt.get(clip.entries[i]!.sha256);
+    if (j !== undefined) {
+      entries.push(clip.entries[i]!);
+      dinoRowOf.push(j);
+    }
+  }
+  const n = entries.length;
+  const clipRows = new Float32Array(n * CLIP_DIM);
+  const dinoRows = new Float32Array(n * DINO_DIM);
+  entries.forEach((e, i) => {
+    clipRows.set(rowAt(clip.rows, e.row, CLIP_DIM), i * CLIP_DIM);
+    dinoRows.set(rowAt(dino.rows, dinoRowOf[i]!, DINO_DIM), i * DINO_DIM);
+  });
+  return { entries, clipRows, dinoRows, n };
+}
+
 export function secondSpace(
   k = 12,
   sampleSize = 1000,
   clip: CorpusEmbeddings = loadCorpusEmbeddings(),
   dino: CorpusEmbeddings = loadEmbeddings(DINO_MATRIX, DINO_INDEX, DINO_DIM)
 ): SecondSpace {
-  // Aligned by sha256, not by row. Both matrices went through the same loader and the same dedupe,
-  // but "the same images in the same order" is an assumption and this is what turns it into a check:
-  // a row misalignment would show up here as a small intersection rather than as a wrong number.
-  const dinoAt = new Map(dino.entries.map((e, i) => [e.sha256, i]));
-  const shared: { clipRow: number; dinoRow: number; source: string }[] = [];
-  for (let i = 0; i < clip.entries.length; i++) {
-    const j = dinoAt.get(clip.entries[i]!.sha256);
-    if (j !== undefined) shared.push({ clipRow: i, dinoRow: j, source: clip.entries[i]!.work.source });
-  }
-  const n = shared.length;
+  const { entries, clipRows, dinoRows, n } = alignSpaces(clip, dino);
   if (n < k + 2) throw new Error(`only ${n} work(s) are in both spaces; ${k} neighbours cannot be drawn`);
-
-  // The two matrices are repacked into the shared order so a row index means one thing in this file.
-  const clipRows = new Float32Array(n * CLIP_DIM);
-  const dinoRows = new Float32Array(n * DINO_DIM);
-  shared.forEach((s, i) => {
-    clipRows.set(rowAt(clip.rows, s.clipRow, CLIP_DIM), i * CLIP_DIM);
-    dinoRows.set(rowAt(dino.rows, s.dinoRow, DINO_DIM), i * DINO_DIM);
-  });
-  const sources = shared.map((s) => s.source);
+  const sources = entries.map((e) => e.work.source);
 
   const counts: Record<string, number> = {};
   for (const s of sources) counts[s] = (counts[s] ?? 0) + 1;
@@ -120,7 +145,7 @@ export function secondSpace(
   const chance = Object.values(counts).reduce((acc, c) => acc + (c / n) * ((c - 1) / (n - 1)), 0);
 
   const queries = evenSample(
-    shared.map((_, i) => i),
+    entries.map((_, i) => i),
     sampleSize
   );
 
