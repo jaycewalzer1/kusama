@@ -64,6 +64,13 @@ corpus/atlas-clip.html
 corpus/clip.f32
 corpus/clip-index.json
 
+# The second space, same rows in the same sha256 order: DINOv2-small's 384-d CLS token, 30MB,
+# `node scripts/dino-embed.mjs`. Ignored for the same reasons and one more — it exists to disagree
+# with the matrix above, and a tracked copy of it would be a second published space rather than a
+# check on the first.
+corpus/dino.f32
+corpus/dino-index.json
+
 # Analytics exports: a flat-file view of the tracked manifest and the derived embeddings, for
 # notebooks. `knn-k20.csv` alone is ~400k rows. Everything in here is reproduced by
 # `npm run corpus -- export-analytics`, so it is a view and not a source.

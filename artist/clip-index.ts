@@ -61,13 +61,29 @@ let cached: CorpusEmbeddings | null = null;
 
 export function loadCorpusEmbeddings(): CorpusEmbeddings {
   if (cached) return cached;
-  if (!embeddingsAvailable()) throw new Error(embeddingsUnavailableMessage());
+  cached = loadEmbeddings(CLIP_MATRIX, CLIP_INDEX, DIM);
+  return cached;
+}
 
-  const index: string[] = JSON.parse(readFileSync(CLIP_INDEX, 'utf8'));
-  const buf = readFileSync(CLIP_MATRIX);
-  const rowsInFile = Math.floor(buf.length / (DIM * 4));
+/**
+ * The same join for any matrix written in the same shape — rows of `dim` float32 in sorted sha256
+ * order, with a JSON array naming each row's sha.
+ *
+ * Split out of `loadCorpusEmbeddings` when `artist/dino.ts` added a second space over the same
+ * images. The dedupe, the zero-row rule and the lowest-id-wins tie-break are the load-bearing part
+ * and there must be exactly one copy of them: a second space that deduped differently would report
+ * its disagreement with the first as a finding about the encoders.
+ */
+export function loadEmbeddings(matrixPath: string, indexPath: string, dim: number): CorpusEmbeddings {
+  if (!existsSync(matrixPath) || !existsSync(indexPath) || !existsSync(MANIFEST)) {
+    throw new Error(`No embeddings at ${path.relative(ROOT, matrixPath)}; see corpus/README.md.`);
+  }
+
+  const index: string[] = JSON.parse(readFileSync(indexPath, 'utf8'));
+  const buf = readFileSync(matrixPath);
+  const rowsInFile = Math.floor(buf.length / (dim * 4));
   if (rowsInFile !== index.length) {
-    throw new Error(`${CLIP_MATRIX} holds ${rowsInFile} rows but the index names ${index.length}`);
+    throw new Error(`${matrixPath} holds ${rowsInFile} rows but the index names ${index.length}`);
   }
   const at = new Map(index.map((sha, i) => [sha, i]));
 
@@ -89,10 +105,10 @@ export function loadCorpusEmbeddings(): CorpusEmbeddings {
   for (const [sha, sharing] of bySha) {
     const i = at.get(sha);
     if (i === undefined) continue;
-    const row = new Float32Array(DIM);
+    const row = new Float32Array(dim);
     let any = false;
-    for (let j = 0; j < DIM; j++) {
-      const v = buf.readFloatLE((i * DIM + j) * 4);
+    for (let j = 0; j < dim; j++) {
+      const v = buf.readFloatLE((i * dim + j) * 4);
       row[j] = v;
       if (v !== 0) any = true;
     }
@@ -111,11 +127,10 @@ export function loadCorpusEmbeddings(): CorpusEmbeddings {
     kept.push(row);
   }
 
-  const rows = new Float32Array(entries.length * DIM);
-  kept.forEach((r, i) => rows.set(r, i * DIM));
+  const rows = new Float32Array(entries.length * dim);
+  kept.forEach((r, i) => rows.set(r, i * dim));
 
-  cached = { entries, rows, rowsInFile, duplicates, zeroRows };
-  return cached;
+  return { entries, rows, rowsInFile, duplicates, zeroRows };
 }
 
 /** Row `i` of a packed matrix, as a view. Not a copy — do not mutate it. */

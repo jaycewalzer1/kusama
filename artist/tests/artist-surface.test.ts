@@ -32,7 +32,15 @@ import path from 'node:path';
 
 import { ROOT } from '../../env/browser.js';
 import { GROUND_CONFIDENT_SHARE, estimateGround, type Rgb } from '../pixels.js';
-import { MIN_MEASURED, surfaceFrom, surfaceText, surfaces, type SurfaceReport } from '../surface.js';
+import {
+  AXIS_SHARE_CHANCE,
+  MIN_MEASURED,
+  axisShare,
+  surfaceFrom,
+  surfaceText,
+  surfaces,
+  type SurfaceReport,
+} from '../surface.js';
 import { imagePath, readManifest, type Work } from '../manifest.js';
 
 // --- synthetic images ---------------------------------------------------------------------------
@@ -274,6 +282,123 @@ test('estimateGround reports extent as well as share, so a nearly empty image is
   assert.equal(g.extent.toFixed(3), (8 / 9).toFixed(3));
   const empty = estimateGround(image(100, 100, flatWhite));
   assert.equal(empty.extent, 1);
+});
+
+// --- grain, the direction family ------------------------------------------------------------------
+
+/**
+ * A square of stripes running at `deg`, where `deg` is the direction the stripes THEMSELVES run —
+ * the same convention `grain.angle` reports, so a test reads as the thing it is checking.
+ *
+ * The stripe field is a cosine rather than hard black-and-white bars, because bars alias: their
+ * edges land on the pixel grid at some angles and not others, which puts a staircase into the
+ * gradients and a false axis peak into the histogram. A cosine has the same direction everywhere
+ * and no edges at all.
+ */
+function stripes(deg: number, side = 128, period = 8): Rgb {
+  const rad = (deg * Math.PI) / 180;
+  // The wave varies ACROSS the stripes, so its direction is a quarter turn from theirs.
+  const nx = Math.sin(rad);
+  const ny = -Math.cos(rad);
+  return image(side, side, (x, y) => {
+    const v = Math.round(128 + 100 * Math.cos((2 * Math.PI * (x * nx + y * ny)) / period));
+    return [v, v, v];
+  });
+}
+
+/** Left half from `a`, right half from `b`. Both must be the same size. */
+function halves(a: Rgb, b: Rgb): Rgb {
+  const { width, height } = a;
+  return image(width, height, (x, y) => {
+    const src = x < width / 2 ? a : b;
+    const i = (y * width + x) * 3;
+    return [src.data[i]!, src.data[i + 1]!, src.data[i + 2]!];
+  });
+}
+
+const grainOfImage = (img: Rgb) => surfaceFrom(img, 'g', '', true).grain;
+/** Circular distance between two orientations, which live modulo 180. */
+const apart = (a: number, b: number) => Math.min(Math.abs(a - b), 180 - Math.abs(a - b));
+
+test('a flat image has no grain, and says so rather than reading a direction off rounding error', () => {
+  const g = grainOfImage(image(100, 100, () => [128, 128, 128]));
+  assert.equal(g.anisotropy, 0);
+  assert.equal(g.angle, 0);
+  assert.deepEqual(
+    g.histogram.map((v) => v),
+    new Array(12).fill(0)
+  );
+  // The trap this guards is specific: unguarded, `atan2(0, 0)` is 0 and the coherence ratio is NaN,
+  // so a blank sheet would report a perfectly confident horizontal grain. Assert the absence, not
+  // just the value, or a NaN would satisfy `!== 90`.
+  assert.ok(Number.isFinite(g.anisotropy));
+});
+
+test('grain.angle reports the direction the marks run, on both axes and the diagonals', () => {
+  for (const deg of [0, 30, 45, 90, 135, 150]) {
+    const g = grainOfImage(stripes(deg));
+    assert.ok(
+      apart(g.angle, deg) < 3,
+      `stripes at ${deg} deg read as ${g.angle.toFixed(1)}, ${apart(g.angle, deg).toFixed(1)} away`
+    );
+    // A pure grating is perfectly coherent, so this is near 1 at every angle including the
+    // diagonals. It was 0.849 at 45 degrees while the gradients were plain forward differences —
+    // that threshold would have passed had it been written as 0.84, and the systematic bias against
+    // diagonal structure would have shipped. The number that made it visible is this one.
+    assert.ok(g.anisotropy > 0.95, `stripes at ${deg} deg had anisotropy ${g.anisotropy.toFixed(3)}`);
+  }
+});
+
+test('orientation wraps at 180, which a mean of angles gets exactly backwards', () => {
+  // 10 and 170 are twenty degrees apart across the wrap, so their true average is horizontal. A
+  // naive `(10 + 170) / 2` is 90 — vertical, the perpendicular of the right answer. This is the
+  // whole reason `grainOf` sums a tensor instead of averaging `atan2` per pixel, so it is asserted
+  // directly and not inferred from the diagonal cases above.
+  const g = grainOfImage(halves(stripes(10), stripes(170)));
+  assert.ok(apart(g.angle, 0) < 12, `two halves at 10 and 170 read as ${g.angle.toFixed(1)}, not ~0`);
+  assert.ok(apart(g.angle, 90) > 45, 'the naive mean of 10 and 170 is 90, and that is the wrong answer');
+});
+
+test('anisotropy and the histogram answer different questions, and a crosshatch separates them', () => {
+  // Two equally strong hatchings a quarter turn apart, in different PLACES. The image as a whole
+  // runs no particular way, so anisotropy is near zero — and that is correct, not a failure. The
+  // histogram is where the two directions are still visible, which is why both fields exist.
+  //
+  // They have to be side by side rather than summed. `cos(x) + cos(y)` looks like a crosshatch and
+  // is not one: adding two gratings makes an egg-crate whose every local gradient points diagonally,
+  // so it reads as peaks at 45 and 135. That was the first version of this test and the code was
+  // right about the image.
+  const g = grainOfImage(halves(stripes(0), stripes(90)));
+  assert.ok(g.anisotropy < 0.25, `a crosshatch should not lean; anisotropy was ${g.anisotropy.toFixed(3)}`);
+
+  const peaks = g.histogram
+    .map((v, b) => ({ v, b }))
+    .sort((p, q) => q.v - p.v)
+    .slice(0, 2)
+    .map((p) => p.b)
+    .sort((p, q) => p - q);
+  // Bin 0 is horizontal, bin 6 is vertical, at 12 bins over the half-circle.
+  assert.deepEqual(peaks, [0, 6], `expected peaks at horizontal and vertical, got bins ${peaks.join(',')}`);
+  assert.ok(g.anisotropy < 0.25 && axisShare(g) > 0.9, 'the crosshatch is axis-aligned even though it does not lean');
+});
+
+test('the grain histogram is a distribution, and axisShare has a chance baseline of a third', () => {
+  const g = grainOfImage(stripes(45));
+  const total = g.histogram.reduce((a, b) => a + b, 0);
+  assert.ok(Math.abs(total - 1) < 1e-9, `histogram summed to ${total}`);
+
+  // Four of twelve bins touch an axis, so an image with no preferred direction reads 1/3. The
+  // constant is asserted rather than assumed, because every reading of this field is against it.
+  assert.equal(AXIS_SHARE_CHANCE.toFixed(4), (1 / 3).toFixed(4));
+  // Stripes at 45 degrees are the furthest a direction can get from both axes, so they must read
+  // well BELOW chance. Stated as a fraction of chance rather than as an absolute, because the
+  // absolute is only readable next to the baseline: 0.11 sounds small and means nothing until you
+  // know that a directionless image reads 0.33.
+  assert.ok(
+    axisShare(g) < AXIS_SHARE_CHANCE / 2,
+    `45-degree stripes read axisShare ${axisShare(g).toFixed(4)} against ${AXIS_SHARE_CHANCE.toFixed(4)} chance`
+  );
+  assert.ok(axisShare(grainOfImage(stripes(0))) > 0.9, 'horizontal stripes must read far above chance');
 });
 
 // --- the batch ------------------------------------------------------------------------------------

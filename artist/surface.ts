@@ -106,6 +106,19 @@ const PALETTE_TOP = 8;
 const PALETTE_COVER = 0.9;
 /** Halvings of resolution in `energy.byOctave`. */
 const OCTAVES = 3;
+/** Bins in `grain.histogram`, over the half-circle. 12 bins is one every 15 degrees. */
+const GRAIN_BINS = 12;
+/**
+ * Floor on the structure tensor's trace, below which the image is called directionless.
+ *
+ * The same class of guard as `weightOf`'s `total < 1/255` and for the same reason: on a flat field
+ * every gradient is zero, the tensor is all zeros, and both the coherence ratio and `atan2(0, 0)`
+ * are 0/0. Unguarded, `atan2` returns 0 and the ratio returns NaN — an image would report a
+ * confident horizontal grain read off nothing. The trace is a sum of squared luminance differences,
+ * so one pixel pair differing by a single 8-bit level contributes `(1/255)^2`; anything with real
+ * content clears this by orders of magnitude.
+ */
+const GRAIN_FLOOR = 1 / 255 ** 2;
 
 /**
  * Below this many measurable works, no band is printed.
@@ -146,6 +159,33 @@ export interface Surface {
   };
   /** Mean absolute luminance gradient, overall and at three halvings of resolution. */
   energy: { gradient: number; byOctave: number[] };
+  /**
+   * Which way the marks run, and how much they agree about it. Defined for every image, like
+   * `weight` and unlike `metrics`, because it needs no ground.
+   *
+   * `anisotropy` is 0 when direction is spread evenly and 1 when every edge in the image runs the
+   * same way. `angle` is the direction the structure *runs* in degrees, 0 horizontal and 90
+   * vertical, measured anticlockwise from the x-axis and reported in [0, 180) because a line has no
+   * arrowhead. `histogram` is `GRAIN_BINS` bins over that same half-circle, weighted by gradient
+   * magnitude and summing to 1.
+   *
+   * **`anisotropy` and `histogram` answer different questions and neither substitutes for the
+   * other.** `anisotropy` is one tensor over the whole image, so two equally strong hatchings at
+   * +45 and -45 cancel to near zero — correctly, since the image as a whole runs no particular way,
+   * but that is not the same as "no direction in it". The histogram is where that image shows two
+   * peaks. Read `anisotropy` as *does the whole sheet lean*, and the histogram as *what directions
+   * are present at all*.
+   *
+   * **On a `studio-framing` row this is mostly the photograph.** A rectangular object on seamless
+   * paper puts a strong horizontal and vertical edge into the frame no matter what its surface
+   * does, so the histogram piles at the 0 and 90 bins for a reason that belongs to the photography
+   * department. Never pool this across `subject`, for exactly the reason `metrics` is never pooled.
+   *
+   * It is also not a measure of texture, weave, or hand. A halftone screen, a canvas weave, a
+   * scanner's banding and a deliberate hatch are indistinguishable here; all four are edges that
+   * agree about direction.
+   */
+  grain: { anisotropy: number; angle: number; histogram: number[] };
   /**
    * Where the visual weight sits, measured against the image's own mean luminance rather than
    * against a ground. Defined for EVERY image, including one with no ground at all.
@@ -335,6 +375,107 @@ function energyOf(img: Rgb): Surface['energy'] {
 }
 
 /**
+ * The structure tensor of the luminance gradients, summarised.
+ *
+ * **Why a tensor and not a mean of angles.** Orientation is a quantity modulo 180 degrees: a stroke
+ * at 10 degrees and a stroke at 170 are twenty degrees apart, not a hundred and sixty, and the mean
+ * of the two is horizontal rather than the vertical that averaging 10 and 170 produces. Summing
+ * `Gx^2`, `Gy^2` and `Gx*Gy` and taking `atan2` of the combination is the doubled-angle average that
+ * makes the wrap-around come out right, and it is the reason this is not four lines of `Math.atan2`
+ * in a loop. The same doubling is why `coherence` falls out for free: it is the length of the
+ * doubled-angle resultant over its total, which is exactly "how much do these directions agree".
+ *
+ * Gradients are differences over a 2x2 cell rather than forward differences, so that both components
+ * are sampled at the same point; see the loop. Any remaining bias toward the axis bins is left in
+ * rather than filtered out, because a filter here would be a choice about what a diagonal is worth,
+ * made once and invisible afterwards. It is small against the frame effect described on the field,
+ * which pushes the same way and is much larger.
+ */
+function grainOf(img: Rgb): Surface['grain'] {
+  const { width, height, data } = img;
+  const histogram = new Array<number>(GRAIN_BINS).fill(0);
+  const flat = { anisotropy: 0, angle: 0, histogram: histogram.map(() => 0) };
+  if (width < 2 || height < 2) return flat;
+
+  const n = width * height;
+  const lum = new Float64Array(n);
+  for (let p = 0; p < n; p++) lum[p] = luminance(data, p * 3);
+
+  let jxx = 0;
+  let jyy = 0;
+  let jxy = 0;
+  let weight = 0;
+  for (let y = 0; y < height - 1; y++) {
+    for (let x = 0; x < width - 1; x++) {
+      // Both differences are averaged over the 2x2 cell so that they are sampled at the SAME point,
+      // its centre. A plain forward difference puts `gx` half a pixel right of `gy`, which reads
+      // the two at different phases of any fine pattern and decorrelates them: a pure 45-degree
+      // grating, which should be perfectly coherent, measured 0.849 that way and measures 1.0000
+      // this way. The error is worst exactly on the diagonals, so it was a systematic bias against
+      // diagonal structure rather than noise.
+      const tl = lum[y * width + x]!;
+      const tr = lum[y * width + x + 1]!;
+      const bl = lum[(y + 1) * width + x]!;
+      const br = lum[(y + 1) * width + x + 1]!;
+      const gx = (tr - tl + (br - bl)) / 2;
+      const gy = (bl - tl + (br - tr)) / 2;
+      jxx += gx * gx;
+      jyy += gy * gy;
+      jxy += gx * gy;
+
+      // The gradient points across the edge; the structure runs along it, a quarter turn away.
+      // `atan2(gx, -gy)` is `atan2(gy, gx) + 90` folded into one call.
+      const mag = Math.hypot(gx, gy);
+      if (mag === 0) continue;
+      let a = Math.atan2(gx, -gy);
+      if (a < 0) a += Math.PI;
+      if (a >= Math.PI) a -= Math.PI;
+      histogram[Math.min(GRAIN_BINS - 1, Math.floor((a / Math.PI) * GRAIN_BINS))]! += mag;
+      weight += mag;
+    }
+  }
+
+  const trace = jxx + jyy;
+  if (trace < GRAIN_FLOOR || weight === 0) return flat;
+
+  // Coherence of the doubled-angle resultant: 0 when the two tensor eigenvalues are equal (no
+  // direction is preferred) and 1 when one of them is zero (every edge runs the same way).
+  const anisotropy = Math.hypot(jxx - jyy, 2 * jxy) / trace;
+  // Halved because the tensor works in doubled angles; +90 degrees for the same gradient-to-tangent
+  // quarter turn the histogram makes.
+  let angle = (0.5 * Math.atan2(2 * jxy, jxx - jyy) * 180) / Math.PI + 90;
+  angle = ((angle % 180) + 180) % 180;
+
+  return { anisotropy, angle, histogram: histogram.map((v) => v / weight) };
+}
+
+/**
+ * The share of gradient magnitude running within 15 degrees of horizontal or vertical.
+ *
+ * `grain.angle` cannot be banded across a corpus — it is circular, and the median of a wrap-around
+ * quantity is not a direction anything has. This is the scalar that can: four of the `GRAIN_BINS`
+ * bins touch an axis, so **an image with no preferred direction reads 4/12 = 0.3333, and that is the
+ * chance baseline every reading here is against.** Above it means axis-aligned structure — a weave,
+ * a rule, a hatch squared to the sheet, or, far more often in this corpus, the edge of the object
+ * and the edge of the photograph.
+ */
+export function axisShare(grain: Surface['grain']): number {
+  const h = grain.histogram;
+  if (h.length !== GRAIN_BINS) return 0;
+  const near = GRAIN_BINS / 12;
+  let sum = 0;
+  for (let b = 0; b < GRAIN_BINS; b++) {
+    const centre = ((b + 0.5) / GRAIN_BINS) * 180;
+    const toAxis = Math.min(centre, Math.abs(centre - 90), 180 - centre);
+    if (toAxis <= 15 * near) sum += h[b]!;
+  }
+  return sum;
+}
+
+/** The chance value of `axisShare` on an image with no preferred direction. */
+export const AXIS_SHARE_CHANCE = 4 / GRAIN_BINS;
+
+/**
  * The luminance-deviation centroid and how far the deviation lies from it.
  *
  * The weight is `|L - mean L|`, which has one property worth stating because it is easy to misread
@@ -462,6 +603,7 @@ export function surfaceFrom(img: Rgb, id: string, sha256: string, twoDimensional
     tone: toneOf(img),
     palette: paletteOf(img),
     energy: energyOf(img),
+    grain: grainOf(img),
     weight: weightOf(img),
     metrics,
     subject,
@@ -587,6 +729,12 @@ const OPEN_FIELDS: { label: string; of: (s: Surface) => number }[] = [
   { label: 'palette.distinct', of: (s) => s.palette.distinct },
   { label: 'palette.concentration', of: (s) => s.palette.concentration },
   { label: 'energy.gradient', of: (s) => s.energy.gradient },
+  // Two rows, not three: `grain.angle` has no band. It is a direction on a circle, so its median
+  // over a corpus is the median of a wrap-around quantity and means nothing — a corpus of purely
+  // horizontal and purely vertical images would report 45 degrees, a direction none of them has.
+  // The distribution of angles is a real question and `corpus surface` is not where it gets asked.
+  { label: 'grain.anisotropy', of: (s) => s.grain.anisotropy },
+  { label: 'grain.axisShare', of: (s) => axisShare(s.grain) },
   // Printed here, in the always-honest table, because it is defined for every image whether or not
   // a ground exists — which is the entire reason it exists. It is NOT a RenderMetrics field and is
   // deliberately nowhere near the inkOffset row.

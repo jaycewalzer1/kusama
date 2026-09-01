@@ -60,6 +60,9 @@ import { DIM, embedText, textAvailable, textUnavailableMessage } from '../artist
 import { lens, lensText } from '../artist/lens.js';
 import { aspectAudit, aspectText } from '../artist/aspect.js';
 import { crossing, crossingText } from '../artist/crossing.js';
+import { DINO_MATRIX, unavailableMessage as dinoUnavailableMessage } from '../artist/dino.js';
+import { elementBand, elementBandText, loadResolvedGroups } from '../artist/element-band.js';
+import { secondSpace, secondSpaceText } from '../artist/second-space.js';
 import {
   available as resemblanceAvailable,
   embed,
@@ -1651,6 +1654,43 @@ influences
     }
     const l = await lens(text, r, loadCorpusEmbeddings(), embedText);
     process.stdout.write(lensText(l, Number(opts.k)));
+  });
+
+program
+  .command('element-band')
+  .description("each element's hand-written numeric rules, against the works it actually names")
+  .option('--trials <n>', 'shuffles behind each chance figure', '10000')
+  .action((opts: { trials: string }) => {
+    const works = listWorks();
+    if (works.length === 0) {
+      process.stdout.write('no manifest — run `corpus metadata` and `corpus select` first\n');
+      process.exitCode = 1;
+      return;
+    }
+    const groups = loadResolvedGroups(new Map(works.map((w) => [w.id, w])), twoD);
+    if (groups.length === 0) {
+      process.stdout.write('no resolved influence sets — run `corpus influences resolve <id>` first\n');
+      process.exitCode = 1;
+      return;
+    }
+    process.stdout.write(elementBandText(elementBand(groups, Number(opts.trials))));
+  });
+
+program
+  .command('second-space')
+  .description('the same neighbour statistic in CLIP and in DINOv2, over the same works — a check on both')
+  .option('-k, --k <n>', 'neighbours per work', '12')
+  .option('-n, --queries <n>', 'works to query, drawn by stride', '1000')
+  .action((opts: { k: string; queries: string }) => {
+    if (!embeddingsAvailable() || !existsSync(DINO_MATRIX)) {
+      process.stdout.write(
+        `${embeddingsAvailable() ? '' : `${embeddingsUnavailableMessage()}\n`}` +
+          `${existsSync(DINO_MATRIX) ? '' : `No second space at corpus/dino.f32 — build it with \`node scripts/dino-embed.mjs\` (~17 min, no API, no key).\n${dinoUnavailableMessage()}\n`}`,
+      );
+      process.exitCode = 1;
+      return;
+    }
+    process.stdout.write(secondSpaceText(secondSpace(Number(opts.k), Number(opts.queries))));
   });
 
 await program.parseAsync(process.argv);
