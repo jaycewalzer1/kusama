@@ -20,6 +20,7 @@ import {
   MODEL_SHA256,
   MODEL_URL,
   available,
+  corpusImages,
   embed,
   resemblance,
   resemblanceText,
@@ -27,9 +28,25 @@ import {
   unavailableMessage,
 } from '../resemblance.js';
 
-const CORPUS = path.join(ROOT, 'corpus', 'works');
-const runnable = available() && existsSync(CORPUS);
+const IMAGES = path.join(ROOT, 'corpus', 'images');
+/** Pixels are gitignored, so a fresh clone has the manifest and no bytes. Both halves are needed. */
+const hasPixels = existsSync(IMAGES) && readdirSync(IMAGES).some((n) => n.endsWith('.jpg'));
+const runnable = available() && hasPixels;
 const skip = runnable ? false : `needs the optional encoder and a corpus.\n${unavailableMessage()}`;
+const noPixels = hasPixels ? false : 'corpus/images/ is empty on this machine; run `corpus images`';
+
+test('the corpus is read from the manifest, not from a directory that no longer exists', { skip: noPixels }, () => {
+  // This is the whole regression. `corpusImages` read `corpus/works/*.json` until 2026-08-31 and
+  // looked correct because the branch it was written on forked before the ingest and still carried
+  // that directory. On the current tree it returned zero and the command threw. No amount of reading
+  // the file said so; only asking it, on this machine, against the corpus that is actually here.
+  const works = corpusImages();
+  assert.ok(works.length > 1000, `found ${works.length} corpus images; the manifest holds ~19,889`);
+  for (const w of works.slice(0, 20)) {
+    assert.ok(existsSync(w.file), `${w.id} points at ${w.file}, which is not there`);
+    assert.ok(w.id.length > 0);
+  }
+});
 
 test('the weights are pinned by hash and by the url they came from', () => {
   // Every number this module produces is relative to one set of weights. A swap that was not
@@ -75,10 +92,29 @@ test("the corpus's own band is narrow and nowhere near 0, which is the whole rea
   const b = r.baseline;
   assert.ok(b.works >= 2 && b.pairs === (b.works * (b.works - 1)) / 2);
   assert.ok(b.min < b.median && b.median < b.max, 'a degenerate band means the encoder is not discriminating');
-  assert.ok(b.min > 0.2, `min was ${b.min}: a cosine over natural images does not reach 0, so 0 is not the floor`);
-  assert.ok(b.max < 0.95, `max was ${b.max}: two corpus works that alike would mean the corpus has a duplicate in it`);
+
+  // Asserted on percentiles rather than on the extremes, and that is a correction, not a loosening.
+  // These bounds were `min > 0.2` and `max < 0.95`, set against a 50-work corpus — 1,225 pairs. The
+  // corpus is now sampled at 1,500 works, which is 1,124,250 pairs, and both bounds fail for the
+  // boring reason that a thousand times as many draws reach further into both tails. The extreme of
+  // a million samples is a fact about the sample size; the percentiles are a fact about the corpus.
+  // Measured 2026-08-31 after deduplication: min 0.1555, p1 0.4148, median 0.6428, p99 0.8374,
+  // max 0.9685 — 2 pairs under 0.20, 10 at or above 0.95, none at or above 0.99.
+  const at = (p: number) => b.sorted[Math.floor(p * (b.sorted.length - 1))] as number;
+  assert.ok(at(0.01) > 0.3, `1st percentile was ${at(0.01)}: a cosine over natural images does not approach 0`);
+  assert.ok(at(0.99) < 0.9, `99th percentile was ${at(0.99)}: the bulk of a corpus must not read as near-identical`);
+
+  // The one extreme that is a property of the corpus rather than of the sample size. `corpusImages`
+  // keeps one row per distinct sha256; until it did, two catalogue rows sharing one photograph put
+  // an exact 1.0000 in here, and the maximum is what every plate's score is read against.
+  assert.ok(b.max < 0.99, `max was ${b.max}: at that similarity the corpus is holding one picture twice`);
+
   assert.equal(b.sorted.length, b.pairs);
-  assert.deepEqual(b.sorted, [...b.sorted].sort((x, y) => x - y), 'sorted must actually be sorted; percentile is a binary search over it');
+  // Linear rather than sort-and-compare: this is 1.1M floats and the claim is only monotonicity,
+  // which `percentile` binary-searches over.
+  for (let i = 1; i < b.sorted.length; i++) {
+    assert.ok((b.sorted[i] as number) >= (b.sorted[i - 1] as number), `sorted is not sorted at ${i}; percentile is a binary search over it`);
+  }
 });
 
 test('the hub is disclosed, because a neighbour that is nearest to everything is not a finding', { skip }, async () => {

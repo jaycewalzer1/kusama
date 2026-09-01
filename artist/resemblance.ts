@@ -32,10 +32,12 @@
 
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { PNG } from 'pngjs';
 import { ROOT } from '../env/browser.js';
+import { evenSample } from './atlas.js';
+import { imagePath, readManifest } from './manifest.js';
 
 const require = createRequire(import.meta.url);
 
@@ -227,7 +229,10 @@ export interface PlateResemblance {
 }
 
 export interface CorpusBaseline {
+  /** Works actually embedded and compared — the sample, not the corpus. */
   works: number;
+  /** Works the manifest has pixels for on this machine. Printed beside `works` so the sample is visible. */
+  corpus: number;
   pairs: number;
   min: number;
   median: number;
@@ -254,24 +259,35 @@ export interface Resemblance {
 }
 
 /**
- * The corpus images a work record claims, in work-id order.
+ * The corpus images a manifest row claims, in the manifest's own order.
  *
- * Driven from `corpus/works/` and not from `readdir` of the image directory. An image nobody's
- * record points at is skipped rather than listed under its own content hash: a neighbour that
- * cannot be looked up is not a finding, and the images are gitignored while the records are not.
+ * Driven from `corpus/manifest.jsonl` and not from `readdir` of the image directory. An image no row
+ * points at is skipped rather than listed under its own content hash: a neighbour that cannot be
+ * looked up is not a finding, and the images are gitignored while the manifest is not.
+ *
+ * This read `corpus/works/*.json` until 2026-08-31 and appeared to work only because the branch it
+ * was written on forked before the ingest and still carried that directory. On the current tree it
+ * found zero works and threw — loudly, which is the only reason it was survivable.
+ *
+ * **One entry per distinct image, not per manifest row.** 98 of the 19,889 rows share a sha256 with
+ * another row, because a museum that photographs a knife and its fork together files one photograph
+ * against both catalogue records. Two rows on one photograph are two catalogue facts and one
+ * picture; letting both in puts an exact 1.0000 into the pair distribution, which is the maximum,
+ * and the whole point of the baseline is that the maximum is what a plate's score is read against.
+ * The first row wins, so the id is stable under a re-read.
  */
-const corpusImages = (): { id: string; file: string }[] => {
-  const worksDir = path.join(ROOT, 'corpus', 'works');
-  if (!existsSync(worksDir)) return [];
+export const corpusImages = (): { id: string; file: string }[] => {
+  const manifest = path.join(ROOT, 'corpus', 'manifest.jsonl');
+  if (!existsSync(manifest)) return [];
+  const seen = new Set<string>();
   const out: { id: string; file: string }[] = [];
-  for (const f of readdirSync(worksDir).filter((n) => n.endsWith('.json')).sort()) {
-    const w = JSON.parse(readFileSync(path.join(worksDir, f), 'utf8')) as {
-      id: string;
-      image?: { path: string; hash: string };
-    };
-    if (!w.image) continue;
-    const file = path.join(ROOT, 'corpus', w.image.path);
-    if (existsSync(file)) out.push({ id: w.id, file });
+  for (const w of readManifest(manifest).works) {
+    const rel = imagePath(w);
+    if (!rel || seen.has(rel)) continue;
+    const file = path.join(ROOT, 'corpus', rel);
+    if (!existsSync(file)) continue;
+    seen.add(rel);
+    out.push({ id: w.id, file });
   }
   return out;
 };
@@ -292,11 +308,19 @@ function percentile(sorted: number[], v: number): number {
  * The corpus against itself, then each plate against the corpus.
  *
  * `dirs` are run directories; each contributes its `final.png` or is skipped by name. Serial because
- * the sessions are, and because fifty embeddings is seconds.
+ * the sessions are.
+ *
+ * `sampleSize` is not a tuning knob, it is what makes this runnable at all. The baseline is all
+ * pairs of the works it holds, which is 1,225 pairs at the 50 works this was written against and
+ * **200 million** at the 19,889 the corpus now has — one array, sorted, held in memory, after twelve
+ * minutes of encoding. So the corpus is sampled by stride, never by prefix: the manifest is written
+ * grouped by source, and a prefix would measure one museum and report it as the corpus. 1,500 works
+ * is 1,124,250 pairs, which is the distribution the corpus-wide CLIP comparison already used.
  */
-export async function resemblance(dirs: string[], topK = 3): Promise<Resemblance> {
-  const works = corpusImages();
-  if (works.length < 2) throw new Error(`corpus/images/ holds ${works.length} image(s); a baseline needs at least two`);
+export async function resemblance(dirs: string[], topK = 3, sampleSize = 1500): Promise<Resemblance> {
+  const held = corpusImages();
+  if (held.length < 2) throw new Error(`corpus/images/ holds ${held.length} image(s); a baseline needs at least two`);
+  const works = evenSample(held, sampleSize);
 
   const vectors: Float32Array[] = [];
   for (const w of works) vectors.push(await embed(w.file));
@@ -316,6 +340,7 @@ export async function resemblance(dirs: string[], topK = 3): Promise<Resemblance
   pairs.sort((a, b) => a - b);
   const baseline: CorpusBaseline = {
     works: works.length,
+    corpus: held.length,
     pairs: pairs.length,
     min: pairs[0]!,
     median: pairs[Math.floor(pairs.length / 2)]!,
@@ -346,7 +371,8 @@ export async function resemblance(dirs: string[], topK = 3): Promise<Resemblance
 export function resemblanceText(r: Resemblance): string {
   const n = (v: number) => v.toFixed(4);
   const out = [
-    `Corpus against itself: ${r.baseline.pairs} pair(s) over ${r.baseline.works} work(s), none a quotation of any other.`,
+    `Corpus against itself: ${r.baseline.pairs} pair(s) over ${r.baseline.works} work(s)` +
+      `${r.baseline.corpus > r.baseline.works ? ` sampled by stride from ${r.baseline.corpus}` : ''}, none a quotation of any other.`,
     `  min ${n(r.baseline.min)}   median ${n(r.baseline.median)}   max ${n(r.baseline.max)}`,
     `That band is what any number below has to be read against. A cosine has no absolute meaning.`,
     `  hub ${r.baseline.hub.workId} at mean ${n(r.baseline.hub.meanSimilarity)} — the work nearest to everything.`,
