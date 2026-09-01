@@ -179,3 +179,29 @@ One line per milestone. Written as it happens.
   `onnxruntime-node` against a local ONNX CLIP; verified end to end tonight while both providers are
   still out of credit. It is not yet usable on this corpus: it reads the pre-manifest `corpus/works/`
   layout, and its baseline is all-pairs, which is 1,225 pairs at 50 works and 200 million at 20,000.
+- **The whole corpus is embedded, and the catalogue turned out not to be what the pictures say.**
+  `resemblance()` still does not scale, but `embed()` does not need it — it takes an absolute path
+  and never touches `ROOT`, so it can be driven from the worktree against the main tree's images.
+  19,807 distinct images, 27.4/s, twelve minutes, **zero failures**, into `corpus/clip.f32` (19,807 x
+  512 float32, sha256 order, gitignored, 40.6MB). The scripts are `artist/clip-{embed,compare}.mjs`
+  on the worktree branch, because `.models/` and `corpus/images/` are both gitignored and no single
+  working directory holds the encoder and the corpus at once.
+
+  The result is the one the metadata atlas asked for. That map scored 34x chance and then admitted
+  both its axes were museum identity — it had largely learnt which of three institutions catalogued
+  a thing. Over 1,500 works sampled by stride: **a work's 20 nearest by metadata are 93.6% from the
+  same museum against 39.0% by chance; its 20 nearest by appearance are 55.4%.** CLIP has never seen
+  the catalogue, and its neighbourhoods cross the wall the catalogue could not. The two maps share
+  only 1.50 of 20 neighbours (5.6x chance), which is the honest reading — they measure different
+  things, and the second one was the one missing.
+
+  One pair in 1,124,250 exceeds 0.98 cosine, and it is `met-544757` against `met-591595`: two
+  catalogue rows on one sha256. The near-duplicate hazard written down earlier fired exactly once,
+  and was already explained before it fired.
+- **A subagent's corpus totals were wrong by 2x, and re-counting caught it.** It reported
+  `corpus/images/` at 9,846 files / 2.3GB; it is 19,807 / 3.0GB, so every per-image total it derived
+  was half the truth. Its code reading was accurate and its arithmetic was not.
+- **1,300 lines of ArtMine work were untracked.** The worktree tip was the *base* snapshot, not the
+  work: `resemblance.ts`, `holdout.ts`, `warrant.ts`, `evidence.ts` and four test files were all
+  `??`, one checkout from gone. Committed as `625224e`. A branch name in a note is not evidence that
+  anything is saved.
