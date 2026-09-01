@@ -94,5 +94,10 @@ docs/demo/searches/
 notebooks/.venv/
 notebooks/out/
 
+# The influence layer's Python. Same deal as notebooks/.venv: pinned in influence/requirements.txt,
+# which IS tracked, and rebuilt by pip in about a minute. The worker itself
+# (influence/descriptors.py) is tracked — it is the arithmetic, not the wheels.
+influence/.venv/
+
 # Python bytecode from the notebook loader.
 __pycache__/

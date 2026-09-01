@@ -23,6 +23,7 @@
     "artist": "npm run build && node dist/studio/artist.js",
     "fonts": "node renderer/assets/fonts/fetch.mjs",
     "corpus": "npm run build && node dist/studio/corpus.js",
+    "influence": "npm run build && node dist/studio/influence.js",
     "notebooks": "npm run build && cd notebooks && .venv/bin/jupyter nbconvert --to notebook --execute --inplace *.ipynb && .venv/bin/jupyter nbconvert --to html --output-dir ../docs/demo/rendered/notebooks *.ipynb"
   },
   "dependencies": {

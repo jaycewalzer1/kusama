@@ -1,0 +1,32 @@
+{
+  "id": "rick-owens",
+  "label": "Rick Owens",
+  "source": "authored",
+  "descriptorVersion": "v1",
+  "authored": "2026-09-02",
+  "basis": "Written from published runway and lookbook imagery and the house's own colour names (black, dust, bone, milk, natural). It is a claim about how that work would MEASURE on these four descriptors, not a measurement of it: no Owens image was passed through influence/descriptors.py, because none is in this corpus. No one with expertise in the work has checked these numbers. Treat every field here as a hypothesis with a name attached, and see docs/influence/README.md on what an authored pack may and may not be used to argue.",
+  "layers": {
+    "armature": null,
+    "texture": null,
+    "palette": {
+      "note": "Near-monochrome and dark: a large black mass, a charcoal, a dust grey, and a bone highlight, with almost no chroma anywhere. The corpus mean for the largest cluster is L*=66.7 (paper) against L*=10 here, so this is the field the pack actually asserts. The fractions say the dark is not just present but dominant - one mass over half the frame rather than six even regions. chromaMean 1.5 against a corpus mean of 7.8 is the strongest single claim in the file.",
+      "fields": {
+        "centres": [10, 0, 0, 24, 0, 1, 46, 1, 3, 72, 1, 7, 86, 0, 4, 94, 0, 2],
+        "fractions": [0.55, 0.19, 0.11, 0.07, 0.05, 0.03],
+        "lMean": 27.3,
+        "lStd": 26.0,
+        "chromaMean": 1.5
+      }
+    },
+    "form": {
+      "note": "Soft-edged and vertical. Hardness is pulled out of the top bin (corpus mean 0.341, the corpus's own largest) and into bins 1-3, because drape resolves over many pixels where a printed rule resolves over two. Orientation is raised on bins 5 and 6 together, not bin 6 alone: the synthetic probes put a vertical stroke at the 5/6 boundary, so an authored spike on 6 alone would be claiming a precision the descriptor does not have. curvatureMean below the corpus reads as long continuous curves rather than many small turns; elongation above it reads as a columnar silhouette. straightFraction is deliberately NOT authored - it is 0.001 +/- 0.011 across all 19,807 works, so any value written there produces an enormous z off a dimension that is nearly constant, and the pack would push hardest on the one number the corpus cannot distinguish.",
+      "fields": {
+        "hardness": [0.01, 0.2, 0.24, 0.18, 0.13, 0.09, 0.06, 0.09],
+        "curvatureMean": 0.95,
+        "curvatureStd": 0.5,
+        "elongation": 3.6,
+        "orientation": [0.08, 0.02, 0.015, 0.015, 0.04, 0.28, 0.36, 0.04, 0.015, 0.015, 0.02, 0.1]
+      }
+    }
+  }
+}

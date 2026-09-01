@@ -1,0 +1,20 @@
+{
+  "version": "v1",
+  "note": "Cost of moving one unit of k along a direction, per layer. bizarreness(assignment) = sum over layers of weight * |k|. These weights are a JUDGEMENT and nobody has calibrated them against anything: no viewer has been asked whether a texture departure reads as stranger than a palette one, and no run has been scored against them. They live in this file rather than in apply.ts so that reading them does not require reading code, and so that changing them is a data change with a diff. Deliberately NOT wired into scores.json - see docs/influence/README.md.",
+  "ordering": "The ranking is the claim, more than the numbers are. It says a palette shift is the cheapest departure to accept and a discourse shift the most expensive, on the reasoning that a viewer forgives a strange colour sooner than a strange subject, and a strange subject sooner than a work that argues from somewhere unexpected. That is an assertion about audiences, made without asking one.",
+  "weights": {
+    "palette": 1,
+    "armature": 2,
+    "texture": 2,
+    "form": 3,
+    "subject": 5,
+    "discourse": 8
+  },
+  "unreachable": {
+    "note": "Four of the six weights can never be spent by the current implementation, and the file should not hide that.",
+    "texture": "No constraint kind reads frequency content, so texture cannot be dialled at all.",
+    "form": "No constraint kind reads edge hardness, curvature or stroke orientation.",
+    "subject": "Reserved, needs a reading of the work rather than a measurement. No direction exists.",
+    "discourse": "Reserved, same reason."
+  }
+}
