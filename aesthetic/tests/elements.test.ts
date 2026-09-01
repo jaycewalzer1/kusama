@@ -708,15 +708,19 @@ test('invariant: exactly one file in artist/ reaches the elements layer, and it 
     .filter((f) => /from '[^']*aesthetic\/elements\//.test(readFileSync(f, 'utf8')))
     .map((f) => path.relative(artist, f))
     .sort();
-  // Four files now, and only one of them is a door. The invariant is about how elements *enter a
-  // run*; the other three sit on either side of one and cannot.
+  // Five files now, and only one of them is a door. The invariant is about how elements *enter a
+  // run*; the other four sit on either side of one and cannot.
   //   breaks.ts         reads a finished log. There is no run left to put an element into, and it
   //                     takes the composition off the log rather than recomposing from the pack.
   //   element-derive.ts writes elements to disk, offline, one per corpus work. It never loads one.
+  //   pack-gap.ts       reads every element's numeric rules and scores them against museum sheets,
+  //                     offline, for a report. It composes nothing and reaches no run. It also
+  //                     writes no element, deliberately: a derived bound would move
+  //                     `elementPackHash`, which is a decision for a person and not for a report.
   //   provenance.ts     loads elements a finished run already named, to reach their source objects.
   //                     It reads `derivedFrom` and no constraint, and composes nothing.
-  // Before widening this again, check which of those three things the new file is doing.
-  assert.deepEqual(importers, ['breaks.ts', 'element-derive.ts', 'field.ts', 'provenance.ts']);
+  // Before widening this again, check which of those four things the new file is doing.
+  assert.deepEqual(importers, ['breaks.ts', 'element-derive.ts', 'field.ts', 'pack-gap.ts', 'provenance.ts']);
   // The door itself, asserted separately so the list above cannot quietly become the invariant.
   const composers = files.filter((f) => /\bcompose\(/.test(readFileSync(f, 'utf8'))).map((f) => path.relative(artist, f));
   assert.deepEqual(composers, ['field.ts'], 'elements enter a run through the commission and nowhere else');

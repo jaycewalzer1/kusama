@@ -52,7 +52,7 @@ import {
   saveWorks,
 } from '../artist/corpus.js';
 import { type AicRecord, metadataFrom as aicFrom, searchUrl, walkPublicDomain } from '../artist/aic.js';
-import { type Vectors, atlas } from '../artist/atlas.js';
+import { type Vectors, atlas, evenSample } from '../artist/atlas.js';
 import { atlasPage } from './atlas-page.js';
 import { SOURCES, type Source, type Work, imagePath, readManifest, workId } from '../artist/manifest.js';
 import { type CorpusEmbeddings, embeddingsAvailable, embeddingsUnavailableMessage, loadCorpusEmbeddings, rowAt } from '../artist/clip-index.js';
@@ -63,6 +63,17 @@ import { crossing, crossingText } from '../artist/crossing.js';
 import { DINO_MATRIX, unavailableMessage as dinoUnavailableMessage } from '../artist/dino.js';
 import { elementBand, elementBandText, loadResolvedGroups } from '../artist/element-band.js';
 import { alignSpaces, secondSpace, secondSpaceText } from '../artist/second-space.js';
+import { TEXT_FIELDS, type TextField, textBaseline, textBaselineText } from '../artist/text-space.js';
+import {
+  DIM as TEXT_DIM,
+  FIELD_SET_NAMES,
+  embedCorpusText,
+  indexPath,
+  matrixPath,
+  textMatrixAvailable,
+  textSpaceComparison,
+  textSpaceComparisonText,
+} from '../artist/text-embed.js';
 import { PER_SEED, expansion, expansionText } from '../artist/expand.js';
 import {
   available as resemblanceAvailable,
@@ -102,7 +113,8 @@ import { csvRows, metadataFrom as metFrom, resolveImageUrl } from '../artist/met
 import { DEFAULT_TARGET, MAX_CLASSIFICATION_SHARE, MAX_SOURCE_SHARE, select } from '../artist/selection.js';
 import { deriveElement, deriveProtocolHash, saveDerived } from '../artist/element-derive.js';
 import { type AuditPoint, auditFrom, auditText, claimsOf } from '../artist/audit.js';
-import { surfaceOf, surfaceText, surfaces } from '../artist/surface.js';
+import { surfaceCensus, surfaceOf, surfaceText, surfaces } from '../artist/surface.js';
+import { CENSUS_FILE, censusMissingMessage, loadCensus, loadPack, packGap, packGapText } from '../artist/pack-gap.js';
 import { type TermField, crosswalk, crosswalkText, dimensionalityOf, dimensionalitySplit, terms } from '../artist/vocabulary.js';
 
 const program = new Command();
@@ -1035,13 +1047,25 @@ program
   .description('measure the corpus images, in the units the aesthetic layer measures a rendered plate in')
   .option('--sample <n>', 'stride-sample this many images rather than decoding all of them', '1500')
   .option('--all', 'decode every image on disk. Slow, and the bands barely move', false)
-  .action((opts: { sample: string; all: boolean }) => {
+  .option('--save', 'cache the census as corpus/surface.census.json, which `corpus pack-gap` reads', false)
+  .action((opts: { sample: string; all: boolean; save: boolean }) => {
     const works = listWorks();
     if (works.length === 0) {
       process.stdout.write('no manifest — run `corpus metadata` and `corpus select` first\n');
       return;
     }
-    process.stdout.write(surfaceText(surfaces(works, twoD, opts.all ? undefined : Number(opts.sample))));
+    const report = surfaces(works, twoD, opts.all ? undefined : Number(opts.sample));
+    process.stdout.write(surfaceText(report));
+    if (opts.save) {
+      // `sampled` is written from the flag rather than inferred from the count, so a stride run can
+      // never be read back as the corpus's own band. `pack-gap` refuses a sampled census outright.
+      const census = surfaceCensus(report, !opts.all);
+      writeFileSync(CENSUS_FILE, JSON.stringify(census));
+      process.stdout.write(
+        `\n\nsaved ${path.relative(ROOT, CENSUS_FILE)} — ${census.measured} measured, ` +
+          `${census.subjects.sheet.length} sheets${census.sampled ? '  (SAMPLED: not a corpus band)' : ''}\n`
+      );
+    }
   });
 
 program
@@ -1678,6 +1702,43 @@ program
   });
 
 program
+  .command('pack-gap')
+  .description("what the element pack claims, beside what its works can answer. Report-only, writes nothing")
+  .action(() => {
+    const census = loadCensus();
+    if (census === null) {
+      process.stdout.write(`${censusMissingMessage()}\n`);
+      process.exitCode = 1;
+      return;
+    }
+    // A stride census is refused rather than caveated. The whole report is bounds scored against a
+    // sheet band, and at --sample 1500 that band is nine sheets — the exact n that produced this
+    // repo's one retracted finding.
+    if (census.sampled) {
+      process.stdout.write(
+        `${path.relative(ROOT, CENSUS_FILE)} was saved from a stride sample, not from --all.\n` +
+          `Its sheet band is ${census.subjects.sheet.length} images and is not the corpus's.\n` +
+          'Rebuild it: npm run corpus -- surface --all --save\n'
+      );
+      process.exitCode = 1;
+      return;
+    }
+    const works = listWorks();
+    if (works.length === 0) {
+      process.stdout.write('no manifest — run `corpus metadata` and `corpus select` first\n');
+      process.exitCode = 1;
+      return;
+    }
+    const groups = loadResolvedGroups(new Map(works.map((w) => [w.id, w])), twoD);
+    if (groups.length === 0) {
+      process.stdout.write('no resolved influence sets — run `corpus influences resolve <id>` first\n');
+      process.exitCode = 1;
+      return;
+    }
+    process.stdout.write(packGapText(packGap(loadPack(), groups, census)));
+  });
+
+program
   .command('second-space')
   .description('the same neighbour statistic in CLIP and in DINOv2, over the same works — a check on both')
   .option('-k, --k <n>', 'neighbours per work', '12')
@@ -1722,6 +1783,95 @@ program
       process.stdout.write(expansionText(expansion(r, Number(opts.perSeed), shared)));
       process.stdout.write('\n');
     }
+  });
+
+program
+  .command('text-baseline')
+  .description('BM25 over the catalogue prose — the lexical control any text embedding has to beat')
+  .option('-k, --k <n>', 'neighbours per work', '12')
+  .option('-n, --queries <n>', 'works to query, drawn by stride', '1000')
+  .option(
+    '--embedded',
+    'restrict to the works held in corpus/clip.f32, for a like-for-like comparison with the image spaces',
+  )
+  .action((opts: { k: string; queries: string; embedded?: boolean }) => {
+    // No embeddings needed by default: this is arithmetic over the manifest, and it is the one
+    // corpus-wide neighbour statistic that runs on a fresh clone with nothing downloaded.
+    let works: Work[];
+    if (opts.embedded) {
+      if (!embeddingsAvailable()) {
+        process.stdout.write(`${embeddingsUnavailableMessage()}\n`);
+        process.exitCode = 1;
+        return;
+      }
+      works = loadCorpusEmbeddings().entries.map((e) => e.work);
+    } else {
+      works = readManifest(MANIFEST).works;
+    }
+    const queries = evenSample(
+      works.map((_, i) => i),
+      Number(opts.queries),
+    );
+    process.stdout.write(textBaselineText(textBaseline(works, queries, Number(opts.k), TEXT_FIELDS)));
+  });
+
+program
+  .command('text-embed')
+  .description("CLIP's text tower over the catalogue prose — 20,000 x 512, one row per WORK, no API key")
+  .option('--set <name>', `field set: ${FIELD_SET_NAMES.join(' | ')} | all-sets`, 'all-sets')
+  .action(async (opts: { set: string }) => {
+    if (!textAvailable()) {
+      process.stdout.write(`${textUnavailableMessage()}\n`);
+      process.exitCode = 1;
+      return;
+    }
+    const sets =
+      opts.set === 'all-sets' ? FIELD_SET_NAMES : FIELD_SET_NAMES.filter((s) => s === opts.set);
+    if (sets.length === 0) {
+      process.stdout.write(`Unknown field set \`${opts.set}\`. Try: ${FIELD_SET_NAMES.join(', ')}\n`);
+      process.exitCode = 1;
+      return;
+    }
+    for (const set of sets) {
+      const started = Date.now();
+      let last = 0;
+      const m = await embedCorpusText(set, (done, total) => {
+        if (done - last < 2000 && done !== total) return;
+        last = done;
+        process.stdout.write(`  ${set}: ${done.toLocaleString()} / ${total.toLocaleString()}\n`);
+      });
+      process.stdout.write(
+        `${set}: ${m.ids.length.toLocaleString()} works x ${TEXT_DIM} in ${((Date.now() - started) / 1000).toFixed(0)}s` +
+          `${m.empty > 0 ? `, ${m.empty} with no words at all` : ''}\n` +
+          `  fields: ${m.fields.join(', ')}\n` +
+          `  ${path.relative(ROOT, matrixPath(set))} + ${path.relative(ROOT, indexPath(set))}\n`,
+      );
+    }
+  });
+
+program
+  .command('text-space')
+  .description('BM25 vs CLIP-text vs CLIP-image — one statistic, one sample, one population')
+  .option('-k, --k <n>', 'neighbours per work', '12')
+  .option('-n, --queries <n>', 'works to query, drawn by stride', '1000')
+  .action((opts: { k: string; queries: string }) => {
+    const missing = FIELD_SET_NAMES.filter((s) => !textMatrixAvailable(s));
+    if (missing.length > 0) {
+      process.stdout.write(
+        `No text embeddings for: ${missing.join(', ')}.\n` +
+          `Build them first: npm run corpus -- text-embed   (local CLIP text tower, no API key)\n`,
+      );
+      process.exitCode = 1;
+      return;
+    }
+    if (!embeddingsAvailable()) {
+      process.stdout.write(`${embeddingsUnavailableMessage()}\n`);
+      process.exitCode = 1;
+      return;
+    }
+    process.stdout.write(
+      textSpaceComparisonText(textSpaceComparison(Number(opts.k), Number(opts.queries))),
+    );
   });
 
 await program.parseAsync(process.argv);

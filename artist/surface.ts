@@ -836,3 +836,68 @@ export function surfaceText(r: SurfaceReport): string {
 
   return out.join('\n');
 }
+
+// --- the census, saved --------------------------------------------------------------------------
+//
+// `surfaceText` is for a person and `surfaceCensus` is for the next program. They read the same
+// `SurfaceReport` and the same two field lists, so a field added to one table appears in both.
+//
+// The asymmetry between `open` and `subjects` is deliberate. Open fields are stored as quantiles
+// because there are 19,791 of them and nothing downstream has asked a question that the quantiles
+// cannot answer. Metrics are stored RAW, per image, because a constraint is not a quantile — it is
+// a predicate, and "what share of real sheets satisfy `inkDensityRange {min: 0.35}`" cannot be
+// recovered from five numbers. Storing bands there would have quietly limited every future reader
+// to the questions I happened to think of today.
+
+export interface Band {
+  n: number;
+  min: number;
+  p10: number;
+  med: number;
+  p90: number;
+  max: number;
+}
+
+export interface SurfaceCensus {
+  version: 1;
+  generated: string;
+  /** False only for an `--all` run. A band off a stride sample must never be quoted as the corpus's. */
+  sampled: boolean;
+  manifestRows: number;
+  imagesRead: number;
+  measured: number;
+  open: Record<string, Band>;
+  /** Raw metrics per measured image, split by subject and NEVER pooled. See `surfaceText`. */
+  subjects: Record<Surface['subject'], Omit<RenderMetrics, 'pixelHash'>[]>;
+}
+
+export function bandOf(values: number[]): Band {
+  const s = [...values].sort((a, b) => a - b);
+  return {
+    n: s.length,
+    min: s[0] ?? NaN,
+    p10: quantile(s, 0.1),
+    med: quantile(s, 0.5),
+    p90: quantile(s, 0.9),
+    max: s[s.length - 1] ?? NaN,
+  };
+}
+
+export function surfaceCensus(r: SurfaceReport, sampled: boolean): SurfaceCensus {
+  const open: Record<string, Band> = {};
+  for (const f of OPEN_FIELDS) open[f.label] = bandOf(r.surfaces.map(f.of));
+
+  const subjects = { sheet: [], 'studio-framing': [], unknown: [] } as SurfaceCensus['subjects'];
+  for (const s of r.surfaces) if (s.metrics !== null) subjects[s.subject].push(s.metrics);
+
+  return {
+    version: 1,
+    generated: new Date().toISOString(),
+    sampled,
+    manifestRows: r.works,
+    imagesRead: r.surfaces.length,
+    measured: r.measured,
+    open,
+    subjects,
+  };
+}

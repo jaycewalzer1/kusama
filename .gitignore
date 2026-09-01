@@ -71,6 +71,21 @@ corpus/clip-index.json
 corpus/dino.f32
 corpus/dino-index.json
 
+# The text side of the same works: CLIP's TEXT tower over the catalogue prose, 20,000 x 512, one row
+# per WORK in manifest order — not per image and not in sha256 order, so it does not row-align with
+# the three matrices above and is joined by work id at read time. Two field sets, because
+# `department` is an org chart rather than a description of the object and reading it as catalogue
+# text is what made the catalogue look museum-bound. `npm run corpus -- text-embed`, no key.
+corpus/text-clip-*.f32
+corpus/text-clip-*.index.json
+
+# The surface census: every image's open-field bands and the raw RenderMetrics of the 3,743 that
+# have a confident ground, split by subject. 0.9MB, written by `corpus surface --all --save` and
+# read by `corpus pack-gap`. Derived from `corpus/images/`, which is itself untracked — a tracked
+# census would be a measurement of pixels nobody cloning this repo can see, and it would go stale
+# silently the first time the ground detector changed.
+corpus/surface.census.json
+
 # Analytics exports: a flat-file view of the tracked manifest and the derived embeddings, for
 # notebooks. `knn-k20.csv` alone is ~400k rows. Everything in here is reproduced by
 # `npm run corpus -- export-analytics`, so it is a view and not a source.
