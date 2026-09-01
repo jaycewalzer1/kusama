@@ -12,7 +12,7 @@
 //   corpus search "<phrase>" [-k N]    find works from words, in CLIP space
 //   corpus search --image <file>       find works from a picture, in the same space
 //   corpus influences resolve [ids...] a position's background as weights over the corpus
-//   corpus influences show <id> | blend <a> <b>
+//   corpus influences show <id> | blend <a> <b> | lens "<text>" <id>
 //
 // Both network stages are serial with a pause between requests. Not because anything here is heavy,
 // but because a museum's open-access API is a courtesy and hammering it is how the courtesy gets
@@ -57,6 +57,7 @@ import { atlasPage } from './atlas-page.js';
 import { SOURCES, type Source, type Work, imagePath, readManifest, workId } from '../artist/manifest.js';
 import { type CorpusEmbeddings, embeddingsAvailable, embeddingsUnavailableMessage, loadCorpusEmbeddings, rowAt } from '../artist/clip-index.js';
 import { DIM, embedText, textAvailable, textUnavailableMessage } from '../artist/clip-text.js';
+import { lens, lensText } from '../artist/lens.js';
 import {
   available as resemblanceAvailable,
   embed,
@@ -1492,6 +1493,28 @@ influences
         `  ${w.cosine.toFixed(4)} (a ${w.toA.toFixed(3)} b ${w.toB.toFixed(3)})  ${w.id.padEnd(12)} ${(w.title || '').slice(0, 40)}\n`,
       );
     }
+  });
+
+influences
+  .command('lens')
+  .description('a condition read through a resolved set: which works it picks out, against chance')
+  .argument('<text>', 'the condition, or any text — sentences are encoded and averaged')
+  .argument('<id>', 'a resolved influence set, by position id')
+  .option('-k, --k <n>', 'how many works to list', '10')
+  .action(async (text: string, id: string, opts: { k: string }) => {
+    if (!embeddingsAvailable() || !textAvailable()) {
+      process.stdout.write(`${embeddingsAvailable() ? textUnavailableMessage() : embeddingsUnavailableMessage()}\n`);
+      process.exitCode = 1;
+      return;
+    }
+    const r = loadResolved(id);
+    if (!r) {
+      process.stdout.write(`no resolved influences for ${id} — run \`corpus influences resolve ${id}\`\n`);
+      process.exitCode = 1;
+      return;
+    }
+    const l = await lens(text, r, loadCorpusEmbeddings(), embedText);
+    process.stdout.write(lensText(l, Number(opts.k)));
   });
 
 await program.parseAsync(process.argv);

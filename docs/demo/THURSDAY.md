@@ -129,6 +129,37 @@ This is the operation that is hard to describe without the corpus and trivial wi
 
 ---
 
+## 3b. A condition read through a shelf — 0.4 s, and the answer is *no*
+
+This is the honest one. Run it twice:
+
+```bash
+node dist/studio/corpus.js influences lens "woven cloth, linen and thread" withheld -k 3
+node dist/studio/corpus.js influences lens "a photograph of a modern sports car on a racetrack" withheld -k 3
+```
+
+Both print a ranking, and both print `NOTHING MEASURED`:
+
+```
+  against withheld: 48 works, mean cosine 0.2428
+  against the corpus: 19,791 works, mean 0.2164 sd 0.0274
+  NOTHING MEASURED. The set sits +0.97 sd from the corpus mean, inside the ±2 band.
+
+    0.3014  p 99.17  met-545138   Length of Very Sheer Linen Cloth
+```
+
+**Say:** ranking 48 works against a phrase always produces a first-place work — it does for a phrase
+about textiles and it does for a phrase about nothing, and the two look identical on the page. So the
+ranking is never printed without the same query's distribution over all 19,791 works. The nearest
+work here is at the 99th percentile of the whole corpus, and the *set* is at +0.97 sd. By that
+measure this shelf is no more "about woven cloth" (+0.97) than it is "about sports cars" (+0.96).
+
+**Do not say** the tool found the textiles. It ranked them. A position's influence set is not
+selected for any brief, so this is the expected answer — the point of the command is that it says so
+instead of letting you supply the significance.
+
+---
+
 ## 4. The plates this project has already made, placed in that corpus — 1.0 s
 
 ```bash
