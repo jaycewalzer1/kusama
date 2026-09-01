@@ -91,10 +91,20 @@ test('FIND is shown the block and the pictures; SKETCH the block alone', async (
   assert.equal(find.length, 1);
   for (const marker of MARKERS) assert.ok(find[0]!.observation.includes(marker), `FIND is missing "${marker}"`);
   // The pictures, and the sentence that says they are there, agreeing about the count.
+  //
+  // How many pictures is a fact about this machine — `corpus/images/` is 3GB of derived, gitignored
+  // bytes, so a fresh clone resolves the same 48 works and can show none of them. The claim under
+  // test is not "there are pictures", it is that the sentence follows the payload either way. A
+  // block promising eight images over a message carrying none is the defect, and it is reachable
+  // from both branches.
   const images = find[0]!.images ?? [];
-  assert.ok(images.length > 0, 'FIND carries no images');
   assert.ok(images.every((i) => i.mediaType === 'image/jpeg'));
-  assert.match(find[0]!.observation, new RegExp(`${images.length} of them are attached to this message as images`));
+  assert.match(
+    find[0]!.observation,
+    images.length > 0
+      ? new RegExp(`${images.length} of them are attached to this message as images`)
+      : /No pictures are attached to this message/,
+  );
 
   // SKETCH gets the catalogue and says outright that it has no pictures — the same works, named,
   // without paying the image tokens nine times over.

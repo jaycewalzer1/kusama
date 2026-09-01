@@ -8,7 +8,7 @@
 
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import {
@@ -26,6 +26,11 @@ import {
 } from '../corpus.js';
 import { imagePath, workId } from '../manifest.js';
 import { recentEnvRequests, setEnvModel, type EnvRequest, type EnvResponse } from '../env-model.js';
+
+/** Pixels are derived and gitignored, so a fresh clone has the manifest and no bytes. */
+const hasPixels =
+  existsSync(path.join(CORPUS_DIR, 'images')) &&
+  readdirSync(path.join(CORPUS_DIR, 'images')).some((n) => n.endsWith('.jpg'));
 
 const leak = (artist: string | null, work: string | null = null): Leakage => ({ artist, work, year: null, recognised: artist !== null });
 
@@ -229,6 +234,10 @@ test('every work on disk carries its rights and a content hash', () => {
     assert.match(w.image.sha256, /^[0-9a-f]{64}$/, `${w.id} has no content hash`);
     const rel = imagePath(w) as string;
     assert.equal(rel, path.join('images', `${w.image.sha256}.jpg`));
+    // The bytes themselves are derived data and gitignored, so their absence is a fact about this
+    // machine, not about the corpus. What is asserted unconditionally above — the id, the rights, the
+    // hash, the path the hash implies — is the provenance claim, and that travels with the clone.
+    if (!hasPixels) continue;
     assert.ok(existsSync(path.join(CORPUS_DIR, rel)), `${w.id} names an image that is not there`);
   }
 });
