@@ -9,6 +9,8 @@
 //   corpus verify                      every row against the bytes on disk: present, and the right ones
 //   corpus read                        one blind reading and one leakage probe per unread work
 //   corpus status                      what is on disk, and the canonical count
+//   corpus search "<phrase>" [-k N]    find works from words, in CLIP space
+//   corpus search --image <file>       find works from a picture, in the same space
 //
 // Both network stages are serial with a pause between requests. Not because anything here is heavy,
 // but because a museum's open-access API is a courtesy and hammering it is how the courtesy gets
@@ -47,7 +49,11 @@ import {
 import { type AicRecord, metadataFrom as aicFrom, searchUrl, walkPublicDomain } from '../artist/aic.js';
 import { type Vectors, atlas } from '../artist/atlas.js';
 import { atlasPage } from './atlas-page.js';
-import { type Source, type Work, imagePath, readManifest, workId } from '../artist/manifest.js';
+import { SOURCES, type Source, type Work, imagePath, readManifest, workId } from '../artist/manifest.js';
+import { embeddingsAvailable, embeddingsUnavailableMessage } from '../artist/clip-index.js';
+import { textAvailable, textUnavailableMessage } from '../artist/clip-text.js';
+import { available, embed, unavailableMessage } from '../artist/resemblance.js';
+import { searchByText, searchByVector, searchText } from '../artist/search.js';
 import { csvRows, metadataFrom as metFrom, resolveImageUrl } from '../artist/met.js';
 import { DEFAULT_TARGET, MAX_CLASSIFICATION_SHARE, MAX_SOURCE_SHARE, select } from '../artist/selection.js';
 import { deriveElement, deriveProtocolHash, saveDerived } from '../artist/element-derive.js';
@@ -791,6 +797,92 @@ program
     }
     process.stdout.write(surfaceText(surfaces(works, twoD, opts.all ? undefined : Number(opts.sample))));
   });
+
+program
+  .command('search')
+  .description('find corpus works from a phrase, or from an image, in CLIP space')
+  .argument('[query]', 'the phrase to look for')
+  .option('--image <file>', 'search with a picture instead of a phrase (png or jpeg)')
+  .option('-k, --k <n>', 'how many works to return', '12')
+  .option('--museum <s>', 'restrict to one of cma | met | aic')
+  .option('--json', 'machine-readable output', false)
+  .action(
+    async (
+      query: string | undefined,
+      opts: { image?: string; k: string; museum?: string; json: boolean },
+    ) => {
+      if (!embeddingsAvailable()) {
+        process.stdout.write(embeddingsUnavailableMessage() + '\n');
+        process.exitCode = 1;
+        return;
+      }
+      const filter = opts.museum ? (opts.museum as Source) : null;
+      if (filter !== null && !SOURCES.includes(filter)) {
+        process.stdout.write(`--museum must be one of ${SOURCES.join(' | ')}\n`);
+        process.exitCode = 1;
+        return;
+      }
+
+      let result;
+      if (opts.image) {
+        if (!available()) {
+          process.stdout.write(unavailableMessage() + '\n');
+          process.exitCode = 1;
+          return;
+        }
+        const file = path.resolve(opts.image);
+        if (!existsSync(file)) {
+          process.stdout.write(`no such image: ${file}\n`);
+          process.exitCode = 1;
+          return;
+        }
+        result = searchByVector(await embed(file), opts.image, Number(opts.k), filter);
+      } else {
+        if (!query) {
+          process.stdout.write('give a phrase, or --image <file>\n');
+          process.exitCode = 1;
+          return;
+        }
+        if (!textAvailable()) {
+          process.stdout.write(textUnavailableMessage() + '\n');
+          process.exitCode = 1;
+          return;
+        }
+        result = await searchByText(query, Number(opts.k), filter);
+      }
+
+      if (opts.json) {
+        process.stdout.write(
+          JSON.stringify(
+            {
+              query: result.query,
+              kind: result.kind,
+              searched: result.searched,
+              distribution: { mean: result.mean, sd: result.sd, min: result.min, max: result.max },
+              crossing: result.crossing,
+              hits: result.hits.map((h) => ({
+                id: h.entry.work.id,
+                source: h.entry.work.source,
+                title: h.entry.work.title,
+                classification: h.entry.work.classification,
+                url: h.entry.work.url,
+                image: imagePath(h.entry.work),
+                sha256: h.entry.sha256,
+                aliases: h.entry.aliases,
+                score: h.score,
+                z: h.z,
+                percentile: h.percentile,
+              })),
+            },
+            null,
+            2,
+          ) + '\n',
+        );
+        return;
+      }
+      process.stdout.write(searchText(result));
+    },
+  );
 
 program
   .command('vocabulary')
