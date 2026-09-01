@@ -34,6 +34,7 @@ npm run corpus -- metadata cma                  # ~41,500 CC0 records, about fou
 npm run corpus -- metadata met --csv MetObjects.csv   # 248,472 public-domain rows, offline
 npm run corpus -- metadata aic                  # ~59,000 public-domain records with images
 npm run corpus -- select --target 20000         # stratify the pool into the manifest
+npm run corpus -- met-urls <dump.json>          # Met image URLs, from the parquet not the API
 npm run corpus -- images                        # the long one: fetch the pixels
 npm run corpus -- verify                        # every row against the bytes on disk
 npm run corpus -- read                          # the blind reading and the leakage probe
@@ -44,10 +45,23 @@ Each stage is resumable and each is a separate command on purpose, because they 
 somebody else's bandwidth. `read` is the only one that costs money.
 
 `MetObjects.csv` is the Met's own published dump of the whole collection (317MB, 484,956 rows), from
-`github.com/metmuseum/openaccess`. It is filtered locally rather than by walking their object API,
-which would be 484,956 requests to learn that 236,484 of them are not public domain. The CSV carries
-no image URL, so those are resolved one call at a time — after selection, for the works that were
-chosen, rather than before it for the quarter of a million that were not.
+`github.com/metmuseum/openaccess`. It is not kept in this repo — it is a one-time input, consumed
+into `pool.jsonl`, and `--csv` takes whatever path you downloaded it to. It is filtered locally
+rather than by walking the Met's object API, which would be 484,956 requests to learn that 236,484
+of them are not public domain.
+
+The CSV carries **no image URL**, and the obvious way to get one does not work. Resolving them from
+`collectionapi.metmuseum.org/…/objects/<id>` dies after roughly 700 requests with an Imperva 403,
+and it is not a rate problem — that run was at 2.5 req/s against a documented 80 req/s. Nor is the
+URL derivable from the objectID or the accession number; 15 of a known-good 64 are photography
+negative numbers with no relation to either.
+
+What does work is the Met's *other* publication of the same fields: the `metmuseum/openaccess`
+parquet dump on HuggingFace, which is a file download and so has nothing to rate-limit. Scanning it
+resolved 9,956 of 10,000. `corpus met-urls <file> --write` loads them, and it first re-checks every
+URL against the works that *were* resolved through the live API before the throttle — 64 of 64
+exact, 0 differing — and refuses to write if a single one disagrees. A fact taken from a second
+source is only worth having if the two sources agree.
 
 ## Getting the images back
 
