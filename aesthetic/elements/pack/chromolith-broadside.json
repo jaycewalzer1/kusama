@@ -5,7 +5,8 @@
     "culture": "American and British commercial job printing: circus, theatre and patent-medicine bills, worked from stone by shops such as the Strobridge Lithographing Company",
     "period": "roughly 1860-1900, the decades in which multi-stone colour printing became cheap enough for a handbill",
     "note": "A sheet that has to be read from across a street and then again from arm's length, so it carries a dozen sizes of type, an engraved vignette or three, and as many colours as the shop had stones for. Every square inch is sold. Restraint is not a virtue available to a bill that is competing with the bill pasted over it.",
-    "citation": "Jay T. Last, The Color Explosion: Nineteenth-Century American Lithography (Santa Ana, CA: Hillcrest Press, 2005)"
+    "citation": "Jay T. Last, The Color Explosion: Nineteenth-Century American Lithography (Santa Ana, CA: Hillcrest Press, 2005)",
+    "tier": "indirect"
   },
   "worldviewFragment": "The sheet is competing for attention with every other sheet on the wall, and anything held back is a stone the shop paid for and did not use. More colours, more sizes, more pictures: the abundance is the offer.",
   "generativeRules": [

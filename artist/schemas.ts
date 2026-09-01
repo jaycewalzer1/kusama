@@ -342,7 +342,7 @@ export function actSchema(): Schema {
   return {
     type: 'object',
     additionalProperties: false,
-    required: ['think', 'control', 'risk', 'unrealizable', 'edits'],
+    required: ['think', 'control', 'risk', 'warrant', 'unrealizable', 'edits'],
     properties: {
       think: {
         type: 'string',
@@ -358,6 +358,16 @@ export function actSchema(): Schema {
         description:
           'If this step is the once-per-piece move this genre would not make, say what you are risking. ' +
           'Otherwise null. Naming a constraint id here is how you declare that you meant to break it.',
+      },
+      warrant: {
+        type: 'array',
+        items: { type: 'string' },
+        description:
+          'Which constraints from the checker table this step is SERVING — ids only, exactly as they ' +
+          'are printed there, and no prose. The mirror of `risk`, which names what you are breaking. ' +
+          'The empty list is a real answer and carries no penalty: a wash or an exploratory move ' +
+          'serves no particular rule. Every id here is checked against what the step did, so an id ' +
+          'you cannot point at afterwards is worse than citing nothing.',
       },
       unrealizable: {
         type: ['string', 'null'],

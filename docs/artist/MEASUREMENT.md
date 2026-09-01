@@ -427,3 +427,64 @@ cell, and `scoreSpreads` reports each score's between-cell difference beside the
 and marks the ones where the difference is no larger than the noise as not measuring anything. With
 one seed per cell there is no spread and the report says so rather than reporting a clean sweep over
 a corpus it did not measure.
+
+## Who wrote the thing being measured
+
+Every entry above states its own failure mode. This section states the one they share, which none of
+them can state about itself, and which is larger than any of them.
+
+**The author of the position, the author of the checker, the author of the threshold and the author
+of the judge's prompt are the same author.** Three positions and three conditions are on disk. Each
+carries 11–13 constraints including two `rubric` lines, and those rubric lines are precisely the
+questions `artist/judge.ts` puts to the necessity and derivation critics. So a high necessity score
+says the work satisfied a question that was written next to the constraints that shaped the work, by
+the person who also chose what the checker would look at. `judge.ts` says this about itself already —
+"the judge and the position were written in the same repo by the same kind of author, so agreement
+between them is weak evidence" — and it is true one layer up as well, of `tree` and `render` and of
+every threshold in this file.
+
+- **is** — a circularity. The measurements agree with the documents because both came from the same
+  hand, and agreement between them is therefore close to uninformative about the artist.
+- **is not** — a reason to distrust the individual numbers. `tree` really is the fraction of
+  decidable constraints satisfied. The mechanical facts are facts. What is in question is what a
+  high value of one of them licenses you to *claim*.
+- **fails when** — a score is quoted as evidence that the system works, rather than as evidence that
+  it complied. The gap is the whole of it.
+- **trust** — the numbers, yes. The inference from the numbers to "this environment produces good
+  work", no, and nothing in this repo closes that gap.
+
+**The one dimension that escapes it is `attribution`**, and it escapes for a structural reason worth
+naming: it has a baseline a coin could beat, and a control arm that predicts chance. A critic that
+cannot tell `withheld` from `interference` above 1/3 has said something the author could not have
+arranged. Necessity and derivation have no such floor. Prefer attribution when you need a number
+that is not downstream of its own author.
+
+**The threshold list, so it can be argued with.** `PENDING_CAP` 0.34, `MAX_DECLARED_IDS` 3,
+`INERT_THRESHOLD` 0.001, the 0.05 spillover limit in `diff`, the render-constraint thresholds. Each
+was set by somebody who could see what changing it did to the runs then on disk — all of which are
+`withheld × fifty-year-embargo`. None was set against a held-out sample, because until 2026-08-31
+there was not one.
+
+**What has been done about it, and what it is worth.** `aesthetic/holdout.json` freezes the position
+`many-hands` and the condition `two-million-slips` by content hash; `artist holdout` reports whether
+the freeze is intact and a test fails if either document is edited; `artist grid` refuses those cells
+without `--include-held-out`. That separates *the thresholds were fitted to this cell* from *they
+were not*, and separates nothing else. The held-out position was written by the same author in the
+same week in the same house style against the same constraint kinds and is graded by the same
+checker. It is held out from tuning. It is not independent, and a number taken on it is not a
+generalisation result.
+
+**What would actually close the gap, none of which is done.** A position written by somebody who has
+not read the checker. A rubric written before the constraints rather than beside them. A judge whose
+prompt was not authored in this repo. Human ratings from more than one rater — `artist rate` builds a
+pool of one, and `artist validate-reward` correlates the automatic scores against that single
+person's taste. Until then, the honest form of every claim here is *"complies with, and was judged by,
+a rubric we wrote"*, and the interesting numbers are the disagreements: `examineAgreement`,
+`affectArmed`, the `destructionRate` 0 against 60.22% pixel survival. A measurement that surprised
+its author is worth more than ten that confirmed them.
+
+**The bias this file cannot see at all.** Every constraint kind, every descriptor and every rubric
+was chosen from within one aesthetic vocabulary — one that has words for coverage, contrast, margin,
+ink and edge contact, and no words for anything a tree walk and six render metrics cannot reach.
+`docs/artist/NEEDS.md` lists what was wanted and not expressible. What is not listed anywhere is what
+was never wanted because the vocabulary gave no way to want it.

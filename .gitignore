@@ -10,6 +10,10 @@ dist-*/
 
 node_modules/
 
+# The CLIP vision encoder artist/resemblance.ts runs. 335MB, refetchable, and pinned by sha256 in
+# that file rather than by being checked in — the same deal as .browsers/.
+.models/
+
 # Scratch render output and trajectories. goldens/ and examples/ are deliberately NOT ignored.
 out/
 

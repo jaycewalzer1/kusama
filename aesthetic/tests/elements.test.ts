@@ -289,7 +289,7 @@ test('fixture: an element prohibition contradicting the base position is derived
   const forbidder: LineageElement = {
     id: 'test-no-paint',
     name: 'Test: nothing may be painted',
-    provenance: { culture: 'test', period: 'test', note: 'synthetic, defined in the test file', citation: 'none: synthetic fixture' },
+    provenance: { culture: 'test', period: 'test', note: 'synthetic, defined in the test file', citation: 'none: synthetic fixture', tier: 'speculative' },
     worldviewFragment: 'A fixture, so that the element-prohibits-position direction is covered by something.',
     generativeRules: [],
     prohibitions: [
@@ -331,7 +331,7 @@ test('fixture: an element that reuses a position constraint id composes, it does
   const collider: LineageElement = {
     id: 'test-collider',
     name: 'Test: reuses a name the position already uses',
-    provenance: { culture: 'test', period: 'test', note: 'synthetic, defined in the test file', citation: 'none: synthetic fixture' },
+    provenance: { culture: 'test', period: 'test', note: 'synthetic, defined in the test file', citation: 'none: synthetic fixture', tier: 'speculative' },
     worldviewFragment: 'A fixture for the id-collision path.',
     generativeRules: [
       {

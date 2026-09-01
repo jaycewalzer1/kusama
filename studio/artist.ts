@@ -7,6 +7,10 @@
 //   artist provenance <dir>              has this combination of lineages been made before?
 //   artist archive <runs>                finished plates filed by what they look like, in a grid
 //   artist envelope [runs]               how much of 0..1 each descriptor actually reaches
+//   artist holdout                       which cells are frozen against tuning, and is the freeze intact
+//   artist evidence <position>           what share of the rules a run is graded against is evidenced
+//   artist warrant <dir>                 what each step said it was serving, against what it served
+//   artist resemblance <dir...>          how close a plate sits to the corpus, against the corpus's own band
 //   artist rate [--set p tier]           hand-rate plates into the pool everything else is checked against
 //   artist validate-reward <runs>        the component-correlation gate and the top-k agreement readout
 //   artist filmstrip <dir> [--story]     the piece rebuilt step by step, and the survival curve
@@ -56,6 +60,13 @@ import { breakRecordOf, breakText } from '../artist/breaks.js';
 import { provenanceOf, provenanceText } from '../artist/provenance.js';
 import { archive, archiveText, measureRuns, DEFAULT_AXES, DEFAULT_BINS, DESCRIPTORS, type Descriptor } from '../artist/archive.js';
 import { envelope, envelopeText, gather } from '../artist/envelope.js';
+import { heldOutBriefs, heldOutPositions, holdoutDrift, holdoutText, isHeldOut } from '../artist/holdout.js';
+import { compose } from '../aesthetic/elements/compose.js';
+import { evidenceProfile, evidenceText } from '../aesthetic/elements/evidence.js';
+import { loadElements } from '../aesthetic/elements/pack.js';
+import { loadPosition } from '../artist/field.js';
+import { warrantSummary, warrantText, warrantsIn } from '../artist/warrant.js';
+import { available as resemblanceAvailable, resemblance, resemblanceText, unavailableMessage } from '../artist/resemblance.js';
 import {
   CORRELATION_LIMIT,
   DEFAULT_KS,
@@ -91,6 +102,12 @@ const ids = (dir: string) =>
 
 const POSITIONS = ids('positions');
 const BRIEFS = ids('briefs');
+
+// What `grid` offers by default. The held-out documents stay on disk and `run` will still take one
+// by name — a deliberate, single, explicit act — but nothing that sweeps the catalog may reach them
+// without being asked twice. A split you have to remember to honour is not a split.
+const OPEN_POSITIONS = POSITIONS.filter((id) => !heldOutPositions().includes(id));
+const OPEN_BRIEFS = BRIEFS.filter((id) => !heldOutBriefs().includes(id));
 
 function summarise(t: Trajectory): string {
   const s = t.scores;
@@ -306,9 +323,10 @@ program
   .requiredOption('-o, --out <dir>', 'root directory; one subdirectory per cell')
   .option('--seed <n>', 'master seed', '1')
   .option('--steps <n>', 'steps per trajectory', '12')
-  .option('--positions <ids>', 'comma-separated subset', POSITIONS.join(','))
-  .option('--briefs <ids>', 'comma-separated subset', BRIEFS.join(','))
-  .option('--control-brief <id>', 'the brief the control column runs', BRIEFS[0])
+  .option('--positions <ids>', 'comma-separated subset', OPEN_POSITIONS.join(','))
+  .option('--briefs <ids>', 'comma-separated subset', OPEN_BRIEFS.join(','))
+  .option('--include-held-out', 'run the frozen cells too; see `artist holdout` before you do')
+  .option('--control-brief <id>', 'the brief the control column runs', OPEN_BRIEFS[0])
   .option('--no-control', 'skip the control column')
   .option(
     '--cells <list>',
@@ -321,6 +339,23 @@ program
     const positions = String(opts['positions']).split(',');
     const briefs = String(opts['briefs']).split(',');
     const root = String(opts['out']);
+
+    // The gate. Held-out cells reached by an explicit --positions/--briefs are still refused unless
+    // the second flag is given, because the whole value of the split is that reaching it has to be a
+    // decision somebody made on purpose and can be seen to have made.
+    const frozen = positions.flatMap((p) => briefs.filter((b) => isHeldOut(p, b)).map((b) => `${p} x ${b}`));
+    if (frozen.length > 0 && opts['includeHeldOut'] !== true) {
+      console.error(`refusing ${frozen.length} held-out cell(s):\n  ${frozen.join('\n  ')}\n`);
+      console.error(holdoutText());
+      console.error('\nPass --include-held-out if this is the run the freeze was for.');
+      process.exitCode = 1;
+      return;
+    }
+    if (frozen.length > 0) {
+      console.log(`RUNNING ${frozen.length} HELD-OUT CELL(S). After this they are in-sample forever.\n`);
+      console.log(holdoutText());
+      console.log('');
+    }
     const policy = await selectPolicy();
     const rows: GridCell[][] = [];
     const done: Trajectory[] = [];
@@ -455,6 +490,51 @@ program
     const e = envelope(points, excluded);
     if (opts.out) writeFileSync(opts.out, `${JSON.stringify(e, null, 2)}\n`);
     console.log(envelopeText(e));
+  });
+
+program
+  .command('holdout')
+  .description('which cells are frozen against tuning, and whether the freeze still holds')
+  .action(() => {
+    console.log(holdoutText());
+    if (holdoutDrift().length > 0) process.exitCode = 1;
+  });
+
+program
+  .command('evidence')
+  .description('what share of the constraints deciding a run rests on each tier of evidence')
+  .argument('<position>', `one of: ${POSITIONS.join(' ')}`)
+  .option('--elements <ids...>', 'the lineage elements the run adopts', [])
+  .action((positionId: string, opts: { elements: string[] }) => {
+    const elements = loadElements(opts.elements);
+    console.log(evidenceText(evidenceProfile(compose(loadPosition(positionId), elements), elements)));
+  });
+
+program
+  .command('warrant')
+  .description('what each step cited as the rule it was serving, checked against what the step did')
+  .argument('<dir>')
+  .action((dir: string) => {
+    console.log(warrantText(warrantSummary(warrantsIn(readLog(path.join(dir, 'studio.jsonl'))))));
+  });
+
+program
+  .command('resemblance')
+  .description("how close each plate sits to the corpus, read against the corpus's own similarity band")
+  .argument('<dirs...>', 'run directories')
+  .option('-k, --top <n>', 'neighbours to list per plate', '3')
+  .option('-o, --out <file>', 'also write the report as JSON')
+  .action(async (dirs: string[], opts: { top: string; out?: string }) => {
+    if (!resemblanceAvailable()) {
+      console.error(unavailableMessage());
+      process.exitCode = 1;
+      return;
+    }
+    const r = await resemblance(dirs, Number(opts.top));
+    // `sorted` is 1,225 numbers and is the baseline's evidence, so it stays in the JSON and out of
+    // the terminal.
+    if (opts.out) writeFileSync(opts.out, `${JSON.stringify(r, null, 2)}\n`);
+    console.log(resemblanceText(r));
   });
 
 program

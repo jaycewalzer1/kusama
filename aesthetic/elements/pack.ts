@@ -9,7 +9,7 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import type { Constraint } from '../types.js';
-import type { LineageElement } from './types.js';
+import { EVIDENCE_TIERS, type LineageElement } from './types.js';
 import { contentHash } from './hash.js';
 
 /**
@@ -77,6 +77,19 @@ export function checkElementShape(value: unknown, expectedId?: string): LineageE
     if (typeof p?.[key] !== 'string' || (p[key] as string).trim().length === 0) {
       throw new Error(`${id}: provenance.${key} must be a non-empty string`);
     }
+  }
+  const tier = p?.['tier'];
+  if (typeof tier !== 'string' || !(EVIDENCE_TIERS as readonly string[]).includes(tier)) {
+    throw new Error(`${id}: provenance.tier must be one of ${EVIDENCE_TIERS.join(', ')}, got ${String(tier)}`);
+  }
+  // The one mechanical rule the tier system has, and the only one available: a derived element was
+  // made by a model reading one image, so it cannot claim to rest on a source it never read.
+  // Everything else about a tier is an assertion nothing here can check. This part is not, so it is.
+  if (e['derivedFrom'] !== undefined && tier !== 'interpretation' && tier !== 'speculative') {
+    throw new Error(
+      `${id}: has derivedFrom and claims provenance.tier "${tier}". An element derived from a blind ` +
+        `reading of one image is an interpretation of that image, not a citation of a source.`
+    );
   }
   if (typeof e['worldviewFragment'] !== 'string' || e['worldviewFragment'].trim().length === 0) {
     throw new Error(`${id}: needs a worldviewFragment`);

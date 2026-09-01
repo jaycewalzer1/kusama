@@ -5,7 +5,8 @@
     "culture": "Japanese; the term is general to architecture, noh, ikebana and printing, and was put to a Western audience as a design principle by Isozaki",
     "period": "the concept is old; its statement as an exhibitable design position dates from the 1978-79 exhibition",
     "note": "Ma is the interval between things, and it is the charged part, not the leftover. An arrangement is judged on the gaps: what is not marked is doing the work, and adding to the surface is spending something that cannot be got back. The unworked area is not unfinished, it is the subject.",
-    "citation": "Arata Isozaki, MA: Space-Time in Japan, exhibition catalogue (New York: Cooper-Hewitt Museum, 1979)"
+    "citation": "Arata Isozaki, MA: Space-Time in Japan, exhibition catalogue (New York: Cooper-Hewitt Museum, 1979)",
+    "tier": "indirect"
   },
   "worldviewFragment": "The interval is the content and the mark is what interrupts it. Every addition to the sheet costs more than it gives, so the count of things present is itself the thing under discipline.",
   "generativeRules": [

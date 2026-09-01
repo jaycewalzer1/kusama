@@ -1,0 +1,17 @@
+{
+  "frozenAt": "2026-08-31",
+  "note": "Chosen by what had already been looked at, not by preference. Every trajectory on disk on this\ndate is withheld x fifty-year-embargo — that cell is where the L2 A/B was measured and where the\nthresholds were watched, so it is in-sample beyond argument. Of what was left, one position and\none brief were frozen and are not to be run during development.\n\nThe rule: no run against a held-out cell while any threshold, prompt, checker or rubric is still\nbeing changed. `artist grid` will not include them without --include-held-out, which prints this\nnote. When the environment is finally still, run them once and report those numbers separately.\n\nThis is a freeze against tuning and nothing more. The held-out position was written by the same\nauthor in the same week against the same constraint kinds and is graded by the same checker.\nSee docs/artist/MEASUREMENT.md, \"who wrote the thing being measured\".",
+  "positions": [
+    {
+      "id": "many-hands",
+      "hash": "19ce1fa64067c1524c338868f2d488565c04580f1278f6793aa3ee38655114ac"
+    }
+  ],
+  "briefs": [
+    {
+      "id": "two-million-slips",
+      "hash": "c640905f5c15accd43db3ab28cfcd8f29ee97c42bf951a7cf9848a3485a31ed4",
+      "fieldHash": "90629f5b7c2b62eeabb2f4505024d71952b41abcc67710339e49d01699bce970"
+    }
+  ]
+}
