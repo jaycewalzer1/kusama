@@ -39,14 +39,23 @@ import type { AestheticProgram } from '../aesthetic/types.js';
 /** Where a run's intermediate plates live, keyed by program hash. Written by artist/canvas.ts. */
 const PNG_CACHE = path.join(ROOT, '.cache', 'artist-png');
 
-/** Everything the page itself may load. Runs are served through /api, never from here. */
-const SERVED_PREFIXES = ['studio/ui/'];
+/**
+ * Everything the page itself may load. Runs are served through /api, never from here.
+ *
+ * The last two are not the studio's own pages: they are the atlases under `corpus/` and the rendered
+ * notebooks under `docs/demo/rendered/`, which used to want a `python3 -m http.server` each on its
+ * own port. They are static files with relative links, so mounting them at their own repo paths is
+ * the whole of what those servers did, and one port now serves all three.
+ */
+const SERVED_PREFIXES = ['studio/ui/', 'corpus/', 'docs/demo/rendered/'];
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.md': 'text/markdown; charset=utf-8',
 };
 
 /**
@@ -695,6 +704,8 @@ cli.action((opts: { runs: string; port: string }) => {
 
   server.listen(Number(opts.port), '127.0.0.1', () => {
     console.log(`studio  http://127.0.0.1:${opts.port}`);
+    console.log(`    atlas http://127.0.0.1:${opts.port}/corpus/atlas-clip.html`);
+    console.log(`    demo  http://127.0.0.1:${opts.port}/docs/demo/rendered/atlas-clip.html`);
     console.log(`    runs under ${root}, new ones into ${path.join(root, 'studio')}`);
     console.log('    a trajectory costs real money and takes 20-30 minutes; renders are serial');
   });

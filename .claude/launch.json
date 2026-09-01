@@ -9,30 +9,6 @@
         "ui"
       ],
       "port": 4321
-    },
-    {
-      "name": "atlas",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": [
-        "-m",
-        "http.server",
-        "4322",
-        "--directory",
-        "corpus"
-      ],
-      "port": 4322
-    },
-    {
-      "name": "demo",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": [
-        "-m",
-        "http.server",
-        "4323",
-        "--directory",
-        "docs/demo/rendered"
-      ],
-      "port": 4323
     }
   ]
 }

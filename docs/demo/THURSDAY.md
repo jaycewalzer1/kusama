@@ -399,18 +399,18 @@ the atlas pages inline their 19,791 points into one `<script>` and draw to a `<c
 influences sheet inlines its PNG as a data URI. All six were loaded headless from `file://` and
 **none logged a console error**. This is the whole reason the fallback is credible.
 
-Two servers may be running from earlier work, and **neither is needed**:
+There is **one** server, and it is **not needed** for any of the above:
 
 ```bash
 lsof -nP -iTCP:4321 -sTCP:LISTEN     # the studio UI  (npm run ui)
-lsof -nP -iTCP:4322 -sTCP:LISTEN     # the atlas server (python3 -m http.server)
 ```
 
 If you want the atlas served rather than opened as a file — the only reason being that a server lets
-you reload without re-picking the file — then:
+you reload without re-picking the file — the studio serves it, so there is no second port to start:
 
 ```bash
-python3 -m http.server 4322 --directory corpus     # then http://localhost:4322/atlas-clip.html
+npm run ui                          # then http://localhost:4321/corpus/atlas-clip.html
+                                    #  or  http://localhost:4321/docs/demo/rendered/atlas-clip.html
 ```
 
 **If that port is taken or the server dies mid-demo, do not debug it.** Both maps are also sitting in
