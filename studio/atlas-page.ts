@@ -30,6 +30,9 @@ export function atlasPage(a: Atlas, generatedAt: string, opts: PageOptions = {})
   // would triple the file for fields nothing on the page reads.
   const points = a.points.map((p) => [Number(p.x.toFixed(3)), Number(p.y.toFixed(3)), p.source, p.kind, p.period, p.title, p.id]);
   const p = a.preservation;
+  // A decimal below ten, because "chance 0%" beside "same kind 4%" reads as a broken measurement
+  // when the true baseline is 0.3% and the effect is the largest one on the page at 11.6x.
+  const pct = (x: number) => `${(100 * x).toFixed(100 * x < 10 ? 1 : 0)}%`;
   const ratio = p.preserved / (p.chance || 1);
   const verdict = p.informative
     ? `Neighbourhoods on this map are real: ${ratio.toFixed(1)}x what scattering the same ${p.n} points at random would give.`
@@ -76,7 +79,7 @@ export function atlasPage(a: Atlas, generatedAt: string, opts: PageOptions = {})
         ? a.loadings.map((axis) => `<div><b>axis ${axis[0]?.axis} is made of</b><br>${axis.slice(0, 5).map((l) => `${l.weight >= 0 ? '+' : '&minus;'}${Math.abs(l.weight).toFixed(2)} ${l.column}`).join('<br>')}</div>`).join('')
         : '<div><b>the axes are made of nothing</b><br>UMAP has no loadings. Neither direction on this page is a quantity; only togetherness is.</div>'
     }
-    <div><b>its ${p.k} nearest, in the full space</b><br>${a.composition.map((c) => `${c.field} ${(100 * c.share).toFixed(0)}% <span style="color:#888">(chance ${(100 * c.chance).toFixed(0)}%)</span>`).join('<br>')}</div>
+    <div><b>its ${p.k} nearest, in the full space</b><br>${a.composition.map((c) => `${c.field} ${pct(c.share)} <span style="color:#888">(chance ${pct(c.chance)}, ${c.chance > 0 ? `${(c.share / c.chance).toFixed(1)}x` : '&mdash;'})</span>`).join('<br>')}</div>
   </div>
 </header>
 <main><canvas id="c"></canvas><aside><div id="controls"></div><div id="legend"></div></aside></main>
