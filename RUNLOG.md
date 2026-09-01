@@ -209,3 +209,37 @@ One line per milestone. Written as it happens.
   work: `resemblance.ts`, `holdout.ts`, `warrant.ts`, `evidence.ts` and four test files were all
   `??`, one checkout from gone. Committed as `625224e`. A branch name in a note is not evidence that
   anything is saved.
+
+## 2026-08-31 (after the shutdown) — master was broken, and a second map
+
+- **`master` was shipping a tree that could not run its own tests.** `ac9624e` removed
+  `aesthetic/deliverables/` from the index without removing the code that loads it. A clean checkout
+  of HEAD typechecks with 0 errors and then fails 34 tests on `ENOENT ... scandir
+  'aesthetic/deliverables'`: **526 tests / 492 pass / 34 fail**. The working tree was 553/0 the whole
+  time, so nothing local ever said so. The fix was the other half of the change, uncommitted, left by
+  an agent the shutdown killed — one `git checkout` from gone, the same failure mode as the ArtMine
+  work earlier the same day. Committed as `aced259`, with `envelope.ts` and `pass.ts` in the same set
+  because `studio/artist.ts` imports both and the tree does not compile without them. The damage had
+  not reached the remote. **A green `npm test` in your working directory is not a claim about HEAD.**
+- **`corpus atlas --clip [--umap]` — the map of what the works look like.** 19,889 of 20,000 works,
+  joined to `clip.f32` by sha256 rather than by row, dropping the works with no pixels rather than
+  giving them a zero row that would sit at the origin and pull the first axis through itself.
+- **PCA is the wrong projection for CLIP, and UMAP is the wrong projection for the catalogue.**
+  Measured with the `preservation()` that was already there, over the same 1,500-work stride sample:
+
+  | space | PCA | UMAP |
+  |---|---|---|
+  | catalogue metadata, 91 named columns | **34.0x** chance | 26.9x |
+  | CLIP, 512 anonymous columns | 5.6x | **24.2x** |
+
+  PCA collapses on CLIP because one coordinate takes 64% of the variance — a documented property of
+  the encoder, not a fact about art. Both projections kept, `--umap` a flag, the choice per space.
+  The convenient outcome would have been one winner; there isn't one, which is why it was measured.
+- **`composition()` — what a space calls near, in words a museum wrote.** The loadings answer "what
+  is this axis made of", which over 512 ordinals is `+0.69 clip:92`: true, and about nothing. So the
+  question is asked from the other side, always against the chance two works from the same sample
+  agree (39% for museum here — a share printed without it can be made to mean anything). Catalogue
+  neighbourhoods are 93% same-museum; appearance neighbourhoods are 55%.
+- **The two pages cross-link, and clicking between them *is* the result**: three clean colour blocks
+  by museum, then one thoroughly mixed cloud. The link is only rendered when the other file exists,
+  because a button that 404s teaches a reader that the buttons on this page do not work.
