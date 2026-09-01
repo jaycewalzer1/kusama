@@ -46,3 +46,10 @@ corpus/pool.jsonl
 # these are a reading of it.
 corpus/atlas.json
 corpus/atlas.html
+
+# CLIP embeddings: 19,807 x 512 float32, one row per distinct image in sha256 order, plus the index
+# that names the rows. 40.6MB of derived numbers that a local model reproduces from the pixels in
+# twelve minutes with no API and no key. Derived, therefore not evidence, therefore not tracked —
+# and a 40MB binary is the exact thing a repo of hashes and JSONL should not start carrying.
+corpus/clip.f32
+corpus/clip-index.json
