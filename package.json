@@ -22,7 +22,8 @@
     "check": "npm run build && node dist/studio/check.js",
     "artist": "npm run build && node dist/studio/artist.js",
     "fonts": "node renderer/assets/fonts/fetch.mjs",
-    "corpus": "npm run build && node dist/studio/corpus.js"
+    "corpus": "npm run build && node dist/studio/corpus.js",
+    "notebooks": "npm run build && cd notebooks && .venv/bin/jupyter nbconvert --to notebook --execute --inplace *.ipynb && .venv/bin/jupyter nbconvert --to html --output-dir ../docs/demo/rendered/notebooks *.ipynb"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.65.0",

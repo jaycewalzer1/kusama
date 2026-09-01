@@ -56,13 +56,14 @@ import { type Vectors, atlas } from '../artist/atlas.js';
 import { atlasPage } from './atlas-page.js';
 import { SOURCES, type Source, type Work, imagePath, readManifest, workId } from '../artist/manifest.js';
 import { embeddingsAvailable, embeddingsUnavailableMessage } from '../artist/clip-index.js';
-import { textAvailable, textUnavailableMessage } from '../artist/clip-text.js';
+import { DIM, embedText, textAvailable, textUnavailableMessage } from '../artist/clip-text.js';
 import {
   available as resemblanceAvailable,
   embed,
   unavailableMessage as resemblanceUnavailableMessage,
 } from '../artist/resemblance.js';
 import { platesIn, readTrajectory, sidecarText, writeSidecar } from '../artist/plates.js';
+import { KNN_K, exportAnalytics } from '../artist/analytics.js';
 import { searchByText, searchByVector, searchText } from '../artist/search.js';
 import {
   DEFAULT_SEED,
@@ -1010,6 +1011,48 @@ program
         }
       }
     }
+  });
+
+// --- analytics ------------------------------------------------------------------------------------
+
+program
+  .command('embed-text')
+  .description('the text tower, as JSON — the one way into CLIP text space from outside TypeScript')
+  .argument('<phrases...>')
+  .action(async (phrases: string[]) => {
+    // This exists so a notebook can reach the text tower without a second tokenizer. CLIP's tokenizer
+    // is the part most likely to be ported subtly wrong (byte-BPE, the two special tokens, the eos
+    // pool), and a wrong tokenizer produces a plausible vector rather than an error.
+    if (!textAvailable()) {
+      process.stdout.write(textUnavailableMessage() + '\n');
+      process.exitCode = 1;
+      return;
+    }
+    const vectors = await embedText(phrases);
+    process.stdout.write(
+      JSON.stringify(
+        { dim: DIM, phrases, vectors: vectors.map((v) => Array.from(v)) },
+      ) + '\n',
+    );
+  });
+
+program
+  .command('export-analytics')
+  .description('the manifest, the kNN and the band as flat files, so a notebook never reimplements them')
+  .option('-k, --k <n>', 'neighbours per distinct image', String(KNN_K))
+  .action((opts: { k: string }) => {
+    if (!embeddingsAvailable()) {
+      process.stdout.write(`${embeddingsUnavailableMessage()}\n`);
+      process.exitCode = 1;
+      return;
+    }
+    const s = exportAnalytics(Number(opts.k));
+    process.stdout.write(
+      `manifest rows ${s.manifestRows}, distinct images ${s.distinctImages} ` +
+        `(${s.duplicateRows} rows share bytes with a kept row), kNN rows ${s.knnRows}\n`,
+    );
+    for (const f of s.files) process.stdout.write(`  wrote ${path.relative(ROOT, f)}\n`);
+    process.stdout.write(`${s.seconds.toFixed(1)}s\n`);
   });
 
 // --- influences -----------------------------------------------------------------------------------
