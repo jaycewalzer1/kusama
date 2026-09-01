@@ -243,3 +243,43 @@ One line per milestone. Written as it happens.
 - **The two pages cross-link, and clicking between them *is* the result**: three clean colour blocks
   by museum, then one thoroughly mixed cloud. The link is only rendered when the other file exists,
   because a button that 404s teaches a reader that the buttons on this page do not work.
+- **`worktree-artmine-recs` is merged into `master` (`faa5af4`).** Seven conflicts, and the split was
+  clean once stated: the branch is right about the artist layer and stale about the corpus. It was
+  built against a snapshot from before the pool/selection rebuild, so its `.gitignore`, `corpus.ts`,
+  `manifest.ts` and `studio/corpus.ts` all describe `corpus/works/` and `imageUrl` — a layout that no
+  longer exists. Master's side taken on all four; the branch's side taken on `studio/artist.ts` and
+  the evidence `tier` in `element-derive.ts`. Verified the merge re-adds **0** files under
+  `corpus/images/`, which is the thing a stale `.gitignore` could quietly have undone.
+  **592 tests / 586 pass / 0 fail / 6 skipped, 11 goldens.** The 6 skips name what they need
+  (`onnxruntime-node` + the 335MB encoder) rather than passing empty.
+- Gained: a held-out split with a hash check (`artist holdout`), evidence tiers (`artist evidence`),
+  cite-then-verify (`artist warrant`), and corpus resemblance (`artist resemblance`). `artist grid`
+  now defaults to the open cells and needs `--include-held-out` to reach `many-hands` /
+  `two-million-slips`. **This bumps `observationHash` and `elementPackHash`** — trajectories collected
+  before it are not the same experiment.
+- `artist evidence withheld` on the real pack: **100% `position`, 0% `direct`**. Nothing that grades a
+  run rests on a primary source. Worth having precisely because it is unflattering.
+- **The merge shipped a metric that was measuring a deleted directory, and the tests that would have
+  caught it were the ones hiding it** (`82ec395`). `corpusImages()` globbed `corpus/works/*.json`,
+  gone since the ingest; the branch forked before that, so on the branch it was correct. Worse: the
+  six tests gated on `existsSync(corpus/works)` — *the same dead directory* — so a gate meant to say
+  "no encoder installed" silently also said "no corpus", and five encoder tests reported ok while
+  running nothing. **A skip condition that names one missing thing and covers two is worse than no
+  test**, because the count goes up.
+- Installed the encoder (hash checked against the pin: `fd6e1402…`) and `jpeg-js`, which came in with
+  the merge and had never been `npm install`ed. **593 tests / 593 pass / 0 skipped**, 11 goldens.
+- Two defects only visible once it ran. (1) The baseline is all pairs: 1,225 at the 50 works it was
+  written for, **197,780,116** at 19,889. Sampled by stride to 1,500 = 1,124,250, never by prefix —
+  the manifest is grouped by source. (2) **The corpus holds one picture twice and scored it 1.0000.**
+  98 rows share a sha256; the max is what every plate is read against. One row per hash: 19,889 ->
+  19,791, max 1.0000 -> **0.9685**. The predicted hazard fired exactly where it was predicted.
+- Thresholds restated, not loosened. `min > 0.2` / `max < 0.95` were set over 1,225 pairs and fail
+  over 1.12M **because a thousand times as many draws reach further into both tails** — an extreme of
+  a million samples is a fact about the sample size, so the assertions moved to p1 and p99. Measured:
+  min 0.1555, p1 0.4148, median 0.6428, p99 0.8374, max 0.9685; 2 pairs under 0.20, 10 at or over
+  0.95, **none at or over 0.99**.
+- First real reading, on the L2 A/B pair: `openai-withheld`'s nearest corpus work sits at the
+  **44.9th** percentile of the corpus's own pairs, `condition-withheld`'s at the **87.9th**. Hub
+  disclosed (`met-248517`, mean 0.7183) and neither plate matched it. Reported, never rewarded, and
+  it can only be convergence — no corpus image is ever shown to the artist.
+- `master` is **26 commits ahead of `origin/master`** and unpushed.
