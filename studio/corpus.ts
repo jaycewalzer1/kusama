@@ -51,6 +51,9 @@ import { type Source, type Work, imagePath, readManifest, workId } from '../arti
 import { csvRows, metadataFrom as metFrom, resolveImageUrl } from '../artist/met.js';
 import { DEFAULT_TARGET, MAX_CLASSIFICATION_SHARE, MAX_SOURCE_SHARE, select } from '../artist/selection.js';
 import { deriveElement, deriveProtocolHash, saveDerived } from '../artist/element-derive.js';
+import { type AuditPoint, auditFrom, auditText, claimsOf } from '../artist/audit.js';
+import { surfaceOf, surfaceText, surfaces } from '../artist/surface.js';
+import { type TermField, crosswalk, crosswalkText, dimensionalityOf, dimensionalitySplit, terms } from '../artist/vocabulary.js';
 
 const program = new Command();
 program.name('corpus').description('the corpus of real works the lineage elements are derived from');
@@ -767,6 +770,100 @@ program
         : `NOTHING MEASURED — ${(p.preserved / (p.chance || 1)).toFixed(1)}x chance. Do not read clusters off this plot.\n`,
     );
     process.stdout.write(`\ncorpus/${stem}.json\ncorpus/${stem}.html  — open this one in a browser\n`);
+  });
+
+/** '2d'/'object' as the boolean `surfaces` wants, with 'unknown' kept as null rather than guessed. */
+const twoD = (w: Work): boolean | null => {
+  const d = dimensionalityOf(w);
+  return d === 'unknown' ? null : d === '2d';
+};
+
+program
+  .command('surface')
+  .description('measure the corpus images, in the units the aesthetic layer measures a rendered plate in')
+  .option('--sample <n>', 'stride-sample this many images rather than decoding all of them', '1500')
+  .option('--all', 'decode every image on disk. Slow, and the bands barely move', false)
+  .action((opts: { sample: string; all: boolean }) => {
+    const works = listWorks();
+    if (works.length === 0) {
+      process.stdout.write('no manifest — run `corpus metadata` and `corpus select` first\n');
+      return;
+    }
+    process.stdout.write(surfaceText(surfaces(works, twoD, opts.all ? undefined : Number(opts.sample))));
+  });
+
+program
+  .command('vocabulary')
+  .description('what the three museums call things, and where they call the same thing different names')
+  .option('--field <f>', 'title | medium | classification | all', 'all')
+  .option('--top <n>', 'how many terms to print', '30')
+  .option('--min-documents <n>', 'ignore terms in fewer works than this; below it the ranking is noise')
+  .action((opts: { field: string; top: string; minDocuments?: string }) => {
+    const works = listWorks();
+    if (works.length === 0) {
+      process.stdout.write('no manifest — run `corpus metadata` and `corpus select` first\n');
+      return;
+    }
+    const field = opts.field as TermField;
+
+    // Printed first because it is the number that decides whether any pixel measurement below is
+    // about pictures or about photographs of things, and it is not a majority.
+    const split = dimensionalitySplit(works);
+    process.stdout.write(`${split.works} works, by what the catalogue says they physically are:\n`);
+    for (const [k, n] of Object.entries(split.counts)) {
+      process.stdout.write(`  ${k.padEnd(8)} ${String(n).padStart(6)}  ${(100 * n / split.works).toFixed(1)}%\n`);
+    }
+    process.stdout.write('\nand per museum, because the mix is a fact about collecting, not about art:\n');
+    for (const [src, row] of Object.entries(split.bySource)) {
+      const n = row['2d'] + row.object + row.unknown;
+      process.stdout.write(`  ${src.padEnd(8)} ${String(n).padStart(6)}  2d ${(100 * row['2d'] / n).toFixed(1)}%  object ${(100 * row.object / n).toFixed(1)}%  unknown ${(100 * row.unknown / n).toFixed(1)}%\n`);
+    }
+
+    const t = terms(works, field, opts.minDocuments ? Number(opts.minDocuments) : undefined);
+    process.stdout.write(`\nthe most distinctive terms in \`${field}\` (${t.length} cleared the floor):\n`);
+    for (const term of t.slice(0, Number(opts.top))) {
+      process.stdout.write(`  ${term.term.padEnd(24)} tfidf ${term.tfidf.toFixed(3)}  in ${term.documents} works, ${term.count} times\n`);
+    }
+
+    process.stdout.write(`\n${crosswalkText(crosswalk(works))}`);
+  });
+
+program
+  .command('audit')
+  .description("test the blind readings' spatial claims against the pixels they were written without")
+  .option('--permutations <n>', 'shuffles of the labels, which is what `chance` is measured against', '10000')
+  .option('--seed <n>', 'the shuffle. A finding that moves with this is not a finding', '1')
+  .action((opts: { permutations: string; seed: string }) => {
+    const points: AuditPoint[] = [];
+    for (const w of listWorks()) {
+      const r = loadReading(w.id);
+      if (r === null) continue;
+      const rel = imagePath(w);
+      // NaN, never 0. A missing or unreadable file is a work with no measurement, and `auditFrom`
+      // lists it as such; read as 0 it would be the most centred work in the corpus and would drag
+      // a median it has no right to.
+      let offset = NaN;
+      if (rel !== null) {
+        try {
+          offset = surfaceOf(path.join(CORPUS_DIR, rel), w, twoD(w)).weight.offset;
+        } catch {
+          offset = NaN;
+        }
+      }
+      points.push({
+        id: w.id,
+        families: [...new Set(claimsOf(r.reading).map((c) => c.family))],
+        offset,
+        // `canonical`, not `claimedCanonical`: the split is about what the model actually knew, and
+        // a confident wrong guess is evidence the work was NOT memorised.
+        recognised: r.canonical,
+      });
+    }
+    if (points.length === 0) {
+      process.stdout.write('no readings on disk — run `corpus read` first\n');
+      return;
+    }
+    process.stdout.write(auditText(auditFrom(points, Number(opts.permutations), Number(opts.seed))));
   });
 
 await program.parseAsync(process.argv);

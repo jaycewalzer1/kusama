@@ -34,10 +34,10 @@ import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { PNG } from 'pngjs';
 import { ROOT } from '../env/browser.js';
 import { evenSample } from './atlas.js';
 import { imagePath, readManifest } from './manifest.js';
+import { decode, type Rgb } from './pixels.js';
 
 const require = createRequire(import.meta.url);
 
@@ -94,42 +94,6 @@ export function unavailableMessage(): string {
     );
   }
   return out.join('\n');
-}
-
-interface Rgb {
-  width: number;
-  height: number;
-  /** RGB, one byte per channel, no alpha. */
-  data: Uint8Array;
-}
-
-function decode(file: string): Rgb {
-  const bytes = readFileSync(file);
-  if (file.toLowerCase().endsWith('.png')) {
-    const png = PNG.sync.read(bytes);
-    const out = new Uint8Array(png.width * png.height * 3);
-    for (let i = 0, j = 0; i < png.data.length; i += 4, j += 3) {
-      // Composited onto white, not dropped. A plate's alpha is the sheet showing through, and
-      // reading RGB straight would turn the untouched margin into whatever the buffer happened to
-      // hold — which on this renderer is black, and would dominate the embedding.
-      const a = png.data[i + 3]! / 255;
-      out[j] = Math.round(png.data[i]! * a + 255 * (1 - a));
-      out[j + 1] = Math.round(png.data[i + 1]! * a + 255 * (1 - a));
-      out[j + 2] = Math.round(png.data[i + 2]! * a + 255 * (1 - a));
-    }
-    return { width: png.width, height: png.height, data: out };
-  }
-  const jpeg = require('jpeg-js') as {
-    decode: (b: Buffer, o: { useTArray: boolean }) => { width: number; height: number; data: Uint8Array };
-  };
-  const img = jpeg.decode(bytes, { useTArray: true });
-  const out = new Uint8Array(img.width * img.height * 3);
-  for (let i = 0, j = 0; j < out.length; i += 4, j += 3) {
-    out[j] = img.data[i]!;
-    out[j + 1] = img.data[i + 1]!;
-    out[j + 2] = img.data[i + 2]!;
-  }
-  return { width: img.width, height: img.height, data: out };
 }
 
 /** CLIP's own preprocessing: shortest side to 224, centre crop, rescale, normalize, NCHW. */
