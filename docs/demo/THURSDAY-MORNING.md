@@ -12,18 +12,20 @@ Do these **before** you open the runbook. The runbook is `docs/demo/THURSDAY.md`
 
 ```bash
 cd ~/kusama
-git rev-parse --abbrev-ref HEAD          # expect: overnight/2026-09-01
-git log --oneline -1                     # expect: 176e29f  wednesday: stage 5 ...
+git rev-parse --abbrev-ref HEAD          # expect: master
+git log --oneline -1                     # expect: 30f629a  wednesday: master fast-forwarded ...
 git status --short                       # expect: nothing, or only files you know about
 ```
 
-**The commit is what matters, not the branch name.** `master` and `overnight/2026-09-01` are the
-same commit — `176e29f` — and both are on origin. The tree is checked out on the branch and there is
-no reason to switch it. If the commit is anything older than `176e29f`, **stop**: everything the demo
-needs went in on Wednesday.
+**There is one branch now.** `master` at `30f629a`, here and on origin, and nothing else — the
+Wednesday work was fast-forwarded in and the working branches were deleted once every one of them was
+an ancestor of `master`. If the commit is older than `30f629a`, **stop**: everything the demo needs
+went in on Wednesday.
 
-The previous `master` is kept at `backup/master-pre-wednesday` (`ebd95cd`), locally and on origin, in
-case anything needs to be compared against the state before this week.
+Nothing was lost in that cleanup: `ebd95cd` (the previous `master`), `1c3dd9e`, `cf0236f` and
+`67e743b` are all still reachable from `master`, and the tag `recovery/2026-08-27` is untouched. The
+second worktree at `.claude/worktrees/artmine-recs` and its branch were left in place; they are not
+needed for the demo and nothing there is uncommitted.
 
 ---
 
