@@ -1,0 +1,27 @@
+$ node dist/studio/corpus.js search a page of dense handwriting -k 12
+
+query: a page of dense handwriting
+searched 19791 distinct corpus images; this query's scores over all of them: mean 0.1643 sd 0.0261 min 0.0892 max 0.2970
+
+  cos      z     pct     id            classification / title
+  0.2970   5.09   99.99  aic-204613    album leaf | Landscape in the Style of Ancient Masters: colophon 
+  0.2950   5.01   99.99  met-229879    Textiles-Woven | Textile swatch to accompany letter
+  0.2876   4.73   99.98  met-475053    Papyrus | Papyrus
+  0.2861   4.67   99.98  cma-162091    Calligraphy | Calligraphy in Running Style based on Wang Bo's Essa
+  0.2859   4.66   99.97  cma-114258    Manuscript | Page from Ramayana
+  0.2859   4.66   99.97  cma-114259    Manuscript | Page from Ramayana
+  0.2847   4.62   99.96  cma-678488    Bound Volume | Text, folio 250 (recto), from a Gospel Book with Com
+  0.2844   4.61   99.96  aic-91678     drawings (visual works | Gutenberg Bible Leaf
+  0.2837   4.58   99.95  aic-238739    album leaf | Calligraphy
+  0.2832   4.56   99.95  cma-114254    Manuscript | Page from Ramayana
+  0.2805   4.45   99.94  aic-131871    tempera | Illuminated Initial "A" from a Psalter or Breviary
+  0.2767   4.31   99.94  met-845154    Calligraphy | 遊女恋文三十七通 (Yūjo koibumi sanjūnanatsū)|Letters by Cour
+
+museum crossing (share of these hits vs share of the searched set):
+  cma   41.7% of hits    16.1% of corpus
+  aic   33.3% of hits    34.3% of corpus
+  met   25.0% of hits    49.6% of corpus
+
+A cosine here is not a probability and not a percentage of anything. Read the z and the
+percentile, which are against this query's own distribution over the corpus. No corpus image
+ever reaches the artist through this command; it is a lookup for a person.

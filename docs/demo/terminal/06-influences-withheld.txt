@@ -1,0 +1,95 @@
+$ node dist/studio/corpus.js influences show withheld
+
+influences for withheld — 48 works, influencesHash 5ccf5677370534ce
+
+  weight   cos   pen  id            museum  classification / title
+   0.738  0.342  0.70  met-117560    met     Mourning veil        | Mourning veil
+   0.620  0.298  0.81  met-14141     met     Tablecloth           | Hand-woven Tablecloth
+   0.569  0.300  0.76  met-68318     met     Textiles-Costumes    | (untitled)
+   0.493  0.318  0.82  cma-94198     cma     Textile              | Fragments of Egyptian Mummy Wrappings fr
+   0.477  0.289  0.83  met-2053      met     Steps                | Steps
+   0.461  0.289  0.80  met-544131    met     Bracelet, Senebtisi  | Bracelet of Senebtisi
+   0.427  0.328  0.81  aic-142570    aic     collage              | Study for a Composition
+   0.410  0.282  0.85  met-8666      met     Toast rack           | Toast rack
+   0.393  0.324  0.78  met-447591    met     Textiles             | Cover
+   0.379  0.308  0.78  cma-119691    cma     Textile              | Headcloth
+   0.358  0.260  0.87  met-209021    met     Sculpture-Reproducti | The Thinker (Le Penseur)
+   0.351  0.279  0.79  met-544253    met     Stool                | Low stool
+   0.346  0.286  0.79  met-545138    met     Sheet, weavers marks | Length of Very Sheer Linen Cloth
+   0.313  0.264  0.77  aic-41579     aic     sketchbook           | Sketchbook
+   0.307  0.306  0.79  met-561756    met     Ring, finger         | Ring with a flat bezel
+   0.299  0.275  0.69  cma-115544    cma     Garment              | Lace Cap
+   0.284  0.333  0.85  met-544558    met     Facsimile, Ineni (TT | House with Storerooms, Tomb of Ineni
+   0.281  0.325  0.86  met-548740    met     Linen Mark, Amenmose | Linen Mark Recording the Name Amenmose
+   0.280  0.268  0.75  met-212319    met     Textiles-Laces       | Band
+   0.275  0.322  0.86  aic-150806    aic     brush and ink        | Untitled
+   0.271  0.310  0.87  met-7405      met     Sewing steps         | Sewing steps
+   0.270  0.301  0.90  met-829835    met     Codices              | Jewish Captives Making an Appeal to the 
+   0.270  0.326  0.83  met-553114    met     Stela with a seated  | Stela with a seated figure of Re-Harakht
+   0.268  0.295  0.91  cma-114248    cma     Calligraphy          | Page from a Qur'an (recto)
+   0.267  0.295  0.91  cma-114240    cma     Drawing              | Leaf from a Qur'an (verso)
+   0.266  0.318  0.84  aic-85897     aic     pen and ink drawings | Sketches of Various Objects, Including A
+   0.264  0.320  0.83  met-553669    met     Papyrus, funerary, R | Fragments of a funerary papyrus
+   0.263  0.296  0.89  aic-76881     aic     watercolor           | The Greedy Dog
+   0.262  0.302  0.87  aic-60426     aic     miniature painting   | Old Man Attended by Visitors
+   0.261  0.319  0.82  aic-156397    aic     soft-ground etching  | The Corner of the Sofa (No. 1)
+   0.261  0.294  0.89  cma-114238    cma     Drawing              | Leaf from a Qur'an
+   0.260  0.297  0.88  cma-114267    cma     Calligraphy          | Qur'an Manuscript Folio
+   0.260  0.295  0.88  met-548355    met     Facsimile, QV 66, Ne | Queen Nefertari Playing Senet
+   0.260  0.289  0.75  aic-262187    aic     prints and drawing   | Still-Life with Geometric Forms
+   0.258  0.306  0.84  met-503603    met     Idiophone-Struck-bar | Rock Harmonicon
+   0.257  0.289  0.89  met-548408    met     amulets, beads       | Amulets and beads (modern stringing)
+   0.257  0.302  0.85  aic-154177    aic     handscroll           | Imperial Edict
+   0.256  0.283  0.91  met-22498     met     Armor Parts-Cuirasse | Cuirass of a &lt;i&gt;Dō-maru&lt;/i&gt;
+   0.256  0.270  0.80  aic-156886    aic     weaving - coverlet   | Coverlet
+   0.255  0.295  0.87  aic-108747    aic     calligraphy          | Page from a Copy of The Qur'an
+   0.253  0.306  0.83  met-3530      met     Embroidery frame     | Embroidery frame
+   0.251  0.298  0.84  aic-52293     aic     miniature painting   | Manuchehr Kills Tur, Manuscript from Sha
+   0.251  0.295  0.85  cma-114246    cma     Calligraphy          | Qur'an Manuscript Folio
+   0.251  0.319  0.79  aic-20609     aic     engraved plate       | Plate one, from A Harlot's Progress
+   0.250  0.324  0.77  cma-161235    cma     Woodblock            | Dragon and Orchard
+   0.248  0.288  0.86  met-221643    met     Textiles-Woven|Texti | Cope
+   0.248  0.289  0.86  cma-161231    cma     Woodblock            | Dragon and Orchard
+   0.246  0.288  0.86  met-575094    met     Beads, imitation     | Beads, imitation
+
+measured, each against its chance baseline:
+  same-museum pairs   37.5%  vs 39.0% chance (and vs 55.4% for appearance neighbours, 93.6% for metadata neighbours)
+  intra-set cosine    mean 0.6416 (min 0.3045 max 0.9622)  vs corpus median 0.6428 / p99 0.8374
+  classification  entropy 5.252 bits vs random draw 5.468 [5.293, 5.585] — NARROWER than chance
+  medium          entropy 5.319 bits vs random draw 5.355 [5.111, 5.543] — INSIDE the chance band — nothing measured
+  2D vs object        24 2D / 16 object / 8 unknown  = 50.0% 2D vs 14.7% in the manifest
+  museums             met 25 (52.1%)  aic 13 (27.1%)  cma 10 (20.8%)
+
+the set's own shape: spread 0.8056 (mean cosine to centroid), radius 0.6176 (mean euclidean)
+
+  axis 0 — 27.5% of the set's variance — calligraphy -> furniture; aic -> met
+    walked 10 steps out on minus (stopped by the corpus's hull), 7 on plus (hull)
+      -   0.915  aic-16144    calligraphy        | Qur'an Manuscript
+      -   0.912  cma-114242   Drawing            | Qur'an Manuscript Folio (recto)
+      -   0.909  cma-114249   Calligraphy        | Page from a Qur'an (verso)
+      +   0.904  met-13580    Carpet             | Carpet
+      +   0.902  met-14129    Tablecover         | Dressing Table Cover Quilt
+      +   0.897  met-564827   Spear case         | Spear case
+
+  axis 1 — 7.4% of the set's variance — lace -> chalk; met -> aic
+    walked 3 steps out on minus (stopped by the corpus's hull), 8 on plus (hull)
+      -   0.869  met-546731   Papyrus fragment   | Papyrus fragment
+      -   0.866  met-448688   Textiles-Painted a | Textile Printed in Gold
+      -   0.862  cma-157145   Manuscript         | Qur'an Manuscript Folio (recto); left 
+      +   0.906  met-557692   Facsimile, Djehuty | Facade of a House, Tomb of Djehutynefe
+      +   0.904  met-845136   Calligraphy        | 「花さそふ」和歌  (“Hana sasou” waka)|Waka Poe
+      +   0.903  aic-33043    textile            | Fragments
+
+  axis 2 — 6.1% of the set's variance — tomb pottery -> textile
+    walked 4 steps out on minus (stopped by the corpus's hull), 6 on plus (hull)
+      -   0.890  met-468426   Textiles-Dyed      | Mitre
+      -   0.874  met-544593   Facsimile, Puyemre | Face of Puyemre
+      -   0.873  met-326763   Ceramics-Vessels   | Vessel
+      +   0.900  met-548836   Linen, Tutankhamun | Linen from Tutankhamun's Embalming Cac
+      +   0.898  met-552619   Papyrus, uninscrib | Papyrus sheet
+      +   0.898  aic-33043    textile            | Fragments
+
+This is RETRIEVAL, not reading. Nothing here knows what any of these works is. A lineage entry
+names a real work that is almost certainly NOT in this corpus, so what comes back is whatever
+photographs like the words in its title. Read the Jaccard column across positions before
+believing that any of this distinguishes one position from another.

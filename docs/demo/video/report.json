@@ -1,0 +1,19 @@
+{
+  "page": "docs/demo/rendered/atlas-condition-withheld__inf-withheld.html",
+  "frames": [
+    "01-open",
+    "02-colour-by-source",
+    "03-colour-by-kind",
+    "04-colour-by-period",
+    "05-hover-final-plate",
+    "06-corpus-coloured",
+    "07-corpus-grey-again"
+  ],
+  "hover": {
+    "x": 1024,
+    "y": 555,
+    "label": "final.png  520x700\nplaced from 20 corpus works at mean cosine 0.7406\nnearest corpus work aic-65821 — Composition (No. 1) Gray-Red (cos 0.7995)\nto the influence centroid: 46.4th percentile of the corpus"
+  },
+  "errors": [],
+  "video": "atlas-overlay-condition-withheld.webm"
+}

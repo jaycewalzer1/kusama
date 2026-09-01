@@ -1,0 +1,17 @@
+$ node dist/studio/corpus.js influences lens a photograph of a modern sports car on a racetrack withheld -k 3
+
+"a photograph of a modern sports car on a racetrack"
+  encoded as 1 sentence, averaged
+  against withheld: 48 works, mean cosine 0.1660
+  against the corpus: 19,791 works, mean 0.1417 sd 0.0252
+  NOTHING MEASURED. The set sits +0.96 sd from the corpus mean, inside the ±2 band.
+  This condition does not pick this shelf out of the corpus. The ranking below is still the
+  order the works come in; it is not evidence that the condition found them.
+
+  nearest 3 of the works this artist has looked at:
+    0.2384  p 99.96  met-503603   Rock Harmonicon
+    0.2262  p 99.84  aic-85897    Sketches of Various Objects, Including Ancho
+    0.2127  p 99.45  aic-156886   Coverlet
+
+  Read the percentile, not the cosine. A text-image cosine of 0.30 is a high one; the two
+  towers do not share a scale with image-image cosines, whose corpus median is 0.6428.

@@ -1,0 +1,34 @@
+$ node dist/studio/corpus.js plates out/condition-withheld
+
+
+out/condition-withheld — 17 plates against 19791 deduped corpus works
+  position withheld  influences 5ccf5677370534ce
+  band from 1500 works / 1,124,250 pairs — min 0.1555 median 0.6428 max 0.9685
+
+  plate                                              novelty  nearest corpus work              pctile   to influences (vs corpus)
+  * final.png                                        0.2005  aic-65821    Composition (No. 1)   96.7%  0.7406 at  46.4%
+    sketches/avoid-becoming-proxy-1.png              0.1760  aic-10348    Prutah (Coin) Depict  98.4%  0.7994 at  88.1%
+    sketches/avoid-becoming-proxy-2.png              0.1686  met-69987    (untitled)            98.8%  0.7935 at  85.5%
+    sketches/avoid-becoming-proxy-3.png              0.1742  cma-95559    Sash                  98.5%  0.8050 at  90.3%
+    sketches/contact.png                             0.1788  met-212319   Band                  98.3%  0.7805 at  78.3%
+    sketches/fidelity-not-secrecy-1.png              0.2102  aic-65821    Composition (No. 1)   95.7%  0.7457 at  51.0%
+    sketches/fidelity-not-secrecy-2.png              0.1706  met-69987    (untitled)            98.7%  0.7913 at  84.4%
+    sketches/fidelity-not-secrecy-3.png              0.1832  aic-212763   Lily Pattern Frame    98.0%  0.7400 at  46.0%
+    sketches/necessity-without-derivation-1.png      0.1877  met-8666     Toast rack            97.7%  0.7410 at  46.7%
+    sketches/necessity-without-derivation-2.png      0.1460  aic-10348    Prutah (Coin) Depict  99.5%  0.8047 at  90.2%
+    sketches/necessity-without-derivation-3.png      0.2057  met-69987    (untitled)            96.2%  0.7541 at  58.2%
+    sketches/procedural-proof-in-print-1.png         0.1418  aic-10348    Prutah (Coin) Depict  99.6%  0.7793 at  77.5%
+    sketches/procedural-proof-in-print-2.png         0.1577  aic-51270    Fragment with the Gy  99.2%  0.8083 at  91.5%
+    sketches/procedural-proof-in-print-3.png         0.2085  aic-51270    Fragment with the Gy  95.9%  0.7550 at  59.0%
+    sketches/two-distances-no-slogan-1.png           0.1778  met-69987    (untitled)            98.3%  0.7718 at  72.6%
+    sketches/two-distances-no-slogan-2.png           0.2081  aic-10348    Prutah (Coin) Depict  95.9%  0.7360 at  42.3%
+    sketches/two-distances-no-slogan-3.png           0.1922  met-69987    (untitled)            97.4%  0.7667 at  68.4%
+
+  The last column is the one to read. A plate at 50.0% is exactly as near this position's
+  influences as a corpus work drawn at random, i.e. not near them at all. The raw cosine is
+  not interpretable on its own: CLIP image embeddings sit in a narrow cone.
+
+  NOTHING MEASURED: drift needs a plate per MAKE step and no run has ever persisted one. A `render` log line keeps a pixelHash, not the pixels. Sketches are alternatives considered at one moment, not a canvas over time, so a "drift" computed over them would answer a different question while looking like an answer to this one.
+  wrote out/condition-withheld/plates.clip.f32
+  wrote out/condition-withheld/plates.clip-index.json
+  wrote out/condition-withheld/scores.corpus.json

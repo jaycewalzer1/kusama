@@ -1,0 +1,27 @@
+$ node dist/studio/corpus.js search an upside-down flag hung from a granite cliff -k 12
+
+query: an upside-down flag hung from a granite cliff
+searched 19791 distinct corpus images; this query's scores over all of them: mean 0.1469 sd 0.0373 min 0.0339 max 0.2787
+
+  cos      z     pct     id            classification / title
+  0.2787   3.53   99.99  met-590353    Relief, woman carrying | Relief from the tomb of Queen Neferu: female attenda
+  0.2783   3.52   99.99  aic-60122     cabinet card (albumen) | Glacier Rock from below
+  0.2783   3.52   99.98  met-466520    Glass-Stained | Glass Fragment
+  0.2772   3.49   99.98  cma-130354    Metalwork | Lamp
+  0.2762   3.47   99.97  aic-181272    albumen print from col | Cañon of Kanab Wash, Colorado River, Looking South
+  0.2751   3.43   99.97  met-25827     Banners | Banner
+  0.2734   3.39   99.96  met-590374    Relief, part of female | Relief from the tomb of Queen Neferu: parts of two f
+  0.2731   3.38   99.96  met-767246    Sealing, Nebmaatre, Am | Document Sealing
+  0.2719   3.35   99.95  met-567666    Crown edge, discs, 2 a | Crown with discs and two adjoining surfaces
+  0.2676   3.23   99.95  met-544991    Talatat, three courtie | Relief with three courtiers
+  0.2660   3.19   99.94  met-557885    Knife, fishtail, bifac | Fragment of a fishtail knife
+  0.2658   3.19   99.94  aic-27086     salted paper print | St. Lucia, Naples
+
+museum crossing (share of these hits vs share of the searched set):
+  met   66.7% of hits    49.6% of corpus
+  aic   25.0% of hits    34.3% of corpus
+  cma    8.3% of hits    16.1% of corpus
+
+A cosine here is not a probability and not a percentage of anything. Read the z and the
+percentile, which are against this query's own distribution over the corpus. No corpus image
+ever reaches the artist through this command; it is a lookup for a person.

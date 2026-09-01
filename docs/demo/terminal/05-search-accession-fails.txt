@@ -1,0 +1,27 @@
+$ node dist/studio/corpus.js search 1923.456 -k 12
+
+query: 1923.456
+searched 19791 distinct corpus images; this query's scores over all of them: mean 0.2257 sd 0.0191 min 0.1486 max 0.3105
+
+  cos      z     pct     id            classification / title
+  0.3105   4.43   99.99  aic-110182    medal/plaquette/coin | Papal Medal of Sede Vacante
+  0.3009   3.93   99.99  aic-136566    coin | Papal Medal of Clement XII
+  0.2982   3.79   99.98  aic-136572    coin | Papal Medal of Clement XII
+  0.2971   3.73   99.98  aic-141550    medal/plaquette/coin | Papal Medal of Pius IX
+  0.2939   3.56   99.97  aic-141542    medal/plaquette/coin | Papal Medal of Innocent XI
+  0.2937   3.56   99.97  aic-110141    coin | Papal Medal of Julius III
+  0.2935   3.54   99.96  aic-141541    medal/plaquette/coin | Papal Medal of Innocent XI
+  0.2924   3.48   99.96  aic-141549    medal/plaquette/coin | Papal Medal of Pius IX
+  0.2919   3.46   99.95  aic-39649     wood engraving block | At the Universal Exhibition. The visitor will easily
+  0.2917   3.45   99.95  aic-110185    medal/plaquette/coin | Papal Medal of Clement X
+  0.2904   3.38   99.94  aic-136571    coin | Papal Medal of Clement XII
+  0.2889   3.30   99.94  aic-136563    coin | Papal Medal of Clement XII
+
+museum crossing (share of these hits vs share of the searched set):
+  aic  100.0% of hits    34.3% of corpus
+  cma    0.0% of hits    16.1% of corpus
+  met    0.0% of hits    49.6% of corpus
+
+A cosine here is not a probability and not a percentage of anything. Read the z and the
+percentile, which are against this query's own distribution over the corpus. No corpus image
+ever reaches the artist through this command; it is a lookup for a person.

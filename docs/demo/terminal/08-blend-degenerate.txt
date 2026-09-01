@@ -1,0 +1,32 @@
+$ node dist/studio/corpus.js influences blend withheld interference
+
+blend withheld x interference — centroids sit at cosine 0.9598
+  the two centroids are nearly the same point, so this blend has almost nothing to blend
+
+nearest the midpoint (excluding both sets):
+  0.9050  met-70531    Stencils             | (untitled)
+  0.9037  cma-98663    Velvet               | Velvet Fragment
+  0.9021  met-560616   Mummy Cloth Fragment | Mummy Cloth Fragment of Djedptahefankh
+  0.8998  aic-33043    textile              | Fragments
+  0.8993  met-448688   Textiles-Painted and | Textile Printed in Gold
+  0.8974  aic-249353   embroidery           | Panel of English Elizabethan Embroidery
+  0.8969  aic-240464   needlework - quilt   | Bedcover (Unfinished in three sections)
+  0.8948  met-14129    Tablecover           | Dressing Table Cover Quilt
+  0.8946  cma-101307   Textile              | Fragment
+  0.8941  cma-127922   Textile              | Tiraz with gold
+  0.8940  cma-143793   Textile              | Fragment
+  0.8934  met-548836   Linen, Tutankhamun c | Linen from Tutankhamun's Embalming Cache
+
+near the midpoint but outside BOTH sets' own spreads (a<0.806, b<0.836) — the only part of a blend neither set could have reached alone:
+  0.8274 (a 0.805 b 0.833)  met-314372   Figure
+  0.8273 (a 0.805 b 0.833)  met-326756   Necklace
+  0.8272 (a 0.804 b 0.834)  cma-100653   Lace Insertion
+  0.8266 (a 0.804 b 0.833)  met-325601   Spearhead
+  0.8266 (a 0.802 b 0.835)  aic-248724   Crewel Work Curtain
+  0.8262 (a 0.801 b 0.835)  met-45535    (untitled)
+  0.8240 (a 0.800 b 0.831)  cma-100649   Lace Insertion
+  0.8240 (a 0.800 b 0.831)  met-35966    (untitled)
+  0.8236 (a 0.798 b 0.833)  met-558335   Tile
+  0.8235 (a 0.797 b 0.833)  met-549980   Necklace restrung with amulets and a fai
+  0.8235 (a 0.800 b 0.830)  met-64932    (untitled)
+  0.8234 (a 0.802 b 0.828)  aic-116848   Front of Mail Breech

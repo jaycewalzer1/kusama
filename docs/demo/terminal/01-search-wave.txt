@@ -1,0 +1,20 @@
+$ node dist/studio/corpus.js search a woodcut print of a wave -k 5
+
+query: a woodcut print of a wave
+searched 19791 distinct corpus images; this query's scores over all of them: mean 0.1642 sd 0.0378 min 0.0474 max 0.3179
+
+  cos      z     pct     id            classification / title
+  0.3179   4.07   99.99  aic-88398     woodcut | The Girls on the Bridge
+  0.3137   3.96   99.99  cma-98505     Velvet | Velvet Fragment
+  0.3105   3.87   99.98  cma-98488     Velvet | Velvet Textile
+  0.3101   3.86   99.98  aic-43169     album leaf | Landscape 山水扇面
+  0.3090   3.83   99.97  aic-88396     woodcut | Woman's Head against the Shore
+
+museum crossing (share of these hits vs share of the searched set):
+  aic   60.0% of hits    34.3% of corpus
+  cma   40.0% of hits    16.1% of corpus
+  met    0.0% of hits    49.6% of corpus
+
+A cosine here is not a probability and not a percentage of anything. Read the z and the
+percentile, which are against this query's own distribution over the corpus. No corpus image
+ever reaches the artist through this command; it is a lookup for a person.

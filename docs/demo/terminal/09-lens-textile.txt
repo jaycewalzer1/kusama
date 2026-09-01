@@ -1,0 +1,17 @@
+$ node dist/studio/corpus.js influences lens woven cloth, linen and thread withheld -k 3
+
+"woven cloth, linen and thread"
+  encoded as 1 sentence, averaged
+  against withheld: 48 works, mean cosine 0.2428
+  against the corpus: 19,791 works, mean 0.2164 sd 0.0274
+  NOTHING MEASURED. The set sits +0.97 sd from the corpus mean, inside the ±2 band.
+  This condition does not pick this shelf out of the corpus. The ranking below is still the
+  order the works come in; it is not evidence that the condition found them.
+
+  nearest 3 of the works this artist has looked at:
+    0.3014  p 99.17  met-545138   Length of Very Sheer Linen Cloth
+    0.2972  p 98.87  aic-156886   Coverlet
+    0.2905  p 98.16  met-68318    (untitled)
+
+  Read the percentile, not the cosine. A text-image cosine of 0.30 is a high one; the two
+  towers do not share a scale with image-image cosines, whose corpus median is 0.6428.

@@ -1,0 +1,126 @@
+[
+  {
+    "name": "01-search-handwriting",
+    "file": "docs/demo/searches/a-page-of-dense-handwriting.html",
+    "ms": 1694,
+    "errors": [],
+    "ink": {
+      "kind": "dom",
+      "chars": 3582,
+      "imgs": 1
+    }
+  },
+  {
+    "name": "02-search-does-not-blink",
+    "file": "docs/demo/searches/being-watched-by-something-that-does-not-blink.html",
+    "ms": 1673,
+    "errors": [],
+    "ink": {
+      "kind": "dom",
+      "chars": 3163,
+      "imgs": 1
+    }
+  },
+  {
+    "name": "03-search-corporate-greed",
+    "file": "docs/demo/searches/corporate-greed.html",
+    "ms": 1688,
+    "errors": [],
+    "ink": {
+      "kind": "dom",
+      "chars": 3329,
+      "imgs": 1
+    }
+  },
+  {
+    "name": "04-search-flag-fails",
+    "file": "docs/demo/searches/an-upside-down-flag-hung-from-a-granite-cliff.html",
+    "ms": 1696,
+    "errors": [],
+    "ink": {
+      "kind": "dom",
+      "chars": 3776,
+      "imgs": 1
+    }
+  },
+  {
+    "name": "05-influences-withheld",
+    "file": "docs/demo/influences/withheld.html",
+    "ms": 3502,
+    "errors": [],
+    "ink": {
+      "kind": "dom",
+      "chars": 17042,
+      "imgs": 1
+    }
+  },
+  {
+    "name": "06-atlas-overlay-condition-withheld",
+    "file": "docs/demo/rendered/atlas-condition-withheld__inf-withheld.html",
+    "ms": 3127,
+    "errors": [],
+    "ink": {
+      "kind": "canvas",
+      "w": 1620,
+      "h": 890,
+      "litSamples": 1503
+    }
+  },
+  {
+    "name": "07-atlas-clip",
+    "file": "docs/demo/rendered/atlas-clip.html",
+    "ms": 3147,
+    "errors": [],
+    "ink": {
+      "kind": "canvas",
+      "w": 1620,
+      "h": 890,
+      "litSamples": 1499
+    }
+  },
+  {
+    "name": "08-atlas-metadata",
+    "file": "docs/demo/rendered/atlas.html",
+    "ms": 3129,
+    "errors": [],
+    "ink": {
+      "kind": "canvas",
+      "w": 1620,
+      "h": 890,
+      "litSamples": 627
+    }
+  },
+  {
+    "name": "09-notebook-02-embedding-space",
+    "file": "docs/demo/rendered/notebooks/02_embedding_space.html",
+    "ms": 2103,
+    "errors": [],
+    "ink": {
+      "kind": "dom",
+      "chars": 8427,
+      "imgs": 4
+    }
+  },
+  {
+    "name": "10-notebook-06-pixel-metrics",
+    "file": "docs/demo/rendered/notebooks/06_pixel_metrics.html",
+    "ms": 1972,
+    "errors": [],
+    "ink": {
+      "kind": "dom",
+      "chars": 14775,
+      "imgs": 2
+    }
+  },
+  {
+    "name": "11-search-crowd-one-museum",
+    "file": "docs/demo/searches/a-crowd-of-people-in-the-street.html",
+    "ms": 1672,
+    "errors": [],
+    "ink": {
+      "kind": "dom",
+      "chars": 3246,
+      "imgs": 1
+    }
+  }
+]

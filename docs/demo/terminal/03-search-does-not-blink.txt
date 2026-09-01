@@ -1,0 +1,27 @@
+$ node dist/studio/corpus.js search being watched by something that does not blink -k 12
+
+query: being watched by something that does not blink
+searched 19791 distinct corpus images; this query's scores over all of them: mean 0.1806 sd 0.0150 min 0.1235 max 0.2463
+
+  cos      z     pct     id            classification / title
+  0.2463   4.38   99.99  cma-136836    Portrait Miniature | Eye
+  0.2417   4.07   99.99  met-718107    Vase | Vase with peacock feathers
+  0.2405   3.99   99.98  met-1397      Cane handle | Cane Handle
+  0.2388   3.88   99.98  met-577587    Pendant | Pendant
+  0.2376   3.80   99.97  met-551326    Amulet | Horus amulet
+  0.2366   3.73   99.97  aic-185001    ink | A Pair of Carp
+  0.2364   3.72   99.96  aic-111252    architectural sculptur | Lintel Support with Lion
+  0.2356   3.66   99.96  met-551325    Amulet, Khnum | Amulet of Khnum
+  0.2344   3.58   99.95  met-546156    Amulet, Horus falcon | Horus Falcon Amulet
+  0.2343   3.58   99.95  met-551324    Isis amulet | Isis amulet
+  0.2343   3.58   99.94  met-550932    Amulet, Baboon | Amulet: Squatting Baboon
+  0.2339   3.55   99.94  aic-9643      coin | Stater (Coin) Depicting a Sea Turtle
+
+museum crossing (share of these hits vs share of the searched set):
+  met   66.7% of hits    49.6% of corpus
+  aic   25.0% of hits    34.3% of corpus
+  cma    8.3% of hits    16.1% of corpus
+
+A cosine here is not a probability and not a percentage of anything. Read the z and the
+percentile, which are against this query's own distribution over the corpus. No corpus image
+ever reaches the artist through this command; it is a lookup for a person.

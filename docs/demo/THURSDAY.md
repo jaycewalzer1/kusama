@@ -96,11 +96,11 @@ open docs/demo/searches/a-page-of-dense-handwriting.html
 
 | # | phrase | same-museum pairs | museums | what comes back |
 |---|---|---|---|---|
-| 1 | `a page of dense handwriting` | **28.8%** vs 39.0% chance | 3 | twelve dense pages — Chinese album leaves, a papyrus, Ramayana folios, a textile swatch pinned to a letter |
-| 2 | `grief handled as paperwork` | **31.8%** vs 39.0% | 3 | a vanitas with a skull, an American passport, a memorial card, engravings of men at desks |
-| 3 | `an empire taking inventory of what it took` | **37.9%** vs 39.0% | 3 | tomb registers — wine and beer being counted at Nebamun, a Ramesses relief, a funerary papyrus |
-| 4 | `corporate greed` | 45.5% vs 39.0% | 3 | a wall of posters: *Hun or Home?*, *Halt die Hun!*, Posada's calavera, and one that begins PLEASE REMEMBER THE MORE THAN 20,000 BLACK PEOPLE |
-| 5 | `being watched by something that does not blink` | 47.0% vs 39.0% | 3 | a Lover's Eye miniature — a single painted human eye in a brooch — then a row of Horus falcon amulets and a stone owl |
+| 1 | `a page of dense handwriting` | **28.8%** vs 39.0% chance | 3 | twelve dense pages and nothing else — an album-leaf colophon, a papyrus, three *Page from Ramayana* folios, a Gutenberg Bible leaf, a psalter initial, and `met-229879 Textile swatch to accompany letter` |
+| 2 | `grief handled as paperwork` | **31.8%** vs 39.0% | 3 | a still life, `met-656327 Charles Saint-Mémin's American Passport`, a fraktur *Wall Text*, a manuscript sampler, *Milton Dictating to Ellwood the Quaker* |
+| 3 | `an empire taking inventory of what it took` | **37.9%** vs 39.0% | 3 | an embroidered cloth fragment, then the tomb registers — *Storage of Wine and Beer, Tomb of Nebamun*, a Ramesses I chapel relief, a Book-of-the-Dead judgment papyrus, *Nubian Tribute Presented to the King* |
+| 4 | `corporate greed` | 45.5% vs 39.0% | **2** | a necklace and a toothpick holder, then the posters: *Hun or Home?*, *Halt the Hun!*, Posada's *Calavera Tapatia*, and `met-852944` which begins PLEASE REMEMBER THE MORE THAN 20,000 BLACK PEOPLE |
+| 5 | `being watched by something that does not blink` | 47.0% vs 39.0% | 3 | `cma-136836 Portrait Miniature \| Eye` — a single painted human eye in a brooch — then a peacock-feather vase, and amulets of Horus, Khnum, Isis, a Horus falcon and a baboon |
 
 **Three of the five sit below the 39.0% chance rate**, which is the interesting direction: the
 phrase is not simply retrieving one museum's cataloguing habits. **Lead with 5.** The eye is the
@@ -113,19 +113,22 @@ Five of the thirty, and why each fails. These are worth showing on purpose if th
 
 | phrase | what happens | why |
 |---|---|---|
-| `1923.456` | twelve papal medals, **one museum, 3 classifications** | an accession number has no appearance; the nearest thing to a string of digits is a round metal disc with digits struck on it |
+| `1923.456` | eleven papal medals and a wood-engraving block — **one museum, 3 classifications** | an accession number has no appearance; the nearest thing to a string of digits is a round metal disc with digits struck on it |
 | `circa 1650` | 83.3% same-museum | a date is not a visible property of a photograph |
 | `untitled` | 68.2% same-museum | it matches the catalogue's *word*, not the picture |
 | `authenticity` | 68.2% same-museum | an abstract noun with no visual referent lands wherever the corpus is densest |
-| `an upside-down flag hung from a granite cliff` | granite, rock fragments, a bare pole — **no flag, no inversion** | it keeps the nouns and drops the syntax; CLIP has no "upside-down" |
+| `an upside-down flag hung from a granite cliff` | `Glacier Rock from below`, `Cañon of Kanab Wash`, one `met-25827 Banner` — and then Egyptian tomb reliefs, a glass fragment, a lamp, a knife | the nouns land **separately**: a cliff photograph, a banner, and no image of the two together. There is no inversion anywhere; CLIP has no "upside-down" |
 
 That last one is worth dwelling on, because it is the brief phrased literally. **The same brief
 phrased three ways gives three different behaviours** and the sheets for all three are on disk:
 
-- `an upside-down flag hung from a granite cliff` — 47.0% crossing, but returns *granite*, not a flag
+- `an upside-down flag hung from a granite cliff` — 47.0% crossing, and the cliff and the banner come
+  back as **two different works**
 - `a protest banner over a national park` — 69.7% crossing, 9 classifications, a muddle
-- `a wilderness photographed as a political argument` — **twelve real 19th-century landscape
-  photographs**, visually the most coherent of the three, and the *worst* crosser at 69.7%
+- `a wilderness photographed as a political argument` — **twelve 19th-century landscapes**, half of
+  them photographs (`The Spanish Peaks`, `Glacier Rock from below`, `Boat House`) and the rest
+  lithographs, a mezzotint, a charcoal. Visually the most coherent of the three, ten of twelve from
+  one museum, and the *worst* crosser at 69.7%. **No politics in any of them.**
 
 **Coherence and museum-crossing pull against each other**, and this trio is the cleanest evidence of
 it. The extreme case is `a crowd of people in the street`: twelve street scenes with figures, the
@@ -417,6 +420,28 @@ the tracked folder as plain files:
 open docs/demo/rendered/atlas-clip.html    # the appearance map, bare
 open docs/demo/rendered/atlas.html         # the metadata map, bare
 ```
+
+### If the browser itself is the problem
+
+Three tracked folders, in the order you would reach for them. All were produced on 2026-09-02 from
+the commands in this file, and **none of them needs a browser, a server, or the corpus**:
+
+| folder | what | size |
+|---|---|---|
+| `docs/demo/screens/` | 11 PNGs at 1920x1080, numbered in this runbook's order | 9.1 MB |
+| `docs/demo/terminal/` | 12 `.txt` files, the **complete real stdout** of every command above, each with its command line at the top | 52 KB |
+| `docs/demo/video/` | the atlas being driven — a 887 KB webm and 7 stills | 3.5 MB |
+
+`docs/demo/terminal/` is the one that survives everything. It is plain text, it is 52 KB, and it can
+be catted, pasted into a chat window, or read off a phone.
+
+**The atlas page has no pan and no zoom.** Its entire interactive surface is the `colour by` buttons,
+the corpus grey/coloured toggle, and the hover readout — that is what `video/` records, and it is
+what to do on stage. Do not reach for a gesture the page does not have. Grey is the default and the
+legible one: against 19,791 coloured points the plates disappear.
+
+The slide-by-slide script, with the chance baseline that belongs beside each number, is
+`docs/demo/SLIDES.md`.
 
 and if you want everything behind one URL instead, one line with no install and no repo state:
 

@@ -1,0 +1,17 @@
+$ node dist/studio/corpus.js influences lens A room in the house she died in, opened twice a year to check the humidity, with seven canvases in it turned to the wall. A letter in her hand explaining the fifty years, which her niece has never shown anyone. One photograph of her, taken in 1961, which she disliked and which the estate will not release. The humidity log, kept since 1998 in the same biro. Nothing else: the four canvases in institutions cannot be visited and the eleven have never been photographed. withheld -k 3
+
+"A room in the house she died in, opened twice a year to check the humidity, with seven canvases in it turned to the wall. A letter in her hand explaining the fifty years, which her niece has never shown anyone. One photograph of her, taken in 1961, which she disliked and which the estate will not release. The humidity log, kept since 1998 in the same biro. Nothing else: the four canvases in institutions cannot be visited and the eleven have never been photographed."
+  encoded as 5 sentences, averaged — the query is their mean direction, not any one of them
+  against withheld: 48 works, mean cosine 0.2524
+  against the corpus: 19,791 works, mean 0.2168 sd 0.0200
+  NOTHING MEASURED. The set sits +1.78 sd from the corpus mean, inside the ±2 band.
+  This condition does not pick this shelf out of the corpus. The ranking below is still the
+  order the works come in; it is not evidence that the condition found them.
+
+  nearest 3 of the works this artist has looked at:
+    0.2931  p 99.98  met-447591   Cover
+    0.2842  p 99.94  cma-161235   Dragon and Orchard
+    0.2832  p 99.92  met-14141    Hand-woven Tablecloth
+
+  Read the percentile, not the cosine. A text-image cosine of 0.30 is a high one; the two
+  towers do not share a scale with image-image cosines, whose corpus median is 0.6428.
