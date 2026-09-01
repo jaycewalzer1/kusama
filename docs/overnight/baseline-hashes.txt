@@ -1,0 +1,56 @@
+## protected bytes (rule 12: these may not move)
+9dfe34cca09538e1975652dafb5fd055f25f69f4b98477c81cc7462cce46f017  corpus/manifest.jsonl
+b6690bffa63240fa2bb986faf13a8b1fa51aa134076a4fd9d4f7a4af34682adf  corpus/clip.f32
+c4d1c4beafd1850ac05aa228c23b05e37205d5e0084fb6ed6892939c2933910e  corpus/clip-index.json
+04c70f8180c7fb01a39c5588b0ea09486d4e6f1c5e7936af826ab1f6fd27f147  aesthetic/holdout.json
+050371b75253f38a614cf7441f7962eb276832c631f85aec14c240afb74a72bc  aesthetic/elements/pack/chromolith-broadside.json
+febf4e4d15c687f59936ce3e21275d3dfdc81613caafa48b94e2c2697f45b20e  aesthetic/elements/pack/conflicts.json
+6cdd520561bc76542c8c73e96b9852518fc15df3f653daee1e901cb426e1b1e7  aesthetic/elements/pack/kuba-shoowa-surface.json
+4bab79fc3605f3a2b13558f1e0aa363d5ef374c110744e433cba78ea816d3135  aesthetic/elements/pack/ma-interval.json
+a92461e9dd49f8122b113b60fcecdb68bdf8ca1b10e62b8c82f3cf60d4124230  aesthetic/elements/pack/rodchenko-red-black.json
+587a1ae08bfecb0b6afd9db74807d90338a34951da08f528300a1fa31c2476c1  out/condition-withheld/scores.json
+13067cdf1e579ccfd932f8268f47ecfc0563f40329d3e9a6c5b7bf6664e0df99  out/condition-withheld/studio.jsonl
+5b511b757e91264efe3a52c8eafec791da7334ebe0126b7304ea01f5396f3471  out/condition-withheld/final.png
+16db852277a702afc3c8488a4bcb530c3f2358aaf9dc5e16a11821baffc0297c  out/condition-withheld/final.json
+818668df83e33f168d468ae1d40d3e39a36aeee740203179415826aec2a85536  out/openai-withheld/scores.json
+ef702a8ae70f32b7d9db41f789571ae9a91bedf77bced6dfc191903f18a0e9b8  out/openai-withheld/studio.jsonl
+7b9a9c7e10f3dbf514f8b8c9c2aeed748b387647d098677a3ef0e2427c1feacf  out/openai-withheld/final.png
+0b483bca80f6f126c68b93c9ea9b1876d387a2b166335a63d5f185ef8c8bef4f  out/openai-withheld/final.json
+ABSENT  out/first-withheld/scores.json
+dd07a6ff7bad207f15fcd85a92954b569e5cd24eee23f41f91fad34c8df78421  out/first-withheld/studio.jsonl
+ABSENT  out/first-withheld/final.png
+ABSENT  out/first-withheld/final.json
+
+## artist recompute (output text, normalised)
+DIFFERS out/condition-withheld
+  render: recorded 1, recomputed 0.6
+  hardViolations: recorded 0, recomputed 1
+  problemsGrounded: recorded 0, recomputed 3
+DIFFERS out/openai-withheld
+  tree: recorded 1, recomputed 0.8666666666666667
+  render: recorded 1, recomputed 0.6
+  hardViolations: recorded 0, recomputed 2
+  realization: recorded {"score":0,"mechanical":6,"satisfied":0,"judgePending":2,"elementsMade":0.16666666666666666}, recomputed {"score":0,"mechanical":6,"satisfied":0,"judgePending":2,"elementsMade":0.3333333333333333,"fused":{"score":0.125,"decidable":8,"satisfied":1,"fromEye":2}}
+  examineAgreement: recorded {"comparable":5,"agree":2,"treeYesEyeNo":0,"treeNoEyeYes":3,"eyePending":1,"unplanned":1,"unexamined":0}, recomputed {"comparable":5,"agree":2,"treeYesEyeNo":0,"treeNoEyeYes":3,"eyePending":1,"treePending":2,"unplanned":1,"unexamined":0}
+  termination: recorded {"kind":"out-of-steps","edgesUnrealized":6,"unrealizedEdges":["facts-block->sealed-interval","facts-block->cover-a","facts-block->cover-b","cover-a->sealed-interval","cover-b->sealed-interval","cover-c->cover-a"],"declaredUnrealizable":null,"pendingRate":0.25,"pendingCapExceeded":false,"legitimate":false}, recomputed {"kind":"finish-blocked","edgesUnrealized":6,"unrealizedEdges":["facts-block->sealed-interval","facts-block->cover-a","facts-block->cover-b","cover-a->sealed-interval","cover-b->sealed-interval","cover-c->cover-a"],"declaredUnrealizable":null,"pendingRate":0.25,"pendingCapExceeded":false,"legitimate":false}
+  judgePending: recorded ["[j-necessity] Could any element here have been otherwise at no cost? Name the single most necessary thing present and say what it is carrying. Then name the single most arbitrary. The specific test for this practice: take each covered region and ask whether anything visible on the sheet constrains what could have been underneath it. If the coverings could be slid two centimetres in any direction without changing a single relationship, then nothing was ever under them, the withholding is a shape, and the piece is a composition of dark rectangles claiming to be a refusal.","[j-only-this] Could this have come from any practice with these materials, or only from one that works by covering? Look at the edges of the covered regions, which are where this position either does or does not exist. In work from this practice the edge is where something is escaping — a corner of the thing underneath, a mark that runs out from beneath and continues — so the covering is legibly later than what it covers. Anywhere else, the dark regions are shapes that were placed on an empty surface and their edges touch nothing. Name one thing available only to a practice that works by subtraction, and one thing anybody with these tools would have done."], recomputed undefined
+  + gradient: not recorded, recomputed null
+  + pendingRubrics: not recorded, recomputed ["[j-necessity] Could any element here have been otherwise at no cost? Name the single most necessary thing present and say what it is carrying. Then name the single most arbitrary. The specific test for this practice: take each covered region and ask whether anything visible on the sheet constrains what could have been underneath it. If the coverings could be slid two centimetres in any direction without changing a single relationship, then nothing was ever under them, the withholding is a shape, and the piece is a composition of dark rectangles claiming to be a refusal.","[j-only-this] Could this have come from any practice with these materials, or only from one that works by covering? Look at the edges of the covered regions, which are where this position either does or does not exist. In work from this practice the edge is where something is escaping — a corner of the thing underneath, a mark that runs out from beneath and continues — so the covering is legibly later than what it covers. Anywhere else, the dark regions are shapes that were placed on an empty surface and their edges touch nothing. Name one thing available only to a practice that works by subtraction, and one thing anybody with these tools would have done."]
+
+## artist replay (output text, normalised; the 'now' hashes are the point)
+--- out/condition-withheld
+6a6706cbc86ebc58: NOT COMPARABLE — the environment moved after this run was recorded
+  observationHash: recorded 23da677cea3b, now 199dfe688d5d
+  dynamicsHash: recorded 9ebbcac19ed1, now f3902a5da90a
+  positionHash: recorded bdb6e5335312, now 67e566914a2c
+  Nothing was replayed. Rebuilding this run's observations under a different
+  serializer would report differences that are not the run's to answer for.
+--- out/openai-withheld
+6a6706cbc86ebc58: NOT COMPARABLE — the environment moved after this run was recorded
+  observationHash: recorded 00f8a7a54e2c, now 199dfe688d5d
+  dynamicsHash: recorded 9ebbcac19ed1, now f3902a5da90a
+  protocolHash: recorded e37ae0e46c4c, now 780a090fbde7
+  positionHash: recorded adc3513be8c1, now 67e566914a2c
+  briefHash: recorded 15853c3b5f0f, now 3a44adaf64bb
+  Nothing was replayed. Rebuilding this run's observations under a different
+  serializer would report differences that are not the run's to answer for.
