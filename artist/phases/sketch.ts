@@ -21,6 +21,7 @@ import { capabilitySheet } from '../capability-sheet.js';
 import { distribution, rng, sampleIndices, streamSeed, tookTheMode } from '../sampling.js';
 import { bareEdit, PROPOSE_SCHEMA, SKETCH_SCHEMA } from '../schemas.js';
 import { stack } from '../observation.js';
+import { artistLayers } from '../field.js';
 import type { AestheticProgram } from '../../aesthetic/types.js';
 import type { Canvas } from '../canvas.js';
 import type { Commission } from '../field.js';
@@ -122,8 +123,9 @@ const PROPOSE_SYSTEM = [
 ].join('\n');
 
 function proposeObservation(commission: Commission, problem: Problem, n: number): string {
+  const l = artistLayers(commission);
   return [
-    stack(commission.position, commission.practice, commission.deliverable, commission.brief),
+    stack(l.position, l.practice, l.brief),
     `THE PROBLEM YOU ARE ABOUT TO SKETCH\n[${problem.id}] ${problem.text}\ntension: ${problem.tension.between} vs ${problem.tension.and}: ${problem.tension.claim}`,
     `WHAT HAPPENS TO THIS LIST\n${n} of the approaches you name will be drawn at random, weighted by the\nprobabilities you give. A low number does not remove an approach from the running; it makes it less\nlikely, and it is the only way you get to say that you thought of something and do not back it.`,
   ].join(`\n${'-'.repeat(88)}\n`);
@@ -173,6 +175,7 @@ function observation(
   textOps: { used: number; max: number },
   assigned: ProposedApproach | null
 ): string {
+  const l = artistLayers(commission);
   const left = Math.max(0, textOps.max - textOps.used);
   // The assignment replaces the old closing line rather than sitting beside it: told both "make it
   // different from a sketch you would draw twice" and "draw this specific idea", the model split the
@@ -182,7 +185,7 @@ function observation(
     : `This is sketch ${index + 1} of 3 for this problem. Make it different from a sketch you would draw\nfor the same problem twice. One idea, drawn clearly enough to be refuted.`;
   return [
     `THE SUBSTRATE (sketch budgets: profile ${SKETCH_PROFILE})\n${capabilitySheet}`,
-    stack(commission.position, commission.practice, commission.deliverable, commission.brief),
+    stack(l.position, l.practice, l.brief),
     `THE PROBLEM YOU ARE SKETCHING\n[${problem.id}] ${problem.text}\ntension: ${problem.tension.between} vs ${problem.tension.and}: ${problem.tension.claim}`,
     `THE SHEET YOU ARE STARTING FROM\n${JSON.stringify(seed, null, 2)}`,
     // The remainder, not the cap. The cap is in the capability sheet above and was not enough: a

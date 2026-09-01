@@ -23,7 +23,6 @@ export interface PackRun {
   dir: string;
   positionId: string;
   briefId: string;
-  deliverableId: string;
 }
 
 export interface PackWork {
@@ -42,7 +41,6 @@ export interface PackPractice {
 export interface PackPair {
   name: string;
   briefId: string;
-  deliverableId: string;
   /** The two works, shuffled. */
   works: PackWork[];
   /** The two practices, shuffled again and separately. */
@@ -85,10 +83,9 @@ function shuffled<T>(items: T[], next: () => number): T[] {
 /**
  * Group the runs into comparable pairs.
  *
- * Same brief *and* same deliverable. The brief alone is not enough: a poster and a sticker differ
- * because they are different objects, and a reader shown one of each would be sorting by format
- * while believing they were sorting by practice. That is the one way this test can quietly produce
- * a positive result that means nothing.
+ * Same condition. Two works answering different situations are not comparable: a reader shown one
+ * of each would be sorting by subject while believing they were sorting by practice, which is the
+ * one way this test can quietly produce a positive result that means nothing.
  *
  * One run per position per group, the first by sorted directory. With k seeds per cell there are
  * several, and putting all of them in makes the same practice appear repeatedly in one pack, which
@@ -104,7 +101,7 @@ export function pairsOf(runs: PackRun[], seed: number): Pack {
       skipped.push({ dir: run.dir, why: 'no final.png: the run did not reach a finished piece' });
       continue;
     }
-    const key = `${run.briefId}__${run.deliverableId}`;
+    const key = run.briefId;
     const group = groups.get(key) ?? new Map<string, PackRun>();
     if (group.has(run.positionId)) {
       skipped.push({ dir: run.dir, why: `another run of ${run.positionId} on ${key} is already in the pack` });
@@ -140,7 +137,6 @@ export function pairsOf(runs: PackRun[], seed: number): Pack {
         pairs.push({
           name: `pair-${String(pairs.length + 1).padStart(2, '0')}`,
           briefId: two[0]!.briefId,
-          deliverableId: two[0]!.deliverableId,
           works: shuffled(two, next).map((r, n) => ({
             label: ['A', 'B'][n]!,
             positionId: r.positionId,
@@ -179,9 +175,9 @@ const README = [
   '# Which work came from which practice?',
   '',
   'Each folder in `pairs/` holds two pictures, `A.png` and `B.png`, and two descriptions of how an',
-  'artist works, `practice-1.txt` and `practice-2.txt`. The two pictures answer the same commission',
-  'for the same kind of object. One was made by the artist described in `practice-1.txt` and the',
-  'other by the artist described in `practice-2.txt`.',
+  'artist works, `practice-1.txt` and `practice-2.txt`. The two pictures answer the same commission.',
+  'One was made by the artist described in `practice-1.txt` and the other by the artist described in',
+  '`practice-2.txt`.',
   '',
   'For each pair, write down which picture goes with which practice, and one sentence saying what',
   'made you say so. The sentence is the part worth having: an answer with no reason behind it is',
@@ -220,7 +216,7 @@ export function writePack(pack: Pack, outDir: string): string[] {
     }
     // The commission, so the reader knows what both artists were asked for. Not the position, and
     // not the id of anything: `briefId` is a slug that would name the answer half the time.
-    put(path.join(dir, 'the-commission.txt'), `Both works answer the same commission, for a ${pair.deliverableId}.\n`);
+    put(path.join(dir, 'the-commission.txt'), 'Both works answer the same commission.\n');
   }
 
   const key = {
@@ -228,7 +224,6 @@ export function writePack(pack: Pack, outDir: string): string[] {
     pairs: pack.pairs.map((p) => ({
       pair: p.name,
       briefId: p.briefId,
-      deliverableId: p.deliverableId,
       works: Object.fromEntries(p.works.map((w) => [w.label, w.positionId])),
       practices: Object.fromEntries(p.practices.map((x) => [x.label, x.positionId])),
       answer: Object.fromEntries(

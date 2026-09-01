@@ -605,7 +605,7 @@ export interface Termination {
 }
 
 /**
- * Every input that could have changed the answer, hashed. The four prompt layers are hashed
+ * Every input that could have changed the answer, hashed. The prompt layers are hashed
  * separately and not rolled together: an ablation that swaps one of them has to be able to say
  * which one moved, and a single combined hash would only say that something did.
  */
@@ -620,13 +620,11 @@ export interface EnvVersion {
   protocolHash: string;
   /** L1. The practice, artist-side. */
   positionHash: string;
-  /** L3. The kind of object, artist-agnostic. */
-  deliverableHash: string;
   /** L2. The commission, artist-agnostic. */
   briefHash: string;
   fieldHash: string;
   /**
-   * The lineage elements the run composed with, as one hash. A tenth field rather than folded into
+   * The lineage elements the run composed with, as one hash. A separate field rather than folded into
    * `packHash`, because the asset pack and the element pack answer different questions: a run that
    * changed which brushes exist should not read as a run that changed which traditions it drew on.
    * The empty set hashes to a real, stable value, so an ordinary run carries this too.
@@ -639,8 +637,6 @@ export interface Trajectory {
   positionId: string;
   positionHash: string;
   briefId: string;
-  /** The kind of object commissioned — L3. */
-  deliverableId: string;
   /**
    * The lineage elements composed into the position, sorted. Empty is the ordinary case and means
    * the run adopted none. Recorded because `envVersion.elementPackHash` says only *whether* two runs

@@ -26,10 +26,7 @@ import { ROOT } from '../env/browser.js';
 import { validateAestheticProgram } from '../aesthetic/check.js';
 import {
   aestheticDirection,
-  deliverableFacts,
   effectivePosition,
-  listDeliverables,
-  namesDeliverable,
   practiceOf,
   temperamentOf,
   type Brief,
@@ -60,7 +57,7 @@ const MIME: Record<string, string> = {
  */
 const RUN_KINDS: Record<string, (p: Params, dir: string) => string[]> = {
   run: (p, dir) => [
-    'run', p.position!, p.brief!, p.deliverable!, '-o', dir,
+    'run', p.position!, p.brief!, '-o', dir,
     '--seed', String(p.seed), '--steps', String(p.steps), '--sketches', String(p.sketches),
     ...(p.control ? ['--control'] : []),
     ...(p.audience ? [] : ['--no-audience']),
@@ -69,7 +66,6 @@ const RUN_KINDS: Record<string, (p: Params, dir: string) => string[]> = {
     'grid', '-o', dir,
     '--seed', String(p.seed), '--steps', String(p.steps),
     '--positions', p.positions!.join(','), '--briefs', p.briefs!.join(','),
-    '--deliverable', p.deliverable!,
     ...(p.control ? [] : ['--no-control']),
   ],
 };
@@ -78,8 +74,6 @@ interface Params {
   kind: string;
   position?: string;
   brief?: string;
-  /** L3, and it is one for a grid as well: the grid crosses positions with briefs, not with objects. */
-  deliverable?: string;
   positions?: string[];
   briefs?: string[];
   seed: number;
@@ -92,13 +86,12 @@ interface Params {
 // --- what can be asked for ----------------------------------------------------------------------
 
 /**
- * The three layers on disk that vary, and all three are picked at launch. L4 is not here because it
- * varies with nothing and there is nothing to choose.
+ * The two layers on disk that vary, and both are picked at launch. L4 is not here because it varies
+ * with nothing and there is nothing to choose.
  */
 function catalog(): {
   positions: { id: string; name: string }[];
   briefs: { id: string; title: string }[];
-  deliverables: { id: string; name: string }[];
 } {
   const read = (dir: string, skipField: boolean) => {
     const abs = path.join(ROOT, 'aesthetic', dir);
@@ -110,7 +103,6 @@ function catalog(): {
   return {
     positions: read('positions', false).map((p) => ({ id: p['id']!, name: p['name'] ?? p['id']! })),
     briefs: read('briefs', true).map((b) => ({ id: b['id']!, title: b['title'] ?? b['id']! })),
-    deliverables: listDeliverables().map((d) => ({ id: d.id, name: d.name })),
   };
 }
 
@@ -118,9 +110,9 @@ function catalog(): {
 
 const NAME = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
-const DIRS: Record<string, string> = { position: 'positions', brief: 'briefs', deliverable: 'deliverables' };
+const DIRS: Record<string, string> = { position: 'positions', brief: 'briefs' };
 
-/** Both documents of a commission, or the one document of a position or a deliverable. */
+/** Both documents of a condition, or the one document of a position. */
 function readDoc(kind: string, id: string): { doc: unknown; field: unknown } | null {
   if (!NAME.test(id)) return null;
   const dir = path.join(ROOT, 'aesthetic', DIRS[kind] ?? 'briefs');
@@ -158,28 +150,6 @@ function documentErrors(kind: string, id: string, doc: Record<string, unknown>, 
           bad.push(e instanceof Error ? e.message : String(e));
         }
       }
-      // The L1/L3 boundary, enforced where the next position is actually written. A position that
-      // states what the object does has done L3's job, and the artist then appears to derive from
-      // its own vocabulary what it was in fact told. Catching this at `npm test` is too late: the
-      // file is on disk by then and runs against it are already confounded.
-      const facts = deliverableFacts(doc as unknown as AestheticProgram);
-      if (facts.length > 0) {
-        bad.push(
-          `a position may hold beliefs about a medium but not facts about one, and ${facts.join('; ')}. ` +
-            'Cite the object in lineage, where it is a reference, or say it about the medium instead.'
-        );
-      }
-    }
-    return bad;
-  }
-
-  if (kind === 'deliverable') {
-    for (const key of ['name', 'function', 'doesNotDecide']) {
-      if (typeof doc?.[key] !== 'string' || !(doc[key] as string).trim()) bad.push(`${key} is required and must say something`);
-    }
-    const consequences = doc?.['consequences'];
-    if (!Array.isArray(consequences) || consequences.length < 3) {
-      bad.push('consequences must list at least three things this kind of object has to survive');
     }
     return bad;
   }
@@ -198,15 +168,6 @@ function documentErrors(kind: string, id: string, doc: Record<string, unknown>, 
     bad.push(
       'pressures must name at least one pull this situation exerts that damages the work; ' +
         'a condition with nothing to resist measures compliance rather than judgment'
-    );
-  }
-  // The kind of object is the third axis, chosen at launch. A condition that names one is wrong in
-  // every cell that runs it as something else, and it hands the artist a fact L3 may contradict.
-  const named = namesDeliverable(doc as unknown as Brief);
-  if (named.length > 0) {
-    bad.push(
-      `which kind of object this becomes is chosen when the run is launched, not here, and ${named.join('; ')}. ` +
-        'Say what the situation is instead.'
     );
   }
   // The one editorial rule that is enforced mechanically. A condition carrying style words is not a
@@ -528,7 +489,7 @@ cli.action((opts: { runs: string; port: string }) => {
       });
     }
 
-    // Any one of the three layers that live on disk, whole, for reading and for starting from.
+    // Either of the two layers that live on disk, whole, for reading and for starting from.
     if (url.pathname === '/api/doc' && req.method !== 'POST') {
       const asked = url.searchParams.get('kind') ?? '';
       const kind = asked in DIRS ? asked : 'brief';
@@ -658,10 +619,9 @@ cli.action((opts: { runs: string; port: string }) => {
       } catch {
         return json(400, { error: 'not JSON' });
       }
-      const { positions, briefs, deliverables } = catalog();
+      const { positions, briefs } = catalog();
       const knownP = new Set(positions.map((x) => x.id));
       const knownB = new Set(briefs.map((x) => x.id));
-      const knownD = new Set(deliverables.map((x) => x.id));
       const int = (v: unknown, lo: number, hi: number, fallback: number) => {
         const n = Math.trunc(Number(v));
         return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : fallback;
@@ -670,7 +630,6 @@ cli.action((opts: { runs: string; port: string }) => {
         kind: p.kind === 'grid' ? 'grid' : 'run',
         position: p.position,
         brief: p.brief,
-        deliverable: p.deliverable,
         positions: (p.positions ?? []).filter((x) => knownP.has(x)),
         briefs: (p.briefs ?? []).filter((x) => knownB.has(x)),
         seed: int(p.seed, 0, 1e9, 1),
@@ -679,11 +638,6 @@ cli.action((opts: { runs: string; port: string }) => {
         control: Boolean(p.control),
         audience: p.audience !== false,
       };
-      // The kind of object is required for both kinds of run, because nothing else supplies it any
-      // more: the brief stopped carrying one when it became the third axis.
-      if (!knownD.has(params.deliverable ?? '')) {
-        return json(400, { error: 'pick a kind of object that exists' });
-      }
       if (params.kind === 'run' && (!knownP.has(params.position ?? '') || !knownB.has(params.brief ?? ''))) {
         return json(400, { error: 'pick a position and a brief that exist' });
       }

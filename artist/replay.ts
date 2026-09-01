@@ -102,7 +102,6 @@ interface StartLine {
   id: string;
   positionId: string;
   briefId: string;
-  deliverableId: string;
   control: boolean;
   seed: number;
   mode: Mode;
@@ -116,7 +115,7 @@ interface StartLine {
   useAudience: boolean;
 }
 
-/** The start line also carries the environment hashes, and has since before it carried all eight. */
+/** The start line also carries the environment hashes, and has since before it carried all of them. */
 type StartEnv = StartLine & Partial<EnvVersion>;
 
 /**
@@ -134,7 +133,7 @@ export async function replay(dir: string, into: string): Promise<ReplayResult> {
   // serializer the run never saw and then calls the difference a mismatch — which is what happened
   // to the two studio runs on disk, twenty-seven times each, and read as state leaking through the
   // driver rather than as the environment having moved underneath them.
-  const drifted = envDrift(start, envVersionNow(start.positionId, start.briefId, start.deliverableId, start.seed, start.elementIds ?? []));
+  const drifted = envDrift(start, envVersionNow(start.positionId, start.briefId, start.seed, start.elementIds ?? []));
   if (drifted.length > 0) {
     return {
       id: original.id,
@@ -154,7 +153,6 @@ export async function replay(dir: string, into: string): Promise<ReplayResult> {
     policy,
     positionId: start.positionId,
     briefId: start.briefId,
-    deliverableId: start.deliverableId,
     seed: start.seed,
     outDir: into,
     control: start.control,

@@ -409,8 +409,8 @@ Three things about the surrounding machinery, because a score is only as good as
 from.
 
 **`envVersion` refuses rather than reports.** Nine content hashes — the position, the brief, the
-deliverable, the field, the profile, the pack, the observation serializer, the schemas, and the affect
-dynamics — are stamped on every trajectory. `replay` reads them first and refuses across a bump. A
+field, the element pack, the profile, the pack, the observation serializer, the protocol, and the
+affect dynamics — are stamped on every trajectory. `replay` reads them first and refuses across a bump. A
 comparison across a version bump is not a weaker comparison, it is a different question, and
 answering it as though it were the same one turns an environment change into an accusation against
 the record. A hash the record does not carry is not counted as drift.

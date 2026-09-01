@@ -249,7 +249,7 @@ test('soft constraints are never contradictions', () => {
 
 // The scan is worth nothing if it fires on the catalog. `run.ts` throws on an unsatisfiable
 // commission before it makes a single policy call, so a false positive here is not a bad score, it
-// is a triple the studio offers and then refuses to launch.
+// is a pair the studio offers and then refuses to launch.
 //
 // Read off the disk rather than listed, because the studio can author new positions and briefs and a
 // hardcoded list would go on passing while covering none of them.
@@ -260,23 +260,20 @@ const catalog = (dir: string) =>
     .map((f) => f.replace(/\.json$/, ''))
     .sort();
 
-test('every triple the catalog offers composes to something a program could satisfy', () => {
+test('every pair the catalog offers composes to something a program could satisfy', () => {
   const positions = catalog('positions');
   const briefs = catalog('briefs');
-  const deliverables = catalog('deliverables');
-  assert.ok(positions.length > 0 && briefs.length > 0 && deliverables.length > 0, 'catalog is empty');
+  assert.ok(positions.length > 0 && briefs.length > 0, 'catalog is empty');
 
   for (const positionId of positions) {
     for (const briefId of briefs) {
-      for (const deliverableId of deliverables) {
-        const commission = loadCommission(positionId, briefId, deliverableId);
-        assert.deepEqual(
-          commission.unsatisfiable,
-          [],
-          `${positionId} x ${briefId} x ${deliverableId}: ` +
-            commission.unsatisfiable.map((c) => `${c.a} x ${c.b}: ${c.why}`).join('; ')
-        );
-      }
+      const commission = loadCommission(positionId, briefId);
+      assert.deepEqual(
+        commission.unsatisfiable,
+        [],
+        `${positionId} x ${briefId}: ` +
+          commission.unsatisfiable.map((c) => `${c.a} x ${c.b}: ${c.why}`).join('; ')
+      );
     }
   }
 });

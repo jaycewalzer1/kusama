@@ -11,6 +11,7 @@
 import { callPolicy, type Spend } from '../call.js';
 import { examineObservation } from '../observation.js';
 import { EXAMINE_SCHEMA } from '../schemas.js';
+import { artistLayers } from '../field.js';
 import type { Commission } from '../field.js';
 import type { Policy } from '../policy/interface.js';
 import type { StudioLog } from '../studio-log.js';
@@ -42,7 +43,7 @@ export async function examine(
   const result = await callPolicy<Examine>(policy, log, spend, {
     name: 'examine',
     system: SYSTEM,
-    observation: examineObservation(commission, intention, report, description, audienceRead),
+    observation: examineObservation(artistLayers(commission), intention, report, description, audienceRead),
     schema: EXAMINE_SCHEMA,
     images: [{ mediaType: 'image/png', base64: png.toString('base64') }],
     maxTokens: 4000,

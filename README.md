@@ -567,7 +567,6 @@ aesthetic/   the layer above the medium: what a program is *for*, and whether it
   aesthetic-program.schema.json         the gate a position must pass
   positions/     three aesthetic programs: interference, many-hands, withheld
   briefs/        three conditions, each with a .json and a .field.json
-  deliverables/  five kinds of object: for-one, panel, print, underpainting, unshown
   elements/      the lineage pack
   fixtures/      six trees, a pass and a fail per position
 

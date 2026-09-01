@@ -149,7 +149,7 @@ function empty(p: Record<string, unknown>): Record<string, unknown> {
   return q;
 }
 
-const commission = loadCommission('withheld', 'two-million-slips', 'panel');
+const commission = loadCommission('withheld', 'two-million-slips');
 const position = commission.effective;
 const tree = (r: CheckReport): number => {
   assert.notEqual(r.treeScore, null, 'this position has decidable tree constraints');
@@ -217,7 +217,7 @@ test('positions are not interchangeable: one program does not satisfy all of the
   assert.ok(ids.length >= 3, 'expected the catalog of positions on disk');
 
   const perfect = ids.filter((id) => {
-    const c = loadCommission(id, 'two-million-slips', 'panel');
+    const c = loadCommission(id, 'two-million-slips');
     return checkProgram(program, c.effective, null).treeScore === 1;
   });
   // A false pass is expected — positions overlap, and one program legitimately answering two of

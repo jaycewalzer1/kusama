@@ -21,7 +21,7 @@ const OBSERVATION = 'THE SHEET\n----\nthree marks, and one of them is a lie abou
 function run(extra: Record<string, unknown> = {}): LogLine[] {
   seq = 0;
   return [
-    line('trajectory-start', { positionId: 'withheld', briefId: 'two-million-slips', deliverableId: 'panel', seed: 7 }),
+    line('trajectory-start', { positionId: 'withheld', briefId: 'two-million-slips', seed: 7 }),
     line('phase', { phase: 'reset' }),
     line('render', { programHash: 'blank', treeScore: 0, renderScore: 0, hardViolations: 6, softViolations: 0 }),
     line('phase', { phase: 'make' }),

@@ -1,18 +1,19 @@
 // `artist` — run the loop, and everything you can do to a run afterwards.
 //
-//   artist run <position> <brief> <deliverable>
-//                                        one trajectory into a directory
+//   artist run <position> <brief>        one trajectory into a directory
 //   artist grid <dir>                    the whole grid, serially, plus the control column
 //   artist steps <dir>                   one record per step: before, action, after, what it moved
 //   artist breaks <dir>                  which commitment broke, what forced it, declared or not
 //   artist provenance <dir>              has this combination of lineages been made before?
 //   artist archive <runs>                finished plates filed by what they look like, in a grid
+//   artist envelope [runs]               how much of 0..1 each descriptor actually reaches
 //   artist rate [--set p tier]           hand-rate plates into the pool everything else is checked against
 //   artist validate-reward <runs>        the component-correlation gate and the top-k agreement readout
 //   artist filmstrip <dir> [--story]     the piece rebuilt step by step, and the survival curve
 //                                        --story adds index.html: each frame next to why it happened
 //   artist twin <arm> <control>          does the position steer, or is it decoration? the two arms
 //                                        compared on what they DID, not on what they scored
+//   artist pass <dir> --prompt <text>    the optional diffusion pass over the finished plate
 //   artist replay <dir>                  the same trajectory with the model unplugged
 //   artist recompute <dir...>            rebuild scores.json from the log alone
 //   artist strip <dir>                   every plate the trajectory stood on, left to right
@@ -45,6 +46,7 @@ import { selectPolicy } from '../artist/policy/interface.js';
 import { recomputeMatches, scoresCsv } from '../artist/reward.js';
 import { driftText } from '../artist/env-version.js';
 import { judgeSummary, judgeTrajectory, type Judgment } from '../artist/judge.js';
+import { finalPass, passText, type PassFidelity, type PassQuality, type PassSize } from '../artist/pass.js';
 import { replay } from '../artist/replay.js';
 import { runTrajectory } from '../artist/run.js';
 import { storyOf, storyText, summarise as summariseLine } from '../artist/story.js';
@@ -53,6 +55,7 @@ import { processOf, processText } from '../artist/transition.js';
 import { breakRecordOf, breakText } from '../artist/breaks.js';
 import { provenanceOf, provenanceText } from '../artist/provenance.js';
 import { archive, archiveText, measureRuns, DEFAULT_AXES, DEFAULT_BINS, DESCRIPTORS, type Descriptor } from '../artist/archive.js';
+import { envelope, envelopeText, gather } from '../artist/envelope.js';
 import {
   CORRELATION_LIMIT,
   DEFAULT_KS,
@@ -88,7 +91,6 @@ const ids = (dir: string) =>
 
 const POSITIONS = ids('positions');
 const BRIEFS = ids('briefs');
-const DELIVERABLES = ids('deliverables');
 
 function summarise(t: Trajectory): string {
   const s = t.scores;
@@ -97,7 +99,7 @@ function summarise(t: Trajectory): string {
     // The stop, on the same line as the cell, never `outcome` alone. A run can end with every score
     // under it green and still not have earned the stop, and that gap is the thing most worth
     // seeing first — so it prints next to the word that used to absorb it.
-    `${t.positionId} x ${t.briefId} x ${t.deliverableId}  ${t.outcome}` +
+    `${t.positionId} x ${t.briefId}  ${t.outcome}` +
       `  [${s.termination.kind}${s.termination.legitimate ? '' : ', not legitimate'}` +
       `${s.termination.edgesUnrealized > 0 ? `, ${s.termination.edgesUnrealized} edges unrealized` : ''}]`,
     `  tree ${n(s.tree)}  render ${n(s.render)}  hard ${s.hardViolations}  soft ${s.softViolations}`,
@@ -146,7 +148,6 @@ async function runCells(opts: Record<string, string | boolean>): Promise<void> {
   const cells: Cell[] = String(opts['cells']).split(',').map(parseCell);
   const k = Number(opts['k']);
   const seed0 = Number(opts['seed0']);
-  const deliverableDefault = String(opts['deliverable']);
   const root = String(opts['out']);
   if (!Number.isInteger(k) || k < 1) throw new Error(`--k must be a positive integer, got "${opts['k']}"`);
 
@@ -156,7 +157,6 @@ async function runCells(opts: Record<string, string | boolean>): Promise<void> {
     const missing = [
       POSITIONS.includes(c.positionId) ? null : `position "${c.positionId}"`,
       BRIEFS.includes(c.briefId) ? null : `brief "${c.briefId}"`,
-      DELIVERABLES.includes(c.deliverableId) ? null : `deliverable "${c.deliverableId}"`,
     ].filter(Boolean);
     if (missing.length) throw new Error(`cell ${cellName(c)}: no such ${missing.join(', ')}`);
   }
@@ -198,7 +198,6 @@ async function runCells(opts: Record<string, string | boolean>): Promise<void> {
           policy,
           positionId: c.positionId,
           briefId: c.briefId,
-          deliverableId: c.deliverableId,
           seed,
           outDir: dir,
           maxSteps: Number(opts['steps']),
@@ -233,7 +232,6 @@ program
   .command('run')
   .argument('<position>')
   .argument('<brief>')
-  .argument('<deliverable>', 'the kind of object; chosen here, not by the brief')
   .requiredOption('-o, --out <dir>', 'directory for studio.jsonl, final.json, final.png and sketches/')
   .option('--seed <n>', 'master seed for the program', '1')
   .option('--steps <n>', 'steps the artist is told it has', '12')
@@ -243,12 +241,15 @@ program
   .option('--control', 'strip the position: same brief, same checker, no steering')
   .option('--blind', 'the ablation: take the canvas away during MAKE and work from the tree and the describer alone')
   .option('--elements <ids>', 'comma-separated lineage elements to compose into the position', '')
-  .action(async (position: string, brief: string, deliverable: string, opts: Record<string, string | boolean>) => {
+  .option('--pass <prompt>', 'after the run, put final.png through the diffusion model with this prompt')
+  .option('--pass-size <size>', 'auto | 1024x1024 | 1536x1024 | 1024x1536', 'auto')
+  .option('--pass-quality <q>', 'auto | low | medium | high', 'high')
+  .option('--pass-fidelity <f>', 'low | high — how much of the plate survives the pass', 'high')
+  .action(async (position: string, brief: string, opts: Record<string, string | boolean>) => {
     const t = await runTrajectory({
       policy: await selectPolicy(),
       positionId: position,
       briefId: brief,
-      deliverableId: deliverable,
       elementIds: String(opts['elements'] ?? '').split(',').map((s) => s.trim()).filter(Boolean),
       seed: Number(opts['seed']),
       outDir: String(opts['out']),
@@ -260,6 +261,43 @@ program
       showCanvas: !opts['blind'],
     });
     console.log(summarise(t));
+    // After everything the run reports on, and outside its numbers. A pass that failed must not make
+    // a finished trajectory look failed — the work is already on disk and already scored.
+    if (opts['pass']) {
+      const dir = String(opts['out']);
+      try {
+        console.log(`\n${passText(dir, await finalPass(dir, passOptions(String(opts['pass']), opts)))}`);
+      } catch (e) {
+        console.error(`\nthe run finished; the final pass did not: ${e instanceof Error ? e.message : String(e)}`);
+        process.exitCode = 1;
+      }
+    }
+  });
+
+/** The three pass settings, shared by `run --pass` and `pass`, validated before any money is spent. */
+function passOptions(prompt: string, opts: Record<string, unknown>) {
+  const one = <T extends string>(name: string, value: unknown, allowed: readonly T[]): T => {
+    if (!allowed.includes(value as T)) throw new Error(`--${name} must be one of: ${allowed.join(' ')}`);
+    return value as T;
+  };
+  return {
+    prompt,
+    size: one('pass-size', opts['passSize'] ?? 'auto', ['auto', '1024x1024', '1536x1024', '1024x1536'] as const) as PassSize,
+    quality: one('pass-quality', opts['passQuality'] ?? 'high', ['auto', 'low', 'medium', 'high'] as const) as PassQuality,
+    inputFidelity: one('pass-fidelity', opts['passFidelity'] ?? 'high', ['low', 'high'] as const) as PassFidelity,
+  };
+}
+
+program
+  .command('pass')
+  .description('put a finished plate through the diffusion model once — written as pass.png beside final.png')
+  .argument('<dir>')
+  .requiredOption('--prompt <text>', 'what the pass is being asked to do; recorded verbatim in pass.json')
+  .option('--pass-size <size>', 'auto | 1024x1024 | 1536x1024 | 1024x1536', 'auto')
+  .option('--pass-quality <q>', 'auto | low | medium | high', 'high')
+  .option('--pass-fidelity <f>', 'low | high — how much of the plate survives the pass', 'high')
+  .action(async (dir: string, opts: Record<string, string>) => {
+    console.log(passText(dir, await finalPass(dir, passOptions(String(opts['prompt']), opts))));
   });
 
 program
@@ -270,15 +308,11 @@ program
   .option('--steps <n>', 'steps per trajectory', '12')
   .option('--positions <ids>', 'comma-separated subset', POSITIONS.join(','))
   .option('--briefs <ids>', 'comma-separated subset', BRIEFS.join(','))
-  // The grid is positions x briefs at one kind of object. Crossing the third axis in as well would
-  // cube the cell count for a comparison nobody has asked for yet; run the grid again with a
-  // different --deliverable when they do.
-  .option('--deliverable <id>', 'the kind of object every cell is made as', DELIVERABLES[0])
   .option('--control-brief <id>', 'the brief the control column runs', BRIEFS[0])
   .option('--no-control', 'skip the control column')
   .option(
     '--cells <list>',
-    'comma-separated position:brief:deliverable[:control]; runs --k seeds of each instead of the cross-product'
+    'comma-separated position:brief[:control]; runs --k seeds of each instead of the cross-product'
   )
   .option('--k <n>', 'independent seeds per cell, only with --cells', '1')
   .option('--seed0 <n>', 'first seed; the k seeds are seed0..seed0+k-1', '1')
@@ -286,7 +320,6 @@ program
     if (opts['cells']) return runCells(opts);
     const positions = String(opts['positions']).split(',');
     const briefs = String(opts['briefs']).split(',');
-    const deliverable = String(opts['deliverable']);
     const root = String(opts['out']);
     const policy = await selectPolicy();
     const rows: GridCell[][] = [];
@@ -308,7 +341,6 @@ program
             policy,
             positionId: position,
             briefId: brief,
-            deliverableId: deliverable,
             seed: Number(opts['seed']),
             outDir: dir,
             maxSteps: Number(opts['steps']),
@@ -411,6 +443,18 @@ program
     writeFileSync(path.join(runs, 'archive.json'), `${JSON.stringify(a, null, 2)}\n`);
     console.log(archiveText(a));
     for (const s of skipped) console.log(`skipped, not a readable finished run: ${s}`);
+  });
+
+program
+  .command('envelope')
+  .description('the measured range of every descriptor — what "the edge of the medium" is, or a refusal')
+  .argument('[runs]', 'a directory of run directories to include alongside the metrics cache')
+  .option('-o, --out <file>', 'also write the envelope as JSON')
+  .action((runs: string | undefined, opts: { out?: string }) => {
+    const { points, excluded } = gather(runs ?? null);
+    const e = envelope(points, excluded);
+    if (opts.out) writeFileSync(opts.out, `${JSON.stringify(e, null, 2)}\n`);
+    console.log(envelopeText(e));
   });
 
 program
@@ -561,7 +605,7 @@ program
     const a = head(armDir);
     const c = head(controlDir);
     if (a && c) {
-      const mismatched = (['positionId', 'briefId', 'deliverableId', 'seed'] as const).filter((k) => a[k] !== c[k]);
+      const mismatched = (['positionId', 'briefId', 'seed'] as const).filter((k) => a[k] !== c[k]);
       if (mismatched.length) {
         console.error(`WARNING: these are not two arms of one experiment — they differ in ${mismatched.join(', ')}`);
       }
@@ -654,7 +698,6 @@ program
         dir,
         positionId: trajectory.positionId,
         briefId: trajectory.briefId,
-        deliverableId: trajectory.deliverableId,
       }));
     const pack = pairsOf(runs, Number(opts['seed']));
     if (pack.pairs.length === 0) {
@@ -665,7 +708,7 @@ program
     }
     const written = writePack(pack, opts['out']!);
     console.log(`${pack.pairs.length} pairs, ${written.length} files -> ${opts['out']}`);
-    for (const p of pack.pairs) console.log(`  ${p.name}  ${p.briefId} / ${p.deliverableId}`);
+    for (const p of pack.pairs) console.log(`  ${p.name}  ${p.briefId}`);
     // Loudly, not in a log file. A pack quietly missing half its runs is a test of a different
     // thing from the one it says it is.
     for (const s of pack.skipped) console.log(`  skipped ${s.dir}: ${s.why}`);

@@ -65,24 +65,23 @@ function scores(over: Partial<Scores> = {}): Scores {
   };
 }
 
-test('a cell spec is position:brief:deliverable, with control as a fourth part', () => {
-  assert.deepEqual(parseCell('interference:nine-returned:panel'), {
+test('a cell spec is position:brief, with control as a third part', () => {
+  assert.deepEqual(parseCell('interference:nine-returned'), {
     positionId: 'interference',
     briefId: 'nine-returned',
-    deliverableId: 'panel',
     control: false,
   });
-  assert.equal(parseCell('interference:nine-returned:panel:control').control, true);
-  assert.equal(cellName(parseCell('a:b:c:control')), 'a__b__c__control');
-  assert.equal(runDir('/out', parseCell('a:b:c'), 3), '/out/a__b__c/seed-3');
+  assert.equal(parseCell('interference:nine-returned:control').control, true);
+  assert.equal(cellName(parseCell('a:b:control')), 'a__b__control');
+  assert.equal(runDir('/out', parseCell('a:b'), 3), '/out/a__b/seed-3');
 });
 
-test('a cell spec that omits the deliverable is refused rather than defaulted', () => {
+test('a cell spec of the wrong shape is refused rather than defaulted', () => {
   // Defaulting here would run a different experiment than the one on the command line, and the
   // difference would not surface until the scores were already paid for.
-  assert.throws(() => parseCell('interference:nine-returned'), /position:brief:deliverable/);
-  assert.throws(() => parseCell('a:b:c:sideways'), /position:brief:deliverable/);
-  assert.throws(() => parseCell('a::c'), /empty part/);
+  assert.throws(() => parseCell('interference'), /position:brief/);
+  assert.throws(() => parseCell('a:b:sideways'), /position:brief/);
+  assert.throws(() => parseCell('a:'), /empty part/);
 });
 
 test('flattening finds nested and boolean scores without being told their names', () => {

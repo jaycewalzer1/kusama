@@ -26,7 +26,6 @@ function trajectoryDir(positionId: string, id: string, control = false): string 
       id,
       positionId,
       briefId: 'fifty-year-embargo',
-      deliverableId: 'panel',
       control,
       // A tree the checker can read. It violates most of the position, which does not matter here:
       // the judge is asked about the picture, and what it consumes off the tree is the rubric list.
@@ -160,7 +159,6 @@ test('the summary keeps the arms apart and states the chance rate', () => {
     trajectoryId: 'x',
     positionId: 'withheld',
     briefId: 'b',
-    deliverableId: 'panel',
     control,
     judgeVersion: judgeVersion(),
     attribution: { chose: correct ? 'withheld' : 'many-hands', actual: 'withheld', correct, candidates: 3, why: '' },

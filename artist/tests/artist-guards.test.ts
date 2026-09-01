@@ -108,6 +108,19 @@ test('the judge shares no door with the artist or its environment', () => {
   assert.deepEqual(importers, [], 'the judge is imported by the CLI only, never by artist/');
 });
 
+test('the final pass is sealed off from the loop and from the scores', () => {
+  // The pass is the only nondeterministic thing in the repo. It runs after the trajectory is over,
+  // on bytes that are already written, and nothing may read it back: an artist that could see a
+  // pass would be reasoning about a picture it did not make and could not make again, and a score
+  // computed off one would not survive a rescore.
+  const source = read(path.join(ARTIST, 'pass.ts'));
+  assert.ok(!/policy\.call</.test(source), 'the final pass reaches the policy');
+  assert.ok(!/from '\.\/policy\/interface\.js'/.test(source), 'the final pass imports the policy interface');
+  assert.ok(!/\benvModel[<(]/.test(source), 'the final pass reaches the environment model');
+  const importers = FILES.filter((f) => /from '\.\/pass\.js'|from '\.\.\/pass\.js'/.test(read(f))).map(rel);
+  assert.deepEqual(importers, [], 'the final pass is imported by the CLI only, never by artist/');
+});
+
 test('the trace sink is reachable from call.ts and nowhere else', () => {
   const importers = FILES.filter((f) => /from '\.\/trace\.js'|from '\.\.\/trace\.js'/.test(read(f))).map(rel);
   assert.deepEqual(importers, ['call.ts']);

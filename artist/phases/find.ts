@@ -13,6 +13,7 @@ import { callPolicy, type Spend } from '../call.js';
 import { findObservation } from '../observation.js';
 import { distribution, rng, sampleIndices, streamSeed, tookTheMode } from '../sampling.js';
 import { FIND_SCHEMA } from '../schemas.js';
+import { artistLayers } from '../field.js';
 import type { Commission } from '../field.js';
 import type { Policy } from '../policy/interface.js';
 import type { StudioLog } from '../studio-log.js';
@@ -52,7 +53,7 @@ export async function find(
   const result = await callPolicy<{ questions: Question[]; problems: Problem[] }>(policy, log, spend, {
     name: 'find',
     system: SYSTEM,
-    observation: findObservation(commission, commission.field),
+    observation: findObservation(artistLayers(commission), commission.field),
     schema: FIND_SCHEMA,
     maxTokens: 4000,
   });

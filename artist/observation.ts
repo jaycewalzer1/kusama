@@ -13,26 +13,28 @@
 //                           the content arrives. Read last it would be a footnote on a finished
 //                           argument.
 //   L1 PRACTICE     second, so the identity is the most settled thing in the context.
-//   L3 DELIVERABLE  third,  as a constraint on that identity rather than a part of it.
 //   L2 BRIEF        last,   so it is the freshest instruction and unmistakably the thing answered.
 //
-// L4 lives in this file, as one constant, because it varies with nothing. L1, L2 and L3 are loaded
-// from disk by field.ts and hashed separately, so any one of them can be swapped or removed without
-// touching the others — which is the only way an ablation over them is worth running.
+// There was an L3 between them — the deliverable, a document naming the kind of object being made.
+// It is gone: there is one kind of commission and it is art, so nothing tells the artist what type
+// of object this is and deriving that from L1 and L2 is now part of the work.
+//
+// L4 lives in this file, as one constant, because it varies with nothing. L1 and L2 are loaded from
+// disk by field.ts and hashed separately, so either can be swapped or removed without touching the
+// other — which is the only way an ablation over them is worth running.
 //
 // Three rules are enforced by tests rather than by care:
 //   - `describeObservation` and `audienceObservation` are the environment's, not the artist's. They
 //     may not contain the position, the brief, the field beyond the one watching-paragraph, the
 //     intention, or the affect.
-//   - L1 and L3 never name each other, and the assembly order above is the order on the page.
-//     See tests/artist-layers.test.ts.
+//   - The assembly order above is the order on the page. See tests/artist-layers.test.ts.
 //   - Nothing here calls a model or renders anything. It is string building, top to bottom.
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { contentHash } from '../env/profile.js';
 import type { AestheticProgram, CheckReport } from '../aesthetic/types.js';
-import type { Brief, Deliverable, Practice } from './field.js';
+import type { Brief, Practice } from './field.js';
 import { affectSentence } from './affect.js';
 import { bindingOf } from './intention.js';
 import type { Affect, Field, Intention, Problem, Step, TriggerName } from './types.js';
@@ -139,9 +141,6 @@ export function protocolSection(): string {
  * checkable shadow of the prose rather than the substance of it: an artist that read only the
  * commitments would satisfy them and make nothing.
  *
- * Nothing in here may mention a poster, a flyer, or any other kind of object. That is L3's, and an
- * artist told by its own practice how a poster behaves has been handed the derivation this whole
- * arrangement exists to watch it perform.
  *
  * Two fields of the position are deliberately NOT here, and their absence is the point:
  *
@@ -204,32 +203,6 @@ export function practiceSection(position: AestheticProgram, practice: Practice):
   );
 }
 
-// --- L3: the deliverable -------------------------------------------------------------------------
-
-/**
- * What this kind of object has to do, independent of who is making it and what it is about. It names
- * no artist and no style, and it says so at the end: the consequences are physics and the response
- * to them is not.
- */
-export function deliverableSection(deliverable: Deliverable): string {
-  return section(
-    `THE OBJECT: ${deliverable.name.toUpperCase()}`,
-    [
-      'This describes what this kind of object has to do to function. It is independent of who makes',
-      'it and of what it is about. It does not tell you what the piece should look like.',
-      '',
-      'FUNCTION',
-      deliverable.function,
-      '',
-      'CONSEQUENCES',
-      bullets(deliverable.consequences),
-      '',
-      'WHAT THIS DOES NOT DECIDE',
-      deliverable.doesNotDecide,
-    ].join('\n')
-  );
-}
-
 // --- L2: the condition ---------------------------------------------------------------------------
 
 /**
@@ -238,8 +211,8 @@ export function deliverableSection(deliverable: Deliverable): string {
  * layer that supplied any of those would have decided the composition before the artist saw it.
  *
  * Nothing here describes how it should look, and nothing here says what kind of object it is —
- * that is L3's, chosen separately, and printed above this. If a style word appears in this section
- * the run is contaminated: see `aestheticDirection` in field.ts.
+ * nothing does, any more. If a style word appears in this section the run is contaminated: see
+ * `aestheticDirection` in field.ts.
  */
 export function briefSection(brief: Brief): string {
   return section(
@@ -275,17 +248,12 @@ export function briefSection(brief: Brief): string {
 }
 
 /**
- * L4 + L1 + L3 + L2, in that order, which is the only order any artist-side observation uses. Every
- * phase builds on this and appends its own task; none of them assembles the four itself, so the
+ * L4 + L1 + L2, in that order, which is the only order any artist-side observation uses. Every
+ * phase builds on this and appends its own task; none of them assembles the three itself, so the
  * order cannot drift apart between phases.
  */
-export function stack(
-  position: AestheticProgram,
-  practice: Practice,
-  deliverable: Deliverable,
-  brief: Brief
-): string {
-  return [protocolSection(), practiceSection(position, practice), deliverableSection(deliverable), briefSection(brief)].join('\n');
+export function stack(position: AestheticProgram, practice: Practice, brief: Brief): string {
+  return [protocolSection(), practiceSection(position, practice), briefSection(brief)].join('\n');
 }
 
 /**
@@ -382,19 +350,18 @@ export function historySection(steps: Step[], keep = 4): string {
 // --- policy observations -------------------------------------------------------------------------
 
 /**
- * The four layers of one commission, in the shape every phase wants them. Passed as a unit so that
- * no call site can supply three of them and quietly drop the fourth.
+ * The layers of one commission, in the shape every phase wants them. Passed as a unit so that no
+ * call site can supply some of them and quietly drop the rest.
  */
 export interface Layers {
   position: AestheticProgram;
   practice: Practice;
-  deliverable: Deliverable;
   brief: Brief;
 }
 
 export function findObservation(l: Layers, field: Field): string {
   return [
-    stack(l.position, l.practice, l.deliverable, l.brief),
+    stack(l.position, l.practice, l.brief),
     fieldSection(field),
     section(
       'YOUR TASK: INTERROGATE, THEN FIND THE PROBLEM (protocol step 1)',
@@ -422,7 +389,7 @@ export function findObservation(l: Layers, field: Field): string {
 
 export function chooseObservation(l: Layers, problems: Problem[], sketchNote: string): string {
   return [
-    stack(l.position, l.practice, l.deliverable, l.brief),
+    stack(l.position, l.practice, l.brief),
     section(
       'THE PROBLEMS YOU FOUND',
       bullets(problems.map((p) => `[${p.id}] ${p.text}\n      tension: ${p.tension.between} vs ${p.tension.and}`))
@@ -541,7 +508,7 @@ function budgetLine(t: { used: number; max: number }): string {
 export function makeObservation(c: MakeContext): string {
   return [
     section('THE SUBSTRATE — what you can actually draw with, and the budgets you have', c.capabilitySheet),
-    stack(c.position, c.practice, c.deliverable, c.brief),
+    stack(c.position, c.practice, c.brief),
     intentionSection(c.intention),
     section('THE PROGRAM AS IT STANDS', json(c.program)),
     checkSection(c.report),
@@ -641,7 +608,7 @@ export function examineObservation(
   audienceRead: string | null
 ): string {
   return [
-    stack(l.position, l.practice, l.deliverable, l.brief),
+    stack(l.position, l.practice, l.brief),
     intentionSection(intention),
     checkSection(report),
     section(

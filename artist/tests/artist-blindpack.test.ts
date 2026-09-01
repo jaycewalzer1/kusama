@@ -14,22 +14,22 @@ import { loadPosition, practiceOf } from '../field.js';
 const OUT = mkdtempSync(path.join(tmpdir(), 'blindpack-'));
 
 /** A run directory with a final.png in it. Nothing here needs the picture to be a real picture. */
-function run(dir: string, positionId: string, briefId: string, deliverableId: string, withPng = true): PackRun {
+function run(dir: string, positionId: string, briefId: string, withPng = true): PackRun {
   const full = path.join(OUT, dir);
   mkdirSync(full, { recursive: true });
   if (withPng) writeFileSync(path.join(full, 'final.png'), `bytes of ${dir}`);
-  return { dir: full, positionId, briefId, deliverableId };
+  return { dir: full, positionId, briefId };
 }
 
-test('the pack pairs works that answered the same commission for the same kind of object', () => {
+test('the pack pairs works that answered the same commission', () => {
   const pack = pairsOf(
     [
-      run('a', 'interference', 'nine-returned', 'panel'),
-      run('b', 'many-hands', 'nine-returned', 'panel'),
-      // Same brief, different object. A reader shown one of each would be sorting by format while
+      run('a', 'interference', 'nine-returned'),
+      run('b', 'many-hands', 'nine-returned'),
+      // A different condition entirely. A reader shown one of each would be sorting by subject while
       // believing they were sorting by practice, which is the one way this test returns a false
       // positive, so it must not be paired with either of the two above.
-      run('c', 'withheld', 'nine-returned', 'card'),
+      run('c', 'withheld', 'two-million-slips'),
     ],
     1
   );
@@ -47,8 +47,8 @@ test('the works and the practices are shuffled separately, so A does not always 
   // both orders vary from pair to pair — and it is a test of whether the reader noticed.
   const runs: PackRun[] = [];
   for (let i = 0; i < 8; i++) {
-    runs.push(run(`p${i}-a`, 'interference', `brief-${i}`, 'panel'));
-    runs.push(run(`p${i}-b`, 'many-hands', `brief-${i}`, 'panel'));
+    runs.push(run(`p${i}-a`, 'interference', `brief-${i}`));
+    runs.push(run(`p${i}-b`, 'many-hands', `brief-${i}`));
   }
   const pack = pairsOf(runs, 7);
   assert.equal(pack.pairs.length, 8);
@@ -61,9 +61,9 @@ test('the works and the practices are shuffled separately, so A does not always 
 test('a pack regenerates exactly from its seed, and a different seed gives a different order', () => {
   // The key and the folder are written by two runs of this code as soon as anyone regenerates one.
   const runs = [
-    run('s-a', 'interference', 'nine-returned', 'panel'),
-    run('s-b', 'many-hands', 'nine-returned', 'panel'),
-    run('s-c', 'withheld', 'nine-returned', 'panel'),
+    run('s-a', 'interference', 'nine-returned'),
+    run('s-b', 'many-hands', 'nine-returned'),
+    run('s-c', 'withheld', 'nine-returned'),
   ];
   assert.deepEqual(pairsOf(runs, 42), pairsOf(runs, 42));
   const orders = (seed: number) => pairsOf(runs, seed).pairs.map((p) => p.works.map((w) => w.label + w.positionId).join());
@@ -73,8 +73,8 @@ test('a pack regenerates exactly from its seed, and a different seed gives a dif
 test('a run with no picture is skipped by name rather than dropped', () => {
   const pack = pairsOf(
     [
-      run('n-a', 'interference', 'nine-returned', 'panel'),
-      run('n-b', 'many-hands', 'nine-returned', 'panel', false),
+      run('n-a', 'interference', 'nine-returned'),
+      run('n-b', 'many-hands', 'nine-returned', false),
     ],
     1
   );
@@ -86,8 +86,8 @@ test('a run with no picture is skipped by name rather than dropped', () => {
 test('nothing the reader is given names the position, and the answers are not in plain sight', () => {
   const pack = pairsOf(
     [
-      run('w-a', 'interference', 'nine-returned', 'panel'),
-      run('w-b', 'many-hands', 'nine-returned', 'panel'),
+      run('w-a', 'interference', 'nine-returned'),
+      run('w-b', 'many-hands', 'nine-returned'),
     ],
     3
   );

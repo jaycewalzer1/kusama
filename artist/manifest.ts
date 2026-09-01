@@ -107,7 +107,18 @@ export function workId(source: Source, objectId: string | number): string {
 
 // --- validation ---------------------------------------------------------------------------------
 
-const STRINGS = ['id', 'object_id', 'url', 'rights', 'title', 'date_display', 'classification', 'medium', 'department', 'fetched_at'] as const;
+/** Fields with no honest empty value: a row missing any of these is not identifiable or not usable. */
+const STRINGS = ['id', 'object_id', 'url', 'rights', 'title', 'classification', 'department', 'fetched_at'] as const;
+
+/**
+ * Fields where the empty string is the source's own answer.
+ *
+ * `medium` and `date_display` are blank on real records — AIC leaves the medium off coins, the Met
+ * leaves the date prose off objects it dates only numerically. Requiring them to be non-empty does
+ * not make the data better; it makes the importer write `"(unknown)"`, which is a placeholder
+ * indistinguishable from a fact two layers downstream. Empty means empty.
+ */
+const MAY_BE_EMPTY = ['date_display', 'medium'] as const;
 const NULLABLE_STRINGS = ['accession_number', 'creator', 'culture'] as const;
 
 /**
@@ -122,6 +133,7 @@ export function manifestFaults(v: unknown): string[] {
   const w = v as Record<string, unknown>;
 
   for (const k of STRINGS) if (typeof w[k] !== 'string' || (w[k] as string).length === 0) bad.push(`${k} must be a non-empty string`);
+  for (const k of MAY_BE_EMPTY) if (typeof w[k] !== 'string') bad.push(`${k} must be a string, empty if the source does not record it`);
   for (const k of NULLABLE_STRINGS) if (w[k] !== null && typeof w[k] !== 'string') bad.push(`${k} must be a string or null`);
   if (!SOURCES.includes(w.source as Source)) bad.push(`source must be one of ${SOURCES.join(', ')}`);
   if (typeof w.id === 'string' && typeof w.source === 'string' && typeof w.object_id === 'string') {

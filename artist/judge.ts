@@ -161,7 +161,6 @@ export interface Judgment {
   trajectoryId: string;
   positionId: string;
   briefId: string;
-  deliverableId: string;
   /** Which arm. A control is judged exactly like a position and that is the point of judging it. */
   control: boolean;
   judgeVersion: string;
@@ -441,7 +440,6 @@ export async function judgeTrajectory(dir: string, options: JudgeOptions = {}): 
     trajectoryId: trajectory.id,
     positionId: trajectory.positionId,
     briefId: trajectory.briefId,
-    deliverableId: trajectory.deliverableId,
     control: trajectory.control,
     judgeVersion: judgeVersion(),
     attribution: attribution.value,
