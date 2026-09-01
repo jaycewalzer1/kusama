@@ -45,6 +45,40 @@ export interface DerivedFrom {
   canonical: boolean;
 }
 
+/**
+ * How good the evidence for this element's rules is, and — as with `ConflictTier` — the difference
+ * between the tiers is who is answerable for the claim.
+ *
+ * A lineage element asserts a normative rule about a tradition: *this practice fills the sheet*,
+ * *this practice will not centre a figure*. Until this field existed, every such assertion arrived
+ * with the same weight, whether it came from a book, from a model looking at one JPEG, or from
+ * somebody in this repo who thought it sounded right. The four tiers are ArtMine's (arXiv:2607.08331
+ * §2, "Evidence Construction"), which is the one part of that system worth taking whole.
+ *
+ * `direct`         a primary source states the rule and is quoted in the element: the maker's own
+ *                  words, a workshop record, a conservation report. Nothing on disk claims this and
+ *                  nothing should until somebody has quoted the source into the file.
+ * `indirect`       a secondary source is named — a book, a catalogue, a monograph — and NOBODY IN
+ *                  THIS REPO HAS CHECKED IT. `citation` is shape-checked for being a non-empty
+ *                  string and for nothing else. This tier means "a real reference is claimed", not
+ *                  "a real reference was verified", and the four authored elements sit here.
+ * `interpretation` inferred by reading the work rather than by reading a source. Every element with
+ *                  a `derivedFrom` is this by construction, because a blind model reading of one
+ *                  image is an interpretation of one image; `checkElementShape` refuses a derived
+ *                  element that claims anything stronger.
+ * `speculative`    asserted here, with no source outside this repo. Not forbidden — a made-up
+ *                  lineage is a legitimate thing to run an experiment with — but a claim resting on
+ *                  one is a claim about this repo and not about any tradition.
+ *
+ * The number this exists to produce is in `./evidence.ts`: what share of the constraints a run was
+ * graded against rests on each tier. Before the field existed that share was unanswerable, and the
+ * answer being uncomfortable is the point of asking.
+ */
+export type EvidenceTier = 'direct' | 'indirect' | 'interpretation' | 'speculative';
+
+/** Strongest first. Used only to decide whether one tier out-claims another. */
+export const EVIDENCE_TIERS: readonly EvidenceTier[] = ['direct', 'indirect', 'interpretation', 'speculative'];
+
 export interface LineageElement {
   id: string;
   name: string;
@@ -55,9 +89,18 @@ export interface LineageElement {
     /**
      * Shape-checked and non-empty, and that is *all* it is. Nothing in this repo can tell whether a
      * citation names a real book, and a test that asserted a non-empty string would read as though
-     * something had. See docs/artist/NEEDS.md.
+     * something had. See docs/artist/NEEDS.md — and read `tier` beside this, which is the field that
+     * says how much the citation is worth.
      */
     citation: string;
+    /**
+     * Required, and adding it moved `elementPackHash` and with it `envVersion`. That cost was paid
+     * deliberately: `commitments` was left optional to avoid exactly this, and the result was a pack
+     * in which the newest elements carried a field the oldest ones did not, so no count over the
+     * pack meant anything. A field that says how much to believe a claim is worthless if it can be
+     * absent, because absence would read as the strongest tier rather than the weakest.
+     */
+    tier: EvidenceTier;
   };
   /** One or two sentences: the stance this fragment carries into a work that adopts it. */
   worldviewFragment: string;

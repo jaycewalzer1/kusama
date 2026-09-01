@@ -321,6 +321,9 @@ export async function deriveElement(work: Work, reading: WorkReading): Promise<D
       period: work.date_display || 'date not recorded',
       note: `Derived from a blind reading of one work. The reading saw the picture and no label; this element saw the reading and not the picture. Neither saw the line above.`,
       citation: `${work.title} — ${work.url} (${work.rights}, ${work.source})`,
+      // Not negotiable and not a parameter: one blind model reading of one JPEG is an interpretation
+      // of that image. `checkElementShape` refuses a derived element that claims anything stronger.
+      tier: 'interpretation',
     },
     worldviewFragment: draft.worldview,
     commitments: commitments.kept,

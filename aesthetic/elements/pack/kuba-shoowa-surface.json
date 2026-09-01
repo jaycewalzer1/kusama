@@ -5,7 +5,8 @@
     "culture": "Shoowa, one of the Kuba peoples of the Kasai region, Democratic Republic of the Congo",
     "period": "17th century onward; the bulk of collected examples are 19th and early 20th century",
     "note": "Cut-pile raffia panels worked edge to edge, with no ground left as ground. The design is not laid on a surface, it is the surface: every square of the cloth is embroidered, and a motif that begins at one edge is broken off and restarted somewhere else rather than being centred or repeated on a grid. The unworked area is not a rest, it is an unfinished panel.",
-    "citation": "Georges Meurant, Shoowa Design: African Textiles from the Kingdom of Kuba (London: Thames and Hudson, 1986)"
+    "citation": "Georges Meurant, Shoowa Design: African Textiles from the Kingdom of Kuba (London: Thames and Hudson, 1986)",
+    "tier": "indirect"
   },
   "worldviewFragment": "The sheet is not a background that receives marks; it is a field that must be entirely worked. Emptiness is not restraint, it is the part that has not been done yet.",
   "generativeRules": [

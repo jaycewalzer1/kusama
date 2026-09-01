@@ -28,6 +28,7 @@ import {
   unplannedViolation,
   type Fired,
 } from './triggers.js';
+import { warrantOf } from './warrant.js';
 import type { StudioLog } from './studio-log.js';
 import type { Commission } from './field.js';
 import type { Action, Affect, CheckReport, Intention, Look, Refusal, RefusalCause, Step } from './types.js';
@@ -339,6 +340,7 @@ export class ArtistEnv {
       // that is supposed to notice runs that stop improving.
       improved: false,
       declaration: null,
+      warrant: null,
       sawCanvas: saw.canvas,
       sawChange: saw.change,
     };
@@ -385,6 +387,10 @@ export class ArtistEnv {
     // incidental mention a declaration, and the checker table shows it every id on every call.
     const { fired: broke, declaration } = unplannedViolation(beforeReport, after.checkReport, action.risk);
     step.declaration = declaration;
+    // Stamped on the candidate's report even when the step is about to be reverted. What the artist
+    // cited, and what its edits did to the constraint table, are both facts about the call that was
+    // made — and a reverted step is exactly where a wrong citation is most worth having on record.
+    step.warrant = action.warrant === undefined ? null : warrantOf(action.warrant, beforeReport, after.checkReport);
     const brokeHard = broke !== null && after.checkReport.hardViolations > beforeReport.hardViolations;
 
     if (brokeHard) {
@@ -541,6 +547,10 @@ export class ArtistEnv {
       // offline rescore would otherwise have to re-render and re-check every intermediate program
       // to answer what this step broke and what it had said about it.
       declaration: step.declaration,
+      // The citations and their verdicts, for the same reason as `declaration`. `null` distinguishes
+      // a step that was asked and cited nothing (a warrant with an empty `cited`) from a step that
+      // never reached a before/after comparison, and both from a log that predates the field.
+      warrant: step.warrant ?? null,
       // The step's size on the page. Logged so an offline reader can tell a step that rewrote the
       // picture from one that nudged an argument, which the tree diff alone will not say.
       pixelsMoved: step.pixelsMoved,

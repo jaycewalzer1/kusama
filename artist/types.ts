@@ -9,6 +9,7 @@
 
 import type { EditAction, Program } from '../env/edits.js';
 import type { CheckReport } from '../aesthetic/types.js';
+import type { StepWarrant } from './warrant.js';
 
 export type { EditAction, CheckReport, Program };
 
@@ -190,6 +191,17 @@ export interface Action {
   /** The convention about to be broken, or null. Only meaningful once the step is accepted. */
   risk: string | null;
   /**
+   * Constraint ids this step claims to be serving — the positive twin of `risk`, checked against
+   * what the step did by `artist/warrant.ts`.
+   *
+   * Optional in the type and required in the schema. Every trajectory recorded before the field
+   * existed has no `warrant` on any action, and `undefined` there must read as "never asked", not
+   * as "cited nothing": `warrantSummary` counts those steps separately and leaves them out of every
+   * rate. A default of `[]` here would silently turn every old run into a run with a perfect
+   * citation record.
+   */
+  warrant?: string[];
+  /**
    * On a `finished` step, the one edge of the plan the artist could not realize in this medium,
    * written `from->to`. Null when it claims every edge holds. Meaningless on any other control.
    *
@@ -300,6 +312,11 @@ export interface Step {
    * comparison — nothing applied, or the candidate would not render.
    */
   declaration: StepDeclaration | null;
+  /**
+   * This step's citations, checked. Null on steps that never reached a before/after comparison, and
+   * `undefined` on steps recorded before the field existed — see `Action.warrant`.
+   */
+  warrant?: StepWarrant | null;
   /**
    * Whether the plate was actually attached to this step's THINK+ACT call, and the change image
    * with it. Stamped from the context that was built, not from the run's flag: the flag says what
