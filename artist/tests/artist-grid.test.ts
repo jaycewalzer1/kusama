@@ -24,6 +24,7 @@ function scores(over: Partial<Scores> = {}): Scores {
     destructionRate: 0,
     inertSteps: 0,
     gradient: null,
+    moves: null,
     finishRefusals: 0,
     declarations: {
       declaredViolationRate: 0,

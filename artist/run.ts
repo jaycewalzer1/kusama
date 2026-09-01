@@ -47,6 +47,7 @@ import {
 } from './intention.js';
 import { envVersionNow } from './env-version.js';
 import { loadInfluenceDoc } from './influence-doc.js';
+import { moveSummary } from './moves.js';
 import { type MakeContext } from './observation.js';
 import { seedProgram } from './seed.js';
 import { readLog, StudioLog } from './studio-log.js';
@@ -291,6 +292,9 @@ function scoresOf(
     // never measured as a run with no inert steps.
     inertSteps: steps.some((s) => s.inert !== undefined) ? steps.filter((s) => s.inert === true).length : null,
     gradient: gradientOf(steps.map((s) => s.improved)),
+    // Beside `inertSteps`, never folded into it. See ./moves.ts: that separation is the whole safety
+    // property, because a move must not become a way to buy a step out of the reward-hacking counter.
+    moves: moveSummary(steps),
     finishRefusals,
     declarations: declarationScores(steps.map((s) => s.declaration)),
     canvasVisibleRate: visibleRate(steps.map((s) => s.sawCanvas)),
@@ -504,6 +508,11 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
       seedProgram: seed,
       useAudience: o.useAudience ?? true,
       useMetrics: true,
+      // `influences`, not `makeInfluences`. A work shown once in FIND is a work this run showed, and
+      // a `retrieve` naming it two hours later is grounded whether or not the block was still on the
+      // page at that step. `makeInfluences` answers a different question — what the act call carried
+      // — and using it here would mark the default arm's every retrieval unfounded by construction.
+      shownWorks: influences?.resolved.works.map((w) => w.id) ?? [],
     });
     await env.reset(intention0, affect0);
     // The ablation's only switch, logged so a trajectory says which arm it is without being diffed

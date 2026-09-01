@@ -342,7 +342,7 @@ export function actSchema(): Schema {
   return {
     type: 'object',
     additionalProperties: false,
-    required: ['think', 'control', 'risk', 'warrant', 'unrealizable', 'edits'],
+    required: ['think', 'control', 'risk', 'warrant', 'unrealizable', 'moves', 'edits'],
     properties: {
       think: {
         type: 'string',
@@ -377,6 +377,48 @@ export function actSchema(): Schema {
           'element ids from your plan. Null if you are claiming every edge holds. Naming an edge is ' +
           'neither a penalty nor an excuse: it is the difference between stopping because the work is ' +
           'done and stopping because you ran out of steps. Name at most one, and only one you tried.',
+      },
+      moves: {
+        type: 'array',
+        description:
+          'What this step did that was not a mark. The empty list is the ordinary answer and costs ' +
+          'you nothing — most steps are just painting. Record a move when you actually made one, ' +
+          'because a decision that is only described in `think` is not on the record as a decision ' +
+          'and nothing downstream can examine it.',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['kind', 'refs', 'because'],
+          properties: {
+            kind: {
+              enum: ['retrieve', 'reject', 'copy-as-study', 'extract-a-relation', 'reframe'],
+              description:
+                'retrieve — you went and got something and it now bears on the piece. ' +
+                'reject — you considered something and are deliberately not using it; this is a ' +
+                'decision, and without it the record cannot tell it apart from never having looked. ' +
+                'copy-as-study — you reproduced something to understand it, not to keep it. ' +
+                'extract-a-relation — you are carrying a relation off something rather than the ' +
+                'thing itself; name at least two refs, since a relation to nothing is a description. ' +
+                'reframe — you changed what the piece is about; refs name what you are re-reading.',
+            },
+            refs: {
+              type: 'array',
+              minItems: 1,
+              items: { type: 'string' },
+              description:
+                'Ids only, copied exactly from something you were shown: a lineage element, a work ' +
+                'in the influences block, one of your own plan elements, or a constraint id from ' +
+                'the checker table. No prose — that goes in `because`. Every ref is checked against ' +
+                'what this run actually put in front of you, and one that names nothing is recorded ' +
+                'as unfounded rather than taken on trust.',
+            },
+            because: {
+              type: 'string',
+              minLength: 15,
+              description: 'What the move does to the piece. One sentence, not a justification of yourself.',
+            },
+          },
+        },
       },
       edits: { type: 'array', items: editSchema() },
     },

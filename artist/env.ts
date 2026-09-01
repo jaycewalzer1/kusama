@@ -29,6 +29,7 @@ import {
   type Fired,
 } from './triggers.js';
 import { warrantOf } from './warrant.js';
+import { record, shown } from './moves.js';
 import type { StudioLog } from './studio-log.js';
 import type { Commission } from './field.js';
 import type { Action, Affect, CheckReport, Intention, Look, Refusal, RefusalCause, Step } from './types.js';
@@ -143,6 +144,15 @@ export interface EnvOptions {
    */
   useMetrics?: boolean;
   profileId?: string;
+  /**
+   * Corpus work ids this run held up to the artist, if any layer did. Given to the environment
+   * rather than read from the influence block, because it is only ever used for one thing — deciding
+   * whether a `retrieve` names a work the run actually showed — and the environment must not be
+   * able to build that set out of anything it did not itself put on the page. Empty on every run
+   * with no influences layer, which is nearly all of them, and an empty set is the right answer
+   * there: a run shown no works can ground no move against one.
+   */
+  shownWorks?: string[];
 }
 
 export interface StepOutcome {
@@ -341,6 +351,14 @@ export class ArtistEnv {
       improved: false,
       declaration: null,
       warrant: null,
+      // Audited against the look the artist was answering — `this.look`, the report it was shown —
+      // and not against the candidate's, which does not exist yet and which it could not have read
+      // a constraint id off. `undefined` when the action carries no `moves` at all, which is a log
+      // written under the older action space; `[]` when it was asked and made none.
+      moves:
+        action.moves === undefined
+          ? undefined
+          : record(action.moves, shown(this.o.commission, this.intention, this.look.checkReport, this.o.shownWorks ?? [])),
       sawCanvas: saw.canvas,
       sawChange: saw.change,
     };
@@ -551,6 +569,11 @@ export class ArtistEnv {
       // a step that was asked and cited nothing (a warrant with an empty `cited`) from a step that
       // never reached a before/after comparison, and both from a log that predates the field.
       warrant: step.warrant ?? null,
+      // The moves and the environment's audit of their refs, for the same reason as `warrant`: the
+      // grounding check reads what this run showed, which an offline rescore cannot reconstruct
+      // without re-deriving the influence set and the constraint table of every intermediate look.
+      // `null` distinguishes a step logged under the older action space from one asked and silent.
+      moves: step.moves ?? null,
       // The step's size on the page. Logged so an offline reader can tell a step that rewrote the
       // picture from one that nudged an argument, which the tree diff alone will not say.
       pixelsMoved: step.pixelsMoved,
