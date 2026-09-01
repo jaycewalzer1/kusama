@@ -13,12 +13,17 @@ Do these **before** you open the runbook. The runbook is `docs/demo/THURSDAY.md`
 ```bash
 cd ~/kusama
 git rev-parse --abbrev-ref HEAD          # expect: overnight/2026-09-01
+git log --oneline -1                     # expect: 176e29f  wednesday: stage 5 ...
 git status --short                       # expect: nothing, or only files you know about
-git log --oneline -1
 ```
 
-If the branch is not `overnight/2026-09-01`, **stop**. Everything the demo needs was committed there.
-Do not switch branches with untracked work in the tree.
+**The commit is what matters, not the branch name.** `master` and `overnight/2026-09-01` are the
+same commit — `176e29f` — and both are on origin. The tree is checked out on the branch and there is
+no reason to switch it. If the commit is anything older than `176e29f`, **stop**: everything the demo
+needs went in on Wednesday.
+
+The previous `master` is kept at `backup/master-pre-wednesday` (`ebd95cd`), locally and on origin, in
+case anything needs to be compared against the state before this week.
 
 ---
 
