@@ -72,13 +72,41 @@ returns 200 on the same id in the same second, which is what ruled the CDN out. 
 `full/!843,843` — fit inside, never enlarge — **only after 843 has been refused** recovered all 203.
 Detail in `BLOCKERS.md`.
 
-**8. The Met IP-blocks its own object API by volume.** After roughly 200 requests to
+**8. The Met IP-blocks its own object API by volume — routed around, not defeated.** After ~200 requests to
 `collectionapi.metmuseum.org/…/objects/<id>` it begins serving an Akamai bot-manager challenge with a
 **403**, and it does so for our user agent, a full browser user agent, and no user-agent header at
 all — so it is IP-level, not headers. Probes spaced five minutes apart keep returning 200
 indefinitely, which is why this looks like it has lifted and then does not. The documented limit (80
 req/s, no key) is not the limit being enforced. The CSV import is untouched; it is only the per-work
 image-URL resolve that is blocked, which is the one Met step that needs the API at all.
+
+**The Met publishes the same field itself**, as the `metmuseum/openaccess` parquet dump — a file
+download, not an API, so there is nothing to rate-limit. Scanning 259,874 rows resolved **9,956 of the
+10,000** selected works. A fact taken from a second source is only worth having if the two sources
+agree, so the 64 works resolved through the live API before the block came down are the control:
+**64 exact matches, 0 differing.** `corpus met-urls <file>` runs that comparison against the manifest
+and refuses to write anything if a single URL disagrees. The dump gives both image columns and the
+command keeps `primaryImageSmall`, the same tier `resolveImageUrl` picks, so the 64 works already on
+disk and the other ten thousand are at one size.
+
+`images.metmuseum.org` is a plain CDN and was never what blocked us — only
+`collectionapi.metmuseum.org` was. The download ran 9,925 works at 2.0/s with **zero 403s** and 84
+failures, all 404s: URLs the dump lists that the CDN no longer serves, which is 0.8%.
+
+## Where it ended (2026-08-31)
+
+**19,889 of 20,000 works have their pixels — 99.4%.** aic 6,817/6,817, cma 3,183/3,183,
+met 9,889/10,000. The 111 without are 48 Met works the museum publishes no image for, 84 whose URL
+404s, and a handful of AIC/CMA edge cases; a work with no image is a fact about the work, and
+`image: null` is a legitimate manifest state.
+
+**19,807 files hold 19,889 images**, and every hash a row claims exists on disk (0 missing). The gap
+is not loss, it is the content-addressed store doing its job: **98 rows share bytes with another
+row**, because a museum that photographs a knife and its fork together files one photograph against
+both catalogue records — `aic-116987` "Knife and Fork with Sheath", `aic-266123` "Knife" and
+`aic-266124` "Fork" are one JPEG and three works. 57 images are shared this way. Anything that later
+builds a pair distribution over corpus images has to know this, or it will find exact 1.0 similarities
+and report them as a discovery.
 
 ## What the corpus honestly contains
 

@@ -160,3 +160,22 @@ One line per milestone. Written as it happens.
 - `images.metmuseum.org` is a plain CDN and was never the thing blocking us; only
   `collectionapi.metmuseum.org` was. The download runs past two hundred works without a single 403,
   which is the number at which the object API had failed twice.
+- **The corpus is 99.4% complete: 19,889 of 20,000 works have their pixels.** The Met download ran
+  9,925 works in 4,904s at a steady 2.0/s with **zero 403s** — past two hundred, which is the count
+  at which the object API had failed twice — and 84 failures, every one a 404 for a URL the dump
+  lists and the CDN no longer serves. The 111 works with no pixels are a fact about those works.
+- **19,807 files hold 19,889 images and nothing is missing** (every hash a row claims is on disk).
+  The gap is the content-addressed store working: 98 rows share bytes with another row, because a
+  museum that photographs a knife and its fork together files one photograph against both catalogue
+  records. That is worth knowing before anyone computes similarities over these images and reports a
+  1.0 as a discovery.
+- **The atlas confirmed its own criticism.** Before the Met arrived, `file:have-pixels` loaded on the
+  first axis at 0.45, as heavily as `source:met` itself — a large part of the strongest structure in
+  the corpus was the download not having happened. Re-run on the complete corpus it falls to **0.14**.
+  The axes are now cleanly what the map always said they were, museum identity, and nothing else.
+  Preservation is 34.0x chance over 20,000 works. The confound was real, it was named before it was
+  fixed, and fixing it moved the number in the direction the criticism predicted.
+- **CLIP needs no credit.** `artist/resemblance.ts` in the unmerged `artmine-recs` worktree runs on
+  `onnxruntime-node` against a local ONNX CLIP; verified end to end tonight while both providers are
+  still out of credit. It is not yet usable on this corpus: it reads the pre-manifest `corpus/works/`
+  layout, and its baseline is all-pairs, which is 1,225 pairs at 50 works and 200 million at 20,000.
