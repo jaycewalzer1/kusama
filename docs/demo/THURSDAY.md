@@ -282,3 +282,7 @@ npm run notebooks
   recall is 1.5%. The region is meaningful; the immediate neighbours on screen are not.
 - Do not say the sketches on the overlay are a path through the space. Nothing joins them, on
   purpose: no run has ever persisted a plate per MAKE step, so there is no sequence to draw.
+- Do not name a single work as "the one this plate is nearest to". The plates are 520x700, so the
+  centre crop throws away 26% of the sheet before CLIP sees it; encode them the other way and only
+  62 of 101 images in that band keep the same top-1. Bands and regions survive that; a named
+  neighbour is close to a coin flip. `corpus aspect-audit` prints the whole gradient.
