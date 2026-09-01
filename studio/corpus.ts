@@ -11,17 +11,22 @@
 //   corpus status                      what is on disk, and the canonical count
 //   corpus search "<phrase>" [-k N]    find works from words, in CLIP space
 //   corpus search --image <file>       find works from a picture, in the same space
+//   corpus influences resolve [ids...] a position's background as weights over the corpus
+//   corpus influences show <id> | blend <a> <b>
 //
 // Both network stages are serial with a pause between requests. Not because anything here is heavy,
 // but because a museum's open-access API is a courtesy and hammering it is how the courtesy gets
 // withdrawn for everybody. `read` is idempotent: the environment model caches on request content, so
 // re-running it costs nothing and returns exactly what the first run got.
 
-import { appendFileSync, createReadStream, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, createReadStream, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { Command } from 'commander';
-import { derivedIds, loadElement } from '../aesthetic/elements/pack.js';
+import { contactSheet, type Image } from '../env/sheet.js';
+import { encodePng } from '../env/png.js';
+import { decode } from '../artist/pixels.js';
+import { derivedIds, elementIds, loadElement } from '../aesthetic/elements/pack.js';
 import {
   CORPUS_DIR,
   MANIFEST,
@@ -54,6 +59,22 @@ import { embeddingsAvailable, embeddingsUnavailableMessage } from '../artist/cli
 import { textAvailable, textUnavailableMessage } from '../artist/clip-text.js';
 import { available, embed, unavailableMessage } from '../artist/resemblance.js';
 import { searchByText, searchByVector, searchText } from '../artist/search.js';
+import {
+  DEFAULT_SEED,
+  INFLUENCES_DIR,
+  blend,
+  influencesFile,
+  influencesFromElement,
+  influencesFromPosition,
+  jaccard,
+  loadResolved,
+  type Resolved,
+  resolve,
+  resolvedText,
+  saveResolved,
+} from '../artist/influences.js';
+import { loadPosition } from '../artist/field.js';
+import { ROOT } from '../env/browser.js';
 import { csvRows, metadataFrom as metFrom, resolveImageUrl } from '../artist/met.js';
 import { DEFAULT_TARGET, MAX_CLASSIFICATION_SHARE, MAX_SOURCE_SHARE, select } from '../artist/selection.js';
 import { deriveElement, deriveProtocolHash, saveDerived } from '../artist/element-derive.js';
@@ -956,6 +977,233 @@ program
       return;
     }
     process.stdout.write(auditText(auditFrom(points, Number(opts.permutations), Number(opts.seed))));
+  });
+
+// --- influences -----------------------------------------------------------------------------------
+
+const influences = program
+  .command('influences')
+  .description("an artist's background as weights over the corpus, resolved offline");
+
+/**
+ * Every position on disk, and every element in the pack. Counted, never hard-coded.
+ *
+ * Both the authored pack and the derived set, because both are lineage a run can be given.
+ * `derivedIds()` is empty on a machine that has never had model credit, so a run of this that
+ * reports four elements is reporting the authored pack alone.
+ */
+function influenceSubjects(): { id: string; kind: 'position' | 'element' }[] {
+  const out: { id: string; kind: 'position' | 'element' }[] = [];
+  const posDir = path.join(ROOT, 'aesthetic', 'positions');
+  if (existsSync(posDir)) {
+    for (const f of readdirSync(posDir).sort()) {
+      if (f.endsWith('.json')) out.push({ id: f.replace(/\.json$/, ''), kind: 'position' });
+    }
+  }
+  for (const id of [...elementIds(), ...derivedIds()].sort()) out.push({ id, kind: 'element' });
+  return out;
+}
+
+function influencesFor(id: string, kind: 'position' | 'element', seed: number) {
+  return kind === 'position'
+    ? influencesFromPosition(loadPosition(id), seed)
+    : influencesFromElement(loadElement(id) as never, seed);
+}
+
+const SHEET_DIR = path.join(ROOT, 'docs', 'demo', 'influences');
+
+/**
+ * A resolved set as a picture and a page, both self-contained.
+ *
+ * No browser. `contactSheet` is pure integer arithmetic over decoded pixels, and the HTML inlines
+ * the sheet as a data URI, so the page opens off a filesystem with no server, no network and no
+ * Playwright — which is the whole point of it existing as a Thursday demo asset.
+ *
+ * A work whose file is missing or undecodable leaves a hole rather than shifting everything after it
+ * by one cell: the caption grid under the sheet is read against the sheet, and a silent shift would
+ * put every caption against the wrong image.
+ */
+function writeInfluenceSheet(r: Resolved, pngPath: string, cell: number): string[] {
+  const cols = 8;
+  const blank: Image = { rgba: Buffer.alloc(4, 0), width: 1, height: 1 };
+  const failed: string[] = [];
+  const images = r.works.map((w) => {
+    if (!w.imagePath) {
+      failed.push(`${w.id} (no image path in the manifest)`);
+      return blank;
+    }
+    // `imagePath` is `images/<sha256>.jpg`, relative to `corpus/` and not to the repo root.
+    const file = path.join(CORPUS_DIR, w.imagePath);
+    try {
+      const rgb = decode(file);
+      const rgba = Buffer.allocUnsafe(rgb.width * rgb.height * 4);
+      for (let p = 0, i = 0; p < rgb.width * rgb.height; p++, i += 3) {
+        rgba[4 * p] = rgb.data[i]!;
+        rgba[4 * p + 1] = rgb.data[i + 1]!;
+        rgba[4 * p + 2] = rgb.data[i + 2]!;
+        rgba[4 * p + 3] = 0xff;
+      }
+      return { rgba, width: rgb.width, height: rgb.height };
+    } catch (e) {
+      failed.push(`${w.id} (${(e as Error).message})`);
+      return blank;
+    }
+  });
+
+  const sheet = contactSheet(images, { cols, cell, gap: 8, background: [0x18, 0x18, 0x18] });
+  const png = encodePng(sheet.rgba, sheet.width, sheet.height);
+  mkdirSync(path.dirname(path.resolve(pngPath)), { recursive: true });
+  writeFileSync(pngPath, png);
+
+  const esc = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const cells = r.works
+    .map(
+      (w, i) =>
+        `<figure><b>${i + 1}</b> <code>${esc(w.id)}</code><br>${esc(w.title || '(untitled)')}` +
+        `<br><i>${esc(w.classification || '?')}</i> · ${esc(w.date || '?')} · ${esc(w.museum)}` +
+        `<br>weight ${w.weight.toFixed(3)} · cos ${w.cosine.toFixed(4)}<br>via “${esc(w.via)}”</figure>`,
+    )
+    .join('\n');
+  const html = `<!doctype html><meta charset="utf-8"><title>influences — ${esc(r.positionId)}</title>
+<style>
+ body{background:#111;color:#ddd;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;margin:0;padding:28px 32px}
+ h1{font-size:19px;margin:0 0 4px} h2{font-size:14px;margin:26px 0 8px;color:#9ad}
+ .warn{color:#e88} img{max-width:100%;border:1px solid #333;display:block;margin:10px 0}
+ pre{white-space:pre-wrap;color:#bbb;background:#0b0b0b;padding:14px;border:1px solid #262626;overflow-x:auto}
+ .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+ figure{margin:0;padding:8px;border:1px solid #262626;background:#171717;font-size:11px;line-height:1.45}
+ code{color:#9ad} i{color:#8a8}
+</style>
+<h1>influences — ${esc(r.positionId)}</h1>
+<div>${r.works.length} works · influencesHash <code>${esc(r.influencesHash)}</code> · seed ${r.seed}</div>
+<p class="warn">This is RETRIEVAL, not reading. Nothing here has looked at any of these works. Each is
+here because its photograph is near a phrase taken verbatim out of the position file.</p>
+${failed.length ? `<p class="warn">${failed.length} of ${r.works.length} images could not be drawn and are blank cells: ${esc(failed.join(', '))}</p>` : ''}
+<img src="data:image/png;base64,${png.toString('base64')}" alt="contact sheet, ${cols} columns, in weight order">
+<h2>the works, in the same order</h2>
+<div class="grid">${cells}</div>
+<h2>the numbers, against their chance baselines</h2>
+<pre>${esc(resolvedText(r))}</pre>
+`;
+  const htmlPath = pngPath.replace(/\.png$/, '') + '.html';
+  writeFileSync(htmlPath, html);
+  return [
+    `${path.relative(ROOT, pngPath)}  ${sheet.width}x${sheet.height}  ${r.works.length} works, ${failed.length} blank`,
+    `${path.relative(ROOT, htmlPath)}  ${(html.length / 1024).toFixed(0)}KB, self-contained — open it with a browser, no server`,
+  ];
+}
+
+influences
+  .command('resolve')
+  .description('derive queries from a position or element, run them, and write the resolved set')
+  .argument('[ids...]', 'position or element ids; default is everything on disk')
+  .option('--seed <n>', 'seed for the entropy chance bands', String(DEFAULT_SEED))
+  .option('--dry-run', 'print the resolution without writing either file', false)
+  .action(async (ids: string[], opts: { seed: string; dryRun: boolean }) => {
+    if (!embeddingsAvailable() || !textAvailable()) {
+      process.stdout.write(`${embeddingsUnavailableMessage()}\n${textUnavailableMessage()}\n`);
+      process.exitCode = 1;
+      return;
+    }
+    const all = influenceSubjects();
+    const wanted = ids.length ? all.filter((s) => ids.includes(s.id)) : all;
+    const missing = ids.filter((i) => !all.some((s) => s.id === i));
+    if (missing.length) {
+      process.stdout.write(`no position or element named: ${missing.join(', ')}\n`);
+      process.exitCode = 1;
+      return;
+    }
+
+    const resolvedAll = [];
+    for (const s of wanted) {
+      const inf = influencesFor(s.id, s.kind, Number(opts.seed));
+      const r = await resolve(inf);
+      resolvedAll.push(r);
+      if (!opts.dryRun) {
+        mkdirSync(INFLUENCES_DIR, { recursive: true });
+        writeFileSync(influencesFile(s.id), JSON.stringify(inf, null, 2) + '\n');
+        saveResolved(r);
+      }
+      process.stdout.write(`\n${'='.repeat(96)}\n${resolvedText(r)}`);
+    }
+
+    if (resolvedAll.length > 1) {
+      // The check that the whole derivation is worth anything. If two positions with different
+      // lineages land on the same works, the queries are not carrying the position.
+      process.stdout.write('\noverlap between resolved sets (Jaccard over sha256):\n');
+      for (let i = 0; i < resolvedAll.length; i++) {
+        for (let j = i + 1; j < resolvedAll.length; j++) {
+          const v = jaccard(resolvedAll[i]!, resolvedAll[j]!);
+          const verdict = v > 0.5 ? '  <-- these two are not being distinguished' : '';
+          process.stdout.write(
+            `  ${resolvedAll[i]!.positionId.padEnd(22)} x ${resolvedAll[j]!.positionId.padEnd(22)} ${v.toFixed(3)}${verdict}\n`,
+          );
+        }
+      }
+    }
+    if (!opts.dryRun) process.stdout.write(`\nwritten to ${path.relative(ROOT, INFLUENCES_DIR)}/\n`);
+  });
+
+influences
+  .command('show')
+  .description('print a resolved set that is already on disk')
+  .argument('<id>')
+  .option('--json', 'the resolved file itself', false)
+  .option('--sheet [file]', 'write a contact sheet of the works, and an HTML page beside it')
+  .option('--cell <px>', 'the box each image is fitted into on the sheet', '220')
+  .action((id: string, opts: { json: boolean; sheet?: string | boolean; cell: string }) => {
+    const r = loadResolved(id);
+    if (!r) {
+      process.stdout.write(`no resolved influences for ${id} — run \`corpus influences resolve ${id}\`\n`);
+      process.exitCode = 1;
+      return;
+    }
+    if (opts.sheet) {
+      const png = typeof opts.sheet === 'string' ? opts.sheet : path.join(SHEET_DIR, `${id}.png`);
+      for (const line of writeInfluenceSheet(r, png, Number(opts.cell))) process.stdout.write(`${line}\n`);
+      return;
+    }
+    process.stdout.write(opts.json ? JSON.stringify(r, null, 2) + '\n' : resolvedText(r));
+  });
+
+influences
+  .command('blend')
+  .description('what sits between two resolved sets, and what sits between them but in neither')
+  .argument('<a>')
+  .argument('<b>')
+  .option('-k, --k <n>', 'how many works per row', '12')
+  .action((aId: string, bId: string, opts: { k: string }) => {
+    const a = loadResolved(aId);
+    const b = loadResolved(bId);
+    if (!a || !b) {
+      process.stdout.write(`resolve both first: ${!a ? aId : ''} ${!b ? bId : ''}\n`);
+      process.exitCode = 1;
+      return;
+    }
+    const bl = blend(a, b, Number(opts.k));
+    process.stdout.write(`blend ${bl.a} x ${bl.b} — centroids sit at cosine ${bl.centroidCosine.toFixed(4)}\n`);
+    process.stdout.write(
+      bl.centroidCosine > 0.95
+        ? '  the two centroids are nearly the same point, so this blend has almost nothing to blend\n'
+        : '',
+    );
+    process.stdout.write('\nnearest the midpoint (excluding both sets):\n');
+    for (const w of bl.midpoint) {
+      process.stdout.write(`  ${w.cosine.toFixed(4)}  ${w.id.padEnd(12)} ${(w.classification || '?').slice(0, 20).padEnd(20)} | ${(w.title || '').slice(0, 40)}\n`);
+    }
+    process.stdout.write(
+      `\nnear the midpoint but outside BOTH sets' own spreads (a<${a.spread.toFixed(3)}, b<${b.spread.toFixed(3)}) — ` +
+        `the only part of a blend neither set could have reached alone:\n`,
+    );
+    if (bl.surprises.length === 0) {
+      process.stdout.write('  NOTHING FOUND. Every work near the midpoint is already inside one of the two sets.\n');
+    }
+    for (const w of bl.surprises) {
+      process.stdout.write(
+        `  ${w.cosine.toFixed(4)} (a ${w.toA.toFixed(3)} b ${w.toB.toFixed(3)})  ${w.id.padEnd(12)} ${(w.title || '').slice(0, 40)}\n`,
+      );
+    }
   });
 
 await program.parseAsync(process.argv);

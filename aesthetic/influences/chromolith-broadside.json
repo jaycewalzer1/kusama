@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "positionId": "chromolith-broadside",
+  "seed": 20260831,
+  "queries": [
+    {
+      "text": "Chromolithographic Broadside",
+      "weight": 1,
+      "k": 12,
+      "source": "lineage"
+    },
+    {
+      "text": "American and British commercial job printing: circus, theatre and patent-medicine bills, worked from stone by shops such as the Strobridge Lithographing Company",
+      "weight": 1,
+      "k": 12,
+      "source": "lineage"
+    },
+    {
+      "text": "A sheet that has to be read from across a street and then again from arm's length, so it carries a dozen sizes of type, an engraved vignette or three, and as many colours as the shop had stones for.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "Every square inch is sold.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "Restraint is not a virtue available to a bill that is competing with the bill pasted over it.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "The sheet is competing for attention with every other sheet on the wall, and anything held back is a stone the shop paid for and did not use.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "More colours, more sizes, more pictures: the abundance is the offer.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "One stone per colour, and the shop used the ones it had. The list is long and specific because the colours are the inventory of a particular press rather than a chosen harmony, and the ground is on it because the bill is printed on a bright stock, not on a warm paper.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    },
+    {
+      "text": "A broadside is read at three distances and sets a different size for each, plus the terms, plus the date, plus the printer's line. Six separate pieces of type is the floor at which that layering is present rather than implied.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    },
+    {
+      "text": "The engraved picture is the thing being sold — the acrobat, the elephant, the bottle. `fragment` is this medium's drawn figure, so it is where a vignette has to live.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    },
+    {
+      "text": "A bill exists to name an occasion and close it off. The urgency is not a tone applied afterwards; it is a phrase that has to be on the sheet or the sheet is a decoration.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    }
+  ],
+  "picks": [],
+  "excludes": [],
+  "avoid": [
+    "a wood-type circus poster pastiche with the word 'SPECTACULAR' arched over a banner",
+    "distressed cream paper texture laid over flat digital colour",
+    "an ornamental border and a pointing-hand dingbat used as period signals",
+    "the Victorian playbill grid filled with lorem ipsum at eight sizes",
+    "sepia applied to make an image read as historical",
+    "a modern brand name set in Clarendon and called a broadside",
+    "Unsold space on a bill is space the competition will paste over. Coverage rather than ink density, because the requirement is that the sheet is worked everywhere, not that it is dark."
+  ],
+  "limits": {
+    "maxWorks": 48,
+    "maxPerMuseum": 0.6,
+    "minCosineToQuery": 0.2
+  }
+}

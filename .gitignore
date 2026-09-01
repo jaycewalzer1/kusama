@@ -63,3 +63,9 @@ corpus/atlas-clip.html
 # and a 40MB binary is the exact thing a repo of hashes and JSONL should not start carrying.
 corpus/clip.f32
 corpus/clip-index.json
+
+# Influence contact sheets: 97MB for seven positions, because each HTML inlines its own 1.8MB sheet
+# as a data URI so the file can be opened or sent on its own with no server and no network. Derived
+# in about two seconds each from `aesthetic/influences/*.resolved.json`, which IS tracked. The
+# resolved sets are the evidence; these are a way of looking at them.
+docs/demo/influences/

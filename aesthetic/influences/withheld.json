@@ -1,0 +1,146 @@
+{
+  "version": 1,
+  "positionId": "withheld",
+  "seed": 20260831,
+  "queries": [
+    {
+      "text": "Robert Rauschenberg, \"Erased de Kooning Drawing\" (1953)",
+      "weight": 1,
+      "k": 12,
+      "source": "lineage"
+    },
+    {
+      "text": "Jenny Holzer, the Redaction Paintings (from 2005)",
+      "weight": 1,
+      "k": 12,
+      "source": "lineage"
+    },
+    {
+      "text": "Christo and Jeanne-Claude, \"Wrapped Reichstag\" (1971-1995)",
+      "weight": 1,
+      "k": 12,
+      "source": "lineage"
+    },
+    {
+      "text": "Doris Salcedo, \"Unland\" and the concrete-filled furniture works (1995-2008)",
+      "weight": 1,
+      "k": 12,
+      "source": "lineage"
+    },
+    {
+      "text": "Mashrabiya screens in Cairo and the Levant, from the fourteenth century",
+      "weight": 1,
+      "k": 12,
+      "source": "lineage"
+    },
+    {
+      "text": "Gustav Metzger, the auto-destructive art manifestos and demonstrations (1959-1965)",
+      "weight": 1,
+      "k": 12,
+      "source": "lineage"
+    },
+    {
+      "text": "An image made powerful by being covered.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "It works by subtraction: something is made in order to be hidden, then it is hidden, and what the viewer receives is the shape of a withholding rather than its content.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "This is not censorship depicted.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "It is censorship performed by whoever made the thing being censored, which is a different act and a much less comfortable one.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "The covering has to be opaque, large, and placed with the same care as anything under it, because a careless covering reads as damage and damage is an accident.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "What is left showing at the edges is the entire argument: enough to establish that there was something there, never enough to say what.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "The work fails the moment a viewer stops wondering and starts guessing correctly.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "Three separate acts of covering. One is an incident and can be read as a compositional block; three is a policy, and a policy is the only thing that makes the withholding legible as a decision rather than as a shape.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    },
+    {
+      "text": "Four areas that admit nothing at all. A translucent covering is a hint, and a hint invites the guess that the position exists to refuse; opacity is what makes the refusal total.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    },
+    {
+      "text": "One region sealed off from the rest of the surface rather than merely obscured. Something has to be set apart and kept apart, or the sheet is a picture with dark passages in it.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    },
+    {
+      "text": "Two places where what is present is the remainder of something larger that was destroyed. The distinction between a remnant and a shape drawn to look like one is the position's whole subject.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    },
+    {
+      "text": "The first tension made answerable. A covering over something and a covering over nothing are identical objects, but they are not identically constrained: a real one has to sit where the thing was.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    },
+    {
+      "text": "The failure this position falls into is a tidy arrangement of black rectangles, which is indistinguishable from the position from a distance and completely distinguishable at the edges. Only a reader can look at the edges.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    }
+  ],
+  "picks": [],
+  "excludes": [],
+  "avoid": [
+    "black bars over text, at the height of the line, evenly spaced",
+    "a document with words blacked out so that the remaining words form a message",
+    "a portrait with the face covered, which converts a person into a category",
+    "a rectangle of solid colour labelled as a removal in a caption",
+    "wrapping or bandaging drawn as a texture over a form that is still entirely legible underneath",
+    "the silhouette of a recognisable object presented as though it were withholding something",
+    "a torn edge revealing a second surface below, used as a reveal rather than as a concealment",
+    "large areas of black used for weight and then described afterwards as an absence",
+    "the word 'classified', or any stamp language borrowed from state secrecy",
+    "Nothing may be repeated. Repetition is how a maker avoids deciding — if one covering is not working, twelve of them make a pattern and the pattern excuses the first. This position has to place each one and answer for it.",
+    "Nothing here explains itself. A sentence long enough to have a clause is long enough to say what is being withheld, and saying it is the one thing that cannot happen.",
+    "`p-few-words` limits how much may be said; this limits what saying it can be. A short line set small in a corner is not a mark on the surface, it is a label attached to it, and a label naming what has been covered hands over the content in the one form that fits. Any word here is at the scale of the coverings or it is not there.",
+    "A built-up area is a place where density arrived gradually and could have stopped anywhere. This position's tones are decisions taken all at once, and the difference between covered and not covered has to stay absolute.",
+    "Most of the surface is taken. A sheet that is mostly open has withheld nothing; it has left room, and leaving room is generosity of exactly the kind this position does not extend.",
+    "The covering reaches the sheet's edge on at least two sides. A dark region bounded on all four sides hands the viewer its dimensions, and a measurement is a description with the middle taken out. It is also the difference the second rubric asks a reader to find: a shape placed on an empty surface is bounded, a covering laid over something already there runs out past where you can follow it. Two sides and not four, because a covering that bleeds on every side is a ground, and there has to be something left to withhold it from.",
+    "The weight should sit near the middle of the sheet rather than escaping to an edge. A covering pushed into a corner is being got out of the way, and the thing being withheld has to be in front of the viewer."
+  ],
+  "limits": {
+    "maxWorks": 48,
+    "maxPerMuseum": 0.6,
+    "minCosineToQuery": 0.2
+  }
+}

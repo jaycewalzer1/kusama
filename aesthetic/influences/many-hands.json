@@ -1,0 +1,144 @@
+{
+  "version": 1,
+  "positionId": "many-hands",
+  "seed": 20260831,
+  "queries": [
+    {
+      "text": "The Romm edition of the Babylonian Talmud, Vilna, 1880-1886",
+      "weight": 1,
+      "k": 12,
+      "source": "lineage"
+    },
+    {
+      "text": "The Rosetta Stone, Memphis decree, 196 BC",
+      "weight": 1,
+      "k": 12,
+      "source": "lineage"
+    },
+    {
+      "text": "The Glossa Ordinaria, twelfth and thirteenth century manuscript pages",
+      "weight": 1,
+      "k": 12,
+      "source": "lineage"
+    },
+    {
+      "text": "Chinese handscroll colophons and collectors' seals, Song dynasty onward",
+      "weight": 1,
+      "k": 12,
+      "source": "lineage"
+    },
+    {
+      "text": "Ottoman chancery documents bearing the sultan's tughra",
+      "weight": 1,
+      "k": 12,
+      "source": "lineage"
+    },
+    {
+      "text": "Bilingual East India Company coinage and revenue documents, late eighteenth century",
+      "weight": 1,
+      "k": 12,
+      "source": "lineage"
+    },
+    {
+      "text": "A thing issued in several hands at once, because no single authority commands all of its readers.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "Every hand on it is legitimate, each set by somebody entitled to set it, and none governs the others.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "The disagreement between them is the content.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "This is not collage: nothing is stolen, appropriated or made ironic.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "Everything on it is official, and it is the officialness of the parts that reads as strange once they are made to share a surface with no hierarchy imposed.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "So the work is arrangement without subordination.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "There is no master text with commentary around it; there are three or four texts of equal standing that happen to be on the same sheet and have to be lived with.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "What a reader takes away is which of them they decided to believe, and the sheet does not help them decide.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "Seven separate pieces of setting, because the disagreement has to be between parties and two parties is a comparison rather than a condition. Below this the sheet has a main text and some annotations, which is the hierarchy the position refuses.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    },
+    {
+      "text": "Three marks made with three different instruments. Different hands used different tools because they were writing at different times for different reasons, and reconciling the tools would be the maker overruling all of them at once.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    },
+    {
+      "text": "A line should be set by a hand rather than by a rule: crowding where it runs out of room, drifting where the writer tired, varying because a person varies. This is the position's whole claim about what a hand is.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    },
+    {
+      "text": "The first tension made answerable. The maker is a governing authority pretending not to be one, and the evidence for or against that is which elements turn out to be load-bearing.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    },
+    {
+      "text": "The move this position is nearest to, and least distinguishable from, is ordinary layout with a lot of type on it. Only a reader can say whether the refusal happened.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    }
+  ],
+  "picks": [],
+  "excludes": [],
+  "avoid": [
+    "two languages set in the same face at the same size, which makes them one voice in two spellings",
+    "a script the maker cannot read used as an ornamental texture behind something in English",
+    "official-looking stamps invented for the occasion and rotated to look casually applied",
+    "a document photographed, desaturated and used as a ground for new type",
+    "redaction bars over text that was never sensitive",
+    "mixed faces on one line, used as an effect rather than because two parties set it",
+    "a rubber-stamp texture standing in for institutional authority",
+    "handwriting from a face that was drawn once and repeats exactly",
+    "a form or a table reproduced as a layout device with nothing filled in",
+    "A graduated area is a mood applied to the whole surface by one hand, and a mood is the most complete kind of governing there is. It tells the reader how to feel about texts that disagree.",
+    "An invented device is an authority nobody issued. Every mark here has to have somebody behind it who was entitled to make it, and a made-up emblem is the maker's own hand claiming a standing it does not have.",
+    "A border is a single edge drawn around everything, which subordinates every hand inside it to the one that drew it. It is the cheapest way to reimpose the hierarchy the sheet exists to refuse.",
+    "Several parties sharing one surface produces congestion, because none of them was given room by the others. A comfortable sheet is one that was allocated, and allocation is governing.",
+    "A single centre of gravity is a sheet with a main thing on it. Where several hands genuinely share a surface, the weight sits off to one side because nobody was arranging the whole."
+  ],
+  "limits": {
+    "maxWorks": 48,
+    "maxPerMuseum": 0.6,
+    "minCosineToQuery": 0.2
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "positionId": "rodchenko-red-black",
+  "seed": 20260831,
+  "queries": [
+    {
+      "text": "Red, Black and the Diagonal",
+      "weight": 1,
+      "k": 12,
+      "source": "lineage"
+    },
+    {
+      "text": "Soviet Constructivism; Moscow, the VKhUTEMAS and the advertising partnership with Mayakovsky",
+      "weight": 1,
+      "k": 12,
+      "source": "lineage"
+    },
+    {
+      "text": "After declaring easel painting finished with the three monochromes of 1921, Rodchenko worked to a deliberately impoverished kit: two inks and the paper, type set as a structural bar rather than a line, and the rule used as a member under load.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "The restriction is the argument — a poster that could have used more colours and did not is asserting that the means are public property and countable.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "The means are declared and countable: two inks and the paper, and nothing arrives that cannot be justified as structure.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "A colour added for effect is a claim that the work needs decoration to stand up.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "Paper, black and red. The list is short on purpose and includes the ground, because the ground is one of the three and pretending otherwise would let a fourth colour in under the floorboards.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    },
+    {
+      "text": "The rule is a structural member, not a divider. Five is the count at which the lines start bracing each other and reading as a frame the other elements hang from, rather than as ornament between blocks of text.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    }
+  ],
+  "picks": [],
+  "excludes": [],
+  "avoid": [
+    "a red diagonal band across a black-and-white photograph",
+    "the shouting-woman photomontage reused as a stock gesture",
+    "a Cyrillic-flavoured Latin typeface standing in for the politics",
+    "the constructivist grid used as a magazine layout with the tension taken out",
+    "a hammer, a sickle or a star added to confirm the reference",
+    "red and black chosen as a colour scheme rather than as the entire available means",
+    "diagonals applied evenly to every element until the angle is the new horizontal",
+    "A centred arrangement is at rest, and this work is about forces in tension. Vertical mirror agreement above 0.55 means the sheet has been balanced around an axis, which is the classical composition being refused."
+  ],
+  "limits": {
+    "maxWorks": 48,
+    "maxPerMuseum": 0.6,
+    "minCosineToQuery": 0.2
+  }
+}

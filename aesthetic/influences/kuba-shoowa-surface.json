@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "positionId": "kuba-shoowa-surface",
+  "seed": 20260831,
+  "queries": [
+    {
+      "text": "Shoowa Surface",
+      "weight": 1,
+      "k": 12,
+      "source": "lineage"
+    },
+    {
+      "text": "Shoowa, one of the Kuba peoples of the Kasai region, Democratic Republic of the Congo",
+      "weight": 1,
+      "k": 12,
+      "source": "lineage"
+    },
+    {
+      "text": "Cut-pile raffia panels worked edge to edge, with no ground left as ground.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "The design is not laid on a surface, it is the surface: every square of the cloth is embroidered, and a motif that begins at one edge is broken off and restarted somewhere else rather than being centred or repeated on a grid.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "The unworked area is not a rest, it is an unfinished panel.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "The sheet is not a background that receives marks; it is a field that must be entirely worked.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "Emptiness is not restraint, it is the part that has not been done yet.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "Edge-to-edge working, stated as the one thing the medium can actually measure: the share of the sheet that is not ground. Below about a third the ground is still reading as ground, which is the state this lineage exists to refuse.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    },
+    {
+      "text": "The cloth is built from bounded worked areas that abut rather than from one continuous pattern. Five is the smallest number at which the abutting reads as construction rather than as a figure on a ground.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    },
+    {
+      "text": "Cut pile is a worked texture across an area, not an outline and not a flat fill. `field` is the only style in this medium that distributes marks through a region, so it is the nearest thing to a pile the constraint language can name.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    }
+  ],
+  "picks": [],
+  "excludes": [],
+  "avoid": [
+    "a repeating tile of interlocking hooks used as a background texture",
+    "raffia-brown and cream taken as the palette when the point was the working, not the colour",
+    "a single 'African pattern' band laid across an otherwise empty European layout",
+    "the geometry copied at one scale and evenly gridded, which is the one thing the cloth never does",
+    "distressing applied to suggest hand-work on a surface made in software",
+    "the motif enlarged to poster scale so that the density that defined it disappears",
+    "A Shoowa panel has no centre and no axis: motifs break off at the edge rather than resolving. A mirror-symmetrical sheet has been composed around a middle, which is the organising principle this cloth does without."
+  ],
+  "limits": {
+    "maxWorks": 48,
+    "maxPerMuseum": 0.6,
+    "minCosineToQuery": 0.2
+  }
+}

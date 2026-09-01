@@ -1,0 +1,144 @@
+{
+  "version": 1,
+  "positionId": "interference",
+  "seed": 20260831,
+  "queries": [
+    {
+      "text": "Yayoi Kusama, the Infinity Net paintings (from 1959)",
+      "weight": 1,
+      "k": 12,
+      "source": "lineage"
+    },
+    {
+      "text": "Roman Opalka, \"1965/1 - infinity\" (from 1965)",
+      "weight": 1,
+      "k": 12,
+      "source": "lineage"
+    },
+    {
+      "text": "Hanne Darboven, \"Schreibzeit\" (1975-1980)",
+      "weight": 1,
+      "k": 12,
+      "source": "lineage"
+    },
+    {
+      "text": "On Kawara, \"One Million Years\" (1970-1998)",
+      "weight": 1,
+      "k": 12,
+      "source": "lineage"
+    },
+    {
+      "text": "Bridget Riley, \"Fall\" (1963)",
+      "weight": 1,
+      "k": 12,
+      "source": "lineage"
+    },
+    {
+      "text": "Tamil kolam, the daily threshold drawings of southern India",
+      "weight": 1,
+      "k": 12,
+      "source": "lineage"
+    },
+    {
+      "text": "Nothing here is drawn once.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "A mark made a single time is an assertion; the same mark made four hundred times is a quantity, and the quantity is the subject.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "So the unit is chosen to be uninteresting and the count is where the work is.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "Everything is laid down so it can be seen through: where two accumulations cross, the crossing is darker than either, and that darkness is a sum the viewer can take apart rather than a colour somebody chose.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "That is the discipline.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "Refuse opacity and the arithmetic stays auditable; the moment something hides what is under it, there is a place where the count could have been faked and no way to tell.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "The right density is the one at which the crossings are doing more work than the marks.",
+      "weight": 0.8,
+      "k": 12,
+      "source": "worldview"
+    },
+    {
+      "text": "Six areas that are built rather than filled. An area of tone that arrived in one operation has no count in it, and a count is the only thing this position has to say.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    },
+    {
+      "text": "Eight separate runs of marks, so that there is something for the accumulations to cross. One accumulation is a texture; the work is in the overlaps, and overlaps need at least two parties.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    },
+    {
+      "text": "The ground and two inks. Every other tone on the surface has to be arrived at by crossing, because a third ink is a way of choosing a colour that the arithmetic was supposed to produce.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    },
+    {
+      "text": "The quantity the piece is about should be the quantity that is present. This is the position's central claim and the medium cannot carry it.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    },
+    {
+      "text": "The first tension in a form a reader can answer. A count that was paid for and a count that was simulated are indistinguishable by inspection, but necessity is not: a real accumulation constrains what else can be on the sheet, and a simulated one constrains nothing.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    },
+    {
+      "text": "Non-genericity is the question the position exists to be answerable to. A position that produces work indistinguishable from work made without it has not steered anything, whatever it scores.",
+      "weight": 0.6,
+      "k": 8,
+      "source": "commitment"
+    }
+  ],
+  "picks": [],
+  "excludes": [],
+  "avoid": [
+    "a moire pattern produced once at high frequency and used as a background",
+    "cross-hatching applied as shading to something that was drawn as an outline first",
+    "a grid of dots at even spacing, offered as evidence of labour",
+    "two halftone screens rotated against each other and enlarged",
+    "hand-drawn tally marks used as a motif rather than as a count",
+    "a dense scribble in one corner and clean paper everywhere else, as a gesture at effort",
+    "concentric rings radiating from a single centre, which resolves the whole surface into one decision",
+    "the word 'infinity', or a count written out as a numeral instead of performed",
+    "an accumulation that stops neatly inside a margin on all four sides",
+    "An opaque area is a place where the count cannot be checked. Whatever is under it might be four hundred passes or nothing at all, and the whole claim of the practice is that the viewer can tell.",
+    "The same refusal as an operation rather than as a style. Covering is the one move that makes the arithmetic unauditable, and a position that would not use an opaque fill but would use a covering has kept the letter and dropped the rule.",
+    "Small type at the edge of an accumulation is a legend, and a legend states the count instead of letting it be taken apart. This position's argument is that the arithmetic is visible; a line telling the viewer what they are looking at concedes that it is not, and does so in the one place they will believe it over their own eyes.",
+    "A sparse surface has no crossings on it. Below this the marks are being read individually, which is the one reading this position has nothing to say in.",
+    "A symmetrical accumulation is a composition wearing a count. Where the quantity is genuinely doing the work the result is lopsided, because nobody decided where it should balance."
+  ],
+  "limits": {
+    "maxWorks": 48,
+    "maxPerMuseum": 0.6,
+    "minCosineToQuery": 0.2
+  }
+}
