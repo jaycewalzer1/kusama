@@ -75,6 +75,12 @@ corpus/analytics/
 # resolved sets are the evidence; these are a way of looking at them.
 docs/demo/influences/
 
+# Search contact sheets, same shape and same reason: 1.5MB of PNG per query, doubled by the HTML
+# that inlines it. They cannot be rebuilt from a clone anyway — `corpus/images/` and `corpus/clip.f32`
+# are both ignored — so tracking them would buy a fallback that only works where the fallback is not
+# needed. The demo's tracked fallback is `docs/demo/screens/`, which is flat PNG at 1920x1080.
+docs/demo/searches/
+
 # The notebooks' Python. Pinned in notebooks/requirements.txt, which IS tracked; the venv itself is
 # 200MB of wheels that pip rebuilds in a minute. `notebooks/out/` is scratch — notebooks may write
 # there and nowhere else.

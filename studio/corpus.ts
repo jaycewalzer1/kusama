@@ -1048,10 +1048,19 @@ program
   .option('-k, --k <n>', 'how many works to return', '12')
   .option('--museum <s>', 'restrict to one of cma | met | aic')
   .option('--json', 'machine-readable output', false)
+  .option('--sheet [file]', 'write a contact sheet of the hits, and an HTML page beside it')
+  .option('--cell <px>', 'the box each image is fitted into on the sheet', '220')
   .action(
     async (
       query: string | undefined,
-      opts: { image?: string; k: string; museum?: string; json: boolean },
+      opts: {
+        image?: string;
+        k: string;
+        museum?: string;
+        json: boolean;
+        sheet?: string | boolean;
+        cell: string;
+      },
     ) => {
       if (!embeddingsAvailable()) {
         process.stdout.write(embeddingsUnavailableMessage() + '\n');
@@ -1120,6 +1129,40 @@ program
             2,
           ) + '\n',
         );
+        return;
+      }
+      if (opts.sheet) {
+        // The sheet is the same object the influences sheet is, with a different caption line:
+        // there, a work is on the page because a position document sent a phrase; here, because a
+        // person typed one. The warning at the top is the same warning because the caveat is the
+        // same one — retrieval by photograph, with nothing having read anything.
+        const slug = (result.query || 'query').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 48);
+        const png =
+          typeof opts.sheet === 'string' ? opts.sheet : path.join(SEARCH_SHEET_DIR, `${slug}.png`);
+        const lines = writeSheet({
+          pngPath: png,
+          cell: Number(opts.cell),
+          cols: 6,
+          heading: `search — “${result.query}”`,
+          subhead:
+            `${result.hits.length} of ${result.searched.toLocaleString()} works · ` +
+            `this query's scores over the whole corpus: mean ${result.mean.toFixed(4)} sd ${result.sd.toFixed(4)}`,
+          note:
+            'This is RETRIEVAL, not reading. Nothing has looked at these works; each is here because ' +
+            'its photograph sits near this phrase in CLIP space. Read the z and the percentile, not ' +
+            'the cosine — a text-image cosine is on a different scale from an image-image one.',
+          cells: result.hits.map((h) => ({
+            id: h.entry.work.id,
+            imagePath: imagePath(h.entry.work),
+            title: h.entry.work.title,
+            classification: h.entry.work.classification,
+            date: h.entry.work.date_display,
+            museum: h.entry.work.source,
+            detail: `cos ${h.score.toFixed(4)} · z ${h.z.toFixed(2)} · p ${h.percentile.toFixed(2)}`,
+          })),
+          footer: searchText(result),
+        });
+        for (const line of lines) process.stdout.write(`${line}\n`);
         return;
       }
       process.stdout.write(searchText(result));
@@ -1318,6 +1361,7 @@ function influencesFor(id: string, kind: 'position' | 'element', seed: number) {
 }
 
 const SHEET_DIR = path.join(ROOT, 'docs', 'demo', 'influences');
+const SEARCH_SHEET_DIR = path.join(ROOT, 'docs', 'demo', 'searches');
 
 /**
  * A resolved set as a picture and a page, both self-contained.
@@ -1330,11 +1374,34 @@ const SHEET_DIR = path.join(ROOT, 'docs', 'demo', 'influences');
  * by one cell: the caption grid under the sheet is read against the sheet, and a silent shift would
  * put every caption against the wrong image.
  */
-function writeInfluenceSheet(r: Resolved, pngPath: string, cell: number): string[] {
-  const cols = 8;
+/** One image on a sheet, and the caption printed under it. */
+type SheetCell = {
+  id: string;
+  /** `images/<sha256>.jpg`, relative to `corpus/`. Absent means "leave a hole", never "shift up". */
+  imagePath?: string | null;
+  title: string;
+  classification: string;
+  date: string;
+  museum: string;
+  /** The line that differs per caller — a weight and a source query, or a z and a percentile. */
+  detail: string;
+};
+
+function writeSheet(o: {
+  pngPath: string;
+  cell: number;
+  cols: number;
+  heading: string;
+  subhead: string;
+  note: string;
+  cells: SheetCell[];
+  footer: string;
+}): string[] {
+  const cols = o.cols;
+  const cell = o.cell;
   const blank: Image = { rgba: Buffer.alloc(4, 0), width: 1, height: 1 };
   const failed: string[] = [];
-  const images = r.works.map((w) => {
+  const images = o.cells.map((w) => {
     if (!w.imagePath) {
       failed.push(`${w.id} (no image path in the manifest)`);
       return blank;
@@ -1359,20 +1426,20 @@ function writeInfluenceSheet(r: Resolved, pngPath: string, cell: number): string
 
   const sheet = contactSheet(images, { cols, cell, gap: 8, background: [0x18, 0x18, 0x18] });
   const png = encodePng(sheet.rgba, sheet.width, sheet.height);
-  mkdirSync(path.dirname(path.resolve(pngPath)), { recursive: true });
-  writeFileSync(pngPath, png);
+  mkdirSync(path.dirname(path.resolve(o.pngPath)), { recursive: true });
+  writeFileSync(o.pngPath, png);
 
   const esc = (s: string) =>
     s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  const cells = r.works
+  const cells = o.cells
     .map(
       (w, i) =>
         `<figure><b>${i + 1}</b> <code>${esc(w.id)}</code><br>${esc(w.title || '(untitled)')}` +
         `<br><i>${esc(w.classification || '?')}</i> · ${esc(w.date || '?')} · ${esc(w.museum)}` +
-        `<br>weight ${w.weight.toFixed(3)} · cos ${w.cosine.toFixed(4)}<br>via “${esc(w.via)}”</figure>`,
+        `<br>${esc(w.detail)}</figure>`,
     )
     .join('\n');
-  const html = `<!doctype html><meta charset="utf-8"><title>influences — ${esc(r.positionId)}</title>
+  const html = `<!doctype html><meta charset="utf-8"><title>${esc(o.heading)}</title>
 <style>
  body{background:#111;color:#ddd;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;margin:0;padding:28px 32px}
  h1{font-size:19px;margin:0 0 4px} h2{font-size:14px;margin:26px 0 8px;color:#9ad}
@@ -1382,23 +1449,46 @@ function writeInfluenceSheet(r: Resolved, pngPath: string, cell: number): string
  figure{margin:0;padding:8px;border:1px solid #262626;background:#171717;font-size:11px;line-height:1.45}
  code{color:#9ad} i{color:#8a8}
 </style>
-<h1>influences — ${esc(r.positionId)}</h1>
-<div>${r.works.length} works · influencesHash <code>${esc(r.influencesHash)}</code> · seed ${r.seed}</div>
-<p class="warn">This is RETRIEVAL, not reading. Nothing here has looked at any of these works. Each is
-here because its photograph is near a phrase taken verbatim out of the position file.</p>
-${failed.length ? `<p class="warn">${failed.length} of ${r.works.length} images could not be drawn and are blank cells: ${esc(failed.join(', '))}</p>` : ''}
-<img src="data:image/png;base64,${png.toString('base64')}" alt="contact sheet, ${cols} columns, in weight order">
+<h1>${esc(o.heading)}</h1>
+<div>${esc(o.subhead)}</div>
+<p class="warn">${esc(o.note)}</p>
+${failed.length ? `<p class="warn">${failed.length} of ${o.cells.length} images could not be drawn and are blank cells: ${esc(failed.join(', '))}</p>` : ''}
+<img src="data:image/png;base64,${png.toString('base64')}" alt="contact sheet, ${cols} columns">
 <h2>the works, in the same order</h2>
 <div class="grid">${cells}</div>
 <h2>the numbers, against their chance baselines</h2>
-<pre>${esc(resolvedText(r))}</pre>
+<pre>${esc(o.footer)}</pre>
 `;
-  const htmlPath = pngPath.replace(/\.png$/, '') + '.html';
+  const htmlPath = o.pngPath.replace(/\.png$/, '') + '.html';
   writeFileSync(htmlPath, html);
   return [
-    `${path.relative(ROOT, pngPath)}  ${sheet.width}x${sheet.height}  ${r.works.length} works, ${failed.length} blank`,
+    `${path.relative(ROOT, o.pngPath)}  ${sheet.width}x${sheet.height}  ${o.cells.length} works, ${failed.length} blank`,
     `${path.relative(ROOT, htmlPath)}  ${(html.length / 1024).toFixed(0)}KB, self-contained — open it with a browser, no server`,
   ];
+}
+
+/** A resolved influence set, as the sheet writer wants it. */
+function writeInfluenceSheet(r: Resolved, pngPath: string, cell: number): string[] {
+  return writeSheet({
+    pngPath,
+    cell,
+    cols: 8,
+    heading: `influences — ${r.positionId}`,
+    subhead: `${r.works.length} works · influencesHash ${r.influencesHash} · seed ${r.seed}`,
+    note:
+      'This is RETRIEVAL, not reading. Nothing here has looked at any of these works. Each is here ' +
+      'because its photograph is near a phrase taken verbatim out of the position file.',
+    cells: r.works.map((w) => ({
+      id: w.id,
+      imagePath: w.imagePath,
+      title: w.title,
+      classification: w.classification,
+      date: w.date,
+      museum: w.museum,
+      detail: `weight ${w.weight.toFixed(3)} · cos ${w.cosine.toFixed(4)} · via “${w.via}”`,
+    })),
+    footer: resolvedText(r),
+  });
 }
 
 influences

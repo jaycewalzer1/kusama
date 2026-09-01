@@ -33,6 +33,7 @@ What is **not** tracked is everything derived from it, because it is large and r
 | `corpus/atlas-clip.html` | 3 MB | `npm run corpus -- atlas --clip --umap` | 53 s |
 | `corpus/atlas.html` (metadata map) | 3 MB | `npm run corpus -- atlas` | 3 s |
 | `docs/demo/influences/*.html` | 97 MB | `npm run corpus -- influences show <id> --sheet` | ~1.4 s each |
+| `docs/demo/searches/*.html` | 48 MB | `npm run corpus -- search "<phrase>" -k 12 --sheet` | ~1.5 s each |
 | `out/condition-withheld`, `out/openai-withheld`, `out/first-withheld` | — | a model run | **not reproducible — no credit** |
 
 **Demo on this machine.** A fresh clone would need the pixels and the embeddings before four of the
@@ -81,6 +82,56 @@ finding a work from its own title among 19,791 candidates; P@1 **20.4% against 0
 titles, and a museum title is catalogue prose, not a description of the picture. "Fragment" appears
 hundreds of times.
 
+### The five to type, in this order — every one pre-rendered as a sheet
+
+30 phrases were tried on 2026-09-02 and scored on three things: does the row read as the phrase,
+does it cross museums, and is it twelve of the same object. These five won. **`--sheet` writes a
+self-contained page** — the thumbnails, the captions, and the full numbers — so if the terminal is
+too small to read, open the page instead.
+
+```bash
+node dist/studio/corpus.js search "a page of dense handwriting" -k 12 --sheet
+open docs/demo/searches/a-page-of-dense-handwriting.html
+```
+
+| # | phrase | same-museum pairs | museums | what comes back |
+|---|---|---|---|---|
+| 1 | `a page of dense handwriting` | **28.8%** vs 39.0% chance | 3 | twelve dense pages — Chinese album leaves, a papyrus, Ramayana folios, a textile swatch pinned to a letter |
+| 2 | `grief handled as paperwork` | **31.8%** vs 39.0% | 3 | a vanitas with a skull, an American passport, a memorial card, engravings of men at desks |
+| 3 | `an empire taking inventory of what it took` | **37.9%** vs 39.0% | 3 | tomb registers — wine and beer being counted at Nebamun, a Ramesses relief, a funerary papyrus |
+| 4 | `corporate greed` | 45.5% vs 39.0% | 3 | a wall of posters: *Hun or Home?*, *Halt die Hun!*, Posada's calavera, and one that begins PLEASE REMEMBER THE MORE THAN 20,000 BLACK PEOPLE |
+| 5 | `being watched by something that does not blink` | 47.0% vs 39.0% | 3 | a Lover's Eye miniature — a single painted human eye in a brooch — then a row of Horus falcon amulets and a stone owl |
+
+**Three of the five sit below the 39.0% chance rate**, which is the interesting direction: the
+phrase is not simply retrieving one museum's cataloguing habits. **Lead with 5.** The eye is the
+one the room reacts to, and "something that does not blink" landing on falcon amulets is the whole
+argument for CLIP in one image.
+
+### What the text tower cannot do — say this before someone finds it
+
+Five of the thirty, and why each fails. These are worth showing on purpose if there is time:
+
+| phrase | what happens | why |
+|---|---|---|
+| `1923.456` | twelve papal medals, **one museum, 3 classifications** | an accession number has no appearance; the nearest thing to a string of digits is a round metal disc with digits struck on it |
+| `circa 1650` | 83.3% same-museum | a date is not a visible property of a photograph |
+| `untitled` | 68.2% same-museum | it matches the catalogue's *word*, not the picture |
+| `authenticity` | 68.2% same-museum | an abstract noun with no visual referent lands wherever the corpus is densest |
+| `an upside-down flag hung from a granite cliff` | granite, rock fragments, a bare pole — **no flag, no inversion** | it keeps the nouns and drops the syntax; CLIP has no "upside-down" |
+
+That last one is worth dwelling on, because it is the brief phrased literally. **The same brief
+phrased three ways gives three different behaviours** and the sheets for all three are on disk:
+
+- `an upside-down flag hung from a granite cliff` — 47.0% crossing, but returns *granite*, not a flag
+- `a protest banner over a national park` — 69.7% crossing, 9 classifications, a muddle
+- `a wilderness photographed as a political argument` — **twelve real 19th-century landscape
+  photographs**, visually the most coherent of the three, and the *worst* crosser at 69.7%
+
+**Coherence and museum-crossing pull against each other**, and this trio is the cleanest evidence of
+it. The extreme case is `a crowd of people in the street`: twelve street scenes with figures, the
+single most convincing row in the whole survey, and **100% from one museum**. Beautiful and, by the
+crossing measure, the worst result on the page.
+
 ---
 
 ## 2. An artist's background, as 48 corpus works — 1.3 s
@@ -114,6 +165,26 @@ about 1.8 s to paint; open it *before* you need it.
 the report says so: same-museum share across all seven runs 36.5–41.8% against a **39.0% chance**
 baseline — `NOTHING MEASURED`. Classification entropy is inside the chance band for two of the
 seven. What *does* separate them is the works themselves, which is why the sheet exists.
+
+### Why `withheld` and not one of the other two on screen
+
+All three demo positions were scored before choosing. `withheld` is second-best on every axis and is
+the **only one with finished trajectories** (`out/condition-withheld` and `out/openai-withheld`, both
+`withheld` + `fifty-year-embargo`, seed 1) — §3b, §4 and §5 all need the same position as §2, and
+only this one has pixels to place. `many-hands` is the statistically strongest set; it is on screen
+anyway, in §3's blend.
+
+|                                        | withheld    | interference        | many-hands       |
+| -------------------------------------- | ----------- | ------------------- | ---------------- |
+| 2D share, vs 14.7% corpus              | **50.0%**   | 25.0%               | **58.3%**        |
+| same-museum, vs 39.0% chance           | 37.5%       | 41.8%               | **36.5%**        |
+| intra-set cosine, vs 0.6428 corpus med | 0.6416      | 0.6918              | 0.6572           |
+| classification entropy, band [5.293, 5.585] | 5.252 narrower | 5.377 **inside — null** | 4.601 narrower |
+| axis 0 share of the set's variance     | 27.5%       | 12.0%               | 22.1%            |
+
+**Nothing on this sheet was hand-picked.** The `picks` field exists and is empty for all three; the
+48 works are 100% derived from the position document. That is a stronger claim than a curated sheet
+would be, and it is the reason no work was swapped in to make the page prettier.
 
 ---
 
@@ -176,6 +247,36 @@ measure this shelf is no more "about woven cloth" (+0.97) than it is "about spor
 **Do not say** the tool found the textiles. It ranked them. A position's influence set is not
 selected for any brief, so this is the expected answer — the point of the command is that it says so
 instead of letting you supply the significance.
+
+**If someone asks "well, what about the real brief?" — run it.** This is the third phrase, and it is
+the one worth having in the pocket, because the answer does not change:
+
+```bash
+node dist/studio/corpus.js influences lens "$(node -e 'process.stdout.write(require("./aesthetic/briefs/fifty-year-embargo.json").material)')" withheld -k 3
+```
+
+`fifty-year-embargo` is the condition both trajectories in §4 were actually made under, and that
+`material` field is 90 words of room, letter, photograph, humidity log. It comes back:
+
+```
+  encoded as 5 sentences, averaged — the query is their mean direction, not any one of them
+  against withheld: 48 works, mean cosine 0.2524
+  against the corpus: 19,791 works, mean 0.2168 sd 0.0200
+  NOTHING MEASURED. The set sits +1.78 sd from the corpus mean, inside the ±2 band.
+
+    0.2931  p 99.98  met-447591   Cover
+    0.2842  p 99.94  cma-161235   Dragon and Orchard
+    0.2832  p 99.92  met-14141    Hand-woven Tablecloth
+```
+
+**+1.78 sd is the strongest reading in this whole runbook and it is still a null** — higher than the
+textile phrase's +0.97, and still inside the ±2 band. This is the best moment in the demo to make the
+point that the threshold was fixed before the number was seen. A tool that wanted to impress you
+would have called +1.78 a hit.
+
+**Do not widen `-k` hoping the verdict moves.** It cannot. The ±2 sd band is computed over the whole
+48-work set against the corpus; `-k` chooses only how many rows print. `-k 50` prints all 48 works
+— it cannot print more than the set holds — and the identical `+1.78 sd ... NOTHING MEASURED`.
 
 ---
 
