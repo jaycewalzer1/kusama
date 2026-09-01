@@ -45,7 +45,7 @@ import {
   saveWorks,
 } from '../artist/corpus.js';
 import { type AicRecord, metadataFrom as aicFrom, searchUrl, walkPublicDomain } from '../artist/aic.js';
-import { atlas } from '../artist/atlas.js';
+import { type Vectors, atlas } from '../artist/atlas.js';
 import { atlasPage } from './atlas-page.js';
 import { type Source, type Work, imagePath, readManifest, workId } from '../artist/manifest.js';
 import { csvRows, metadataFrom as metFrom, resolveImageUrl } from '../artist/met.js';
@@ -662,34 +662,101 @@ program
     }
   });
 
+const CLIP_MATRIX = path.join(CORPUS_DIR, 'clip.f32');
+const CLIP_INDEX = path.join(CORPUS_DIR, 'clip-index.json');
+const CLIP_DIM = 512;
+
+/**
+ * The image embeddings as a space the atlas can lay out, one row per work that has one.
+ *
+ * The matrix is one row per *file*, in sorted sha256 order, because a hundred manifest rows share
+ * bytes with another row — two catalogued objects photographed together. So the join is by sha256,
+ * and works whose pixels have not arrived are dropped rather than given a zero row that would sit
+ * at the origin and pull the first axis through itself.
+ *
+ * A zero row in the matrix is the encoder's recorded failure and is dropped for the same reason.
+ */
+function clipSpace(works: Work[]): { works: Work[]; space: Vectors } {
+  if (!existsSync(CLIP_MATRIX) || !existsSync(CLIP_INDEX)) {
+    throw new Error(`no embeddings at ${CLIP_MATRIX} — see corpus/README.md`);
+  }
+  const index: string[] = JSON.parse(readFileSync(CLIP_INDEX, 'utf8'));
+  const buf = readFileSync(CLIP_MATRIX);
+  const rowsInFile = Math.floor(buf.length / (CLIP_DIM * 4));
+  if (rowsInFile !== index.length) {
+    throw new Error(`${CLIP_MATRIX} holds ${rowsInFile} rows but the index names ${index.length}`);
+  }
+  const at = new Map(index.map((sha, i) => [sha, i]));
+
+  const kept: Work[] = [];
+  const rows: Float64Array[] = [];
+  for (const w of works) {
+    const i = w.image ? at.get(w.image.sha256) : undefined;
+    if (i === undefined) continue;
+    const row = new Float64Array(CLIP_DIM);
+    for (let j = 0; j < CLIP_DIM; j++) row[j] = buf.readFloatLE((i * CLIP_DIM + j) * 4);
+    if (row.every((x) => x === 0)) continue;
+    kept.push(w);
+    rows.push(row);
+  }
+  // Named so a loading can still be traced to a column, while being honest that the name is an
+  // ordinal and not a fact anyone recorded. That is exactly what `composition` exists to make up for.
+  return { works: kept, space: { names: Array.from({ length: CLIP_DIM }, (_, i) => `clip:${i}`), rows } };
+}
+
 program
   .command('atlas')
-  .description('lay the corpus out in two dimensions from its metadata alone, and say whether the layout means anything')
+  .description('lay the corpus out in two dimensions and say whether the layout means anything')
   .option('--sample <n>', 'how many works the honesty measure compares', '1500')
   .option('--neighbours <k>', 'neighbourhood size for that measure', '20')
-  .action((opts: { sample: string; neighbours: string }) => {
-    // Offline and free: this reads the manifest and nothing else. It runs on all 20,000 works,
-    // including the ones whose pixels have not arrived, because every column is a field a museum
-    // already filled in.
-    const works = listWorks();
-    if (works.length === 0) {
+  .option('--clip', 'lay out what the works look like, from corpus/clip.f32, instead of what the museums wrote')
+  .option('--umap', 'project with UMAP, which keeps neighbourhoods, instead of PCA, which keeps variance')
+  .action((opts: { sample: string; neighbours: string; clip?: boolean; umap?: boolean }) => {
+    // The default is offline and free: it reads the manifest and nothing else, runs on all 20,000
+    // works including the ones whose pixels have not arrived, because every column is a field a
+    // museum already filled in. --clip is also offline, but only over the works that have pixels.
+    const all = listWorks();
+    if (all.length === 0) {
       process.stdout.write('no manifest — run `corpus metadata` and `corpus select` first\n');
       return;
     }
-    const a = atlas(works, Number(opts.sample), Number(opts.neighbours));
-    writeFileSync(path.join(CORPUS_DIR, 'atlas.json'), `${JSON.stringify(a, null, 1)}\n`);
-    writeFileSync(path.join(CORPUS_DIR, 'atlas.html'), atlasPage(a, new Date().toISOString()));
+    const { works, space } = opts.clip ? clipSpace(all) : { works: all, space: undefined };
+    const stem = opts.clip ? 'atlas-clip' : 'atlas';
+    const a = atlas(works, Number(opts.sample), Number(opts.neighbours), space, opts.umap ? 'umap' : 'pca');
+    writeFileSync(path.join(CORPUS_DIR, `${stem}.json`), `${JSON.stringify(a, null, 1)}\n`);
+    // The link is only rendered when the other map is on disk. A button that 404s teaches a reader
+    // that the buttons on this page do not work, which is a worse outcome than no button.
+    const other = opts.clip ? 'atlas' : 'atlas-clip';
+    writeFileSync(
+      path.join(CORPUS_DIR, `${stem}.html`),
+      atlasPage(a, new Date().toISOString(), {
+        basis: opts.clip ? 'what they look like &mdash; CLIP over the pixels, which never saw the catalogue' : undefined,
+        alsoSee: existsSync(path.join(CORPUS_DIR, `${other}.html`))
+          ? { href: `${other}.html`, label: opts.clip ? 'the same works by metadata' : 'the same works by appearance' }
+          : undefined,
+      }),
+    );
 
     const p = a.preservation;
     process.stdout.write(
-      `${a.works} works, ${a.columns.length} columns\n` +
-        `axis 1 carries ${(a.varianceExplained[0] ?? 0).toFixed(4)} of the variance, axis 2 ${(a.varianceExplained[1] ?? 0).toFixed(4)}\n`,
+      `${a.works} works${opts.clip ? ` of ${all.length} (the rest have no embedding)` : ''}, ${a.columns.length} columns, projected by ${a.projection}\n` +
+        `PCA axis 1 carries ${(a.varianceExplained[0] ?? 0).toFixed(4)} of the variance, axis 2 ${(a.varianceExplained[1] ?? 0).toFixed(4)}\n`,
     );
     // Printed, not merely stored, because an axis nobody reads the loadings of gets called
-    // "style" in the next sentence somebody writes about it.
-    for (const axis of a.loadings) {
-      process.stdout.write(`\naxis ${axis[0]?.axis} is made of:\n`);
-      for (const l of axis) process.stdout.write(`  ${l.weight >= 0 ? '+' : '-'}${Math.abs(l.weight).toFixed(2)}  ${l.column}\n`);
+    // "style" in the next sentence somebody writes about it. Under UMAP they describe the principal
+    // axes, which are not the ones on the page, so they are not printed at all.
+    if (a.projection === 'pca') {
+      for (const axis of a.loadings) {
+        process.stdout.write(`\naxis ${axis[0]?.axis} is made of:\n`);
+        for (const l of axis) process.stdout.write(`  ${l.weight >= 0 ? '+' : '-'}${Math.abs(l.weight).toFixed(2)}  ${l.column}\n`);
+      }
+    }
+    // The question the loadings cannot answer when the columns are ordinals, and the one worth
+    // asking even when they aren't: what does this space actually call near?
+    process.stdout.write(`\n${a.preservation.k} nearest in the full space, against what chance would give:\n`);
+    for (const c of a.composition) {
+      const times = c.chance > 0 ? (c.share / c.chance).toFixed(1) : '-';
+      process.stdout.write(`  ${c.field.padEnd(13)} ${(100 * c.share).toFixed(1)}%  chance ${(100 * c.chance).toFixed(1)}%  ${times}x\n`);
     }
     process.stdout.write(`\n${p.k}-neighbourhoods, over ${p.n} works: ${p.preserved.toFixed(4)} preserved against ${p.chance.toFixed(4)} by chance\n`);
     // The whole reason this command exists. A scatter plot that does not beat scattering the same
@@ -699,7 +766,7 @@ program
         ? `the layout carries ${(p.preserved / p.chance).toFixed(1)}x chance — neighbourhoods on the map are real\n`
         : `NOTHING MEASURED — ${(p.preserved / (p.chance || 1)).toFixed(1)}x chance. Do not read clusters off this plot.\n`,
     );
-    process.stdout.write(`\ncorpus/atlas.json\ncorpus/atlas.html  — open this one in a browser\n`);
+    process.stdout.write(`\ncorpus/${stem}.json\ncorpus/${stem}.html  — open this one in a browser\n`);
   });
 
 await program.parseAsync(process.argv);

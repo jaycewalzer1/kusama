@@ -13,7 +13,19 @@ import type { Atlas } from '../artist/atlas.js';
 /** Colour by the label, stable across renders: the same category is the same colour every time. */
 const PALETTE = ['#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4', '#469990', '#dcbeff', '#9a6324', '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075', '#a9a9a9'];
 
-export function atlasPage(a: Atlas, generatedAt: string): string {
+export interface PageOptions {
+  /**
+   * What the layout was computed from, in the reader's words. Passed in rather than inferred,
+   * because the headline is the one line everyone reads, and "placed by metadata only, no pixels
+   * read" printed over a map of image embeddings would be a lie told in the largest type.
+   */
+  basis?: string;
+  /** The other map, if it has been built. Omitted rather than rendered dead when it has not. */
+  alsoSee?: { href: string; label: string };
+}
+
+export function atlasPage(a: Atlas, generatedAt: string, opts: PageOptions = {}): string {
+  const basis = opts.basis ?? 'metadata only &mdash; no model, no pixels read';
   // Only the columns the page draws with. The full record stays in atlas.json; duplicating it here
   // would triple the file for fields nothing on the page reads.
   const points = a.points.map((p) => [Number(p.x.toFixed(3)), Number(p.y.toFixed(3)), p.source, p.kind, p.period, p.title, p.id]);
@@ -25,12 +37,14 @@ export function atlasPage(a: Atlas, generatedAt: string): string {
 
   return `<!doctype html>
 <meta charset="utf-8">
-<title>the corpus, from its metadata alone</title>
+<title>the corpus, laid out by ${a.projection.toUpperCase()}</title>
 <style>
   :root { color-scheme: dark }
   body { margin:0; background:#111; color:#ddd; font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace }
   header { padding:14px 18px; border-bottom:1px solid #333 }
   h1 { font-size:15px; margin:0 0 6px; font-weight:600 }
+  .also { float:right; font-weight:400; background:#222; color:#ddd; border:1px solid #444; padding:3px 10px; text-decoration:none }
+  .also:hover { background:#3a3a3a; border-color:#888 }
   .verdict { padding:8px 12px; border-left:3px solid ${p.informative ? '#3cb44b' : '#e6194b'}; background:#1a1a1a; margin:8px 0 }
   .cols { display:flex; gap:26px; flex-wrap:wrap; margin-top:8px; font-size:12px; color:#999 }
   .cols b { color:#ddd; font-weight:600 }
@@ -45,12 +59,24 @@ export function atlasPage(a: Atlas, generatedAt: string): string {
   #hover { position:fixed; pointer-events:none; background:#000d; border:1px solid #555; padding:5px 8px; max-width:340px; display:none; font-size:11px }
 </style>
 <header>
-  <h1>${a.works.toLocaleString()} works from three museums, placed by metadata only &mdash; no model, no pixels read</h1>
+  <h1>${a.works.toLocaleString()} works from three museums, placed by ${basis}
+    ${opts.alsoSee ? `<a class="also" href="${opts.alsoSee.href}">${opts.alsoSee.label} &rarr;</a>` : ''}</h1>
   <div class="verdict">${verdict}<br>
     <span style="color:#999">${p.k}-neighbourhoods over ${p.n} works: ${p.preserved.toFixed(3)} preserved, ${p.chance.toFixed(3)} by chance.
-    The two axes hold ${(((a.varianceExplained[0] ?? 0) + (a.varianceExplained[1] ?? 0)) * 100).toFixed(1)}% of the variance in ${a.columns.length} columns, so most of the spread is not on this page at all.</span></div>
+    ${
+      a.projection === 'umap'
+        ? `Projected with UMAP over ${a.columns.length} columns, which keeps neighbourhoods and does not keep distance: the gap between two clusters here means nothing, and only which points sit together does.`
+        : `The two axes hold ${(((a.varianceExplained[0] ?? 0) + (a.varianceExplained[1] ?? 0)) * 100).toFixed(1)}% of the variance in ${a.columns.length} columns, so most of the spread is not on this page at all.`
+    }</span></div>
   <div class="cols">
-    ${a.loadings.map((axis) => `<div><b>axis ${axis[0]?.axis} is made of</b><br>${axis.slice(0, 5).map((l) => `${l.weight >= 0 ? '+' : '&minus;'}${Math.abs(l.weight).toFixed(2)} ${l.column}`).join('<br>')}</div>`).join('')}
+    ${
+      // Only under PCA. The loadings describe the principal axes, and under UMAP the axes on this
+      // page are not those — printing them beside a UMAP plot would label the wrong thing.
+      a.projection === 'pca'
+        ? a.loadings.map((axis) => `<div><b>axis ${axis[0]?.axis} is made of</b><br>${axis.slice(0, 5).map((l) => `${l.weight >= 0 ? '+' : '&minus;'}${Math.abs(l.weight).toFixed(2)} ${l.column}`).join('<br>')}</div>`).join('')
+        : '<div><b>the axes are made of nothing</b><br>UMAP has no loadings. Neither direction on this page is a quantity; only togetherness is.</div>'
+    }
+    <div><b>its ${p.k} nearest, in the full space</b><br>${a.composition.map((c) => `${c.field} ${(100 * c.share).toFixed(0)}% <span style="color:#888">(chance ${(100 * c.chance).toFixed(0)}%)</span>`).join('<br>')}</div>
   </div>
 </header>
 <main><canvas id="c"></canvas><aside><div id="controls"></div><div id="legend"></div></aside></main>

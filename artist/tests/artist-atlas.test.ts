@@ -10,7 +10,7 @@
 
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { evenSample, loadingsOf, preservation, principalAxes, project, standardise, topValues, varianceExplained, vectorise } from '../atlas.js';
+import { composition, evenSample, loadingsOf, preservation, principalAxes, project, standardise, topValues, umapProject, varianceExplained, vectorise } from '../atlas.js';
 import type { Source, Work } from '../manifest.js';
 
 const work = (source: Source, n: number, over: Partial<Work> = {}): Work => ({
@@ -113,6 +113,29 @@ test('the same data twice gives the same picture and not its mirror image', () =
   const a = project(vectorise(works).rows, principalAxes(vectorise(works).rows, 2));
   const b = project(vectorise(works).rows, principalAxes(vectorise(works).rows, 2));
   assert.deepEqual(a, b);
+});
+
+test('a neighbourhood that is all one museum is only news if the corpus is not', () => {
+  // Two clean blocks in the space, each entirely one museum, so every neighbour is a match and
+  // `share` is 1. The point of the test is `chance`: with a 50/50 split it is ~0.5 and 1.0 is a real
+  // finding; make the corpus 39 works from one museum and one from another and chance rises to 0.90
+  // for the same perfect separation. A share reported without it can be made to mean anything.
+  const split = [...Array(40)].map((_, i) => work(i < 20 ? 'met' : 'aic', i));
+  const far = split.map((_, i) => Float64Array.from([i < 20 ? 0 : 100]));
+  const [even] = composition(split, far, [{ field: 'same museum', of: (w) => w.source }], 5);
+  assert.equal(even?.share, 1);
+  assert.ok(Math.abs((even?.chance as number) - 0.4871) < 0.001, `${even?.chance}`);
+
+  const lopsided = [...Array(40)].map((_, i) => work(i < 39 ? 'met' : 'aic', i));
+  const [skewed] = composition(lopsided, far, [{ field: 'same museum', of: (w) => w.source }], 5);
+  assert.ok((skewed?.chance as number) > 0.9, `${skewed?.chance}`);
+});
+
+test('UMAP gives the same picture twice, because an unseeded one makes every cluster unciteable', () => {
+  // Three separated blobs, so there is real structure to find and the run is short.
+  const rows = [...Array(60)].map((_, i) => Float64Array.from([(i % 3) * 50 + (i % 7) * 0.1, (i % 3) * 50 - (i % 5) * 0.1]));
+  assert.deepEqual(umapProject(rows, 7, 5), umapProject(rows, 7, 5));
+  assert.notDeepEqual(umapProject(rows, 7, 5), umapProject(rows, 8, 5));
 });
 
 test('the sample is spread across the manifest rather than taken off the front of it', () => {

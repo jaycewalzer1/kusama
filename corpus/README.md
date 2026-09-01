@@ -44,6 +44,33 @@ Each stage is resumable and each is a separate command on purpose, because they 
 `metadata` is cheap and idempotent. `select` is offline and deterministic. `images` is hours of
 somebody else's bandwidth. `read` is the only one that costs money.
 
+## Looking at it
+
+```
+npm run corpus -- atlas                    # from the catalogue: PCA, and the axes have names
+npm run corpus -- atlas --clip --umap      # from the pixels: CLIP embeddings, laid out by UMAP
+```
+
+Each writes a self-contained HTML file into `corpus/` — `atlas.html` and `atlas-clip.html` — with a
+button in the corner to the other one. Open either in a browser; neither needs a server. Both print
+how much of the layout survived the projection, against what scattering the same points at random
+would give, and refuse to call a map informative below twice chance.
+
+The two projections are both kept because which one is right was *measured* rather than assumed. On
+the catalogue vectors PCA preserves **34.0x** chance and UMAP **26.9x**, so PCA wins and its axes can
+still be read off as named museum fields. On the 512 CLIP dimensions PCA collapses to **5.6x** — one
+anonymous coordinate takes 64% of the variance, which is a known property of CLIP and not a fact
+about art — while UMAP holds **24.2x**. So: PCA for the catalogue, UMAP for the pixels.
+
+`--clip` needs `corpus/clip.f32`, which is not in the repo. It is 19,807 x 512 float32 in sorted
+sha256 order, produced locally by the CLIP ViT-B/32 vision encoder in about twelve minutes with no
+API and no key, and regenerable from the images at any time.
+
+Both pages also report what the *full* space calls near, in terms a museum recorded, because
+"axis 1 is +0.69 clip:92" is a true sentence about nothing. The answer is the reason the second map
+exists: a work's 20 nearest by catalogue are **93% from the same museum** against 39% by chance,
+and by appearance **55%**. The first map had largely learnt which institution catalogued a thing.
+
 `MetObjects.csv` is the Met's own published dump of the whole collection (317MB, 484,956 rows), from
 `github.com/metmuseum/openaccess`. It is not kept in this repo — it is a one-time input, consumed
 into `pool.jsonl`, and `--csv` takes whatever path you downloaded it to. It is filtered locally

@@ -11,6 +11,7 @@
 // get by scattering the same points at random. A layout that does not beat that baseline is
 // decoration, and this module is willing to say so.
 
+import { UMAP } from 'umap-js';
 import { classificationsOf, periodOf } from './selection.js';
 import { SOURCES, type Work } from './manifest.js';
 
@@ -208,6 +209,32 @@ export function varianceExplained(rows: Float64Array[], axes: Float64Array[]): n
   ).map((s) => s / total);
 }
 
+/**
+ * The other projection: UMAP, which keeps neighbourhoods instead of variance.
+ *
+ * PCA answers "what is this axis made of". Over 512 CLIP coordinates that answer is `+0.69 clip:92`
+ * — a real number about a column nobody named, and one anonymous dimension carrying 64% of the
+ * variance is a documented property of CLIP rather than a fact about art. So the argument that made
+ * PCA the right choice for named museum fields does not transfer, and the projection that keeps
+ * *neighbourhoods* is the one to use where the columns are opaque.
+ *
+ * Both are kept and both are measured by the same `preservation()`, because "UMAP is the standard
+ * choice" is not evidence. Seeded, so two runs of this on the same input give the same picture —
+ * an unseeded UMAP is a different map every time, which quietly makes every cluster unciteable.
+ */
+export function umapProject(rows: Float64Array[], seed = 1, neighbours = 15, minDist = 0.1): number[][] {
+  let s = seed >>> 0;
+  const random = () => {
+    // mulberry32: small, and the point is only that it is the same sequence twice.
+    s = (s + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const umap = new UMAP({ nComponents: 2, nNeighbors: Math.min(neighbours, rows.length - 1), minDist, random });
+  return umap.fit(rows.map((r) => Array.from(r)));
+}
+
 // --- is the map telling the truth ------------------------------------------------------------------
 
 export interface Preservation {
@@ -260,6 +287,61 @@ export function preservation(high: Float64Array[], low: number[][], k = 20): Pre
   return { k, n, preserved, chance, informative: preserved > chance * 2 };
 }
 
+export interface Composition {
+  /** The recorded field a neighbourhood was checked against. */
+  field: string;
+  /** Mean fraction of a work's k nearest, in the full space, that carry the work's own value. */
+  share: number;
+  /** What two independently drawn works would share, over this same sample. */
+  chance: number;
+}
+
+/**
+ * What a neighbourhood in the full space is made of.
+ *
+ * The loadings say what an *axis* is made of, which only means something when the columns have
+ * names. A space of 512 anonymous coordinates has no such answer — "axis 1 is +0.09 clip:37" is
+ * true and says nothing — so this asks the question from the other side: take the works a space
+ * calls near each other, and count how often they came out of the same museum, or the same culture.
+ *
+ * Read against `chance`, always. Over this corpus 39% of pairs share a museum before anything is
+ * measured, so a 55% share is a mild effect and a 94% share is a space that has largely learnt the
+ * catalogue rather than the art. Exact and O(n^2), so it runs on the same sample as `preservation`.
+ */
+export function composition(
+  works: Work[],
+  high: Float64Array[],
+  fields: { field: string; of: (w: Work) => string }[],
+  k = 20,
+): Composition[] {
+  const n = works.length;
+  if (n <= k + 1) return fields.map(({ field }) => ({ field, share: 0, chance: 0 }));
+
+  const sq = (a: Float64Array, b: Float64Array) => {
+    let s = 0;
+    for (let i = 0; i < a.length; i++) s += ((a[i] as number) - (b[i] as number)) ** 2;
+    return s;
+  };
+  const nearest = Array.from({ length: n }, (_, i) => {
+    const order = Array.from({ length: n }, (_, j) => j).filter((j) => j !== i);
+    order.sort((a, b) => sq(high[i] as Float64Array, high[a] as Float64Array) - sq(high[i] as Float64Array, high[b] as Float64Array) || a - b);
+    return order.slice(0, k);
+  });
+
+  return fields.map(({ field, of }) => {
+    const value = works.map(of);
+    let same = 0;
+    for (let i = 0; i < n; i++) for (const j of nearest[i] as number[]) if (value[j] === value[i]) same++;
+    // Chance is the probability two distinct works drawn from THIS sample agree, not 1/categories:
+    // the categories are wildly unequal, and a uniform baseline would flatter every result here.
+    const counts = new Map<string, number>();
+    for (const v of value) counts.set(v, (counts.get(v) ?? 0) + 1);
+    let chance = 0;
+    for (const c of counts.values()) chance += (c / n) * ((c - 1) / (n - 1));
+    return { field, share: same / (n * k), chance };
+  });
+}
+
 /**
  * A deterministic, evenly-spread subsample. Every `stride`-th work, not the first `size` of them.
  *
@@ -285,13 +367,19 @@ export interface AtlasPoint {
   sha256: string | null;
 }
 
+/** How the two dimensions on the page were arrived at. Recorded, because it changes what a gap means. */
+export type Projection = 'pca' | 'umap';
+
 export interface Atlas {
   works: number;
+  projection: Projection;
   columns: string[];
   varianceExplained: number[];
   /** Per axis, the columns it is most made of. The reason for choosing PCA over a nicer picture. */
   loadings: { axis: number; column: string; weight: number }[][];
   preservation: Preservation;
+  /** What the full space calls near, in terms a museum recorded. The answer loadings cannot give. */
+  composition: Composition[];
   points: AtlasPoint[];
 }
 
@@ -314,22 +402,45 @@ export function loadingsOf(names: string[], axes: Float64Array[], top = 8): Atla
   );
 }
 
-export function atlas(works: Work[], sampleSize = 1500, k = 20): Atlas {
-  const { names, rows } = vectorise(works);
+/**
+ * @param space An already-built high-dimensional space, one row per work in `works`, used in place
+ *   of the one this module derives from the manifest. That is how the same layout, the same honesty
+ *   measure and the same page get pointed at image embeddings without this file learning what an
+ *   embedding is or where the matrix lives.
+ */
+export function atlas(works: Work[], sampleSize = 1500, k = 20, space?: Vectors, method: Projection = 'pca'): Atlas {
+  const { names, rows } = space ?? vectorise(works);
+  if (rows.length !== works.length) {
+    throw new Error(`space has ${rows.length} rows for ${works.length} works`);
+  }
   const axes = principalAxes(rows, 2);
-  const xy = project(rows, axes);
+  const xy = method === 'umap' ? umapProject(rows) : project(rows, axes);
   const index = evenSample(
     works.map((_, i) => i),
     sampleSize,
   );
   return {
     works: works.length,
+    projection: method,
     columns: names,
+    // Still computed under UMAP, and still true: it says how much of the spread a *linear* map
+    // would have caught, which is the thing UMAP is being used instead of.
     varianceExplained: varianceExplained(rows, axes),
     loadings: loadingsOf(names, axes),
     preservation: preservation(
       index.map((i) => rows[i] as Float64Array),
       index.map((i) => xy[i] as number[]),
+      k,
+    ),
+    composition: composition(
+      index.map((i) => works[i] as Work),
+      index.map((i) => rows[i] as Float64Array),
+      [
+        { field: 'same museum', of: (w) => w.source },
+        { field: 'same culture', of: (w) => w.culture?.trim().toLowerCase() || '(unrecorded)' },
+        { field: 'same kind', of: (w) => classificationsOf(w)[0] as string },
+        { field: 'same period', of: periodOf },
+      ],
       k,
     ),
     points: works.map((w, i) => ({
