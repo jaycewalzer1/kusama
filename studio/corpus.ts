@@ -1516,15 +1516,29 @@ influences
 influences
   .command('crossing')
   .description("does a text query cross the museum wall, or retrieve one museum's prose style")
-  .argument('[ids...]', 'positions; all of them by default')
-  .action(async (ids: string[]) => {
+  .argument('[ids...]', 'positions and lineage elements; all of both by default')
+  .option('--seed <n>', 'the seed the queries are built under', String(DEFAULT_SEED))
+  .action(async (ids: string[], opts: { seed: string }) => {
     if (!embeddingsAvailable() || !textAvailable()) {
       process.stdout.write(`${embeddingsAvailable() ? textUnavailableMessage() : embeddingsUnavailableMessage()}\n`);
       process.exitCode = 1;
       return;
     }
-    const chosen = ids.length > 0 ? ids : influenceSubjects().filter((s) => s.kind === 'position').map((s) => s.id);
-    process.stdout.write(crossingText(await crossing(chosen)));
+    const all = influenceSubjects();
+    const missing = ids.filter((id) => !all.some((s) => s.id === id));
+    if (missing.length > 0) {
+      process.stdout.write(`no position or element named: ${missing.join(', ')}\n`);
+      process.exitCode = 1;
+      return;
+    }
+    const chosen = ids.length > 0 ? all.filter((s) => ids.includes(s.id)) : all;
+    process.stdout.write(
+      crossingText(
+        await crossing(
+          chosen.map((s) => ({ ...s, queries: influencesFor(s.id, s.kind, Number(opts.seed)).queries })),
+        ),
+      ),
+    );
   });
 
 influences

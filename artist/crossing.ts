@@ -22,13 +22,26 @@
 //
 // No model call. The text tower encodes, the corpus is already encoded, and no artist is involved.
 
-import { loadPosition } from './field.js';
 import { loadCorpusEmbeddings, rowAt } from './clip-index.js';
 import { embedText } from './clip-text.js';
-import { queriesFromPosition } from './influences.js';
+import type { InfluenceQuery } from './influences.js';
+
+/**
+ * One thing that can be read through the corpus, and the queries it produces.
+ *
+ * Built by the caller rather than here, because a position and a lineage element turn into queries
+ * by two different functions in `influences.ts` and this file has no business knowing which. It also
+ * means a test can hand over queries directly.
+ */
+export interface CrossingSubject {
+  id: string;
+  kind: 'position' | 'element';
+  queries: InfluenceQuery[];
+}
 
 export interface CrossingQuery {
-  positionId: string;
+  subjectId: string;
+  kind: 'position' | 'element';
   source: string;
   text: string;
   k: number;
@@ -74,7 +87,7 @@ export function pairRate(sources: string[]): number {
  * text tower — the same reason `lens.ts` takes its embedder as an argument.
  */
 export async function crossing(
-  positionIds: string[],
+  subjects: CrossingSubject[],
   corpus = loadCorpusEmbeddings(),
   embed: (phrases: string[]) => Promise<Float32Array[]> = embedText
 ): Promise<Crossing> {
@@ -91,16 +104,16 @@ export async function crossing(
   }
 
   const queries: CrossingQuery[] = [];
-  for (const id of positionIds) {
-    const qs = queriesFromPosition(loadPosition(id));
+  for (const subject of subjects) {
+    const qs = subject.queries;
     const vectors = await embed(qs.map((q) => q.text));
     for (let qi = 0; qi < qs.length; qi++) {
-      const q = qs[qi] as (typeof qs)[number];
+      const q = qs[qi] as InfluenceQuery;
       const scored: [number, number][] = [];
       for (let i = 0; i < n; i++) scored.push([dot(vectors[qi] as Float32Array, rowAt(corpus.rows, i, dim)), i]);
       scored.sort((a, b) => b[0] - a[0]);
       const top = scored.slice(0, q.k).map(([, i]) => corpus.entries[i]!.work.source);
-      queries.push({ positionId: id, source: q.source, text: q.text, k: q.k, rate: pairRate(top) });
+      queries.push({ subjectId: subject.id, kind: subject.kind, source: q.source, text: q.text, k: q.k, rate: pairRate(top) });
     }
   }
 
@@ -126,7 +139,9 @@ const APPEARANCE_KNN = 0.554;
 export function crossingText(c: Crossing): string {
   const out: string[] = [];
   out.push(
-    `${c.queries.length} text queries from ${new Set(c.queries.map((q) => q.positionId)).size} positions, top-k each, over ${c.corpusRows.toLocaleString()} deduped works`,
+    `${c.queries.length} text queries from ${new Set(c.queries.filter((q) => q.kind === 'position').map((q) => q.subjectId)).size} positions` +
+      ` and ${new Set(c.queries.filter((q) => q.kind === 'element').map((q) => q.subjectId)).size} lineage elements,` +
+      ` top-k each, over ${c.corpusRows.toLocaleString()} deduped works`,
     `  corpus mix: ${Object.entries(c.mix).map(([m, s]) => `${m} ${(100 * s).toFixed(1)}%`).join('  ')}`,
     ''
   );
@@ -144,16 +159,24 @@ export function crossingText(c: Crossing): string {
   out.push('');
   const by: Record<string, number[]> = {};
   for (const q of c.queries) (by[q.source] ??= []).push(q.rate);
-  out.push('BY WHAT PART OF THE POSITION THE QUERY CAME FROM');
+  out.push('BY WHAT PART OF THE SUBJECT THE QUERY CAME FROM');
   for (const [s, rs] of Object.entries(by)) {
     out.push(`  ${s.padEnd(12)} n ${String(rs.length).padStart(3)}  mean ${(100 * rs.reduce((a, b) => a + b, 0) / rs.length).toFixed(1)}%`);
+  }
+  // A position is prose this repo wrote; a lineage element names a real tradition. If the two split
+  // here, the shelf a run is given depends on which kind of thing it was derived from.
+  const byKind: Record<string, number[]> = {};
+  for (const q of c.queries) (byKind[q.kind] ??= []).push(q.rate);
+  out.push('BY KIND OF SUBJECT');
+  for (const [k, rs] of Object.entries(byKind)) {
+    out.push(`  ${k.padEnd(12)} n ${String(rs.length).padStart(3)}  mean ${(100 * rs.reduce((a, b) => a + b, 0) / rs.length).toFixed(1)}%`);
   }
   out.push('');
   const sorted = [...c.queries].sort((a, b) => b.rate - a.rate);
   out.push('MOST MUSEUM-BOUND');
-  for (const q of sorted.slice(0, 3)) out.push(`  ${(100 * q.rate).toFixed(0).padStart(3)}%  ${q.source.padEnd(11)} ${q.positionId.padEnd(20)} ${q.text.slice(0, 44)}`);
+  for (const q of sorted.slice(0, 3)) out.push(`  ${(100 * q.rate).toFixed(0).padStart(3)}%  ${q.source.padEnd(11)} ${q.subjectId.padEnd(22)} ${q.text.slice(0, 44)}`);
   out.push('LEAST');
-  for (const q of sorted.slice(-3)) out.push(`  ${(100 * q.rate).toFixed(0).padStart(3)}%  ${q.source.padEnd(11)} ${q.positionId.padEnd(20)} ${q.text.slice(0, 44)}`);
+  for (const q of sorted.slice(-3)) out.push(`  ${(100 * q.rate).toFixed(0).padStart(3)}%  ${q.source.padEnd(11)} ${q.subjectId.padEnd(22)} ${q.text.slice(0, 44)}`);
   out.push('');
   out.push('  A text query is museum-bound, and only mildly. It is nearer the picture than the catalogue,');
   out.push('  which is what an influence set needs to be true for it to be a set of works rather than a set');

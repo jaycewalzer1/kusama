@@ -7,7 +7,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { crossing, crossingText, pairRate } from '../crossing.js';
+import { crossing, crossingText, pairRate, type CrossingSubject } from '../crossing.js';
 import type { CorpusEmbeddings } from '../clip-index.js';
 
 const DIM = 4;
@@ -55,18 +55,42 @@ function fakeCorpus(mix: Record<string, number>): CorpusEmbeddings {
 const flat = async (phrases: string[]): Promise<Float32Array[]> =>
   phrases.map(() => Float32Array.from([1, 0, 0, 0]));
 
+/**
+ * One subject with three queries, one from each part of a position, plus an element.
+ *
+ * The queries are handed over directly rather than derived from a real position on disk: the caller
+ * builds them in `studio/corpus.ts`, and what is under test here is the arithmetic downstream of
+ * them. `k` is 12 so a round-robin over three museums divides evenly.
+ */
+const SUBJECTS: CrossingSubject[] = [
+  {
+    id: 'withheld',
+    kind: 'position',
+    queries: [
+      { source: 'lineage', text: 'On Kawara, Today series', k: 12, weight: 1 },
+      { source: 'worldview', text: 'a record kept so it cannot be read', k: 12, weight: 1 },
+      { source: 'commitment', text: 'nothing is shown that was not withheld first', k: 12, weight: 1 },
+    ],
+  },
+  {
+    id: 'kuba-shoowa-surface',
+    kind: 'element',
+    queries: [{ source: 'lineage', text: 'cut-pile raffia cloth, Kuba', k: 12, weight: 1 }],
+  },
+];
+
 test('the chance baseline is computed from the corpus, not assumed', async () => {
   // 50/30/20 -> 0.25 + 0.09 + 0.04 = 0.38. If this were hard-coded at 0.390 it would be right for
   // the real corpus and quietly wrong for every other, which is the failure mode the whole
   // "against its baseline" rule exists to prevent.
-  const c = await crossing(['withheld'], fakeCorpus({ met: 500, aic: 300, cma: 200 }), flat);
+  const c = await crossing(SUBJECTS, fakeCorpus({ met: 500, aic: 300, cma: 200 }), flat);
   assert.ok(Math.abs(c.chance - 0.38) < 1e-9, `chance ${c.chance}`);
   assert.equal(c.corpusRows, 1000);
   assert.ok(Math.abs((c.mix['met'] as number) - 0.5) < 1e-9);
 });
 
 test('a corpus from one museum makes every query rate 1, and the chance baseline 1 with it', async () => {
-  const c = await crossing(['withheld'], fakeCorpus({ met: 1000 }), flat);
+  const c = await crossing(SUBJECTS, fakeCorpus({ met: 1000 }), flat);
   assert.equal(c.chance, 1);
   assert.ok(c.queries.length > 0);
   for (const q of c.queries) assert.equal(q.rate, 1);
@@ -77,7 +101,7 @@ test('a corpus from one museum makes every query rate 1, and the chance baseline
 });
 
 test('an evenly interleaved corpus puts a query below chance, and the report says which', async () => {
-  const c = await crossing(['withheld'], fakeCorpus({ met: 400, aic: 400, cma: 400 }), flat);
+  const c = await crossing(SUBJECTS, fakeCorpus({ met: 400, aic: 400, cma: 400 }), flat);
   // Round-robin over three equal museums: a top-12 is 4/4/4, so 18 of 66 pairs share a museum.
   for (const q of c.queries) assert.ok(q.rate < c.chance + 1e-9, `${q.rate} vs ${c.chance}`);
   assert.equal(c.atOrBelowChance, c.queries.length);
@@ -85,11 +109,15 @@ test('an evenly interleaved corpus puts a query below chance, and the report say
 });
 
 test('the report carries the two numbers this one has to be read between', async () => {
-  const text = crossingText(await crossing(['withheld'], fakeCorpus({ met: 500, aic: 300, cma: 200 }), flat));
+  const text = crossingText(await crossing(SUBJECTS, fakeCorpus({ met: 500, aic: 300, cma: 200 }), flat));
   assert.match(text, /metadata neighbours\s+93\.6%/);
   assert.match(text, /appearance neighbours\s+55\.4%/);
   assert.match(text, /chance\s+38\.0%/);
   // And it breaks the queries down by which part of the position they came from, because a lineage
   // ref names a real work and a commitment's `why` is prose about this repo's substrate.
   for (const source of ['lineage', 'worldview', 'commitment']) assert.match(text, new RegExp(source));
+  // And by kind, because a position is prose this repo wrote and an element names a real tradition.
+  assert.match(text, /BY KIND OF SUBJECT/);
+  assert.match(text, /position\s+n\s+3/);
+  assert.match(text, /element\s+n\s+1/);
 });
