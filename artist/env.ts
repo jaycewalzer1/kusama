@@ -17,7 +17,7 @@ import { loadPackFor } from '../env/pack.js';
 import { contentHash, loadProfileFor } from '../env/profile.js';
 import { editsPerStep, onAcceptImproved, onRevert, onStall, stallThreshold } from './affect.js';
 import { Canvas, InvalidProgramError, changeSince, check, type Change } from './canvas.js';
-import { describe, audience, transcribe, type ReadString } from './env-calls.js';
+import { describe, audience, readRubric, transcribe, type ReadString, type RubricAnswer } from './env-calls.js';
 import { bareEdit, servedNodeIds } from './schemas.js';
 import { pruneDeadNodes } from './intention.js';
 import { treeFacts } from '../aesthetic/facts.js';
@@ -280,6 +280,30 @@ export class ArtistEnv {
       cached: t.cached,
     });
     return t.value.strings;
+  }
+
+  /**
+   * Answer the selected rubrics against the current plate, only when the finish gate asks. Each is
+   * an independent call so one question cannot anchor the answer to the next. The caller selects
+   * severity; this method only gathers readings and records their evidence.
+   */
+  async readRubrics(rubrics: { id: string; text: string }[]): Promise<RubricAnswer[]> {
+    if (!this.plate) return [];
+    const out: RubricAnswer[] = [];
+    for (const rubric of rubrics) {
+      const reading = await readRubric(this.plate, rubric.text);
+      this.account(reading);
+      this.o.log.append('env-call', {
+        name: 'rubric',
+        programHash: this.programHash,
+        rubricId: rubric.id,
+        verdict: reading.value.verdict,
+        evidence: reading.value.evidence,
+        cached: reading.cached,
+      });
+      out.push({ id: rubric.id, ...reading.value });
+    }
+    return out;
   }
 
   private account(r: { usd: number; cached: boolean }): void {

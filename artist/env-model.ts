@@ -1,10 +1,11 @@
 // The environment's model: frozen, cached, and blind.
 //
-// Four calls live here and none of them is the artist. DESCRIBE says what is on the sheet. AUDIENCE
-// says what one passer-by would take it to mean. Two disagreement checks compare those two answers
-// against the intention. All four are part of the environment, exactly like `checkProgram` and
-// `render` are, and they are treated the way an environment has to be treated if any of this is
-// going to be trainable later:
+// The calls here are environment readings and none of them is the artist. DESCRIBE says what is on
+// the sheet. AUDIENCE says what one passer-by would take it to mean. RUBRIC answers one of the
+// position's own image-only questions when the artist asks to stop. Two disagreement checks compare
+// the first two readings against the intention. All are part of the environment, exactly like
+// `checkProgram` and `render`, and they are treated the way an environment has to be treated if any
+// of this is going to be trainable later:
 //
 //   frozen   one model id, temperature 0, one system prompt each, pinned in this file. If the
 //            describer improves next quarter, every trajectory scored before it becomes
@@ -52,6 +53,11 @@ export type EnvCallName =
   | 'audience'
   | 'description-agrees'
   | 'audience-agrees'
+  // One of the position's own rubrics, put to the sheet. It belongs here because it is a fixed
+  // question a frozen reader answers while the run is still live, and the finish gate acts on it.
+  // The L5 judge in `judge.ts` remains offline, post-hoc, on a different model, and decides nothing
+  // about the trajectory it evaluates.
+  | 'rubric'
   // The corpus reader. Not part of a trajectory — these run once, offline, when a work is imported —
   // but they belong to the environment for exactly the reason the four above do: a reading made with
   // a different model is not comparable with a reading made with this one, and the whole corpus is
@@ -66,7 +72,7 @@ export interface EnvRequest {
   name: EnvCallName;
   system: string;
   text: string;
-  /** base64 image bytes. Present for describe, audience and the corpus reader; absent otherwise. */
+  /** base64 image bytes. Present for image readings such as describe, audience and rubric. */
   imageBase64?: string;
   /**
    * The image's media type. Omitted means PNG, which is what the medium renders and what every call
@@ -76,7 +82,7 @@ export interface EnvRequest {
    */
   imageMime?: string;
   /**
-   * Completion budget. Omitted means 1024, which is what the four trajectory calls have always used
+   * Completion budget. Omitted means 1024, which is what the trajectory calls have always used
    * and must keep using. A structured reading of a painting does not fit in 1024 and truncation here
    * is reported as "answered without calling the emit tool", which is a lie about the cause.
    */

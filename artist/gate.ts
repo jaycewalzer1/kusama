@@ -18,17 +18,24 @@
 // would walk past" is, because the run's own brief says attendance is the point.
 //
 // It must be **evidence that exists**. A check that cannot be run — no audience was asked, no
-// transcript was taken — returns no blocker. Absence of evidence never blocks, because a gate that
-// treated a missing field as a failure would block hardest on the runs it knows least about.
+// transcript was taken, a rubric could not be decided — returns no blocker. Absence of evidence
+// never blocks, because a gate that treated a missing field as a failure would block hardest on the
+// runs it knows least about.
 
 import { normalizeText } from '../aesthetic/kinds.js';
-import type { ReadString } from './env-calls.js';
+import type { ReadString, RubricAnswer } from './env-calls.js';
 import type { Brief } from './field.js';
 import type { CheckReport, EdgeEstimate, Examine, WouldAct } from './types.js';
 
 /** Why the environment would not let this stop. */
 export interface Blocker {
-  kind: 'unreadable-fact' | 'hard-violation' | 'audience-ignores' | 'self-score' | 'unrealized-edge';
+  kind:
+    | 'unreadable-fact'
+    | 'hard-violation'
+    | 'rubric-fails'
+    | 'audience-ignores'
+    | 'self-score'
+    | 'unrealized-edge';
   /** One sentence, written for the artist. It is put in front of the artist verbatim. */
   detail: string;
 }
@@ -49,6 +56,8 @@ export interface GateEvidence {
   examine: Examine;
   /** Null when no transcript was taken. Absent evidence does not block. */
   transcript: ReadString[] | null;
+  /** Hard rubrics answered from the sheet. Undefined on runs that never asked. */
+  rubrics?: RubricAnswer[];
   /** Undefined when no audience was asked. */
   wouldAct?: WouldAct;
   /** True when the artist named something as unrealizable on its terminal step. */
@@ -115,6 +124,15 @@ export function finishBlockers(e: GateEvidence): Blocker[] {
   // it now stops the run rather than appearing in a table beside a score of 0.895.
   for (const v of e.report.results.filter((x) => x.severity === 'hard' && x.status === 'violated')) {
     out.push({ kind: 'hard-violation', detail: `[${v.id}] is a hard constraint and it is violated: ${v.evidence}` });
+  }
+
+  // These are the hard constraints the checker cannot decide from the tree or deterministic render
+  // metrics. Only a visible `fails` blocks. `cannot-tell` is absence of evidence, not a disguised no.
+  for (const rubric of (e.rubrics ?? []).filter((r) => r.verdict === 'fails')) {
+    out.push({
+      kind: 'rubric-fails',
+      detail: `[${rubric.id}] is a hard question your own position asks of its results, and a reader looking at the sheet answered no: ${rubric.evidence}`,
+    });
   }
 
   // The kind of object says what it has to survive. This is not "did it get attention" — there is

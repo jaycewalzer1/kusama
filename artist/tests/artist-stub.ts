@@ -244,7 +244,9 @@ export class StubPolicy implements Policy {
  * A describer that is not a model. Installed with setEnvModel, so it also bypasses the disk cache —
  * which is what makes the stubbed tests independent of whatever a real run left behind.
  */
-export function installStubEnvModel(): { requests: EnvRequest[]; restore: () => void } {
+export function installStubEnvModel(
+  options: { rubricVerdict?: 'holds' | 'fails' | 'cannot-tell' } = {}
+): { requests: EnvRequest[]; restore: () => void } {
   const requests: EnvRequest[] = [];
   setEnvModel(async <T>(request: EnvRequest): Promise<EnvResponse<T>> => {
     requests.push(request);
@@ -258,7 +260,12 @@ export function installStubEnvModel(): { requests: EnvRequest[]; restore: () => 
             { strings: TEXTS.map((text) => ({ text, legible: true })) }
           : request.name === 'audience'
             ? { read: 'It looks like a notice about a date. I would read the date and keep walking.', wouldAct: 'consider' }
-            : { agree: true, reason: 'the report names the same marks in the same places' };
+            : request.name === 'rubric'
+              ? {
+                  verdict: options.rubricVerdict ?? 'cannot-tell',
+                  evidence: 'the stub reader sees rectangles floating independently on empty ground',
+                }
+              : { agree: true, reason: 'the report names the same marks in the same places' };
     return { value: value as T, cached: true, inputTokens: 0, outputTokens: 0, usd: 0, cacheKey: 'stub' };
   });
   return { requests, restore: () => setEnvModel(null) };

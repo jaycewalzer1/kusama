@@ -149,6 +149,31 @@ test('a hard violation the checker already found now stops the run rather than d
   assert.match(blockers[0]!.detail, /c-voices/);
 });
 
+test('a hard rubric a reader answered no to stops the run', () => {
+  const blockers = finishBlockers({
+    ...clean(),
+    rubrics: [{ id: 'j-necessity', verdict: 'fails', evidence: 'the dark rectangles float independently on empty ground' }],
+  });
+  assert.deepEqual(blockers.map((b) => b.kind), ['rubric-fails']);
+  assert.match(blockers[0]!.detail, /j-necessity/);
+  assert.match(blockers[0]!.detail, /empty ground/);
+});
+
+test('a rubric nobody asked, one that holds, and one nobody can decide do not block', () => {
+  assert.deepEqual(finishBlockers({ ...clean(), rubrics: undefined }), []);
+  assert.deepEqual(finishBlockers({ ...clean(), rubrics: [] }), []);
+  assert.deepEqual(
+    finishBlockers({
+      ...clean(),
+      rubrics: [
+        { id: 'j-necessity', verdict: 'cannot-tell', evidence: 'the surface does not settle the question' },
+        { id: 'j-only-this', verdict: 'holds', evidence: 'a mark runs visibly underneath the covering' },
+      ],
+    }),
+    []
+  );
+});
+
 // The same rule `terminationOf` applies after the stop, applied before it: one unrealized relation
 // is a decision if the artist named it, and an oversight otherwise.
 test('one unrealized edge is allowed only when the artist said which', () => {

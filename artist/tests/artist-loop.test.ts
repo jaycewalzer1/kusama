@@ -30,7 +30,10 @@ let trajectory: Trajectory;
 let envRequests: ReturnType<typeof installStubEnvModel>['requests'];
 
 test('the loop runs a whole trajectory: find, sketch, choose, make, examine, finish', async () => {
-  const stub = installStubEnvModel();
+  // Make the new evidence genuinely fail. The trajectory already has other blockers, but the log
+  // assertion below proves this answer crossed the env-call -> gate boundary instead of decorating
+  // an unused field.
+  const stub = installStubEnvModel({ rubricVerdict: 'fails' });
   envRequests = stub.requests;
   const policy = new StubPolicy(4);
   trajectory = await runTrajectory({
@@ -63,6 +66,29 @@ test('the loop runs a whole trajectory: find, sketch, choose, make, examine, fin
   assert.deepEqual(names, ['find', 'choose', 'examine', 'examine']);
   assert.ok(policy.calls.indexOf('sketch') > policy.calls.indexOf('find'));
   assert.ok(policy.calls.indexOf('choose') > policy.calls.lastIndexOf('sketch'));
+
+  const rubricCalls = envRequests.filter((r) => r.name === 'rubric');
+  assert.equal(rubricCalls.length, 2, 'the one hard rubric was read once per finish attempt');
+  assert.ok(rubricCalls.every((r) => r.imageBase64), 'the rubric reader looked at the plate');
+  const rubricResults = trajectory.steps[trajectory.steps.length - 1]!.look.checkReport.results.filter(
+    (r) => r.kind === 'rubric'
+  );
+  const hard = rubricResults.find((r) => r.severity === 'hard')!;
+  const soft = rubricResults.find((r) => r.severity === 'soft')!;
+  assert.ok(rubricCalls.every((r) => r.text.includes(hard.rubric!)), 'the hard rubric text reached the reader');
+  assert.ok(rubricCalls.every((r) => !r.text.includes(soft.rubric!)), 'the soft rubric did not buy an unused call');
+  assert.ok(rubricCalls.every((r) => !r.text.includes('withheld')), 'the rubric reader was not told the position id');
+
+  const gateNotes = readLog(path.join(CELL, 'studio.jsonl')).filter(
+    (line) => line.kind === 'note' && (line.data as { phase?: string }).phase === 'finish-gate'
+  );
+  assert.equal(gateNotes.length, 2);
+  assert.ok(
+    gateNotes.every((line) =>
+      ((line.data as { blockers: string[] }).blockers ?? []).some((b) => b.startsWith('[rubric-fails]'))
+    ),
+    'the failing rubric became a finish blocker on every attempt'
+  );
 
   // One PROPOSE per problem drawn, and every one of them before any sketching. The count is the
   // check that matters: a PROPOSE per *sketch* would be the same call made three times over and
@@ -211,7 +237,7 @@ test('the log chain is whole and every policy call is in it with its observation
 });
 
 test('gate 1: the trajectory replays exactly, with no model and no divergence', async () => {
-  installStubEnvModel();
+  installStubEnvModel({ rubricVerdict: 'fails' });
   const result = await replay(CELL, path.join(OUT, 'replayed'));
   assert.deepEqual(result.envDrift, [], 'a run made moments ago is in the environment that made it');
   assert.deepEqual(result.chainProblems, []);
@@ -284,7 +310,7 @@ test('gate 6: the environment never saw the position, the brief, the plan or the
     String(trajectory.scores.affectTrace[0]?.arousal),
   ];
   for (const request of envRequests) {
-    if (request.name !== 'describe' && request.name !== 'audience') continue;
+    if (!['describe', 'audience', 'rubric'].includes(request.name)) continue;
     const seen = `${request.system}\n${request.text}`.toLowerCase();
     for (const secret of forbidden) {
       assert.ok(!seen.includes(secret.toLowerCase()), `${request.name} was shown "${secret}"`);

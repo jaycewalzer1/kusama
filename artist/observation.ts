@@ -24,7 +24,8 @@
 // other — which is the only way an ablation over them is worth running.
 //
 // Three rules are enforced by tests rather than by care:
-//   - `describeObservation` and `audienceObservation` are the environment's, not the artist's. They
+//   - `describeObservation`, `audienceObservation`, and `rubricObservation` are the environment's,
+//     not the artist's. They
 //     may not contain the position, the brief, the field beyond the one watching-paragraph, the
 //     intention, or the affect.
 //   - The assembly order above is the order on the page. See tests/artist-layers.test.ts.
@@ -579,6 +580,11 @@ export function makeObservation(c: MakeContext): string {
         'handed the reasons and put back to work. You get two asks. Do not spend the first one on a',
         'piece you already know is not right.',
         '',
+        'The questions marked `rubric (hard)` in the checker table are part of that check. They stay',
+        'undecided while you work because the tree cannot answer them. When you ask to stop, each hard',
+        'rubric is put to a frozen reader that sees the sheet and the question, but not your position,',
+        'brief, plan, or intended answer. Only a visible failure blocks; `cannot-tell` does not.',
+        '',
         'Every edit must be legal in the medium described at the top. An illegal edit is refused and',
         'costs you the step. If you need a node id, take it from the program above.',
         '',
@@ -710,6 +716,32 @@ export const TRANSCRIBE_SYSTEM = [
 
 export function transcribeObservation(): string {
   return 'Transcribe the text in the attached image.';
+}
+
+/**
+ * A position rubric, asked while the artist can still act on the answer.
+ *
+ * The reader gets one question and one picture. It never gets the constraint id, the position, the
+ * rubric's `why`, the brief, or the intention. `cannot-tell` is load-bearing: forcing a binary answer
+ * would turn every genuinely undecidable surface into a coin flip at the finish gate.
+ */
+export const RUBRIC_SYSTEM = [
+  'You are shown one image and one question about it. You do not know what the image is for, who',
+  'made it, or what answer anybody wants.',
+  '',
+  'Answer from the image alone. Return `holds` if what the question asks for is visibly there,',
+  '`fails` if the image visibly shows the opposite, and `cannot-tell` if the image does not settle',
+  'the question either way.',
+  '',
+  'Your evidence must name something visible: a mark, edge, region, or relation between them. Do not',
+  'infer intention or purpose. If you cannot name visible evidence, answer `cannot-tell`.',
+  '',
+  'Do not answer `holds` because the question was asked confidently, or `fails` because you were',
+  'asked to look for a fault. `cannot-tell` is a complete and acceptable answer.',
+].join('\n');
+
+export function rubricObservation(text: string): string {
+  return ['Look at the attached image and answer this question about it.', '', text].join('\n');
 }
 
 export const AUDIENCE_SYSTEM = [

@@ -315,6 +315,16 @@ function scoresOf(
   };
 }
 
+/**
+ * Only hard rubrics can refuse a finish. Severity lives on `results`; `pendingRubrics` deliberately
+ * carries only ids and text, so reading severity from that flattened list would be inventing it.
+ */
+function hardRubrics(report: CheckReport): { id: string; text: string }[] {
+  return report.results
+    .filter((r) => r.kind === 'rubric' && r.severity === 'hard' && r.rubric !== undefined)
+    .map((r) => ({ id: r.id, text: r.rubric as string }));
+}
+
 /** EXAMINE's verdicts counted. Kept beside realization's, never folded into them. */
 function tally(estimates: EdgeEstimate[]): { satisfied: number; violated: number; judgePending: number } {
   return {
@@ -589,6 +599,7 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
           // Only asked when the artist wants to stop. Null would mean "not asked", and the gate
           // never blocks on evidence it does not have.
           transcript: await env.readBack(),
+          rubrics: await env.readRubrics(hardRubrics(env.look.checkReport)),
           wouldAct: env.look.wouldAct,
           declaredUnrealizable: call.action.unrealizable ?? null,
         });
