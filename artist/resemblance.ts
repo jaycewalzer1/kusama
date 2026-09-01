@@ -71,7 +71,8 @@ export const MODEL_PATH = path.join(ROOT, '.models', 'clip-vit-base-patch32', 'v
 export const MODEL_URL =
   'https://huggingface.co/Xenova/clip-vit-base-patch32/resolve/main/onnx/vision_model.onnx';
 
-const SIDE = 224;
+/** CLIP-ViT-B/32's input side. Exported so a test can index the tensor without restating it. */
+export const SIDE = 224;
 const MEAN = [0.48145466, 0.4578275, 0.40821073];
 const STD = [0.26862954, 0.26130258, 0.27577711];
 
@@ -96,15 +97,34 @@ export function unavailableMessage(): string {
   return out.join('\n');
 }
 
-/** CLIP's own preprocessing: shortest side to 224, centre crop, rescale, normalize, NCHW. */
-function preprocess(img: Rgb): Float32Array {
-  const scale = SIDE / Math.min(img.width, img.height);
+/**
+ * CLIP's own preprocessing: shortest side to 224, centre crop, rescale, normalize, NCHW.
+ *
+ * `pad` is the other thing that could have been done, and it is here to be measured rather than
+ * chosen. The centre crop discards the two ends of any non-square image — for a 520x700 plate that
+ * is the top and bottom 13% each, and this project's own descriptors say the edge of a sheet is
+ * where the information is. Padding to square keeps all of it, and pays for that by showing the
+ * network bars of a flat colour it was never trained on.
+ *
+ * The bars are CLIP's own channel means, which normalize to exactly 0 — the least the padding can
+ * assert. That does not make them in-distribution; it makes them the quietest thing available.
+ * Which of the two is *right* is not answerable here. What is answerable is how far apart the two
+ * answers are, and `artist/aspect.ts` measures exactly that.
+ */
+export function preprocess(img: Rgb, pad = false): Float32Array {
+  const scale = pad ? SIDE / Math.max(img.width, img.height) : SIDE / Math.min(img.width, img.height);
   const sw = img.width * scale;
   const sh = img.height * scale;
   const ox = (sw - SIDE) / 2;
   const oy = (sh - SIDE) / 2;
   const out = new Float32Array(3 * SIDE * SIDE);
+  // Under `pad` the scaled image is smaller than the box in one axis, so `ox`/`oy` go negative and
+  // the sampling below reads outside it. The clamps in that loop would smear the edge row across the
+  // whole margin, which is a much louder thing than a bar of nothing, so out-of-box pixels are left
+  // at 0 — the normalized channel mean — and skipped.
+  const inBox = (v: number, o: number, s: number) => !pad || (v + o >= 0 && v + o < s);
   for (let y = 0; y < SIDE; y++) {
+    if (!inBox(y, oy, sh)) continue;
     // Bilinear, not bicubic. The difference is well under the noise floor of a 512-d embedding and
     // bicubic here would be forty lines of code nobody would check.
     const fy = Math.min(img.height - 1, Math.max(0, (y + oy) / scale));
@@ -112,6 +132,7 @@ function preprocess(img: Rgb): Float32Array {
     const y1 = Math.min(img.height - 1, y0 + 1);
     const wy = fy - y0;
     for (let x = 0; x < SIDE; x++) {
+      if (!inBox(x, ox, sw)) continue;
       const fx = Math.min(img.width - 1, Math.max(0, (x + ox) / scale));
       const x0 = Math.floor(fx);
       const x1 = Math.min(img.width - 1, x0 + 1);
@@ -146,17 +167,24 @@ async function encoder(): Promise<{ session: Session; Tensor: new (t: string, d:
   return { session, Tensor: rt.Tensor };
 }
 
-/** Unit-length 512-d embedding of one image file. Cached on the image bytes plus the model hash. */
-export async function embed(file: string): Promise<Float32Array> {
+/**
+ * Unit-length 512-d embedding of one image file. Cached on the image bytes plus the model hash.
+ *
+ * `pad` is part of the cache key, not just the computation. Two preprocessings of one file are two
+ * different vectors, and a cache that returned the crop for a padded request would make the audit
+ * in `aspect.ts` report a difference of exactly zero — the most convincing possible wrong answer.
+ */
+export async function embed(file: string, pad = false): Promise<Float32Array> {
   const key = createHash('sha256')
     .update(readFileSync(file))
     .update(MODEL_SHA256)
+    .update(pad ? 'pad' : '')
     .digest('hex');
   const cached = path.join(CACHE, `${key}.json`);
   if (existsSync(cached)) return Float32Array.from(JSON.parse(readFileSync(cached, 'utf8')) as number[]);
 
   const { session: s, Tensor } = await encoder();
-  const result = await s.run({ pixel_values: new Tensor('float32', preprocess(decode(file)), [1, 3, SIDE, SIDE]) });
+  const result = await s.run({ pixel_values: new Tensor('float32', preprocess(decode(file), pad), [1, 3, SIDE, SIDE]) });
   const raw = result['image_embeds']!.data;
   let norm = 0;
   for (const v of raw) norm += v * v;

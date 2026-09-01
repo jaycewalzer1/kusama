@@ -58,6 +58,8 @@ import { SOURCES, type Source, type Work, imagePath, readManifest, workId } from
 import { type CorpusEmbeddings, embeddingsAvailable, embeddingsUnavailableMessage, loadCorpusEmbeddings, rowAt } from '../artist/clip-index.js';
 import { DIM, embedText, textAvailable, textUnavailableMessage } from '../artist/clip-text.js';
 import { lens, lensText } from '../artist/lens.js';
+import { aspectAudit, aspectText } from '../artist/aspect.js';
+import { crossing, crossingText } from '../artist/crossing.js';
 import {
   available as resemblanceAvailable,
   embed,
@@ -1226,6 +1228,22 @@ program
     }
   });
 
+program
+  .command('aspect-audit')
+  .description('what the centre crop costs: one picture encoded both ways, against the corpus pair median')
+  .argument('[dirs...]', 'trajectory directories whose plates to include')
+  .option('--sample <n>', 'corpus works drawn evenly for the aspect gradient', '120')
+  .option('--json', 'the audit itself', false)
+  .action(async (dirs: string[], opts: { sample: string; json: boolean }) => {
+    if (!embeddingsAvailable() || !resemblanceAvailable()) {
+      process.stdout.write(`${embeddingsUnavailableMessage()}\n${resemblanceUnavailableMessage()}\n`);
+      process.exitCode = 1;
+      return;
+    }
+    const a = await aspectAudit(dirs, Number(opts.sample));
+    process.stdout.write(opts.json ? JSON.stringify(a, null, 2) + '\n' : aspectText(a));
+  });
+
 // --- analytics ------------------------------------------------------------------------------------
 
 program
@@ -1493,6 +1511,20 @@ influences
         `  ${w.cosine.toFixed(4)} (a ${w.toA.toFixed(3)} b ${w.toB.toFixed(3)})  ${w.id.padEnd(12)} ${(w.title || '').slice(0, 40)}\n`,
       );
     }
+  });
+
+influences
+  .command('crossing')
+  .description("does a text query cross the museum wall, or retrieve one museum's prose style")
+  .argument('[ids...]', 'positions; all of them by default')
+  .action(async (ids: string[]) => {
+    if (!embeddingsAvailable() || !textAvailable()) {
+      process.stdout.write(`${embeddingsAvailable() ? textUnavailableMessage() : embeddingsUnavailableMessage()}\n`);
+      process.exitCode = 1;
+      return;
+    }
+    const chosen = ids.length > 0 ? ids : influenceSubjects().filter((s) => s.kind === 'position').map((s) => s.id);
+    process.stdout.write(crossingText(await crossing(chosen)));
   });
 
 influences
