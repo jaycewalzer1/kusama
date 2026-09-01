@@ -51,21 +51,23 @@ import type { Trajectory } from './types.js';
  * Frozen. Changing either is a new judge version, not a tweak — `judgeVersion()` hashes both, so
  * judgments recorded under different values never join.
  *
- * Repointed from `claude-opus-4-6` on 2026-08-28: the Anthropic account has no credit, so the
- * choice is between an OpenAI judge and no judge. Two constraints survive the move and one does not.
- * `temperature: 0` survives, and it is the binding one — a judgment that changes when you rescore is
- * not a measurement — which rules out `gpt-5` and `o3` entirely, since both accept only their
- * default temperature of 1. What does not survive is "the judge is the strongest model available":
- * the artist runs on `gpt-5` and the judge does not. That is the conservative direction for the one
- * critic with a baseline — a weaker attributor pushes accuracy toward chance, so it can fail to find
- * signal but cannot manufacture it — and it is a real limit on the other two, which have no baseline
- * and are therefore only as good as the reader.
+ * Anthropic, because critique is artistic reasoning and that is where artistic reasoning runs here.
+ * It was repointed to `gpt-4.1-2025-04-14` on 2026-08-28 when the Anthropic account had no credit —
+ * a forced move, recorded as one — and repointed back on 2026-09-01. Judgments taken under the
+ * OpenAI id do not join these: `judgeVersion()` hashes the model, which is the whole point of the
+ * paragraph above.
+ *
+ * Two constraints bind. `temperature: 0`, because a judgment that changes when you rescore is not a
+ * measurement. And "the judge is at least as strong as the artist" — `claude-opus-4-6` against the
+ * policy's `claude-sonnet-4-6` default. That matters most for the one critic with a baseline: a
+ * weaker attributor pushes accuracy toward chance, so it can fail to find signal but cannot
+ * manufacture it, and the other two have no baseline and are only as good as the reader.
  *
  * It is deliberately a different model from the environment's describer, which a guard test checks
  * by reading both files. The judge already shares no door and no cache with the environment;
  * sharing its eyes would undo most of what that isolation buys.
  */
-export const JUDGE_MODEL = 'gpt-4.1-2025-04-14';
+export const JUDGE_MODEL = 'claude-opus-4-6';
 export const JUDGE_TEMPERATURE = 0;
 
 const CACHE_DIR = path.join(ROOT, '.cache', 'artist-judge');
@@ -179,9 +181,9 @@ interface JudgeRequest {
   schema: object;
 }
 
-interface ChatResponse {
-  choices: { message: { tool_calls?: { function: { name: string; arguments: string } }[] } }[];
-  usage?: { prompt_tokens?: number; completion_tokens?: number };
+interface MessagesResponse {
+  content: { type: string; name?: string; input?: unknown }[];
+  usage?: { input_tokens?: number; output_tokens?: number };
 }
 
 type JudgeModelFn = <T>(request: JudgeRequest) => Promise<{ value: T; cached: boolean; usd: number }>;
@@ -223,40 +225,35 @@ async function ask<T>(request: JudgeRequest): Promise<{ value: T; cached: boolea
     // A miss is the normal path the first time and is not an error.
   }
 
-  const apiKey = process.env['OPENAI_API_KEY'];
-  if (!apiKey) throw new Error('OPENAI_API_KEY is not set, so there is no judge');
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+  const apiKey = process.env['ANTHROPIC_API_KEY'];
+  if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set, so there is no judge');
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
+    headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
     body: JSON.stringify({
       model: JUDGE_MODEL,
-      max_completion_tokens: 2048,
+      max_tokens: 2048,
       temperature: JUDGE_TEMPERATURE,
+      system: request.system,
       messages: [
-        { role: 'system', content: request.system },
         {
           role: 'user',
           content: [
-            { type: 'image_url', image_url: { url: `data:image/png;base64,${request.imageBase64}` } },
+            { type: 'image', source: { type: 'base64', media_type: 'image/png', data: request.imageBase64 } },
             { type: 'text', text: request.text },
           ],
         },
       ],
-      tools: [{ type: 'function', function: { name: 'emit', description: 'Emit the answer.', parameters: request.schema } }],
-      tool_choice: { type: 'function', function: { name: 'emit' } },
+      tools: [{ name: 'emit', description: 'Emit the answer.', input_schema: request.schema }],
+      tool_choice: { type: 'tool', name: 'emit' },
     }),
   });
   if (!res.ok) throw new Error(`the judge answered ${res.status}: ${await res.text()}`);
-  const response = (await res.json()) as ChatResponse;
+  const response = (await res.json()) as MessagesResponse;
 
-  const call = response.choices[0]?.message.tool_calls?.find((c) => c.function.name === 'emit');
+  const call = response.content.find((c) => c.type === 'tool_use' && c.name === 'emit');
   if (!call) throw new Error(`judge call "${request.name}" answered without calling the emit tool`);
-  let value: unknown;
-  try {
-    value = JSON.parse(call.function.arguments);
-  } catch (e) {
-    throw new Error(`judge call "${request.name}" emitted arguments that are not JSON: ${(e as Error).message}`);
-  }
+  const value = call.input;
   const errors = schemaErrors(value, request.schema);
   // No retry, for the same reason the environment does not retry: if a frozen thing cannot answer
   // its own fixed question in its own fixed shape, that is a fact about it and not a hiccup.
@@ -268,7 +265,7 @@ async function ask<T>(request: JudgeRequest): Promise<{ value: T; cached: boolea
   return {
     value: value as T,
     cached: false,
-    usd: usd(JUDGE_MODEL, response.usage?.prompt_tokens ?? 0, response.usage?.completion_tokens ?? 0),
+    usd: usd(JUDGE_MODEL, response.usage?.input_tokens ?? 0, response.usage?.output_tokens ?? 0),
   };
 }
 

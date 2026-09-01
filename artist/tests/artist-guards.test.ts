@@ -92,7 +92,7 @@ test('the judge shares no door with the artist or its environment', () => {
   assert.ok(!/policy\.call</.test(source), 'the judge reaches the policy');
   assert.ok(!/from '\.\/policy\/interface\.js'/.test(source), 'the judge imports the policy interface');
   assert.ok(!/\benvModel[<(]/.test(source), 'the judge reaches the environment model');
-  assert.match(source, /export const JUDGE_MODEL = 'gpt-4.1-2025-04-14'/);
+  assert.match(source, /export const JUDGE_MODEL = 'claude-opus-4-6'/);
   assert.match(source, /export const JUDGE_TEMPERATURE = 0/);
   // And it does not see with the environment's eyes. Sharing a model id would leave the judge's
   // isolation nominal: same weights, same blind spots, reading the same picture.

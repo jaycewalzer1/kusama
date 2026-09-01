@@ -502,6 +502,12 @@ npm test
 The layer above calls a model, so it needs `ANTHROPIC_API_KEY` and it costs money: a trajectory is
 roughly 3-6 steps, 26-32 policy calls, a couple of dollars and twenty to thirty minutes.
 
+Artistic reasoning is Anthropic: the policy (`artist/policy/anthropic.ts`, `claude-sonnet-4-6`) and
+the judge (`artist/judge.ts`, `claude-opus-4-6`) both read `ANTHROPIC_API_KEY`. `OPENAI_API_KEY` is
+for the two things that are not reasoning about art — the environment's blind describer
+(`artist/env-model.ts`, frozen on `gpt-4o-2024-11-20`) and the optional final diffusion pass
+(`artist/pass.ts`, `gpt-image-1`).
+
 ```bash
 # One trajectory: a position, a brief, the kind of object, and a directory to work in.
 npm run artist -- run interference nine-returned panel -o out/run-1
