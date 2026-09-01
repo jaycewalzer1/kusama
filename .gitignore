@@ -41,6 +41,10 @@ corpus/pool.jsonl
 # OS
 .DS_Store
 
+# Worktrees live inside the repo so that one agent per worktree is easy to arrange, but a worktree is
+# a second checkout of this same history — committing one would put the tree inside itself.
+.claude/worktrees/
+
 # The atlas and its viewer. Both are recomputed from `corpus/manifest.jsonl` in about three seconds
 # by `corpus atlas`, and together they are 6.5MB of derived numbers. The manifest is the evidence;
 # these are a reading of it.
