@@ -67,6 +67,7 @@ import { loadElements } from '../aesthetic/elements/pack.js';
 import { loadPosition } from '../artist/field.js';
 import { warrantSummary, warrantText, warrantsIn } from '../artist/warrant.js';
 import { available as resemblanceAvailable, resemblance, resemblanceText, unavailableMessage } from '../artist/resemblance.js';
+import { loadSidecar, sidecarText } from '../artist/plates.js';
 import {
   CORRELATION_LIMIT,
   DEFAULT_KS,
@@ -535,6 +536,16 @@ program
     // the terminal.
     if (opts.out) writeFileSync(opts.out, `${JSON.stringify(r, null, 2)}\n`);
     console.log(resemblanceText(r));
+
+    // The sidecar, when `corpus plates` has written one. Printed beside rather than merged in,
+    // because the two disagree by construction: this command searches a 1,500-work stride sample and
+    // the sidecar searches all 19,791, so the sidecar's percentiles are systematically higher.
+    // Showing both is the point — a nearest-neighbour percentile is partly a fact about how many
+    // works you looked at.
+    for (const dir of dirs) {
+      const sidecar = loadSidecar(dir);
+      if (sidecar) console.log(sidecarText(sidecar));
+    }
   });
 
 program

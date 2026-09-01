@@ -57,7 +57,12 @@ import { atlasPage } from './atlas-page.js';
 import { SOURCES, type Source, type Work, imagePath, readManifest, workId } from '../artist/manifest.js';
 import { embeddingsAvailable, embeddingsUnavailableMessage } from '../artist/clip-index.js';
 import { textAvailable, textUnavailableMessage } from '../artist/clip-text.js';
-import { available, embed, unavailableMessage } from '../artist/resemblance.js';
+import {
+  available as resemblanceAvailable,
+  embed,
+  unavailableMessage as resemblanceUnavailableMessage,
+} from '../artist/resemblance.js';
+import { platesIn, readTrajectory, sidecarText, writeSidecar } from '../artist/plates.js';
 import { searchByText, searchByVector, searchText } from '../artist/search.js';
 import {
   DEFAULT_SEED,
@@ -846,8 +851,8 @@ program
 
       let result;
       if (opts.image) {
-        if (!available()) {
-          process.stdout.write(unavailableMessage() + '\n');
+        if (!resemblanceAvailable()) {
+          process.stdout.write(resemblanceUnavailableMessage() + '\n');
           process.exitCode = 1;
           return;
         }
@@ -977,6 +982,34 @@ program
       return;
     }
     process.stdout.write(auditText(auditFrom(points, Number(opts.permutations), Number(opts.seed))));
+  });
+
+// --- plates ---------------------------------------------------------------------------------------
+
+program
+  .command('plates')
+  .description("a trajectory's own plates placed in the corpus's space, written beside its scores")
+  .argument('<dirs...>', 'trajectory directories')
+  .option('--dry-run', 'print without writing the sidecar', false)
+  .action(async (dirs: string[], opts: { dryRun: boolean }) => {
+    if (!embeddingsAvailable() || !resemblanceAvailable()) {
+      process.stdout.write(`${embeddingsUnavailableMessage()}\n${resemblanceUnavailableMessage()}\n`);
+      process.exitCode = 1;
+      return;
+    }
+    for (const dir of dirs) {
+      if (platesIn(dir).length === 0) {
+        process.stdout.write(`${dir}: no final.png and no sketches/*.png — nothing to place\n`);
+        continue;
+      }
+      const { sidecar, vectors } = await readTrajectory(dir);
+      process.stdout.write(`\n${sidecarText(sidecar)}`);
+      if (!opts.dryRun) {
+        for (const f of writeSidecar(dir, sidecar, vectors)) {
+          process.stdout.write(`  wrote ${path.relative(ROOT, path.resolve(f))}\n`);
+        }
+      }
+    }
   });
 
 // --- influences -----------------------------------------------------------------------------------
