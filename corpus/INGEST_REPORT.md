@@ -72,13 +72,32 @@ returns 200 on the same id in the same second, which is what ruled the CDN out. 
 `full/!843,843` — fit inside, never enlarge — **only after 843 has been refused** recovered all 203.
 Detail in `BLOCKERS.md`.
 
-**8. The Met IP-blocks its own object API by volume — routed around, not defeated.** After ~200 requests to
-`collectionapi.metmuseum.org/…/objects/<id>` it begins serving an Akamai bot-manager challenge with a
-**403**, and it does so for our user agent, a full browser user agent, and no user-agent header at
-all — so it is IP-level, not headers. Probes spaced five minutes apart keep returning 200
-indefinitely, which is why this looks like it has lifted and then does not. The documented limit (80
-req/s, no key) is not the limit being enforced. The CSV import is untouched; it is only the per-work
-image-URL resolve that is blocked, which is the one Met step that needs the API at all.
+**8. The Met throttles its own object API on sustained volume — routed around, not defeated.** After
+~200 requests to `collectionapi.metmuseum.org/…/objects/<id>` it begins serving a bot-manager
+challenge with a **403**, and it does so for our user agent, a full browser user agent, and no
+user-agent header at all — so it is IP-level, not headers. The CDN is **Imperva** (`X-CDN: Imperva`,
+`X-Iinfo:` on every response), not Akamai as this report said for a day.
+
+It is a **cooldown, not a ban**: `failures.jsonl` holds 637 consecutive 403s in one 5m36s window,
+and a single request 6m36s after the last one returned **200**, as did probes every 5 minutes for
+the next half hour. That is exactly why it reads as having lifted when it has not — a probe is a
+different thing from a run.
+
+**The rate was never the problem, so slowing down was never the fix.** The documented limit is 80
+req/s with no key; the run that tripped this was at **~2.5 req/s, 32x under it**, and was still cut
+off after roughly 700 requests. Enforcement is on sustained volume and bot signature, not
+instantaneous rate.
+
+**Nor is the URL derivable, which is why a second source was needed at all.** Of the 64 known-good
+URLs, **15 have no relationship to the accession number** — object 10008, accession `1978.284`, is
+`213693.jpg`; these are photography negative numbers. The other 49 embed the accession under opaque
+suffixes (`_F` eleven times, `_TQR`, `_S`), inconsistent case, and a two-letter department
+directory. Tested on object 45734, whose true path is `as/web-large/DP251139.jpg`: the three obvious
+constructions (`36.100.45.jpg`, `36.100.45_F.jpg`, `45734.jpg`) all 404.
+
+The CSV import is untouched; it is only the per-work image-URL resolve that is blocked, which is the
+one Met step that needs the API at all. `www.metmuseum.org` — the website, a different protection
+domain from the API — is separately 429ing everything and should not be touched.
 
 **The Met publishes the same field itself**, as the `metmuseum/openaccess` parquet dump — a file
 download, not an API, so there is nothing to rate-limit. Scanning 259,874 rows resolved **9,956 of the

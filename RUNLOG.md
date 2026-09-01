@@ -127,9 +127,13 @@ One line per milestone. Written as it happens.
   enlarge) **only after 843 has been refused** recovered **203 of 203**. The general form is worth
   keeping: *a status code is not a diagnosis; ask the same host for something slightly different.*
 - Pixels now: **aic 6,817/6,817, cma 3,183/3,183, met 64/10,000.** The Met's object API serves an
-  Akamai challenge after roughly two hundred requests, for our user agent, a browser user agent and
-  no user agent alike — so it is the address, not the headers. Probes five minutes apart return 200
-  forever, which is exactly why this looks repeatedly like it has lifted.
+  **Imperva** challenge (not Akamai, as first written) after roughly two hundred requests, for our
+  user agent, a browser user agent and no user agent alike — so it is the address, not the headers.
+  Probes five minutes apart return 200 forever, which is exactly why this looks repeatedly like it
+  has lifted. Later measured precisely: 637 consecutive 403s in one 5m36s window, then a **200 six
+  minutes and thirty-six seconds after the last request**. A cooldown, not a ban — and the run that
+  tripped it was at ~2.5 req/s against a documented 80 req/s, **32x under the published limit**, so
+  the throttle is on sustained volume and slowing down would never have fixed it.
 - Every fetched row now carries `image.width`/`height` **measured from the JPEG's own SOF marker**.
   That is a measurement of the bytes we hashed, not a claim about the work, which is the only reason
   it is allowed into a file whose rule is that facts are copied and never invented. The marker is

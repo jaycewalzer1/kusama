@@ -171,9 +171,10 @@ program
   .description("fill in the Met's image URLs from its own published dump instead of its blocked API")
   .option('--write', 'actually change the manifest; without this it only reports')
   .action((file: string, opts: { write?: boolean }) => {
-    // The Met's object API is the only route to `primaryImageSmall`, and it IP-blocks by volume: an
-    // Akamai challenge after roughly two hundred requests, for our user agent, a browser's, and none
-    // at all alike. Ten thousand works cannot be resolved through it.
+    // The Met's object API is the only route to `primaryImageSmall`, and it throttles on sustained
+    // volume: an Imperva challenge after roughly two hundred requests, for our user agent, a
+    // browser's, and none at all alike. Ten thousand works cannot be resolved through it, and going
+    // slower is not the answer — the run that tripped it was 32x under the documented 80 req/s.
     //
     // The Met also publishes the same fields itself, as a parquet dump, which is a file download and
     // therefore not rate-anything. Taking the URLs from there is not a workaround of a limit — it is
