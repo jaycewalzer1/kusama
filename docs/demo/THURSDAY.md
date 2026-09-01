@@ -11,7 +11,9 @@ Read §0 first. It is the part that will bite.
 
 The corpus is 20,000 works from three museums. What is **tracked in git** is the evidence:
 `corpus/manifest.jsonl` (20,000 rows, one per work, each with a sha256 and a refetchable
-`image_url`), `corpus/readings/`, and `aesthetic/influences/*.resolved.json`.
+`image_url`), `corpus/readings/`, and `aesthetic/influences/*.resolved.json`. Also tracked, and the
+whole of the fallback: `docs/demo/rendered/` — the eight notebooks as HTML (4.6 MB) and two atlas
+overlay pages (1.8 MB each).
 
 What is **not** tracked is everything derived from it, because it is large and reproducible:
 
@@ -23,6 +25,7 @@ What is **not** tracked is everything derived from it, because it is large and r
 | `corpus/analytics/` | 70 MB | `npm run corpus -- export-analytics` | 132 s |
 | `.browsers/` (hermetic Chromium) | 478 MB | `PLAYWRIGHT_BROWSERS_PATH=$PWD/.browsers npx playwright install chromium` | one download |
 | `corpus/atlas-clip.html` | 3 MB | `npm run corpus -- atlas --clip --umap` | 53 s |
+| `corpus/atlas.html` (metadata map) | 3 MB | `npm run corpus -- atlas` | 3 s |
 | `docs/demo/influences/*.html` | 97 MB | `npm run corpus -- influences show <id> --sheet` | ~1.4 s each |
 | `out/condition-withheld`, `out/openai-withheld`, `out/first-withheld` | — | a model run | **not reproducible — no credit** |
 
@@ -157,23 +160,36 @@ Two more nulls printed by this command:
 
 ---
 
-## 5. The map — already built, 53 s if it is not
+## 5. The map, and the run laid over it — already built, 53 s if it is not
 
 ```bash
-open corpus/atlas-clip.html          # already on this machine
-# node dist/studio/corpus.js atlas --clip --umap    # 53s to rebuild
+open docs/demo/rendered/atlas-condition-withheld__inf-withheld.html   # tracked, 1.8 MB
+# open corpus/atlas-clip.html                                        # the bare map
+# node dist/studio/corpus.js atlas --clip --umap --overlay out/condition-withheld --influences withheld   # 53s
 ```
 
-19,791 works laid out by appearance. The footer carries the number that makes it a map rather than a
-picture: **20-neighbourhoods preserved 0.3232 against 0.0133 by chance — 24.2x.**
+19,791 works laid out by appearance, with `withheld`'s 48 influence works picked out in orange and
+that run's 17 plates placed on top. The header carries the number that makes it a map rather than a
+picture: **20-neighbourhoods preserved 0.3348 against 0.0133 by chance — 25.1x.**
 
-Two facts worth having ready:
+Three facts worth having ready:
 
-- Neighbours in the full space share a museum **55.4% of the time against 39.0% chance**, share a
-  *kind* 3.6% against 0.3% — **11.6x**.
-- Metadata neighbours are **93.6%** same-museum. Appearance neighbours are 55.4%. The picture crosses
-  the museum wall that the catalogue could not, and much of why the catalogue cannot is that
-  `Ceramic`, `ceramics` and `earthenware` are three different labels here.
+- Neighbours in the full space share a museum **55.9% of the time against 38.9% chance**, share a
+  *kind* 3.8% against 0.3% — **14.5x**.
+- Metadata neighbours are **93.6%** same-museum. Appearance neighbours are 66.3% over the whole
+  corpus (notebook 02) — the picture crosses the museum wall the catalogue could not, and much of why
+  the catalogue cannot is that `Ceramic`, `ceramics` and `earthenware` are three different labels
+  here. *The 55.9% above is the same quantity over the atlas's 1,500-work sample; do not put the two
+  in one sentence.*
+- **The map was not refitted to add the plates.** Each plate sits at the cosine-weighted average of
+  its 20 nearest corpus works' existing coordinates. Refitting would move the corpus to accommodate
+  the plates, and a cluster a plate *created* would look exactly like one it landed in.
+
+**The honest caveat, which is in the page footer and should be said out loud:** of the 20 corpus
+works a plate was placed *from*, only **1.5%** are among the 20 corpus points nearest it on screen.
+UMAP keeps adjacency and not distance, so twenty mutually-near works can be scattered across the page
+and their centroid lands in the gap. The plates are in the right *region* and are **not** necessarily
+beside the works they resemble. For the actual neighbours, read `corpus plates` (§4).
 
 ---
 
@@ -231,3 +247,7 @@ npm run notebooks
 - Do not say the artist uses the corpus. It does not yet.
 - Do not compare a text–image cosine to an image–image cosine. Medians 0.2887 and 0.6428 — they are
   different rulers, and the sentence that mixes them sounds confident and is wrong.
+- Do not read the works *around* a plate on the atlas overlay as the works it resembles. Placement
+  recall is 1.5%. The region is meaningful; the immediate neighbours on screen are not.
+- Do not say the sketches on the overlay are a path through the space. Nothing joins them, on
+  purpose: no run has ever persisted a plate per MAKE step, so there is no sequence to draw.

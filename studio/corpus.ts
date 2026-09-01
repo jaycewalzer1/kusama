@@ -55,14 +55,24 @@ import { type AicRecord, metadataFrom as aicFrom, searchUrl, walkPublicDomain } 
 import { type Vectors, atlas } from '../artist/atlas.js';
 import { atlasPage } from './atlas-page.js';
 import { SOURCES, type Source, type Work, imagePath, readManifest, workId } from '../artist/manifest.js';
-import { embeddingsAvailable, embeddingsUnavailableMessage } from '../artist/clip-index.js';
+import { type CorpusEmbeddings, embeddingsAvailable, embeddingsUnavailableMessage, loadCorpusEmbeddings, rowAt } from '../artist/clip-index.js';
 import { DIM, embedText, textAvailable, textUnavailableMessage } from '../artist/clip-text.js';
 import {
   available as resemblanceAvailable,
   embed,
   unavailableMessage as resemblanceUnavailableMessage,
 } from '../artist/resemblance.js';
-import { platesIn, readTrajectory, sidecarText, writeSidecar } from '../artist/plates.js';
+import { loadSidecar, platesIn, readTrajectory, sidecarText, writeSidecar } from '../artist/plates.js';
+import {
+  type Fidelity,
+  type Landmark,
+  type Overlay,
+  PLACE_K,
+  overlayFidelity,
+  placeByNeighbours,
+  placementRecall,
+  rowOfSha,
+} from '../artist/overlay.js';
 import { KNN_K, exportAnalytics } from '../artist/analytics.js';
 import { searchByText, searchByVector, searchText } from '../artist/search.js';
 import {
@@ -698,46 +708,44 @@ program
     }
   });
 
-const CLIP_MATRIX = path.join(CORPUS_DIR, 'clip.f32');
-const CLIP_INDEX = path.join(CORPUS_DIR, 'clip-index.json');
 const CLIP_DIM = 512;
 
 /**
- * The image embeddings as a space the atlas can lay out, one row per work that has one.
+ * The image embeddings as a space the atlas can lay out, one row per DISTINCT image.
  *
- * The matrix is one row per *file*, in sorted sha256 order, because a hundred manifest rows share
- * bytes with another row — two catalogued objects photographed together. So the join is by sha256,
- * and works whose pixels have not arrived are dropped rather than given a zero row that would sit
- * at the origin and pull the first axis through itself.
+ * This used to do its own join — read the matrix, map sha256 to row, keep every manifest work that
+ * had one — and that join did not dedupe. 98 manifest rows share bytes with another row (a knife
+ * and a fork, photographed once and catalogued twice), so the map carried **19,889 points over
+ * 19,791 distinct images**, with every duplicate pair at distance exactly zero. Rule 7 says the
+ * dedupe belongs in the loader; `loadCorpusEmbeddings` is that loader, and this now uses it rather
+ * than racing it with a second implementation of the same join.
  *
- * A zero row in the matrix is the encoder's recorded failure and is dropped for the same reason.
+ * **What that change did to the numbers, measured rather than assumed.** It was worth predicting
+ * that the duplicates inflated `preservation` (a duplicate is always a preserved neighbour) and
+ * `composition` (a duplicate is always the same museum), so both should fall. They rose: 0.3232 to
+ * 0.3348 preserved, 55.4% to 55.9% same-museum. The prediction was wrong because the change is
+ * confounded — `evenSample` strides over a list of a different length, so it measures a different
+ * 1,500 works, and UMAP was refit over 98 fewer rows. **These half-point moves are not attributable
+ * to the dedupe**, and the dedupe is here because it is correct, not because it moved a number.
+ *
+ * Works whose pixels have not arrived, and rows the encoder recorded a failure for, are dropped
+ * there rather than given a zero row that would sit at the origin and pull the first axis through
+ * itself.
  */
-function clipSpace(works: Work[]): { works: Work[]; space: Vectors } {
-  if (!existsSync(CLIP_MATRIX) || !existsSync(CLIP_INDEX)) {
-    throw new Error(`no embeddings at ${CLIP_MATRIX} — see corpus/README.md`);
-  }
-  const index: string[] = JSON.parse(readFileSync(CLIP_INDEX, 'utf8'));
-  const buf = readFileSync(CLIP_MATRIX);
-  const rowsInFile = Math.floor(buf.length / (CLIP_DIM * 4));
-  if (rowsInFile !== index.length) {
-    throw new Error(`${CLIP_MATRIX} holds ${rowsInFile} rows but the index names ${index.length}`);
-  }
-  const at = new Map(index.map((sha, i) => [sha, i]));
-
-  const kept: Work[] = [];
-  const rows: Float64Array[] = [];
-  for (const w of works) {
-    const i = w.image ? at.get(w.image.sha256) : undefined;
-    if (i === undefined) continue;
+function clipSpace(): { works: Work[]; space: Vectors; corpus: CorpusEmbeddings } {
+  const corpus = loadCorpusEmbeddings();
+  const rows = corpus.entries.map((_, i) => {
     const row = new Float64Array(CLIP_DIM);
-    for (let j = 0; j < CLIP_DIM; j++) row[j] = buf.readFloatLE((i * CLIP_DIM + j) * 4);
-    if (row.every((x) => x === 0)) continue;
-    kept.push(w);
-    rows.push(row);
-  }
+    row.set(rowAt(corpus.rows, i));
+    return row;
+  });
   // Named so a loading can still be traced to a column, while being honest that the name is an
   // ordinal and not a fact anyone recorded. That is exactly what `composition` exists to make up for.
-  return { works: kept, space: { names: Array.from({ length: CLIP_DIM }, (_, i) => `clip:${i}`), rows } };
+  return {
+    works: corpus.entries.map((e) => e.work),
+    space: { names: Array.from({ length: CLIP_DIM }, (_, i) => `clip:${i}`), rows },
+    corpus,
+  };
 }
 
 program
@@ -747,7 +755,16 @@ program
   .option('--neighbours <k>', 'neighbourhood size for that measure', '20')
   .option('--clip', 'lay out what the works look like, from corpus/clip.f32, instead of what the museums wrote')
   .option('--umap', 'project with UMAP, which keeps neighbourhoods, instead of PCA, which keeps variance')
-  .action((opts: { sample: string; neighbours: string; clip?: boolean; umap?: boolean }) => {
+  .option('--overlay <dir>', 'lay a trajectory\'s plates over the map, without refitting it. Needs --clip')
+  .option('--influences <id>', 'also mark a resolved influence set and its axis extremes')
+  .action((opts: {
+    sample: string;
+    neighbours: string;
+    clip?: boolean;
+    umap?: boolean;
+    overlay?: string;
+    influences?: string;
+  }) => {
     // The default is offline and free: it reads the manifest and nothing else, runs on all 20,000
     // works including the ones whose pixels have not arrived, because every column is a field a
     // museum already filled in. --clip is also offline, but only over the works that have pixels.
@@ -756,22 +773,42 @@ program
       process.stdout.write('no manifest — run `corpus metadata` and `corpus select` first\n');
       return;
     }
-    const { works, space } = opts.clip ? clipSpace(all) : { works: all, space: undefined };
+    // An overlay is CLIP vectors. Placing them on the metadata map would mean taking cosines
+    // between an image embedding and a one-hot row of museum fields, which is not a smaller
+    // measurement than the right one — it is a different one, and it would still draw.
+    if (opts.overlay && !opts.clip) {
+      process.stdout.write('--overlay needs --clip: the plates are image embeddings, and the metadata map is not that space\n');
+      process.exitCode = 1;
+      return;
+    }
+    const built = opts.clip ? clipSpace() : { works: all, space: undefined, corpus: null };
+    const { works, space } = built;
     const stem = opts.clip ? 'atlas-clip' : 'atlas';
     const a = atlas(works, Number(opts.sample), Number(opts.neighbours), space, opts.umap ? 'umap' : 'pca');
     writeFileSync(path.join(CORPUS_DIR, `${stem}.json`), `${JSON.stringify(a, null, 1)}\n`);
+
+    const xy = a.points.map((q) => [q.x, q.y]);
+    const over = opts.overlay || opts.influences
+      ? buildOverlay(built.corpus as CorpusEmbeddings, space as Vectors, xy, opts.overlay, opts.influences)
+      : undefined;
+
     // The link is only rendered when the other map is on disk. A button that 404s teaches a reader
     // that the buttons on this page do not work, which is a worse outcome than no button.
     const other = opts.clip ? 'atlas' : 'atlas-clip';
-    writeFileSync(
-      path.join(CORPUS_DIR, `${stem}.html`),
-      atlasPage(a, new Date().toISOString(), {
-        basis: opts.clip ? 'what they look like &mdash; CLIP over the pixels, which never saw the catalogue' : undefined,
-        alsoSee: existsSync(path.join(CORPUS_DIR, `${other}.html`))
-          ? { href: `${other}.html`, label: opts.clip ? 'the same works by metadata' : 'the same works by appearance' }
-          : undefined,
-      }),
-    );
+    const page = atlasPage(a, new Date().toISOString(), {
+      basis: opts.clip ? 'what they look like &mdash; CLIP over the pixels, which never saw the catalogue' : undefined,
+      alsoSee: existsSync(path.join(CORPUS_DIR, `${other}.html`))
+        ? { href: `${other}.html`, label: opts.clip ? 'the same works by metadata' : 'the same works by appearance' }
+        : undefined,
+      overlay: over,
+    });
+    // An overlay is about one trajectory, so it does not overwrite the corpus's own map. It goes to
+    // docs/demo/rendered/ under a name that says which trajectory it is a reading of.
+    const out = over
+      ? path.join(ROOT, 'docs', 'demo', 'rendered', `atlas-${overlaySlug(opts.overlay, opts.influences)}.html`)
+      : path.join(CORPUS_DIR, `${stem}.html`);
+    mkdirSync(path.dirname(out), { recursive: true });
+    writeFileSync(out, page);
 
     const p = a.preservation;
     process.stdout.write(
@@ -802,8 +839,183 @@ program
         ? `the layout carries ${(p.preserved / p.chance).toFixed(1)}x chance — neighbourhoods on the map are real\n`
         : `NOTHING MEASURED — ${(p.preserved / (p.chance || 1)).toFixed(1)}x chance. Do not read clusters off this plot.\n`,
     );
-    process.stdout.write(`\ncorpus/${stem}.json\ncorpus/${stem}.html  — open this one in a browser\n`);
+    if (over) {
+      process.stdout.write(`\n${over.caption}\n`);
+      const counts = new Map<string, number>();
+      for (const l of over.landmarks) counts.set(l.kind, (counts.get(l.kind) ?? 0) + 1);
+      process.stdout.write(`  ${[...counts].map(([k, n]) => `${n} ${k}`).join(', ')}\n`);
+      if (over.anchoring) {
+        process.stdout.write(
+          `  placed points sit at mean cosine ${over.anchoring.meanCosine.toFixed(4)} to the 20 corpus works ` +
+            `they were placed from (${over.anchoring.minCosine.toFixed(4)}..${over.anchoring.maxCosine.toFixed(4)}); ` +
+            `weight spread ${over.anchoring.weightSpread.toFixed(3)}x\n` +
+            `  of those 20, ${(over.anchoring.recall * 100).toFixed(1)}% are among the 20 corpus points nearest the placement ON THE PAGE\n`,
+        );
+      }
+      for (const f of over.fidelity) {
+        process.stdout.write(
+          `  k=${String(f.k).padStart(3)}  ${f.preserved.toFixed(4)} preserved vs ${f.chance.toFixed(4)} chance  ` +
+            `${(f.preserved / (f.chance || 1)).toFixed(1)}x${f.wider ? '' : '   (the k the placement used)'}\n`,
+        );
+      }
+      for (const n of over.notes) process.stdout.write(`\n  ${n}\n`);
+    }
+    process.stdout.write(`\ncorpus/${stem}.json\n${path.relative(ROOT, out)}  — open this one in a browser\n`);
   });
+
+/** A file name that says which trajectory and which position a page is a reading of. */
+function overlaySlug(dir?: string, influences?: string): string {
+  const parts = [dir ? path.basename(path.resolve(dir)) : null, influences ? `inf-${influences}` : null];
+  return parts.filter(Boolean).join('__') || 'overlay';
+}
+
+/**
+ * The things that are not corpus works, placed on the corpus's own coordinates.
+ *
+ * The influence works and the axis extremes need no projection at all — they ARE corpus works, so
+ * they are looked up and highlighted where they already are. Only the plates are new points, and
+ * only they go through `placeByNeighbours`.
+ */
+function buildOverlay(
+  corpus: CorpusEmbeddings,
+  space: Vectors,
+  xy: number[][],
+  dir?: string,
+  influencesId?: string,
+): Overlay {
+  const rows = space.rows;
+  const landmarks: Landmark[] = [];
+  const notes: string[] = [];
+  const caption: string[] = [];
+
+  if (influencesId) {
+    const r = loadResolved(influencesId);
+    if (!r) throw new Error(`no resolved influence set for "${influencesId}" — run \`corpus influences resolve ${influencesId}\``);
+    caption.push(`influences:${influencesId} (${r.works.length} works)`);
+    let missing = 0;
+    for (const w of r.works) {
+      const row = rowOfSha(corpus, w.sha256);
+      if (row < 0) {
+        missing++;
+        continue;
+      }
+      const q = xy[row] as number[];
+      landmarks.push({
+        kind: 'influence',
+        x: q[0] as number,
+        y: q[1] as number,
+        label: '',
+        detail: `${w.id} — ${w.title} [${w.classification}, ${w.museum}]  weight ${w.weight.toFixed(3)} via "${w.via}"`,
+        weight: w.weight,
+        step: null,
+      });
+    }
+    // The extremes: the far end of each principal axis walk, labelled with the axis's own label so
+    // the direction on the page can be read as the direction the influence set actually varies in.
+    for (const axis of r.axes) {
+      for (const [end, side] of [[axis.minus, '-'], [axis.plus, '+']] as const) {
+        const far = end[end.length - 1];
+        if (!far) continue;
+        const row = rowOfSha(corpus, far.sha256);
+        if (row < 0) continue;
+        const q = xy[row] as number[];
+        landmarks.push({
+          kind: 'extreme',
+          x: q[0] as number,
+          y: q[1] as number,
+          label: `axis ${axis.index} ${side}`,
+          detail: `axis ${axis.index} (${(axis.explained * 100).toFixed(1)}% of the set's variance): ${axis.label}` +
+            `\n${side} end after ${side === '+' ? axis.stepsPlus : axis.stepsMinus} steps: ${far.id} — ${far.title} [${far.classification}, ${far.museum}]`,
+          weight: 1,
+          step: null,
+        });
+      }
+    }
+    if (missing > 0) {
+      notes.push(`${missing} of ${r.works.length} influence works are not on this map — they have no embedding row. They are absent, not at the origin.`);
+    }
+  }
+
+  let fidelity: Fidelity[] = [];
+  let anchoring: Overlay['anchoring'] = null;
+
+  if (dir) {
+    const sidecar = loadSidecar(dir);
+    if (!sidecar) {
+      throw new Error(`no scores.corpus.json in ${dir} — run \`corpus plates ${dir}\` first`);
+    }
+    const matrix = path.join(dir, 'plates.clip.f32');
+    if (!existsSync(matrix)) throw new Error(`no plates.clip.f32 in ${dir} — run \`corpus plates ${dir}\` first`);
+    const buf = readFileSync(matrix);
+    const vectors = sidecar.plates.map((_, i) => {
+      const v = new Float32Array(CLIP_DIM);
+      for (let j = 0; j < CLIP_DIM; j++) v[j] = buf.readFloatLE((i * CLIP_DIM + j) * 4);
+      return v;
+    });
+    caption.push(`${path.basename(path.resolve(dir))} (${sidecar.plates.length} plates)`);
+
+    const placements = vectors.map((v) => placeByNeighbours(v, rows, xy));
+    placements.forEach((pl, i) => {
+      const rec = sidecar.plates[i]!;
+      landmarks.push({
+        kind: rec.kind === 'final' ? 'final' : 'sketch',
+        x: pl.x,
+        y: pl.y,
+        label: rec.kind === 'final' ? 'final' : '',
+        detail:
+          `${rec.file}  ${rec.width}x${rec.height}` +
+          `\nplaced from 20 corpus works at mean cosine ${pl.meanCosine.toFixed(4)}` +
+          `\nnearest corpus work ${rec.nearestCorpus.id} — ${rec.nearestCorpus.title} (cos ${rec.nearestCorpus.cosine.toFixed(4)})` +
+          (rec.influencePercentile === null
+            ? ''
+            : `\nto the influence centroid: ${(rec.influencePercentile * 100).toFixed(1)}th percentile of the corpus`),
+        weight: 1,
+        step: rec.step,
+      });
+    });
+
+    const cosines = placements.map((p) => p.meanCosine);
+    anchoring = {
+      meanCosine: cosines.reduce((s, c) => s + c, 0) / (cosines.length || 1),
+      minCosine: Math.min(...cosines),
+      maxCosine: Math.max(...cosines),
+      weightSpread: placements.reduce((s, p) => s + p.weightSpread, 0) / (placements.length || 1),
+      recall: placementRecall(placements, xy),
+    };
+    fidelity = overlayFidelity(vectors, placements, rows, xy, [PLACE_K, 100, 500]);
+    notes.push(
+      `Of the 20 corpus works each plate was placed FROM, ${(anchoring.recall * 100).toFixed(1)}% are among the 20 ` +
+        'corpus points nearest the placement on this page. That was expected to be near 100% and is not: ' +
+        'UMAP keeps adjacency and not distance, so twenty works that sit together in 512 dimensions can be ' +
+        'scattered across the page, and their centroid lands in the gap between them. The plates are ' +
+        'therefore in the right region of the space and NOT necessarily beside the works they resemble. ' +
+        'Read the plate positions as a summary, and read `corpus plates` for the actual neighbours.',
+    );
+
+    if (!sidecar.plates.some((p) => p.step !== null)) {
+      notes.push(
+        'NOTHING MEASURED: the plates are drawn as points and not as a path, because no run has ever ' +
+          'persisted a plate per MAKE step. What is here is one final plate and a set of sketches, and ' +
+          'sketches are alternatives considered at one moment rather than a canvas over time. Joining ' +
+          'them with a line would draw a trajectory this project has never recorded.',
+      );
+    }
+    notes.push(
+      'A placed point is an interpolation and cannot leave the hull of the corpus\'s own coordinates. ' +
+        'A plate that resembles nothing lands in the middle at the centroid of twenty things it is ' +
+        'equally unlike, which looks the same on the page as a plate that belongs there. The mean ' +
+        'cosine above is the number that tells the two apart.',
+    );
+  }
+
+  return {
+    caption: caption.join('  +  ') || 'nothing to overlay',
+    landmarks,
+    fidelity,
+    anchoring,
+    notes,
+  };
+}
 
 /** '2d'/'object' as the boolean `surfaces` wants, with 'unknown' kept as null rather than guessed. */
 const twoD = (w: Work): boolean | null => {
