@@ -72,6 +72,37 @@ function json(value: unknown): string {
   return JSON.stringify(value, null, 2);
 }
 
+/**
+ * The program as the artist is shown it: the tree, without `meta`.
+ *
+ * `meta.provenance` is the append-only edit history `env/edits.ts` keeps, and it stores a full copy
+ * of every inserted node twice — once as `before` and once as `after`. On `out/openai-withheld`,
+ * the one trajectory on disk that reached late steps, it is 38 entries and **31,176 of the
+ * program's 37,821 serialized characters: 82.4% of the block headed THE PROGRAM AS IT STANDS was a
+ * duplicate of the rest of the block**, growing monotonically, sitting between the plan and the
+ * checker table in every THINK+ACT and every REPLAN call. The other two runs on disk measure 73.5%
+ * and 66.2%; the share rises with the number of steps, so the worst case is the late steps, which
+ * is where the artist most needs to read the tree.
+ *
+ * Note that 82.4% is larger than the 26,432 characters `provenance` occupies on its own. It sits
+ * two levels down in the program, so every one of its lines also carries the enclosing indentation,
+ * and the prompt pays for that too.
+ *
+ * It is stripped rather than shortened because the artist has no use for any of it. The edit history
+ * it needs is WHAT YOU HAVE DONE, which is written for a reader; `meta` is written for a replayer,
+ * and `env/` still gets it whole. Only the prompt loses it.
+ *
+ * Nothing about the program changes — this is a serializer, and the tree the artist edits is the
+ * same tree it was. What changes is `OBSERVATION_HASH`, because this file's bytes moved, and that is
+ * the intended consequence: a run made before this is a run whose artist was reading 7,000 tokens of
+ * duplicated JSON, and it should not be silently compared against one made after.
+ */
+function programJson(program: unknown): string {
+  if (typeof program !== 'object' || program === null) return json(program);
+  const { meta: _meta, ...rest } = program as Record<string, unknown>;
+  return json(rest);
+}
+
 // --- L4: the protocol ----------------------------------------------------------------------------
 
 /**
@@ -510,7 +541,7 @@ export function makeObservation(c: MakeContext): string {
     section('THE SUBSTRATE — what you can actually draw with, and the budgets you have', c.capabilitySheet),
     stack(c.position, c.practice, c.brief),
     intentionSection(c.intention),
-    section('THE PROGRAM AS IT STANDS', json(c.program)),
+    section('THE PROGRAM AS IT STANDS', programJson(c.program)),
     checkSection(c.report),
     describerSection(c),
     historySection(c.steps),
@@ -593,7 +624,7 @@ export function replanObservation(c: MakeContext, trigger: TriggerName, detail: 
         .join('\n')
     ),
     intentionSection(c.intention),
-    section('THE PROGRAM AS IT STANDS', json(c.program)),
+    section('THE PROGRAM AS IT STANDS', programJson(c.program)),
     checkSection(c.report),
     describerSection(c),
     historySection(c.steps),

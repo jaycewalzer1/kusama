@@ -27,6 +27,7 @@ import {
   examineObservation,
   findObservation,
   makeObservation,
+  replanObservation,
   type MakeContext,
 } from '../observation.js';
 import { framesOf } from '../phases/act.js';
@@ -259,6 +260,65 @@ test('assembly order is L4 then L1 then L2, in every phase that assembles it', (
   // MUST MOVE. This is the case that used to pass silently: the text promises an image, the payload
   // carries none, and the step is recorded as having seen the canvas.
   assert.throws(() => framesOf(seeing, null, png), /no plate/);
+});
+
+// `meta.provenance` is the edit log `env/edits.ts` keeps, and it holds a whole copy of every
+// inserted node twice. Measured on `out/openai-withheld`, the one trajectory that reached late
+// steps: 31,176 of the program's 37,821 serialized characters, so 82.4% of the block headed THE
+// PROGRAM AS IT STANDS was a duplicate of the rest of the block, in every THINK+ACT and every
+// REPLAN call, growing every step.
+//
+// The tree itself is untouched: this is about what gets serialized into a prompt, and the assertion
+// below is that the nodes still arrive and only the replay log does not.
+test('the artist is shown the tree and not the edit log inside it', () => {
+  const c = loadCommission('many-hands', 'nine-returned');
+  const report: CheckReport = {
+    aesthetic: c.effective.id,
+    hardViolations: 0,
+    softViolations: 0,
+    treeScore: null,
+    renderScore: null,
+    blocked: 0,
+    pendingRubrics: [],
+    results: [],
+  };
+  const intention: Intention = {
+    elements: [],
+    edges: [],
+    purpose: 'p',
+    tension: { between: 'a', and: 'b', claim: 'c' },
+    riskMove: null,
+  };
+  const ctx: MakeContext = {
+    ...artistLayers(c),
+    capabilitySheet: 'sheet',
+    program: {
+      id: 'p',
+      profile: 'default-v1',
+      nodes: [{ id: 'sheet', op: 'wash' }],
+      meta: { provenance: [{ actionId: 'a1', before: { id: 'n1' }, after: { id: 'n1' } }] },
+    },
+    report,
+    description: 'd',
+    audienceRead: null,
+    intention,
+    affect: { arousal: 0.5, valence: 0 },
+    steps: [],
+    maxEdits: 1,
+    stepsLeft: 1,
+    canvasAttached: false,
+    changeAttached: false,
+    textOps: { used: 0, max: 8 },
+  };
+
+  for (const [phase, text] of [
+    ['make', makeObservation(ctx)],
+    ['replan', replanObservation(ctx, 'artist-declares', 'because')],
+  ] as const) {
+    assert.ok(text.includes('"sheet"'), `${phase} lost the tree`);
+    assert.ok(!text.includes('provenance'), `${phase} still carries the edit log`);
+    assert.ok(!text.includes('"meta"'), `${phase} still carries meta`);
+  }
 });
 
 // --- the elements have to reach the artist, not only the checker ---------------------------------
