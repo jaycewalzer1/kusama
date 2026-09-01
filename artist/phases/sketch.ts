@@ -22,6 +22,7 @@ import { distribution, rng, sampleIndices, streamSeed, tookTheMode } from '../sa
 import { bareEdit, PROPOSE_SCHEMA, SKETCH_SCHEMA } from '../schemas.js';
 import { stack } from '../observation.js';
 import { artistLayers } from '../field.js';
+import { withInfluences, type InfluenceDoc } from '../influence-doc.js';
 import type { AestheticProgram } from '../../aesthetic/types.js';
 import type { Canvas } from '../canvas.js';
 import type { Commission } from '../field.js';
@@ -204,7 +205,8 @@ export async function sketch(
   index: number,
   seed: Program,
   canvas: Canvas,
-  assigned: ProposedApproach | null = null
+  assigned: ProposedApproach | null = null,
+  influences: InfluenceDoc | null = null
 ): Promise<SketchResult> {
   const base: SketchResult = {
     problemId: problem.id,
@@ -226,14 +228,22 @@ export async function sketch(
   const result = await callPolicy<{ approach: string; edits: (EditAction & { servesElementId?: string })[] }>(policy, log, spend, {
     name: 'sketch',
     system: SYSTEM,
-    observation: observation(
-      commission,
-      problem,
-      capabilitySheet(profile, pack),
-      index,
-      start,
-      { used: treeFacts(start).texts.length, max: profile.limits.maxTextOps },
-      assigned
+    observation: withInfluences(
+      observation(
+        commission,
+        problem,
+        capabilitySheet(profile, pack),
+        index,
+        start,
+        { used: treeFacts(start).texts.length, max: profile.limits.maxTextOps },
+        assigned
+      ),
+      influences,
+      // Catalogue entries only. The pictures were attached once, at FIND, and re-attaching them to
+      // all nine sketch calls costs about 4,500 image tokens each for a set the artist has already
+      // seen — roughly 40,000 input tokens to say the same thing nine times. Looking at a shelf is
+      // something you do once; what carries forward is that you know what is on it.
+      0
     ),
     schema: SKETCH_SCHEMA,
     maxTokens: 8000,

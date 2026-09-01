@@ -14,6 +14,7 @@ import { findObservation } from '../observation.js';
 import { distribution, rng, sampleIndices, streamSeed, tookTheMode } from '../sampling.js';
 import { FIND_SCHEMA } from '../schemas.js';
 import { artistLayers } from '../field.js';
+import { influenceImages, withInfluences, type InfluenceDoc } from '../influence-doc.js';
 import type { Commission } from '../field.js';
 import type { Policy } from '../policy/interface.js';
 import type { StudioLog } from '../studio-log.js';
@@ -47,14 +48,19 @@ export async function find(
   log: StudioLog,
   spend: Spend,
   commission: Commission,
-  runSeed: number
+  runSeed: number,
+  influences: InfluenceDoc | null = null
 ): Promise<{ questions: Question[]; problems: Problem[]; proposed: Problem[] }> {
-  log.append('phase', { phase: 'find' });
+  log.append('phase', { phase: 'find', influences: influences?.id ?? null });
   const result = await callPolicy<{ questions: Question[]; problems: Problem[] }>(policy, log, spend, {
     name: 'find',
     system: SYSTEM,
-    observation: findObservation(artistLayers(commission), commission.field),
+    observation: withInfluences(findObservation(artistLayers(commission), commission.field), influences),
     schema: FIND_SCHEMA,
+    // FIND is where the pictures go if they go anywhere. It is the one phase whose whole job is to
+    // decide what is difficult here before anything has been drawn, so it is the phase where having
+    // looked at something could plausibly change the answer rather than decorate it.
+    ...(influences ? { images: influenceImages(influences) } : {}),
     maxTokens: 4000,
   });
   const proposed = result.action.problems;

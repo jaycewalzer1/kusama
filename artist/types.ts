@@ -647,6 +647,20 @@ export interface EnvVersion {
    * The empty set hashes to a real, stable value, so an ordinary run carries this too.
    */
   elementPackHash: string;
+  /**
+   * L5. What the artist was shown of a corpus — present ONLY on runs that were shown one.
+   *
+   * Optional and absent by default, unlike `elementPackHash` above, and the difference is
+   * deliberate. An empty element pack is a real state of an ordinary run: every run composes with
+   * some set of elements and the empty one is a set. Influences are not like that. Most runs do not
+   * have the layer at all, and giving them a hash of "nothing" would add a field to every trajectory
+   * ever collected and make each one read as a different environment from the one it ran in.
+   *
+   * `envDrift` skips a field the record does not carry, so an old run is not refused over this. The
+   * consequence to keep in mind is the other direction: **the absence of this field is not evidence
+   * the layer was off** in a log written before the field existed.
+   */
+  influencesHash?: string;
 }
 
 export interface Trajectory {

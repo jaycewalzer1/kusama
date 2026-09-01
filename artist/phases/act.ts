@@ -12,6 +12,7 @@
 import { callPolicy, type CallResult, type Spend } from '../call.js';
 import { makeObservation, replanObservation, type MakeContext } from '../observation.js';
 import { REPLAN_SCHEMA, actSchema } from '../schemas.js';
+import { withInfluences, type InfluenceDoc } from '../influence-doc.js';
 import type { Policy, PolicyImage } from '../policy/interface.js';
 import type { StudioLog } from '../studio-log.js';
 import type { Action, Intention, TriggerName } from '../types.js';
@@ -63,18 +64,35 @@ export function framesOf(context: MakeContext, plate: Buffer | null, change: Buf
   return images;
 }
 
+/**
+ * The influence block during MAKE is off unless asked for, and the reason is not token cost.
+ *
+ * FIND and SKETCH happen before there is a picture; MAKE happens with one in front of the artist. A
+ * shelf of other people's work held up beside a canvas mid-piece is the condition under which
+ * "derivation" turns into "quotation", which is the thing `judge.ts` grades and would then be
+ * grading a pressure the environment applied. So the default arm shows the works once, early, and
+ * lets the piece proceed from what that did — and `--influences-in-make` is the other arm, to be
+ * compared against it rather than assumed better.
+ *
+ * The text is appended here rather than inside `makeObservation`, so `observationHash` does not move
+ * and a run without the layer sends the identical bytes.
+ */
 export async function act(
   policy: Policy,
   log: StudioLog,
   spend: Spend,
   context: MakeContext,
   plate: Buffer | null = null,
-  change: Buffer | null = null
+  change: Buffer | null = null,
+  influences: InfluenceDoc | null = null
 ): Promise<CallResult<Action>> {
   return callPolicy<Action>(policy, log, spend, {
     name: 'act',
     system: SYSTEM,
-    observation: makeObservation(context),
+    // Catalogue entries and no pictures, hence the 0. The images this call carries are the canvas
+    // and what the last step moved, and the observation says so by position — "the canvas itself is
+    // attached" stops being true of image 1 if eight museum works are prepended to the list.
+    observation: withInfluences(makeObservation(context), influences, 0),
     schema: actSchema(),
     images: framesOf(context, plate, change),
     maxTokens: 8000,
@@ -89,13 +107,14 @@ export async function replan(
   trigger: TriggerName,
   detail: string,
   plate: Buffer | null = null,
-  change: Buffer | null = null
+  change: Buffer | null = null,
+  influences: InfluenceDoc | null = null
 ): Promise<Intention> {
   log.append('phase', { phase: 'replan', trigger });
   const result = await callPolicy<{ intention: Intention; why: string }>(policy, log, spend, {
     name: 'replan',
     system: REPLAN_SYSTEM,
-    observation: replanObservation(context, trigger, detail),
+    observation: withInfluences(replanObservation(context, trigger, detail), influences, 0),
     schema: REPLAN_SCHEMA,
     images: framesOf(context, plate, change),
     maxTokens: 4000,

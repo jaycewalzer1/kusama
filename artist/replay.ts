@@ -15,6 +15,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { contentHash } from '../env/profile.js';
 import { envDrift, envVersionNow, type EnvDrift } from './env-version.js';
+import { loadInfluenceDoc, type InfluenceDoc } from './influence-doc.js';
 import { readLog, verifyChain, type LogLine } from './studio-log.js';
 import { runTrajectory } from './run.js';
 import { PolicyError, type Policy, type PolicyRequest, type PolicyResponse } from './policy/interface.js';
@@ -113,6 +114,17 @@ interface StartLine {
   /** Absent in logs written before the ablation existed; those runs were all blind. */
   showCanvas?: boolean;
   useAudience: boolean;
+  /**
+   * The influence set, by id, and how far into the loop it reached. Both absent on a run that was
+   * shown no corpus, which is most of them.
+   *
+   * Replayed from the id rather than from `envVersion.influencesHash`, because the hash is of the
+   * block's text and a block cannot be reconstructed from it. That means a resolved set edited after
+   * the run replays as drift rather than as agreement — which is correct, and is what the hash is
+   * for: `envVersionNow` recomputes it from the set on disk today and `envDrift` compares.
+   */
+  influencesId?: string;
+  influencesInMake?: boolean;
 }
 
 /** The start line also carries the environment hashes, and has since before it carried all of them. */
@@ -133,7 +145,20 @@ export async function replay(dir: string, into: string): Promise<ReplayResult> {
   // serializer the run never saw and then calls the difference a mismatch — which is what happened
   // to the two studio runs on disk, twenty-seven times each, and read as state leaking through the
   // driver rather than as the environment having moved underneath them.
-  const drifted = envDrift(start, envVersionNow(start.positionId, start.briefId, start.seed, start.elementIds ?? []));
+  // Resolved from the id as it stands today. A set that has been edited, or deleted, since the run
+  // does not throw here: it produces a different hash or none, and `envDrift` then refuses the
+  // replay with a line naming `influencesHash`. A crash would say the same thing less usefully, and
+  // a silent skip would say the opposite.
+  let influences: InfluenceDoc | null = null;
+  try {
+    influences = start.influencesId ? loadInfluenceDoc(start.influencesId) : null;
+  } catch {
+    influences = null;
+  }
+  const drifted = envDrift(
+    start,
+    envVersionNow(start.positionId, start.briefId, start.seed, start.elementIds ?? [], influences?.hash)
+  );
   if (drifted.length > 0) {
     return {
       id: original.id,
@@ -162,6 +187,10 @@ export async function replay(dir: string, into: string): Promise<ReplayResult> {
     sketchesPerProblem: start.sketchesPerProblem,
     useAudience: start.useAudience,
     showCanvas: start.showCanvas ?? false,
+    // Past the drift check above, so this is the same set the run saw.
+    ...(start.influencesId
+      ? { influences: start.influencesId, influencesInMake: start.influencesInMake ?? false }
+      : {}),
   });
 
   const differences: string[] = [];

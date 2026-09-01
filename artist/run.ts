@@ -46,6 +46,7 @@ import {
   totalDrift,
 } from './intention.js';
 import { envVersionNow } from './env-version.js';
+import { loadInfluenceDoc } from './influence-doc.js';
 import { type MakeContext } from './observation.js';
 import { seedProgram } from './seed.js';
 import { readLog, StudioLog } from './studio-log.js';
@@ -122,6 +123,24 @@ export interface RunOptions {
    * be run.
    */
   maxFinishAttempts?: number;
+  /**
+   * A resolved influence set — an id under `aesthetic/influences/`, or a path to a
+   * `*.resolved.json` — shown to the artist as a shelf of real works it has looked at.
+   *
+   * Absent is the default and is byte-identical to the run before this option existed: no block is
+   * appended to any observation, no image is attached, and `envVersion` carries no `influencesHash`.
+   * A test pins that.
+   *
+   * Present adds the catalogue block and up to eight thumbnails to FIND and to each SKETCH. It does
+   * NOT reach DESCRIBE or AUDIENCE, which stay blind to everything but the plate, and it does not
+   * reach MAKE unless `influencesInMake` is set.
+   */
+  influences?: string;
+  /**
+   * Carry the block into THINK+ACT and REPLAN as well. Off by default — see the note above `act`.
+   * The thumbnails are never attached during MAKE either way; only the text.
+   */
+  influencesInMake?: boolean;
 }
 
 /**
@@ -299,6 +318,12 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
   const hardStop = o.hardStop ?? 20;
 
   const elementIds = o.elementIds ?? [];
+  // Loaded before anything is written, so a typo in `--influences` fails the run at the top rather
+  // than after the first paid call. `loadInfluenceDoc` throws on a missing or empty set: an artist
+  // told it has looked at nothing is a different experiment from an artist not told anything, and
+  // the two must not be reachable by the same command line.
+  const influences = o.influences ? loadInfluenceDoc(o.influences) : null;
+  const makeInfluences = o.influencesInMake ? influences : null;
   const loaded = loadCommission(o.positionId, o.briefId, elementIds);
   const commission = o.control ? stripped(loaded) : loaded;
   const fieldText = canonicalJson(loaded.field);
@@ -314,12 +339,23 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
 
   // The element set is in the id: two runs of the same cell under different lineages are different
   // runs, and a shared id would make them overwrite each other in a resumable grid.
+  // The influence set joins it for the same reason the element set did — a run that was shown 48
+  // works and one that was shown none are different runs and must not overwrite each other in a
+  // resumable grid. Appended only when there is one, and not as an empty string: a trailing `|`
+  // would move the id of every run that has never had the layer.
   const id = contentHash(
-    [o.positionId, o.briefId, o.seed, o.control ?? false, loaded.elementPackHash].join('|')
+    [
+      o.positionId,
+      o.briefId,
+      o.seed,
+      o.control ?? false,
+      loaded.elementPackHash,
+      ...(influences ? [influences.hash] : []),
+    ].join('|')
   ).slice(0, 16);
   // The same ten hashes on the start line and on the finished trajectory, from one place. They
   // used to be two object literals that happened to agree.
-  const envVersion = envVersionNow(o.positionId, o.briefId, o.seed, elementIds);
+  const envVersion = envVersionNow(o.positionId, o.briefId, o.seed, elementIds, influences?.hash);
   log.append('trajectory-start', {
     id,
     positionId: loaded.positionAsWritten.id,
@@ -343,6 +379,16 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
     // The ablation arm. It changes the observation text as well as the images, so a replay that
     // did not carry it would rebuild every MAKE observation wrong and report the arm as a divergence.
     showCanvas: o.showCanvas ?? true,
+    // Which set, and how far into the loop it reached. `influencesHash` inside `envVersion` says
+    // only *that* two runs saw the same shelf; neither it nor the id is a thing a reader can look
+    // up, and neither says whether MAKE was carrying it.
+    ...(influences
+      ? {
+          influencesId: influences.id,
+          influenceWorks: influences.resolved.works.length,
+          influencesInMake: o.influencesInMake ?? false,
+        }
+      : {}),
     ...envVersion,
     // Style words found in L2. Non-empty does not stop the run — it marks it non-comparable, which
     // is a different and more useful thing than a crash on a brief somebody is still drafting.
@@ -378,7 +424,7 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
 
   try {
     // 1. FIND -------------------------------------------------------------------------------------
-    const { questions, problems, proposed } = await find(o.policy, log, spend, commission, o.seed);
+    const { questions, problems, proposed } = await find(o.policy, log, spend, commission, o.seed, influences);
     log.append('note', {
       phase: 'find',
       // `proposed` is what the artist named; `found` is what the draw kept. Reporting only the
@@ -412,7 +458,9 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
       // sketch calls are independent draws from the same prompt and come back as one idea three times.
       const { drawn } = await propose(o.policy, log, spend, commission, problem, o.seed, perProblem);
       for (let i = 0; i < perProblem; i++) {
-        results.push(await sketch(o.policy, log, spend, commission, problem, i, seed, sketchCanvas, drawn[i] ?? null));
+        results.push(
+          await sketch(o.policy, log, spend, commission, problem, i, seed, sketchCanvas, drawn[i] ?? null, influences)
+        );
       }
     }
     await sketchCanvas.close();
@@ -483,7 +531,7 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
         showCanvas && env.plate !== null,
         textOps(env, profile.limits.maxTextOps)
       );
-      const call = await act(o.policy, log, spend, context, env.plate, env.change?.png ?? null);
+      const call = await act(o.policy, log, spend, context, env.plate, env.change?.png ?? null, makeInfluences);
       const result = await env.step(call.action, {
         canvas: context.canvasAttached,
         change: context.changeAttached,
@@ -584,7 +632,8 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
           fired.trigger,
           fired.detail,
           env.plate,
-          env.change?.png ?? null
+          env.change?.png ?? null,
+          makeInfluences
         );
         const after = carryNodeIds(before, replanned);
         result.step.replan = { trigger: fired.trigger, before, after };

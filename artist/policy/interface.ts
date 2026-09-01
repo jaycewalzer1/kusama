@@ -16,7 +16,14 @@
 // training against a signal the policy could learn to move.
 
 export interface PolicyImage {
-  mediaType: 'image/png';
+  /**
+   * PNG for everything this project renders, JPEG for corpus works.
+   *
+   * The museums serve JPEG and the bytes on disk are what the run should be able to claim it saw, so
+   * a corpus thumbnail is passed through as it is rather than re-encoded to satisfy this type. Both
+   * adapters hand the value to the provider verbatim.
+   */
+  mediaType: 'image/png' | 'image/jpeg';
   base64: string;
 }
 

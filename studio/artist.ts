@@ -259,6 +259,8 @@ program
   .option('--control', 'strip the position: same brief, same checker, no steering')
   .option('--blind', 'the ablation: take the canvas away during MAKE and work from the tree and the describer alone')
   .option('--elements <ids>', 'comma-separated lineage elements to compose into the position', '')
+  .option('--influences <id>', 'a resolved influence set the artist has looked at: shown in FIND and SKETCH')
+  .option('--influences-in-make', 'also carry the influence text into THINK+ACT and REPLAN (text only, no thumbnails)')
   .option('--pass <prompt>', 'after the run, put final.png through the diffusion model with this prompt')
   .option('--pass-size <size>', 'auto | 1024x1024 | 1536x1024 | 1024x1536', 'auto')
   .option('--pass-quality <q>', 'auto | low | medium | high', 'high')
@@ -277,6 +279,9 @@ program
       useAudience: opts['audience'] !== false,
       control: Boolean(opts['control']),
       showCanvas: !opts['blind'],
+      ...(opts['influences']
+        ? { influences: String(opts['influences']), influencesInMake: Boolean(opts['influencesInMake']) }
+        : {}),
     });
     console.log(summarise(t));
     // After everything the run reports on, and outside its numbers. A pass that failed must not make

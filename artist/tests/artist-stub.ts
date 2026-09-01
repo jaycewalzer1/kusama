@@ -64,12 +64,21 @@ export class StubPolicy implements Policy {
   readonly kind = 'stub';
   readonly model = 'stub';
   readonly calls: string[] = [];
+  /**
+   * Every request, whole. `calls` above is the names only, which is all the loop tests needed until
+   * something optional started changing what a phase sends. A test that wants to assert a run
+   * without a layer is byte-identical to the run before the layer existed has to be able to see the
+   * bytes, and a test that wants to assert DESCRIBE never learns what FIND was shown has to be able
+   * to see the images.
+   */
+  readonly requests: PolicyRequest[] = [];
   private acts = 0;
 
   constructor(private readonly steps = 4) {}
 
   async call<T>(request: PolicyRequest): Promise<PolicyResponse<T>> {
     this.calls.push(request.name);
+    this.requests.push(request);
     const action = this.answer(request);
     return {
       action: action as T,

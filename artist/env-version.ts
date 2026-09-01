@@ -48,7 +48,8 @@ export function envVersionNow(
   positionId: string,
   briefId: string,
   seed: number,
-  elementIds: string[] = []
+  elementIds: string[] = [],
+  influencesHash?: string
 ): EnvVersion {
   const program = seedProgram(seed);
   const { hash: profileHash } = loadProfileFor(program);
@@ -63,6 +64,13 @@ export function envVersionNow(
     briefHash: loaded.briefHash,
     fieldHash: loaded.fieldHash,
     elementPackHash: loaded.elementPackHash,
+    // Spread rather than assigned, so a run without the layer produces an object with no such key at
+    // all. `influencesHash: undefined` would be a different thing: `Object.keys` reports it, so
+    // `envDrift` would iterate a field whose current value is undefined and report every run that
+    // *does* carry one as having drifted. It would also serialize into a log line as an absent key
+    // anyway, which is exactly the kind of difference between the object and its JSON that makes a
+    // byte-identity test pass while the behaviour is wrong.
+    ...(influencesHash ? { influencesHash } : {}),
   };
 }
 
@@ -73,17 +81,44 @@ export interface EnvDrift {
 }
 
 /**
+ * What a field the current environment does not have at all reads as. Not a hash, and cannot be
+ * mistaken for one in a drift line.
+ */
+export const ABSENT = '(absent)';
+
+/**
+ * The fields of `EnvVersion` that may legitimately be missing from a current environment.
+ *
+ * Named explicitly, and this is not a stylistic choice. `envDrift` is called with the whole
+ * `trajectory-start` line as `recorded` — a `StartLine & Partial<EnvVersion>`, carrying `id`,
+ * `positionId`, `briefId`, `mode` and a dozen more — so a loop over `Object.keys(recorded)` reports
+ * every one of those as a field the current environment has lost. It did, immediately, on the first
+ * run of the suite after the union was introduced. The key set of `EnvVersion` is therefore the
+ * required fields (which `current` always carries) plus exactly this list, and nothing read off the
+ * record.
+ */
+const OPTIONAL_FIELDS = ['influencesHash'] as const satisfies readonly (keyof EnvVersion)[];
+
+/**
  * Which of them moved. A field the record does not carry is skipped rather than reported as
  * having changed: logs written before a hash existed cannot be said to disagree about it, and
  * calling that drift would refuse every old run for the wrong reason.
+ *
+ * The other direction is drift, and reads as `(absent)`. A run recorded with an optional hash —
+ * today that is `influencesHash`, meaning a run that was shown a corpus — compared against an
+ * environment that has no such hash is not two environments agreeing about nothing. It is a replay
+ * about to rebuild every observation without a block the run actually saw, and then report the
+ * difference as an observation mismatch. That is the exact fault this module exists to stop, and
+ * iterating only the current object's keys would have let it through silently for precisely the
+ * fields that are permitted to be missing.
  */
 export function envDrift(recorded: Partial<EnvVersion>, current: EnvVersion): EnvDrift[] {
   const out: EnvDrift[] = [];
-  for (const field of Object.keys(current) as (keyof EnvVersion)[]) {
+  const fields = new Set([...(Object.keys(current) as (keyof EnvVersion)[]), ...OPTIONAL_FIELDS]);
+  for (const field of fields) {
     const was = recorded[field];
-    if (typeof was === 'string' && was !== current[field]) {
-      out.push({ field, recorded: was, current: current[field] });
-    }
+    const now = current[field] ?? ABSENT;
+    if (typeof was === 'string' && was !== now) out.push({ field, recorded: was, current: now });
   }
   return out;
 }
