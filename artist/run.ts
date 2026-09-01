@@ -251,9 +251,22 @@ function scoresOf(
   const real = realization(intention, program);
   const risk = steps.find((s) => s.accepted && s.isRiskMove);
   const last = steps[steps.length - 1];
+  // Computed before the literal rather than inline, because `tree` and `render` now read it.
+  const termination = terminationOf(real.estimates, stopped, last?.action.unrealizable ?? null);
   return {
-    tree: report.treeScore,
-    render: report.renderScore,
+    // Null when the run did not earn its stop, and this is the same correction `outcome` got below
+    // for the same reason. `treeScore` and `renderScore` are means over the decidable constraints,
+    // and the decidable constraints are almost all node counts — so they saturate at 1.0 the moment
+    // the counting rules are met. One of the two real runs on disk reports `tree: 1, render: 1`
+    // beside `legitimate: false`, a self-score of 4, and six of the artist's own planned relations
+    // not holding. A headline of 1.0 over a run that ran out of steps is not a lenient measurement,
+    // it is a measurement of a different thing presented as the verdict.
+    //
+    // Nothing is lost by nulling them: they are derived from `hardViolations` and `softViolations`,
+    // which stay, and the undecided rubrics stay in `pendingRubrics`. What goes is only the
+    // summary — which is exactly the part that had no right to exist for this run.
+    tree: termination.legitimate ? report.treeScore : null,
+    render: termination.legitimate ? report.renderScore : null,
     hardViolations: report.hardViolations,
     softViolations: report.softViolations,
     realization: {
@@ -295,7 +308,7 @@ function scoresOf(
     // Against `realization`'s estimates, not EXAMINE's: EXAMINE is the artist grading its own
     // picture, and a stopping rule scored off it would let the artist decide it had finished by
     // saying so twice.
-    termination: terminationOf(real.estimates, stopped, last?.action.unrealizable ?? null),
+    termination,
     affectTrace: steps.map((s) => s.affect),
     affectArmed: affectArmed(affect0, steps.map((s) => s.affect)),
     pendingRubrics: report.pendingRubrics.map((r) => `[${r.id}] ${r.text}`),

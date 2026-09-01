@@ -1,3 +1,23 @@
+> # STALE — DO NOT BUILD FROM THIS
+>
+> Marked 2026-09-01. This document was accurate on 2026-08-28 and is kept as a record of what the
+> system was then. It describes at least three things that no longer exist:
+>
+> - **L3 and the whole `Deliverable` subsystem** — deleted at `aced259`. `aesthetic/deliverables/`,
+>   `loadDeliverable`, `deliverableFacts`, `--deliverable`, `deliverableId`. There is now one kind of
+>   commission and it is art; what the object physically is, is the artist's to decide.
+>   `loadCommission` takes 2-3 args, `stack()` is L4 -> L1 -> L2, a cell is `position:brief[:control]`.
+> - **Every catalog id in Part 5** — dead at `ace0971`. On disk today the positions are
+>   `interference` / `many-hands` / `withheld` and the conditions are `fifty-year-embargo` /
+>   `nine-returned` / `two-million-slips`. Count the disk, never this file.
+> - **L2 is a CONDITION, not a commission** (2026-08-30). No `client`, `audience`, `mustAppear` or
+>   `textRequired`; the fields are `material occasion when where means atStake fear pressures[]
+>   refusals[]` and the section header is `THE CONDITION:`.
+>
+> Also stale: `medium/` no longer exists as a path prefix, and the branch this was verified against
+> (`wip/snapshot-2026-08-27`) is gone. For what is true now, read `docs/audit/2026-09-01.md` and the
+> memory topic files it cites.
+
 # Handoff: the current catalog, what the studio actually does, and the fine-art rewrite
 
 Written 2026-08-28 for a fresh model with no access to this repo. Everything below is verified

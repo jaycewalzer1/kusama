@@ -423,7 +423,15 @@ export interface Cost {
 }
 
 export interface Scores {
-  /** Fraction of decidable tree-scope constraints satisfied, hard weighted double. */
+  /**
+   * Fraction of decidable tree-scope constraints satisfied, hard weighted double.
+   *
+   * Null for two different reasons, and the caller cannot tell them apart on purpose: either no
+   * constraint in that scope was decidable, or the run did not earn its stop. Both mean the same
+   * thing to a reader — there is no summary score for this run — and both are recoverable from the
+   * fields that stay: `hardViolations`, `softViolations`, `pendingRubrics`, `termination.legitimate`.
+   * See `scoresOf` in run.ts.
+   */
   tree: number | null;
   render: number | null;
   hardViolations: number;

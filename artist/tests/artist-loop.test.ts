@@ -120,6 +120,20 @@ test('the run stopped because the artist said so, and the record says whether th
   assert.equal(t.pendingCapExceeded, true);
   assert.equal(t.edgesUnrealized, 0);
   assert.equal(t.legitimate, false);
+
+  // And therefore there is no summary score. This is the assertion that would have failed on the
+  // two real runs on disk: `out/openai-withheld/final.json` reports `tree: 1, render: 1` — a
+  // perfect sheet — beside this same `legitimate: false`, a self-score of 4, and six planned
+  // relations that did not hold. The constraints those means are taken over are almost all node
+  // counts, so they saturate as soon as the counting rules are met and say nothing about whether
+  // the run finished anything.
+  //
+  // The counts below are deliberately still asserted present. Nulling the means withdraws a claim;
+  // it does not withdraw a measurement, and a reader who wants the detail still has all of it.
+  assert.equal(trajectory.scores.tree, null, 'a run that did not earn its stop reported a tree score');
+  assert.equal(trajectory.scores.render, null, 'a run that did not earn its stop reported a render score');
+  assert.equal(typeof trajectory.scores.hardViolations, 'number');
+  assert.equal(typeof trajectory.scores.softViolations, 'number');
 });
 
 test('the risk move is recorded once, where the artist declared it', () => {

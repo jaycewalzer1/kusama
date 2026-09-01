@@ -283,9 +283,18 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
     const refusals: Record<RefusalCause, number> = { budget: 0, capability: 0, structural: 0 };
     for (const s of steps) for (const r of s.refused ?? []) refusals[refusalCause(r.reason)]++;
 
+    // Before the literal, because `tree` and `render` read it. This mirrors `scoresOf` in run.ts and
+    // has to keep mirroring it: gate 2 compares the two constructions field by field, and it caught
+    // this the moment run.ts was changed on its own.
+    const termination = terminationOf(real.estimates, stoppedAs(last, gates), last?.unrealizable ?? null);
+
     const scores: Scores = {
-      tree: report.treeScore,
-      render: report.renderScore,
+      // Null when the run did not earn its stop — the reasoning is in `scoresOf` (run.ts). Gated on
+      // the *recomputed* termination, not the recorded one: gate 2's premise is that the log alone
+      // rebuilds the scores, and reading the flag out of `scores.json` would make the check compare
+      // that file against itself.
+      tree: termination.legitimate ? report.treeScore : null,
+      render: termination.legitimate ? report.renderScore : null,
       hardViolations: report.hardViolations,
       softViolations: report.softViolations,
       realization: {
@@ -330,7 +339,7 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
         : null,
       examineAgreement: edgeEstimates ? examineAgreement(real.estimates, edgeEstimates) : null,
       refusals,
-      termination: terminationOf(real.estimates, stoppedAs(last, gates), last?.unrealizable ?? null),
+      termination,
       affectTrace: steps.map((s) => s.affect),
       affectArmed: affectArmed(
         initialAffect(commission.field, commission.temperament.value),
