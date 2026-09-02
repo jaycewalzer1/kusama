@@ -118,9 +118,28 @@ import { type AuditPoint, auditFrom, auditText, claimsOf } from '../artist/audit
 import { surfaceCensus, surfaceOf, surfaceText, surfaces } from '../artist/surface.js';
 import { CENSUS_FILE, censusMissingMessage, loadCensus, loadPack, packGap, packGapText } from '../artist/pack-gap.js';
 import { type TermField, crosswalk, crosswalkText, dimensionalityOf, dimensionalitySplit, terms } from '../artist/vocabulary.js';
+import { ingestMetCorpus } from '../env/sample-corpus.js';
 
 const program = new Command();
 program.name('corpus').description('the corpus of real works the lineage elements are derived from');
+
+const met = program.command('met').description('Met Open Access corpus artifacts for intentional sampling');
+met.command('ingest')
+  .requiredOption('--output <dir>', 'versioned manifest and resumable object cache')
+  .option('--limit <n>', 'accepted public-domain records with a primary image', '250')
+  .option('--download', 'download and content-hash source images (metadata only by default)')
+  .option('--concurrency <n>', 'conservative request concurrency', '2')
+  .option('--pause <ms>', 'minimum interval between Met request starts', '150')
+  .action(async (opts: { output: string; limit: string; download?: boolean; concurrency: string; pause: string }) => {
+    const manifest = await ingestMetCorpus({
+      output: opts.output,
+      limit: Number(opts.limit),
+      downloadImages: Boolean(opts.download),
+      concurrency: Number(opts.concurrency),
+      requestDelayMs: Number(opts.pause),
+    });
+    process.stdout.write(`${path.join(opts.output, 'met-corpus.v1.json')}\n${manifest.records.length} eligible records; ${manifest.recordsHash}\n`);
+  });
 
 const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -836,6 +855,9 @@ program
         ? { href: `${other}.html`, label: opts.clip ? 'the same works by metadata' : 'the same works by appearance' }
         : undefined,
       overlay: over,
+      // An overlay page is written three directories away from the images, below. Relative either
+      // way, so the hover thumbnails work whether the file is opened or served.
+      ...(over ? { imageBase: '../../../corpus/images/' } : {}),
     });
     // An overlay is about one trajectory, so it does not overwrite the corpus's own map. It goes to
     // docs/demo/rendered/ under a name that says which trajectory it is a reading of.

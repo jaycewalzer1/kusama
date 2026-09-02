@@ -183,17 +183,36 @@ export async function embed(file: string, pad = false): Promise<Float32Array> {
   const cached = path.join(CACHE, `${key}.json`);
   if (existsSync(cached)) return Float32Array.from(JSON.parse(readFileSync(cached, 'utf8')) as number[]);
 
-  const { session: s, Tensor } = await encoder();
-  const result = await s.run({ pixel_values: new Tensor('float32', preprocess(decode(file), pad), [1, 3, SIDE, SIDE]) });
-  const raw = result['image_embeds']!.data;
-  let norm = 0;
-  for (const v of raw) norm += v * v;
-  norm = Math.sqrt(norm);
-  const unit = Float32Array.from(raw, (v) => v / norm);
+  const unit = await embedRgb(decode(file), pad);
 
   mkdirSync(CACHE, { recursive: true });
   writeFileSync(cached, JSON.stringify([...unit]));
   return unit;
+}
+
+/** Embed an in-memory crop. The fragment index owns its content-addressed cache. */
+export async function embedRgb(image: Rgb, pad = false): Promise<Float32Array> {
+  return (await embedRgbBatch([image], pad))[0]!;
+}
+
+/** Batch in-memory crops through one CLIP invocation; rows are normalized independently. */
+export async function embedRgbBatch(images: readonly Rgb[], pad = false): Promise<Float32Array[]> {
+  if (images.length === 0) return [];
+  const { session: s, Tensor } = await encoder();
+  const plane = 3 * SIDE * SIDE;
+  const pixels = new Float32Array(images.length * plane);
+  images.forEach((image, row) => pixels.set(preprocess(image, pad), row * plane));
+  const result = await s.run({ pixel_values: new Tensor('float32', pixels, [images.length, 3, SIDE, SIDE]) });
+  const raw = result['image_embeds']!.data;
+  if (raw.length % images.length !== 0) throw new Error(`CLIP returned ${raw.length} values for ${images.length} image rows`);
+  const dimensions = raw.length / images.length;
+  return images.map((_, row) => {
+    const values = raw.subarray(row * dimensions, (row + 1) * dimensions);
+    let norm = 0;
+    for (const value of values) norm += value * value;
+    norm = Math.sqrt(norm);
+    return Float32Array.from(values, (value) => value / norm);
+  });
 }
 
 /** Both arguments are unit vectors, so this is the cosine. */

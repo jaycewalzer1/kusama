@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { validateProgram, validateEditAction, validateProfile } from '../validate.js';
 import { loadProfile, type MediumProfile } from '../profile.js';
 import { tearPointCount, tearPolygon, sprayParticleCount } from '../../renderer/resolve.js';
-import { EMPTY_PACK, group, hatchNode, program, resolve, strokeNode, testProfile, washNode } from './helpers.js';
+import { EMPTY_PACK, group, hatchNode, program, resolve, solidNode, strokeNode, testProfile, washNode } from './helpers.js';
 
 const PROFILE = testProfile();
 
@@ -315,6 +315,45 @@ test('an over-budget repeat is refused before the browser starts', () => {
       layout: { type: 'grid', origin: [10, 10], cols: 2, dx: 140, dy: 140 }, children: [dense] },
   ]);
   assert.deepEqual(validateProgram(light, PROFILE, EMPTY_PACK).issues, []);
+});
+
+test("a cover's `destroys` claim is checked against the geometry, not believed", () => {
+  const coverNode = (id: string, x: number, y: number, destroys?: string[]): Record<string, unknown> => ({
+    id,
+    type: 'op',
+    op: 'cover',
+    rngKey: `key-${id}`,
+    args: { region: { type: 'rect', x, y, w: 100, h: 100 }, softness: 0.1, ...(destroys ? { destroys } : {}) },
+  });
+
+  // The honest case: `under` is painted first, the covering lands on top of it, and the two boxes
+  // share ground. Nothing about the picture changes -- the claim is a record, not an instruction.
+  assert.deepEqual(codes(program([solidNode('under', 40, 40), coverNode('c1', 60, 60, ['under'])])), []);
+  assert.deepEqual(codes(program([solidNode('under', 40, 40), coverNode('c1', 60, 60)])), [], 'destroys is optional');
+
+  // A macro answers for its own parts: they resolve as `m1/arm`, and `m1` is the only name the id
+  // pattern lets a program write, so a covering over a macro names the macro.
+  const motif = {
+    id: 'm1', type: 'macro', macro: 'motif', rngKey: 'key-m1',
+    args: { name: 'tick', x: 100, y: 100, size: 120, brush: 'HB', color: 'ink' },
+  };
+  assert.deepEqual(codes(program([motif, coverNode('c1', 60, 60, ['m1'])])), []);
+  assert.deepEqual(codes(program([motif, coverNode('c1', 60, 60, ['m'])])), ['destroys.unknown'], 'a prefix is not a match');
+
+  // A name with no node behind it.
+  const ghost = program([solidNode('under', 40, 40), coverNode('c1', 60, 60, ['no-such-node'])]);
+  assert.deepEqual(codes(ghost), ['destroys.unknown']);
+
+  // Drawn after the covering, so it is on top of it. A covering cannot destroy what outlived it.
+  const later = program([coverNode('c1', 60, 60, ['over']), solidNode('over', 40, 40)]);
+  assert.deepEqual(codes(later), ['destroys.order']);
+
+  // On the sheet, and before the covering, but nowhere near it.
+  const elsewhere = program([solidNode('far', 260, 260), coverNode('c1', 10, 10, ['far'])]);
+  const disjoint = validateProgram(elsewhere, PROFILE, EMPTY_PACK).issues;
+  assert.deepEqual(disjoint.map((i) => i.code), ['destroys.disjoint']);
+  assert.match(disjoint[0]!.message, /bounds do not overlap/);
+  assert.equal(disjoint[0]!.path, '/root/children/1/args/destroys');
 });
 
 test('edit actions are schema-checked too', () => {

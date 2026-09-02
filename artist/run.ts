@@ -19,8 +19,15 @@
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { applyEdit, type EditAction } from '../env/edits.js';
 import { loadPackFor } from '../env/pack.js';
+import { decodePng } from '../env/png.js';
 import { canonicalJson, contentHash, loadProfile, loadProfileFor } from '../env/profile.js';
+import { validateProgram } from '../env/validate.js';
+import { pixelDiff } from '../env/diff.js';
+import { loadSamplingIndexHeader } from '../aesthetic/sample-index.js';
+import { compileWithSamplingTargets, validateSamplingBindings, withSamplingAncestry, type SamplingBindings, type TargetResolution } from '../aesthetic/sample-targets.js';
+import type { SamplingCompilation, SamplingPlan } from '../aesthetic/sample-types.js';
 import { affectArmed, affectSentence, initialAffect } from './affect.js';
 import { breakRecordOf } from './breaks.js';
 import { capabilitySheet } from './capability-sheet.js';
@@ -47,16 +54,28 @@ import {
 } from './intention.js';
 import { envVersionNow } from './env-version.js';
 import { loadInfluenceDoc } from './influence-doc.js';
+import { DiscoveryLog } from './discovery-log.js';
+import { coverage, groundedInWorks, type MaterialSheet } from './material-sheet.js';
+import { corpusAvailable } from './research-query.js';
 import { moveSummary } from './moves.js';
 import { type MakeContext } from './observation.js';
+import { PRACTICE_STORE, updatePractice, type Tried } from './practice-version.js';
 import { seedProgram } from './seed.js';
 import { readLog, StudioLog } from './studio-log.js';
+import type { SampleRevision } from './sampling-events.js';
 import { processOf } from './transition.js';
+import { bareEdit } from './schemas.js';
 import { act, replan } from './phases/act.js';
 import { choose } from './phases/choose.js';
+import { compare } from './phases/compare.js';
+import { diverge } from './phases/diverge.js';
 import { examine } from './phases/examine.js';
 import { find, grounded } from './phases/find.js';
+import { research } from './phases/research.js';
+import { sample as samplePhase } from './phases/sample.js';
+import { bindSamples, reviewSampling, reviseSamplingPlan } from './phases/sample-finish.js';
 import { assertTextBudget, propose, SKETCH_PROFILE, sheetNotes, sheetOf, sketch, type SketchResult } from './phases/sketch.js';
+import { PER_LENS, wideSketch, type PreviewCanvas, type WideSketch } from './phases/wide-sketch.js';
 import type { Policy } from './policy/interface.js';
 import type {
   Affect,
@@ -142,6 +161,34 @@ export interface RunOptions {
    * The thumbnails are never attached during MAKE either way; only the text.
    */
   influencesInMake?: boolean;
+  /**
+   * Run the discovery half: RESEARCH, then DIVERGE, wide SKETCH and COMPARE in place of the three
+   * canonical sketches and the single CHOOSE call.
+   *
+   * **Off by default, and off is byte-identical to the run before any of it existed.** No
+   * `discovery.jsonl` is opened, no material sheet is built, FIND is handed the same observation and
+   * the same schema object it was handed before, and no practice version is written. That is not
+   * politeness towards old trajectories — it is the only way the two modes contract holds. Discovery
+   * is nondeterministic by design and writes to its own unchained file; the moment an unflagged run
+   * touched any of it, every golden and every replay would be measuring a different environment.
+   *
+   * On, the chain still gets CHOOSE, MAKE, EXAMINE and one UPDATE PRACTICE call, because those are
+   * the decisions the trajectory is a record of. Everything the discovery phases propose and cut
+   * lands in `discovery.jsonl`, which nothing hashes and `replay` never reads.
+   *
+   * It is expensive: two research calls, two diverge calls, a dozen sketches per surviving lens, up
+   * to twelve pairwise judgments. That is the point of it, and the reason it is not the default.
+   */
+  discovery?: boolean;
+  /**
+   * Where UPDATE PRACTICE appends. Defaults to the tracked store under `aesthetic/practice/`; a test
+   * points it at a temporary directory so a stubbed run does not commit a practice version.
+   */
+  practiceStore?: string;
+  /** Opt-in sampling index directory. Absent preserves the pre-sampling trajectory path. */
+  sampling?: string;
+  /** Replay-only plans read from sample_selected events. Their presence suppresses index access. */
+  recordedSamplingPlans?: SamplingPlan[];
 }
 
 /**
@@ -329,12 +376,287 @@ function hardRubrics(report: CheckReport): { id: string; text: string }[] {
     .map((r) => ({ id: r.id, text: r.rubric as string }));
 }
 
+function withBindings(program: Program, bindings: SamplingBindings): Program {
+  return {
+    ...program,
+    meta: { ...((program as Record<string, any>).meta ?? {}), samplingBindings: bindings },
+  };
+}
+
+function resolvedForSampling(program: Program) {
+  const { profile } = loadProfileFor(program);
+  const pack = loadPackFor(program);
+  const checked = validateProgram(program, profile, pack);
+  if (!checked.valid || !checked.resolved) {
+    throw new Error(`sampling base is invalid: ${checked.issues.map((issue) => `${issue.path} ${issue.message}`).join('; ')}`);
+  }
+  return withSamplingAncestry(checked.resolved, program);
+}
+
+interface SamplingPair {
+  plan: SamplingPlan;
+  compilation: SamplingCompilation;
+  resolutions: TargetResolution[];
+  sampled: Awaited<ReturnType<Canvas['render']>>;
+  ablation: Awaited<ReturnType<Canvas['render']>>;
+  sampledFile: string;
+  ablationFile: string;
+}
+
+interface AcceptedSamplingFinish {
+  pair: SamplingPair;
+  inspected: Awaited<ReturnType<ArtistEnv['inspect']>>;
+  base: Program;
+  bindings: SamplingBindings;
+}
+
+async function renderSamplingPair(
+  canvas: Canvas,
+  log: StudioLog,
+  outDir: string,
+  base: Program,
+  plan: SamplingPlan,
+  attempt: number,
+  suffix = ''
+): Promise<SamplingPair> {
+  const resolved = resolvedForSampling(base);
+  const sampledResult = compileWithSamplingTargets(base, plan, resolved);
+  const zero = JSON.parse(JSON.stringify(plan)) as SamplingPlan;
+  for (const sample of zero.samples) sample.controls.salience = 0;
+  for (const request of zero.requests) request.controls.salience = 0;
+  const ablationResult = compileWithSamplingTargets(base, zero, resolved);
+  const sampled = await canvas.render(sampledResult.compilation.program, { metrics: true });
+  const ablation = await canvas.render(ablationResult.compilation.program, { metrics: true });
+  const directory = path.join(outDir, 'sampling');
+  mkdirSync(directory, { recursive: true });
+  const tag = `${attempt}${suffix}`;
+  const sampledFile = path.join('sampling', `sampled-${tag}.png`);
+  const ablationFile = path.join('sampling', `ablation-${tag}.png`);
+  writeFileSync(path.join(outDir, sampledFile), sampled.png);
+  writeFileSync(path.join(outDir, ablationFile), ablation.png);
+  const a = decodePng(sampled.png);
+  const b = decodePng(ablation.png);
+  const diff = pixelDiff(a.rgba, b.rgba, a.width, a.height, []);
+  log.append('ablation_rendered', {
+    sampledProgramHash: sampled.programHash,
+    sampledPixelHash: sampled.pixelHash,
+    ablationProgramHash: ablation.programHash,
+    ablationPixelHash: ablation.pixelHash,
+    differingPixels: diff.differing,
+    totalPixels: a.width * a.height,
+    sampledFile,
+    ablationFile,
+    resolutions: sampledResult.resolutions,
+    effects: sampledResult.compilation.constraints.map((constraint) => ({
+      sampleId: constraint.sampleId,
+      problem: plan.samples.find((sample) => sample.sampleId === constraint.sampleId)?.perceptualGoal ?? '',
+      channel: constraint.channels[0] ?? '',
+      claimedEffect: constraint.claimedEffect,
+      touchedNodeIds: constraint.affectedNodeIds,
+    })),
+  });
+  return {
+    plan,
+    compilation: sampledResult.compilation,
+    resolutions: sampledResult.resolutions,
+    sampled,
+    ablation,
+    sampledFile,
+    ablationFile,
+  };
+}
+
+function revisedBase(
+  base: Program,
+  revision: SampleRevision,
+  bindings: SamplingBindings,
+  plan: SamplingPlan
+): { program: Program; faults: string[] } {
+  if (revision.kind !== 'base') return { program: base, faults: [] };
+  const { profile } = loadProfileFor(base);
+  const pack = loadPackFor(base);
+  let candidate = base;
+  const faults: string[] = [];
+  for (const raw of revision.edits) {
+    const edit = raw as EditAction & { servesElementId?: string };
+    const result = applyEdit(candidate, bareEdit(edit), profile, pack);
+    if (!result.valid) faults.push(`${edit.actionId ?? '(unnamed edit)'}: ${result.reason ?? 'refused'}`);
+    else candidate = result.nextProgram;
+  }
+  if (faults.length > 0) return { program: base, faults };
+  const checked = validateSamplingBindings(candidate, new Set(plan.requests.map((request) => request.role)), bindings);
+  if (!checked.valid) return { program: base, faults: checked.faults };
+  return { program: candidate, faults: [] };
+}
+
 /** EXAMINE's verdicts counted. Kept beside realization's, never folded into them. */
 function tally(estimates: EdgeEstimate[]): { satisfied: number; violated: number; judgePending: number } {
   return {
     satisfied: estimates.filter((e) => e.status === 'satisfied').length,
     violated: estimates.filter((e) => e.status === 'violated').length,
     judgePending: estimates.filter((e) => e.status === 'judge-pending').length,
+  };
+}
+
+/**
+ * What the discovery half hands back to the canonical loop.
+ *
+ * Four of these six fields go straight into CHOOSE, which is deliberate: the widening, the drawing
+ * and the judging all happen out in `discovery.jsonl`, and the only thing that crosses into the
+ * chain is a shortlist with the artist's reasons for it. CHOOSE is still made to choose — it is not
+ * handed a decision — but it is handed a field COMPARE has already argued down.
+ */
+interface Discovered {
+  /** The problems COMPARE committed to. CHOOSE picks among these and no others. */
+  problems: Problem[];
+  sketches: Sketch[];
+  contact: Buffer | null;
+  notes: string[];
+  fertile: Tried[];
+  rejected: Tried[];
+}
+
+/**
+ * One lens's sketch, renamed into the shape COMPARE reads.
+ *
+ * COMPARE is keyed on problems and wide sketching is keyed on lenses, and the join is the lens's own
+ * `problem` field. The index is renumbered per problem rather than carried over from the lens,
+ * because `Card.key` is `${problemId}#s${index + 1}` and two lenses on one problem would otherwise
+ * both produce `p2#s1` — two different pictures under one name, in a phase whose entire job is
+ * telling pictures apart.
+ */
+function asSketchResults(sketches: WideSketch[], problemOf: Map<string, string>): SketchResult[] {
+  const next = new Map<string, number>();
+  const out: SketchResult[] = [];
+  for (const s of sketches) {
+    const problemId = problemOf.get(s.lensId);
+    // A sketch whose lens is not in the map cannot be scored against a problem ranking, and
+    // inventing a problem for it would put a fabricated id into the commitment. It is dropped, and
+    // the count is on the note below.
+    if (!problemId) continue;
+    const index = next.get(problemId) ?? 0;
+    next.set(problemId, index + 1);
+    out.push({
+      problemId,
+      index,
+      approach: s.approach,
+      program: s.program,
+      programHash: s.programHash,
+      png: s.png,
+      failure: s.failure,
+    });
+  }
+  return out;
+}
+
+/**
+ * DIVERGE, wide SKETCH and COMPARE, in the order the brief puts them.
+ *
+ * Everything in here writes to `discovery`. The two lines it appends to the chained `log` are counts
+ * — how wide the widening got, what survived the comparison — because a trajectory that cannot say
+ * whether it ran this at all is a trajectory nobody can group by.
+ */
+async function discoverWide(
+  policy: Policy,
+  discovery: DiscoveryLog,
+  log: StudioLog,
+  spend: Spend,
+  commission: Commission,
+  problems: Problem[],
+  materials: MaterialSheet | null,
+  seed: Program,
+  canvas: PreviewCanvas,
+  outDir: string,
+  runSeed: number,
+  perLens: number,
+  sampling: SamplingPlan | null
+): Promise<Discovered> {
+  const lenses = await diverge(policy, discovery, spend, commission, problems, materials, runSeed);
+  log.append('note', {
+    phase: 'diverge',
+    proposed: lenses.proposed.length,
+    kept: lenses.kept.length,
+    cut: lenses.cut.length,
+    // Reported, never enforced. A run whose emergent sentences are filler is a run worth being able
+    // to find later, and it is not a run to abort.
+    degenerate: lenses.degenerate.map((l) => l.id),
+  });
+
+  const problemOf = new Map(lenses.kept.map((l) => [l.id, l.problem]));
+  const wide = await wideSketch(
+    policy,
+    discovery,
+    spend,
+    commission,
+    lenses.kept.map((l) => ({ id: l.id, lens: l.lens, emergent: l.emergent })),
+    materials,
+    seed,
+    canvas,
+    runSeed,
+    { perLens, ...(sampling ? { sampling, samplingLog: log } : {}) }
+  );
+  for (const s of wide.sheets) {
+    if (s.png) writeFileSync(path.join(outDir, 'sketches', `lens-${s.lensId}.png`), s.png);
+  }
+
+  const cards = asSketchResults(wide.sketches, problemOf);
+  const comparison = await compare(policy, discovery, spend, commission, problems, cards, runSeed);
+
+  // The survivors as pictures, in the order `rank` put them, which is the order they are tiled in —
+  // so a note saying "cell 3" names a cell somebody can find. Tiled by SKETCH's own `sheetOf` and
+  // not by wide-sketch's: this is a handful of finalists at reading size, not a dozen thumbnails
+  // being scanned for variety.
+  const byKey = new Map(cards.map((c) => [`${c.problemId}#s${c.index + 1}`, c]));
+  const survivors = comparison.survivors
+    .map((s) => byKey.get(s.key))
+    .filter((c): c is SketchResult => c !== undefined && c.png !== null);
+  const contact = sheetOf(survivors);
+
+  const sketches: Sketch[] = [];
+  for (const c of survivors) {
+    const file = path.join('sketches', `${c.problemId}-${c.index + 1}.png`);
+    writeFileSync(path.join(outDir, file), c.png!);
+    sketches.push({ problemId: c.problemId, steps: [], finalHash: c.programHash, png: file });
+  }
+
+  const drew = new Set(survivors.map((c) => `${c.problemId}#s${c.index + 1}`));
+  const notes = [
+    `These are the sketches you kept after comparing them in pairs. What you said when you committed: ${comparison.commitment.why}`,
+    ...comparison.survivors
+      .filter((s) => drew.has(s.key))
+      .map(
+        (s, i) =>
+          `cell ${i + 1} (left to right, top to bottom): ${s.approach}` +
+          `\n    problem: ${s.problemId}` +
+          `\n    won ${s.wins} of ${s.comparisons} comparisons`
+      ),
+  ];
+
+  const committed = problems.filter((p) => comparison.commitment.problemIds.includes(p.id));
+  log.append('note', {
+    phase: 'compare',
+    cards: cards.length,
+    dropped: wide.sketches.length - cards.length,
+    comparisons: comparison.comparisons.length,
+    survivors: comparison.survivors.map((s) => s.key),
+    // The question the brief actually asks of this phase: did the artist choose a problem it had
+    // itself weighted low, and if so did it say why with reference to the sketches.
+    ranking: comparison.rankingAnswer,
+  });
+
+  return {
+    // A commitment naming no problem this run found leaves CHOOSE nothing to choose between, so it
+    // falls back to the whole list. That is a worse run, not a broken one.
+    problems: committed.length > 0 ? committed : problems,
+    sketches,
+    contact,
+    notes,
+    fertile: comparison.survivors.map((s) => ({
+      id: s.key,
+      what: s.approach,
+      why: `won ${s.wins} of ${s.comparisons} pairwise comparisons and was committed to`,
+    })),
+    rejected: lenses.cut.map((c) => ({ id: c.lens.id, what: c.lens.lens, why: c.reason })),
   };
 }
 
@@ -351,6 +673,8 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
   // the two must not be reachable by the same command line.
   const influences = o.influences ? loadInfluenceDoc(o.influences) : null;
   const makeInfluences = o.influencesInMake ? influences : null;
+  const samplingIndexId = o.recordedSamplingPlans?.[0]?.indexId ?? (o.sampling ? loadSamplingIndexHeader(o.sampling).indexId : null);
+  const samplingEnabled = samplingIndexId !== null;
   const loaded = loadCommission(o.positionId, o.briefId, elementIds);
   const commission = o.control ? stripped(loaded) : loaded;
   const fieldText = canonicalJson(loaded.field);
@@ -378,11 +702,12 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
       o.control ?? false,
       loaded.elementPackHash,
       ...(influences ? [influences.hash] : []),
+      ...(samplingIndexId ? [samplingIndexId] : []),
     ].join('|')
   ).slice(0, 16);
   // The same ten hashes on the start line and on the finished trajectory, from one place. They
   // used to be two object literals that happened to agree.
-  const envVersion = envVersionNow(o.positionId, o.briefId, o.seed, elementIds, influences?.hash);
+  const envVersion = envVersionNow(o.positionId, o.briefId, o.seed, elementIds, influences?.hash, samplingEnabled);
   log.append('trajectory-start', {
     id,
     positionId: loaded.positionAsWritten.id,
@@ -406,6 +731,7 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
     // The ablation arm. It changes the observation text as well as the images, so a replay that
     // did not carry it would rebuild every MAKE observation wrong and report the arm as a divergence.
     showCanvas: o.showCanvas ?? true,
+    ...(samplingIndexId ? { sampling: true, samplingIndexId } : {}),
     // Which set, and how far into the loop it reached. `influencesHash` inside `envVersion` says
     // only *that* two runs saw the same shelf; neither it nor the id is a thing a reader can look
     // up, and neither says whether MAKE was carrying it.
@@ -449,9 +775,48 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
   const sketchCanvas = new Canvas(SKETCH_PROFILE);
   const affect0: Affect = initialAffect(loaded.field, loaded.temperament.value);
 
+  // The second record, opened only when the discovery half is going to run. An unflagged run does
+  // not create the file, so a directory listing says which mode a trajectory was made in.
+  const discovery = o.discovery ? new DiscoveryLog(o.outDir) : null;
+
   try {
+    // 0. RESEARCH ---------------------------------------------------------------------------------
+    // Before FIND, because the whole point is that the artist has looked at art before it decides
+    // what is difficult here. A corpus that is not on this machine is a missing input, not a
+    // failure: the run continues with `materials` null and every phase below takes the byte-
+    // identical unresearched path, which is exactly what the default arm does.
+    let materials: MaterialSheet | null = null;
+    if (discovery) {
+      if (!corpusAvailable()) {
+        log.append('note', {
+          phase: 'research',
+          warning: 'no corpus manifest on this machine; this run looked at no art',
+        });
+      } else {
+        const found = await research(o.policy, discovery, spend, commission);
+        materials = found.sheet;
+        log.append('note', {
+          phase: 'research',
+          sheet: found.sheet.hash,
+          materials: found.sheet.materials.length,
+          candidatesSeen: found.candidatesSeen,
+          queries: found.queries.length,
+          ...found.coverage,
+        });
+      }
+    }
+
     // 1. FIND -------------------------------------------------------------------------------------
-    const { questions, problems, proposed } = await find(o.policy, log, spend, commission, o.seed, influences);
+    const { questions, problems, proposed } = await find(
+      o.policy,
+      log,
+      spend,
+      commission,
+      o.seed,
+      influences,
+      materials
+    );
+    const inWorks = groundedInWorks(problems);
     log.append('note', {
       phase: 'find',
       // `proposed` is what the artist named; `found` is what the draw kept. Reporting only the
@@ -461,7 +826,22 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
       grounded: grounded(problems, fieldText),
       groundedProposed: grounded(proposed, fieldText),
       questions: questions.length,
+      // Only on a researched run. On an unresearched one every problem cites nothing by
+      // construction and a `0` here would read as a finding rather than as an absent question.
+      ...(materials
+        ? { groundedInWorks: inWorks.grounded, unresolvedWorkRefs: inWorks.unresolved }
+        : {}),
     });
+
+    // SAMPLE is opt-in and sits after the problems exist but before any proposal is drawn.
+    let samplingPlan: SamplingPlan | null = null;
+    if (samplingEnabled) {
+      const sampled = await samplePhase(o.policy, log, spend, commission, problems, o.seed, {
+        indexDir: o.sampling,
+        recordedPlans: o.recordedSamplingPlans,
+      });
+      samplingPlan = sampled.plan;
+    }
 
     // 2. SKETCH -----------------------------------------------------------------------------------
     // Under sketch-v1: every budget at or below default-v1 and no print pass, so a sketch costs a
@@ -469,41 +849,82 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
     const perProblem = o.sketchesPerProblem ?? 3;
     const { profile: sketchProfile } = loadProfile(SKETCH_PROFILE);
     const textNeeded = assertTextBudget(loaded.effective, sketchProfile.limits);
-    log.append('phase', {
-      phase: 'sketch',
-      profile: SKETCH_PROFILE,
-      problems: problems.length,
-      per: perProblem,
-      // The position's own floor, beside the budget it is being given. A run whose sketches all come
-      // back short on text can be read against these two numbers rather than guessed at.
-      textDemand: textNeeded,
-      maxTextOps: sketchProfile.limits.maxTextOps,
-    });
-    const results: SketchResult[] = [];
-    for (const problem of problems) {
-      // One short call names the ideas, then the draw hands one to each sketch. Without it the three
-      // sketch calls are independent draws from the same prompt and come back as one idea three times.
-      const { drawn } = await propose(o.policy, log, spend, commission, problem, o.seed, perProblem);
-      for (let i = 0; i < perProblem; i++) {
-        results.push(
-          await sketch(o.policy, log, spend, commission, problem, i, seed, sketchCanvas, drawn[i] ?? null, influences)
-        );
+
+    let found: Discovered;
+    if (discovery) {
+      // DIVERGE, a dozen sketches per surviving lens, and a round of pairwise judgments — all of it
+      // in discovery.jsonl. `sketchesPerProblem` is read as the per-lens count when it is set, so a
+      // test can ask for one sketch a lens without a second knob meaning nearly the same thing.
+      log.append('phase', {
+        phase: 'diverge',
+        profile: SKETCH_PROFILE,
+        problems: problems.length,
+        perLens: o.sketchesPerProblem ?? PER_LENS,
+        materials: materials?.hash ?? null,
+      });
+      found = await discoverWide(
+        o.policy,
+        discovery,
+        log,
+        spend,
+        commission,
+        problems,
+        materials,
+        seed,
+        sketchCanvas,
+        o.outDir,
+        o.seed,
+        o.sketchesPerProblem ?? PER_LENS,
+        samplingPlan
+      );
+    } else {
+      log.append('phase', {
+        phase: 'sketch',
+        profile: SKETCH_PROFILE,
+        problems: problems.length,
+        per: perProblem,
+        // The position's own floor, beside the budget it is being given. A run whose sketches all
+        // come back short on text can be read against these two numbers rather than guessed at.
+        textDemand: textNeeded,
+        maxTextOps: sketchProfile.limits.maxTextOps,
+      });
+      const results: SketchResult[] = [];
+      for (const problem of problems) {
+        // One short call names the ideas, then the draw hands one to each sketch. Without it the
+        // three sketch calls are independent draws from one prompt and come back as one idea thrice.
+        const { drawn } = await propose(o.policy, log, spend, commission, problem, o.seed, perProblem, samplingPlan);
+        for (let i = 0; i < perProblem; i++) {
+          results.push(
+            await sketch(o.policy, log, spend, commission, problem, i, seed, sketchCanvas, drawn[i] ?? null, influences, samplingPlan)
+          );
+        }
       }
+      const drawnSketches: Sketch[] = [];
+      for (const r of results) {
+        if (!r.png) continue;
+        const file = path.join('sketches', `${r.problemId}-${r.index + 1}.png`);
+        writeFileSync(path.join(o.outDir, file), r.png);
+        drawnSketches.push({ problemId: r.problemId, steps: [], finalHash: r.programHash, png: file });
+      }
+      found = {
+        problems,
+        sketches: drawnSketches,
+        contact: sheetOf(results),
+        notes: sheetNotes(results),
+        fertile: [],
+        rejected: [],
+      };
     }
     await sketchCanvas.close();
-
-    const sketches: Sketch[] = [];
-    for (const r of results) {
-      if (!r.png) continue;
-      const file = path.join('sketches', `${r.problemId}-${r.index + 1}.png`);
-      writeFileSync(path.join(o.outDir, file), r.png);
-      sketches.push({ problemId: r.problemId, steps: [], finalHash: r.programHash, png: file });
-    }
-    const contact = sheetOf(results);
-    if (contact) writeFileSync(path.join(o.outDir, 'sketches', 'contact.png'), contact);
+    const sketches = found.sketches;
+    if (found.contact) writeFileSync(path.join(o.outDir, 'sketches', 'contact.png'), found.contact);
 
     // 3. CHOOSE -----------------------------------------------------------------------------------
-    const chosen = await choose(o.policy, log, spend, commission, problems, sketches, contact, sheetNotes(results));
+    // `found.problems` and not `problems`. On the default arm they are the same list. On a discovery
+    // run they are the problems COMPARE committed to, which is what makes the pairwise judgment
+    // binding rather than advisory: CHOOSE still names the collision, the terms and the intention,
+    // and it can no longer quietly pick a problem the artist has already argued its way off.
+    const chosen = await choose(o.policy, log, spend, commission, found.problems, sketches, found.contact, found.notes);
     // The collision, on its own line in the log. It is the cheapest read on whether both layers were
     // actually taken in, so it goes where somebody tailing the run can see it without a diff.
     log.append('note', { phase: 'choose', collision: chosen.collision, terms: chosen.terms });
@@ -546,6 +967,8 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
     let seen0: Examine | null = null;
     let finishAttempts = 0;
     const maxFinishAttempts = o.maxFinishAttempts ?? 2;
+    let samplingRevisionUsed = false;
+    let sampledFinish: AcceptedSamplingFinish | null = null;
 
     for (let k = 1; k <= hardStop; k++) {
       const stepsLeft = Math.max(0, maxSteps - (k - 1));
@@ -563,7 +986,7 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
         showCanvas && env.plate !== null,
         textOps(env, profile.limits.maxTextOps)
       );
-      const call = await act(o.policy, log, spend, context, env.plate, env.change?.png ?? null, makeInfluences);
+      const call = await act(o.policy, log, spend, context, env.plate, env.change?.png ?? null, makeInfluences, samplingPlan);
       const result = await env.step(call.action, {
         canvas: context.canvasAttached,
         change: context.changeAttached,
@@ -583,59 +1006,113 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
       // this EXAMINE becomes the trajectory's.
       let blocked: Fired | null = null;
       if (call.action.control === 'finished') {
-        const attempt = await examine(
-          o.policy,
-          log,
-          spend,
-          commission,
-          env.intention,
-          env.look.checkReport,
-          env.look.description,
-          env.look.audienceRead ?? null,
-          env.plate ?? (await canvas.render(env.program, { metrics: true })).png
-        );
-        seen0 = attempt;
-        if (maxFinishAttempts === 0) {
-          // The gate is off: the pre-gate environment, kept runnable so that "the gate changed the
-          // work" is a comparison somebody can actually run rather than an assertion.
-          stopped = 'declared-finished';
-          break;
+        let gatePlate = env.plate ?? (await canvas.render(env.program, { metrics: true })).png;
+        let gateProgramHash = env.programHash;
+        let gateLook = env.look;
+        let gateSample: AcceptedSamplingFinish | null = null;
+        if (samplingPlan) {
+          const bound = await bindSamples(o.policy, log, spend, env.program, samplingPlan);
+          if (!bound.valid) {
+            finishAttempts++;
+            const reasons = bound.faults.map((fault) => `[sampling-binding] ${fault}`);
+            log.append('note', { phase: 'finish-gate', k, attempt: finishAttempts, accepted: false, blockers: reasons });
+            if (finishAttempts >= maxFinishAttempts && maxFinishAttempts > 0) {
+              stopped = 'finish-blocked';
+              break;
+            }
+            blocked = { trigger: 'finish-blocked', detail: reasons.join(' '), usd: 0, cached: true };
+          } else {
+            const boundBase = withBindings(env.program, bound.bindings);
+            env.program = boundBase;
+            env.programHash = contentHash(boundBase);
+            let pair = await renderSamplingPair(canvas, log, o.outDir, boundBase, samplingPlan, finishAttempts + 1);
+            if (!samplingRevisionUsed) {
+              const review = await reviewSampling(o.policy, log, spend, samplingPlan, pair.compilation, pair.sampled.png, pair.ablation.png);
+              samplingRevisionUsed = true;
+              const planRevision = reviseSamplingPlan(samplingPlan, review.revision);
+              const baseRevision = revisedBase(boundBase, review.revision, bound.bindings, planRevision.plan);
+              const faults = [...planRevision.faults, ...baseRevision.faults];
+              const accepted = faults.length === 0;
+              log.append('sample_revised', { revision: review.revision, assessment: review.assessment, accepted, faults });
+              if (accepted) {
+                samplingPlan = planRevision.plan;
+                if (review.revision.kind === 'base') {
+                  await env.replaceProgram(baseRevision.program);
+                }
+                if (review.revision.kind !== 'none') {
+                  pair = await renderSamplingPair(canvas, log, o.outDir, env.program, samplingPlan, finishAttempts + 1, '-revised');
+                }
+              }
+            }
+            const inspected = await env.inspect(pair.compilation.program as Program);
+            gatePlate = pair.sampled.png;
+            gateProgramHash = pair.sampled.programHash;
+            gateLook = inspected.look;
+            gateSample = { pair, inspected, base: env.program, bindings: bound.bindings };
+            writeFileSync(path.join(o.outDir, 'sampling', 'sampling-plan.json'), `${JSON.stringify(samplingPlan, null, 2)}\n`);
+            writeFileSync(path.join(o.outDir, 'sampling', 'base-program.json'), `${JSON.stringify(env.program, null, 2)}\n`);
+          }
         }
-        const blockers = finishBlockers({
-          brief: loaded.brief,
-          report: env.look.checkReport,
-          examine: attempt,
-          // Only asked when the artist wants to stop. Null would mean "not asked", and the gate
-          // never blocks on evidence it does not have.
-          transcript: await env.readBack(),
-          rubrics: await env.readRubrics(hardRubrics(env.look.checkReport)),
-          wouldAct: env.look.wouldAct,
-          declaredUnrealizable: call.action.unrealizable ?? null,
-        });
-        finishAttempts++;
-        log.append('note', {
-          phase: 'finish-gate',
-          k,
-          attempt: finishAttempts,
-          accepted: blockers.length === 0,
-          blockers: blockerLines(blockers),
-        });
-        if (blockers.length === 0) {
-          stopped = 'declared-finished';
-          break;
+        if (blocked) {
+          // Invalid bindings never reach compilation or EXAMINE; the finish request becomes a replan.
+        } else {
+          const attempt = await examine(
+            o.policy,
+            log,
+            spend,
+            commission,
+            env.intention,
+            gateLook.checkReport,
+            gateLook.description,
+            gateLook.audienceRead ?? null,
+            gatePlate
+          );
+          seen0 = attempt;
+          if (maxFinishAttempts === 0) {
+            // The gate is off: the pre-gate environment, kept runnable so that "the gate changed the
+            // work" is a comparison somebody can actually run rather than an assertion.
+            stopped = 'declared-finished';
+            sampledFinish = gateSample;
+            break;
+          }
+          const blockers = finishBlockers({
+            brief: loaded.brief,
+            report: gateLook.checkReport,
+            examine: attempt,
+            // Only asked when the artist wants to stop. Null would mean "not asked", and the gate
+            // never blocks on evidence it does not have.
+            transcript: await env.readBack(gatePlate, gateProgramHash),
+            rubrics: await env.readRubrics(hardRubrics(gateLook.checkReport), gatePlate, gateProgramHash),
+            wouldAct: gateLook.wouldAct,
+            declaredUnrealizable: call.action.unrealizable ?? null,
+          });
+          finishAttempts++;
+          log.append('note', {
+            phase: 'finish-gate',
+            k,
+            attempt: finishAttempts,
+            accepted: blockers.length === 0,
+            blockers: blockerLines(blockers),
+          });
+          if (blockers.length === 0) {
+            stopped = 'declared-finished';
+            sampledFinish = gateSample;
+            break;
+          }
+          if (finishAttempts >= maxFinishAttempts) {
+            // It asked, was told why not, and asked again unchanged. The piece stands as it stands
+            // and the record says the stop was not earned.
+            stopped = 'finish-blocked';
+            sampledFinish = gateSample;
+            break;
+          }
+          blocked = {
+            trigger: 'finish-blocked',
+            detail: blockerLines(blockers).join(' '),
+            usd: 0,
+            cached: true,
+          };
         }
-        if (finishAttempts >= maxFinishAttempts) {
-          // It asked, was told why not, and asked again unchanged. The piece stands as it stands
-          // and the record says the stop was not earned.
-          stopped = 'finish-blocked';
-          break;
-        }
-        blocked = {
-          trigger: 'finish-blocked',
-          detail: blockerLines(blockers).join(' '),
-          usd: 0,
-          cached: true,
-        };
       }
 
       // A replan happens for a named reason or not at all. `artist-declares` is the artist's own
@@ -666,7 +1143,8 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
           fired.detail,
           env.plate,
           env.change?.png ?? null,
-          makeInfluences
+          makeInfluences,
+          samplingPlan
         );
         const after = carryNodeIds(before, replanned);
         result.step.replan = { trigger: fired.trigger, before, after };
@@ -682,9 +1160,10 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
     }
 
     // 5. EXAMINE ----------------------------------------------------------------------------------
-    const finalRender = await canvas.render(env.program, { metrics: true });
+    const finalProgram = (sampledFinish?.pair.compilation.program as Program | undefined) ?? env.program;
+    const finalRender = sampledFinish?.pair.sampled ?? await canvas.render(finalProgram, { metrics: true });
     writeFileSync(path.join(o.outDir, 'final.png'), finalRender.png);
-    const scoringReport = check(env.program, loaded.effective, finalRender.metrics);
+    const scoringReport = sampledFinish?.inspected.look.checkReport ?? check(finalProgram, loaded.effective, finalRender.metrics);
 
     // Reused when the artist asked to stop: that call already looked at this program, and asking
     // again would give the run two self-critiques and no way to say which one is its verdict. Only
@@ -697,13 +1176,39 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
         spend,
         commission,
         env.intention,
-        env.look.checkReport,
-        env.look.description,
-        env.look.audienceRead ?? null,
+        scoringReport,
+        sampledFinish?.inspected.look.description ?? env.look.description,
+        sampledFinish?.inspected.look.audienceRead ?? env.look.audienceRead ?? null,
         finalRender.png
       ));
 
-    // 6. FINISH -----------------------------------------------------------------------------------
+    // 6. UPDATE PRACTICE --------------------------------------------------------------------------
+    // The last policy call of the run, and it is on the chain rather than in discovery.jsonl: a
+    // practice version is a claim the artist is held to on every later run, and a claim whose
+    // supporting record may legitimately be deleted is not one anybody can be held to. It has to
+    // land here, after the loop's and EXAMINE's calls and before `trajectory-end`, because `replay`
+    // walks recorded calls in order.
+    if (discovery) {
+      const version = await updatePractice(
+        o.policy,
+        log,
+        spend,
+        {
+          positionId: loaded.positionAsWritten.id,
+          // The practice as this run was actually given it — `commission`, not `loaded`, so a
+          // control arm records the empty practice it was working under rather than the real one.
+          practice: commission.practice,
+          trajectoryId: id,
+          sheet: materials,
+          fertile: found.fertile,
+          rejected: found.rejected,
+        },
+        o.practiceStore ?? PRACTICE_STORE
+      );
+      log.append('note', { phase: 'update-practice', version: version.version, hash: version.hash });
+    }
+
+    // 7. FINISH -----------------------------------------------------------------------------------
     // Derived from how the loop actually ended, never defaulted. `finished` used to be the initial
     // value that anything short of `abandon` kept, so a run that used its last step and a run whose
     // finish was refused both reported `outcome: "finished"` next to `termination.legitimate:
@@ -721,7 +1226,7 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
       renders: canvas.renders + sketchCanvas.renders,
     };
 
-    // 7. SCORES -----------------------------------------------------------------------------------
+    // 8. SCORES -----------------------------------------------------------------------------------
     // Scored against the real position even in the control arm, which is the whole comparison.
     const trajectory: Trajectory = {
       id,
@@ -738,13 +1243,26 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
       questions,
       problems,
       sketches,
+      ...(sampledFinish && samplingPlan
+        ? {
+            sampling: {
+              plan: samplingPlan,
+              bindings: sampledFinish.bindings,
+              resolutions: sampledFinish.pair.resolutions,
+              baseProgram: sampledFinish.base,
+              sampledFile: sampledFinish.pair.sampledFile,
+              ablationFile: sampledFinish.pair.ablationFile,
+              ablationPixelHash: sampledFinish.pair.ablation.pixelHash,
+            },
+          }
+        : {}),
       collision: chosen.collision,
       terms: chosen.terms,
       chosen: { problemId: chosen.problemId, why: chosen.why, cost: chosen.cost },
       intention0,
       intentions,
       steps,
-      finalProgram: env.program,
+      finalProgram,
       finalHash: finalRender.programHash,
       examine: seen,
       outcome,
@@ -752,7 +1270,7 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
       scores: scoresOf(
         scoringReport,
         env.intention,
-        env.program,
+        finalProgram,
         intentions,
         steps,
         problems,

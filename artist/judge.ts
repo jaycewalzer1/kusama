@@ -1,4 +1,4 @@
-// L5: the three critics, offline and in a fresh context.
+// L5: the image critics plus the sampling-process audit, offline and in a fresh context.
 //
 // Nothing else in this repo judges. `check.ts` decides compliance mechanically and `reward.ts`
 // counts what the loop did; neither has an opinion about whether the thing is any good, and
@@ -6,7 +6,7 @@
 // ablation grid has no dependent variable. Separation between two arms could be proven. Improvement
 // could not.
 //
-// Three dimensions and no more. The other two that were proposed — "does it obey the stated formal
+// Three image dimensions and one opt-in process dimension. The other two that were proposed — "does it obey the stated formal
 // rules" and "does it violate a stated refusal" — are struck permanently, because `check.ts` already
 // decides both on the tree and on the render without a model. Routing them through here would
 // launder a deterministic check into a subjective score and then report the agreement between the
@@ -46,6 +46,8 @@ import { loadPosition, practiceOf, type Practice } from './field.js';
 import { schemaErrors } from './policy/schema-check.js';
 import { usd } from './pricing.js';
 import type { Trajectory } from './types.js';
+import { readLog } from './studio-log.js';
+import { parseSamplingEvent } from './sampling-events.js';
 
 /**
  * Frozen. Changing either is a new judge version, not a tweak — `judgeVersion()` hashes both, so
@@ -72,7 +74,7 @@ export const JUDGE_TEMPERATURE = 0;
 
 const CACHE_DIR = path.join(ROOT, '.cache', 'artist-judge');
 
-// The three system prompts. Hashed into every judgment; edit one and old scores stop joining to new
+// The system prompts. Hashed into every judgment; edit one and old scores stop joining to new
 // ones, which is the intended consequence and not an inconvenience.
 
 const ATTRIBUTION_SYSTEM = `You are shown one work and several accounts of artistic practices. Exactly one of those practices made the work; the others made different works you are not being shown.
@@ -110,14 +112,21 @@ The cliche list is the sharpest test available. A work that lands on a named cli
 
 Then say what the work does that the practice's description does not already contain. If you cannot name anything, that is quotation and you should say so.`;
 
+const SAMPLING_PROCESS_SYSTEM = `You audit one sampling decision as process evidence, not as art history.
+
+Image 1 is the final sampled work. Image 2 is the same unsampled base compiled with every sample at salience zero. The text is a redacted record: it names the artist's problem, formal channel, binding role and node IDs, measured pixel difference, compiler effects, and any revision. It deliberately contains no source title, museum ID, culture, date, medium, or artist.
+
+Decide three things separately: whether the stated problem motivated the chosen formal channel; whether the binding of record corresponds to that problem; and whether the revision, if one was made, responded to what the ablation showed. Do not infer anything about the source work and do not reward resemblance.`;
+
 const SYSTEMS = {
   attribution: ATTRIBUTION_SYSTEM,
   necessity: NECESSITY_SYSTEM,
   derivation: DERIVATION_SYSTEM,
+  samplingProcess: SAMPLING_PROCESS_SYSTEM,
 } as const;
 
 /**
- * One hash over the model, the temperature and all three prompts. On every judgment, for the same
+ * One hash over the model, the temperature and every prompt. On every judgment, for the same
  * reason `envVersion` is on every trajectory: two numbers produced under different questions are not
  * two measurements of one thing, and the only way to stop them being averaged is to make them refuse
  * to join.
@@ -169,8 +178,16 @@ export interface Judgment {
   attribution: Attribution;
   necessity: Necessity;
   derivation: Derivation;
+  samplingProcess?: SamplingProcess;
   usd: number;
   cached: boolean;
+}
+
+export interface SamplingProcess {
+  problemMotivatesChannel: boolean;
+  bindingCorresponds: boolean;
+  revisionResponds: boolean;
+  evidence: string;
 }
 
 interface JudgeRequest {
@@ -178,6 +195,7 @@ interface JudgeRequest {
   system: string;
   text: string;
   imageBase64: string;
+  additionalImages?: string[];
   schema: object;
 }
 
@@ -212,7 +230,7 @@ async function ask<T>(request: JudgeRequest): Promise<{ value: T; cached: boolea
         name: request.name,
         system: request.system,
         text: request.text,
-        image: createHash('sha256').update(request.imageBase64).digest('hex'),
+        images: [request.imageBase64, ...(request.additionalImages ?? [])].map((image) => createHash('sha256').update(image).digest('hex')),
         schema: request.schema,
       })
     )
@@ -239,7 +257,9 @@ async function ask<T>(request: JudgeRequest): Promise<{ value: T; cached: boolea
         {
           role: 'user',
           content: [
-            { type: 'image', source: { type: 'base64', media_type: 'image/png', data: request.imageBase64 } },
+            ...[request.imageBase64, ...(request.additionalImages ?? [])].map((data) =>
+              ({ type: 'image', source: { type: 'base64', media_type: 'image/png', data } })
+            ),
             { type: 'text', text: request.text },
           ],
         },
@@ -335,6 +355,37 @@ const DERIVATION_SCHEMA = {
   },
 };
 
+const SAMPLING_PROCESS_SCHEMA = {
+  type: 'object', additionalProperties: false,
+  required: ['problemMotivatesChannel', 'bindingCorresponds', 'revisionResponds', 'evidence'],
+  properties: {
+    problemMotivatesChannel: { type: 'boolean' },
+    bindingCorresponds: { type: 'boolean' },
+    revisionResponds: { type: 'boolean' },
+    evidence: { type: 'string', minLength: 40 },
+  },
+};
+
+/** Sampling evidence with every source-identity field excluded by construction. */
+export function redactedSamplingEvidence(dir: string): string | null {
+  const events: unknown[] = [];
+  for (const line of readLog(path.join(dir, 'studio.jsonl'))) {
+    const event = parseSamplingEvent(line);
+    if (!event || event.kind === 'sample_selected' || event.kind === 'sample_rejected') continue;
+    if (event.kind === 'sample_requested') events.push({ kind: event.kind, intents: event.data.intents, fallback: event.data.fallback });
+    else if (event.kind === 'binding_declared') events.push({ kind: event.kind, ...event.data });
+    else if (event.kind === 'ablation_rendered') events.push({
+      kind: event.kind,
+      differingPixels: event.data.differingPixels,
+      totalPixels: event.data.totalPixels,
+      resolutions: event.data.resolutions,
+      effects: event.data.effects ?? [],
+    });
+    else events.push({ kind: event.kind, ...event.data });
+  }
+  return events.length ? JSON.stringify(events, null, 2) : null;
+}
+
 /**
  * The forced choice. Candidates are every position in the catalog, lettered after a shuffle keyed on
  * the work, and the judge is told nothing about which one is the answer — not the id, not the name,
@@ -383,8 +434,8 @@ export interface JudgeOptions {
 }
 
 /**
- * Judge one trajectory directory. Reads `final.json` and `final.png` off disk and nothing else, so
- * this can be run in a fresh process, months later, against runs that are already finished.
+ * Judge one trajectory directory. Ordinary runs read `final.json` and `final.png`; sampled runs also
+ * read their hash-chained sampling events and recorded ablation image. It can run in a fresh process.
  */
 export async function judgeTrajectory(dir: string, options: JudgeOptions = {}): Promise<Judgment> {
   const trajectory = JSON.parse(readFileSync(path.join(dir, 'final.json'), 'utf8')) as Trajectory;
@@ -433,6 +484,20 @@ export async function judgeTrajectory(dir: string, options: JudgeOptions = {}): 
     schema: DERIVATION_SCHEMA,
   });
 
+  let samplingProcess: { value: SamplingProcess; cached: boolean; usd: number } | null = null;
+  const processEvidence = trajectory.sampling ? redactedSamplingEvidence(dir) : null;
+  if (trajectory.sampling && processEvidence) {
+    const ablation = readFileSync(path.join(dir, trajectory.sampling.ablationFile)).toString('base64');
+    samplingProcess = await ask<SamplingProcess>({
+      name: 'samplingProcess',
+      system: SAMPLING_PROCESS_SYSTEM,
+      text: `REDACTED HASH-CHAINED PROCESS EVIDENCE\n${processEvidence}\n\nImage 1 is final; image 2 is salience zero.`,
+      imageBase64: png,
+      additionalImages: [ablation],
+      schema: SAMPLING_PROCESS_SCHEMA,
+    });
+  }
+
   return {
     trajectoryId: trajectory.id,
     positionId: trajectory.positionId,
@@ -442,8 +507,9 @@ export async function judgeTrajectory(dir: string, options: JudgeOptions = {}): 
     attribution: attribution.value,
     necessity: { ...necessity.value, rubricIds: pending.map((r) => r.id) },
     derivation: derivation.value,
-    usd: attribution.usd + necessity.usd + derivation.usd,
-    cached: attribution.cached && necessity.cached && derivation.cached,
+    ...(samplingProcess ? { samplingProcess: samplingProcess.value } : {}),
+    usd: attribution.usd + necessity.usd + derivation.usd + (samplingProcess?.usd ?? 0),
+    cached: attribution.cached && necessity.cached && derivation.cached && (samplingProcess?.cached ?? true),
   };
 }
 

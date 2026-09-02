@@ -8,6 +8,12 @@
 //
 // The field is the whole reason this can work at all. Without it the model can only rediscover the
 // condition; with it there is something outside the model to find a problem *in*.
+//
+// When the run did RESEARCH, the material sheet is a second such thing. The sheet is appended to the
+// observation and the schema gains one optional field, `workRefs`, so a problem may be read out of a
+// work as well as out of a field line. Both additions are built outside this file's imports of
+// observation.ts and schemas.ts — see material-sheet.ts for why — and a run without a sheet gets the
+// identical observation string and the identical schema object it got before this existed.
 
 import { callPolicy, type Spend } from '../call.js';
 import { findObservation } from '../observation.js';
@@ -15,6 +21,7 @@ import { distribution, rng, sampleIndices, streamSeed, tookTheMode } from '../sa
 import { FIND_SCHEMA } from '../schemas.js';
 import { artistLayers } from '../field.js';
 import { influenceImages, withInfluences, type InfluenceDoc } from '../influence-doc.js';
+import { withMaterials, withWorkRefs, type MaterialSheet } from '../material-sheet.js';
 import type { Commission } from '../field.js';
 import type { Policy } from '../policy/interface.js';
 import type { StudioLog } from '../studio-log.js';
@@ -43,20 +50,39 @@ const SYSTEM = [
   'Quote the field. A problem you could have written from the condition alone is not one.',
 ].join('\n');
 
+/**
+ * The one extra sentence a researched run gets. Appended rather than folded into SYSTEM so that an
+ * unresearched run's system prompt is the byte-identical string it was before.
+ *
+ * It says "may" and not "should". Pushing harder here buys citations rather than problems: the model
+ * would attach a work id to every problem it had already written, which reads exactly like having
+ * found something in the collection and is not.
+ */
+const RESEARCHED = [
+  '',
+  'You have also been looking at art. What you found is below what you found in the field. A problem',
+  'may be read out of a work you looked at as well as out of a line of the field; when it is, cite',
+  'the work. Only cite what you actually saw.',
+].join('\n');
+
 export async function find(
   policy: Policy,
   log: StudioLog,
   spend: Spend,
   commission: Commission,
   runSeed: number,
-  influences: InfluenceDoc | null = null
+  influences: InfluenceDoc | null = null,
+  sheet: MaterialSheet | null = null
 ): Promise<{ questions: Question[]; problems: Problem[]; proposed: Problem[] }> {
-  log.append('phase', { phase: 'find', influences: influences?.id ?? null });
+  log.append('phase', { phase: 'find', influences: influences?.id ?? null, materials: sheet?.hash ?? null });
   const result = await callPolicy<{ questions: Question[]; problems: Problem[] }>(policy, log, spend, {
     name: 'find',
-    system: SYSTEM,
-    observation: withInfluences(findObservation(artistLayers(commission), commission.field), influences),
-    schema: FIND_SCHEMA,
+    system: sheet ? `${SYSTEM}${RESEARCHED}` : SYSTEM,
+    observation: withMaterials(
+      withInfluences(findObservation(artistLayers(commission), commission.field), influences),
+      sheet
+    ),
+    schema: sheet ? withWorkRefs(FIND_SCHEMA) : FIND_SCHEMA,
     // FIND is where the pictures go if they go anywhere. It is the one phase whose whole job is to
     // decide what is difficult here before anything has been drawn, so it is the phase where having
     // looked at something could plausibly change the answer rather than decorate it.

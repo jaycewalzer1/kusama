@@ -53,36 +53,44 @@
   ],
   "commitments": [
     {
+      "id": "r-spread",
+      "kind": "coverageRange",
+      "params": { "min": 0.7 },
+      "scope": "render",
+      "severity": "hard",
+      "why": "The accumulation reaches across the sheet instead of gathering in one place. This carries what `c-accumulated` and `c-crossings` were reaching for and could not say: they counted hatched areas and runs of marks, and eight runs stacked in one corner satisfy both of them. Coverage is the share of the sheet that meets any ink at all, so it is the number that separates a surface built by passes from a cliche in this position's own list — a dense scribble in one corner and clean paper everywhere else. `r-dense` cannot separate them, because a corner scribble can be as dense as you like."
+    },
+    {
       "id": "c-accumulated",
       "kind": "requireMark",
       "params": { "styles": ["hatch"], "min": 6 },
       "scope": "tree",
-      "severity": "hard",
-      "why": "Six areas that are built rather than filled. An area of tone that arrived in one operation has no count in it, and a count is the only thing this position has to say."
+      "severity": "soft",
+      "why": "Six areas that are built rather than filled. An area of tone that arrived in one operation has no count in it, and a count is the only thing this position has to say. Soft, because it counts marks in the tree: it lost its hard slot to `r-spread` and `r-dense`, which measure the built surface on the sheet. A seventh hatch laid under an existing accumulation, or outside the canvas, turns this green with nothing to see."
     },
     {
       "id": "c-crossings",
       "kind": "requireNode",
       "params": { "op": "stroke", "min": 8 },
       "scope": "tree",
-      "severity": "hard",
-      "why": "Eight separate runs of marks, so that there is something for the accumulations to cross. One accumulation is a texture; the work is in the overlaps, and overlaps need at least two parties."
+      "severity": "soft",
+      "why": "Eight separate runs of marks, so that there is something for the accumulations to cross. One accumulation is a texture; the work is in the overlaps, and overlaps need at least two parties. Soft, because it counts nodes: it lost its hard slot to `r-spread`, which says the part of this that is about the picture. Eight `stroke` ops can be eight runs at one angle in one corner, which is the thing this was written to prevent."
     },
     {
       "id": "c-two-inks",
       "kind": "maxDistinctColors",
       "params": { "max": 3, "includeGround": true },
       "scope": "tree",
-      "severity": "hard",
-      "why": "The ground and two inks. Every other tone on the surface has to be arrived at by crossing, because a third ink is a way of choosing a colour that the arithmetic was supposed to produce."
+      "severity": "soft",
+      "why": "The ground and two inks. Every other tone on the surface has to be arrived at by crossing, because a third ink is a way of choosing a colour that the arithmetic was supposed to produce. Soft: it is a ceiling and could have stayed hard, but there are four hard slots and the two opacity bans and the two render measures have first claim. It lost its slot to `r-spread`, and a third ink is now caught by `j-only-this`, by a reader who can see whether the crossings were summed or chosen."
     },
     {
       "id": "b-true-count",
       "kind": "nodeCount",
       "params": { "min": 300 },
       "scope": "tree",
-      "severity": "hard",
-      "why": "The quantity the piece is about should be the quantity that is present. This is the position's central claim and the medium cannot carry it.",
+      "severity": "soft",
+      "why": "The quantity the piece is about should be the quantity that is present. This is the position's central claim and the medium cannot carry it. Soft, because it counts nodes, and because it has never been decided either way: `blocked_by` holds it out of every score, so a hard slot spent here bought nothing but the slot.",
       "blocked_by": "an instance budget that can hold a real count: the profile stops at 400 repeat instances and 1200 resolved nodes, so any quantity the work is actually about is larger than anything the tree can contain, and the number can only be stood for by a smaller number"
     },
     {
@@ -104,6 +112,16 @@
       "scope": "judge",
       "severity": "soft",
       "why": "Non-genericity is the question the position exists to be answerable to. A position that produces work indistinguishable from work made without it has not steered anything, whatever it scores."
+    },
+    {
+      "id": "j-refusals",
+      "kind": "rubric",
+      "params": {
+        "text": "This practice holds five refusals, and each one is a thing it would be easy and wrong to do. It will not draw anything once: a single instance of a mark is an assertion about that mark, and this practice has no assertions about marks. It will not lay down anything opaque: an area that cannot be seen through is an area where the count is unverifiable, and an unverifiable count is the only thing this practice can be accused of. It will not choose the tone at a crossing: the crossing is whatever the sum makes it, and reaching for a third ink to correct it is the moment the arithmetic stops being real. It will not move an instance because it looked wrong: the rule produced it, the rule is the author, and correcting its output by eye means the composition was the author all along. It will not stop where the surface looks resolved: it stops when the count is finished or the sheet runs out, and if those two disagree the sheet loses. Take each refusal in turn. Say whether this work honours it, breaks it, or never came near enough to it for the question to arise, and for any it breaks, say whether breaking it bought anything. Only the second refusal has rules behind it. The other four are yours, and the last two cannot be seen in the tree at all: nothing anywhere records that an instance was moved because it looked wrong, or that the hand stopped at the point the surface looked resolved rather than at the end of the count."
+      },
+      "scope": "judge",
+      "severity": "hard",
+      "why": "What this practice is, put where it can be weighed. It was previously spread across hard tree counts — six hatched areas, eight runs of marks, three colours including the ground, three hundred nodes — which between them admitted about one object and could each be turned green by editing the JSON. The refusals are not counts and never were: whether the tone at a crossing was summed or chosen is visible only to somebody looking at the sheet, and whether an instance was moved by eye is not visible anywhere. So they live in a rubric, and a reader decides."
     }
   ],
   "prohibitions": [
@@ -128,8 +146,8 @@
       "kind": "textMinHeight",
       "params": { "min": 0.05 },
       "scope": "tree",
-      "severity": "hard",
-      "why": "Small type at the edge of an accumulation is a legend, and a legend states the count instead of letting it be taken apart. This position's argument is that the arithmetic is visible; a line telling the viewer what they are looking at concedes that it is not, and does so in the one place they will believe it over their own eyes."
+      "severity": "soft",
+      "why": "Small type at the edge of an accumulation is a legend, and a legend states the count instead of letting it be taken apart. This position's argument is that the arithmetic is visible; a line telling the viewer what they are looking at concedes that it is not. Soft: it lost its hard slot to `r-spread`. Almost no sheet from this practice carries words at all, so a floor on type size is a rule that hardly ever fires, and a slot spent on one that never fires is a slot not spent on the picture."
     },
     {
       "id": "r-dense",

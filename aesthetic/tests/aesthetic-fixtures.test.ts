@@ -29,6 +29,13 @@ function programFile(id: string): string {
   return path.join(ROOT, 'aesthetic', 'positions', `${id}.json`);
 }
 
+/** How many constraints the position declares blocked, read off the file rather than remembered. */
+function blockedCount(id: string): number {
+  return constraintsOf(loadAestheticProgram(programFile(id))).filter(
+    ({ constraint }) => constraint.blocked_by !== undefined
+  ).length;
+}
+
 function fixture(id: string, kind: 'pass' | 'fail'): Record<string, unknown> {
   return JSON.parse(readFileSync(path.join(ROOT, 'aesthetic', 'fixtures', `${id}-${kind}.json`), 'utf8')) as Record<string, unknown>;
 }
@@ -116,9 +123,39 @@ test('each program states a position: lineage, tensions, rules, cliches, and at 
     assert.ok(decidable.filter((c) => c.scope === 'tree').length >= 5, `${id} needs tree-scope constraints that can actually be decided`);
     assert.ok(decidable.filter((c) => c.scope === 'render').length >= 1, `${id} needs a render-scope constraint`);
     const rubrics = all.filter((c) => c.kind === 'rubric');
-    assert.ok(rubrics.length >= 1 && rubrics.length <= 2, `${id} needs one or two judge rubrics`);
-    assert.ok(all.some((c) => c.blocked_by !== undefined), `${id} should name what the medium cannot say`);
+    // The ceiling used to be two, from when a position said what it was in ten hard constraints and
+    // a rubric was a garnish. It is now the other way round: four hard slots decide the picture and
+    // everything else about the practice is a question somebody reads. Four is the new ceiling, and
+    // it is still a ceiling — past that the judge is being handed an essay rather than a question.
+    assert.ok(rubrics.length >= 1 && rubrics.length <= 4, `${id} needs one to four judge rubrics`);
+
+    // A position may name a primitive the medium lacks, and until recently every one of them had to,
+    // because there was always something missing. `withheld` no longer does: `cover.destroys` gave
+    // it the subtractive record its central commitment was waiting on. So the rule is no longer
+    // "every position is blocked somewhere" — it is that a blockage still on the books must be real.
+    // A stale one is the expensive kind of wrong: it reports `unverified` forever, sits out of every
+    // score, and hides the fact that the environment grew the thing it says is missing.
+    for (const c of all.filter((x) => x.blocked_by !== undefined)) {
+      assert.ok((c.blocked_by ?? '').length > 40, `${id}/${c.id} blocked_by is too thin to be a real gap`);
+      assert.notEqual(c.kind, 'requireErasure', `${id}/${c.id} claims erasure is missing; the medium has it`);
+    }
   }
+});
+
+/**
+ * The whole set at once, which no per-position assertion can see. If nothing anywhere is blocked,
+ * either the medium is complete — it is not — or somebody quietly deleted the honest reporting of
+ * what it cannot do, which is the one thing that keeps an unmeasurable commitment from scoring as a
+ * pass. Two of the three positions name a gap; this fails when the last one goes without a fight.
+ */
+test('the set of positions still names at least one thing the medium cannot say', () => {
+  const blocked = AESTHETICS.flatMap((id) =>
+    constraintsOf(loadAestheticProgram(programFile(id)))
+      .map(({ constraint }) => constraint)
+      .filter((c) => c.blocked_by !== undefined)
+      .map((c) => `${id}/${c.id}`)
+  );
+  assert.ok(blocked.length >= 1, 'no position names a missing primitive, which is not credible');
 });
 
 test('every fixture is a program the medium accepts', () => {
@@ -176,8 +213,8 @@ test('render scope is unverified and judge rubrics are returned unread when noth
     assert.equal(report.renderScore, null, `${id} should not score render scope without metrics`);
     for (const r of report.results.filter((x) => x.scope === 'render')) assert.equal(r.status, 'unverified');
     assert.ok(report.pendingRubrics.length >= 1, `${id} should hand its rubrics back`);
+    assert.equal(report.blocked, blockedCount(id), `${id} should report exactly the blocked constraints it declares`);
     for (const p of report.pendingRubrics) assert.ok(p.text.length > 40, `${id}/${p.id} rubric is too thin to judge with`);
-    assert.ok(report.blocked >= 1, `${id} should report its blocked constraints`);
   }
 });
 

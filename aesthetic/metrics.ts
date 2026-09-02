@@ -22,6 +22,24 @@ const GRID = 16;
 const CELL_INK = 0.01;
 /** The edge band's width, as a fraction of the sheet's shorter side. */
 const EDGE_BAND = 0.05;
+/**
+ * A pixel counts as opaque when it sits at least this far off the paper — half of the 0..255 range.
+ * Half, and not "as far as the darkest ink on this sheet", because a threshold taken from the
+ * picture's own extremes would let a pale drawing report the same regions as a black one, and the
+ * whole reason this number exists is to be comparable between two pictures.
+ */
+const OPAQUE_THRESHOLD = 128;
+/**
+ * Regions smaller than this share of the sheet are not recorded. A floor is necessary rather than
+ * tidy: a spray or a halftone is hundreds of thousands of one-pixel components, and an array with
+ * an entry for each of them is not a measurement, it is the image again.
+ */
+const REGION_FLOOR = 0.0005;
+/**
+ * At most this many regions are kept, largest first. Past here the only useful fact is that there
+ * are a great many, and every bound anyone would write is already decided.
+ */
+const REGION_CAP = 64;
 
 function hexToRgb(hex: string): [number, number, number] {
   return [
@@ -155,6 +173,56 @@ function inkOffset(ink: Uint8Array, width: number, height: number): number {
 }
 
 /**
+ * The connected opaque regions of the sheet, as area shares, largest first.
+ *
+ * This is the measure that replaces counting `solid` nodes in the tree. "Four opaque areas" is a
+ * fact about the picture and it was being asked of the program: a position that requires four
+ * `solid` styles is satisfied by four solid marks that overlap into one blot, by four laid outside
+ * the canvas, and by four hidden under a wash — and is violated by three that read as five because
+ * one of them is cut in half by a covering. None of those four mistakes is visible to a tree walk
+ * and all four are visible here.
+ *
+ * Four-connected, not eight: two areas touching at a single corner are two areas to a viewer, and
+ * eight-connectivity would fuse them. Flood-filled iteratively off an explicit stack, because a
+ * recursive fill over a full-bleed sheet is a million frames deep.
+ *
+ * The result is areas rather than a count so that a constraint can set its own floor for what
+ * counts as a region without the image being measured again. `REGION_FLOOR` is not that floor — it
+ * is only the point below which storing the number costs more than the number is worth.
+ */
+function opaqueRegions(ink: Uint8Array, width: number, height: number): number[] {
+  const total = width * height;
+  const seen = new Uint8Array(total);
+  const stack = new Int32Array(total);
+  const areas: number[] = [];
+
+  for (let start = 0; start < total; start++) {
+    if (seen[start] === 1 || ink[start]! < OPAQUE_THRESHOLD) continue;
+    let top = 0;
+    stack[top++] = start;
+    seen[start] = 1;
+    let area = 0;
+    while (top > 0) {
+      const p = stack[--top]!;
+      area++;
+      const x = p % width;
+      const y = (p - x) / width;
+      // Right, left, down, up. The bounds test is on the coordinate, not on the index: without the
+      // x test, "one to the left" of column 0 is the last pixel of the row above, and the whole
+      // sheet fuses into one region through its own margins.
+      if (x + 1 < width && seen[p + 1] === 0 && ink[p + 1]! >= OPAQUE_THRESHOLD) { seen[p + 1] = 1; stack[top++] = p + 1; }
+      if (x > 0 && seen[p - 1] === 0 && ink[p - 1]! >= OPAQUE_THRESHOLD) { seen[p - 1] = 1; stack[top++] = p - 1; }
+      if (y + 1 < height && seen[p + width] === 0 && ink[p + width]! >= OPAQUE_THRESHOLD) { seen[p + width] = 1; stack[top++] = p + width; }
+      if (y > 0 && seen[p - width] === 0 && ink[p - width]! >= OPAQUE_THRESHOLD) { seen[p - width] = 1; stack[top++] = p - width; }
+    }
+    const share = area / total;
+    if (share >= REGION_FLOOR) areas.push(share);
+  }
+
+  return areas.sort((a, b) => b - a).slice(0, REGION_CAP);
+}
+
+/**
  * Every field of RenderMetrics except pixelHash, which is a claim about bytes this does not have.
  *
  * The ink map is the only input, so a caller that decided for itself which pixels are paper — a
@@ -192,6 +260,7 @@ export function metricsFromInk(
       horizontal: symmetry(ink, width, height, 'horizontal'),
     },
     edgeContact: edgeContact(ink, width, height),
+    opaqueRegions: opaqueRegions(ink, width, height),
   };
 }
 

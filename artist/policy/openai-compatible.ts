@@ -50,7 +50,7 @@ export class OpenAICompatiblePolicy implements Policy {
   constructor() {
     this.baseUrl = (process.env['ARTIST_BASE_URL'] ?? '').replace(/\/+$/, '');
     if (!this.baseUrl) {
-      throw new PolicyError('ARTIST_BASE_URL is not set, so there is no OpenAI-compatible endpoint to call');
+      throw new PolicyError('ARTIST_BASE_URL is not set, so there is no OpenAI-compatible endpoint to call', 'configuration');
     }
     this.apiKey = process.env['ARTIST_API_KEY'] ?? process.env['OPENAI_API_KEY'] ?? 'no-key';
     this.model = process.env['ARTIST_MODEL'] ?? 'local';
@@ -103,7 +103,7 @@ export class OpenAICompatiblePolicy implements Policy {
         }),
       });
       if (!res.ok) {
-        throw new PolicyError(`${request.name}: ${this.baseUrl} answered ${res.status} ${await res.text()}`);
+        throw new PolicyError(`${request.name}: ${this.baseUrl} answered ${res.status} ${await res.text()}`, 'transport');
       }
       const body = (await res.json()) as ChatResponse;
       inputTokens += body.usage?.prompt_tokens ?? 0;
@@ -154,7 +154,8 @@ export class OpenAICompatiblePolicy implements Policy {
     }
 
     throw new PolicyError(
-      `${request.name}: the policy did not produce a schema-valid action in two attempts:\n  ${failures.join('\n  ')}`
+      `${request.name}: the policy did not produce a schema-valid action in two attempts:\n  ${failures.join('\n  ')}`,
+      truncated ? 'output' : 'schema'
     );
   }
 }

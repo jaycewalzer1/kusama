@@ -1,0 +1,158 @@
+{
+  "version": "0.2",
+  "profile": "default-v1",
+  "assetPack": "core-v1",
+  "seed": 63533,
+  "canvas": { "width": 600, "height": 900, "ground": "#f2efe9", "brushScale": 1 },
+  "palette": {
+    "ink": "#181a1f",
+    "rust": "#8b3c1e"
+  },
+  "meta": {
+    "aesthetic": "interference",
+    "exemplar": "five stacks of sentences overprinted",
+    "reads_as": "seventy-three lines of very large capitals in five faces at five angles -- two nearly level, one leaning thirty degrees, one running steeply down the sheet, one almost horizontal -- each face repeating a single flat sentence line under line until the sheet runs out, the five stacks laid over each other so that across most of the surface letters are crossing letters and only fragments of any one sentence stay readable",
+    "note": "Nothing is set once. Each stack is one line of type handed to a repeat rule that steps it down the sheet until the count runs out, and each stack is placed so that every line of it crosses the whole sheet rather than stopping inside a margin. Type is large everywhere; there is no caption anywhere, nothing here states the count."
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "stack-a",
+        "type": "group",
+        "transform": { "translate": [-207, -28], "rotate": -9 },
+        "children": [
+          {
+            "id": "lines-a",
+            "type": "repeat",
+            "rngKey": "if/lines-a",
+            "count": 14,
+            "layout": { "type": "line", "origin": [0, 0], "dx": 0, "dy": 92 },
+            "children": [
+              {
+                "id": "line-a",
+                "type": "op",
+                "op": "text",
+                "rngKey": "if/line-a",
+                "args": {
+                  "text": "AND THEN I DID IT AGAIN AND THEN I DID IT AGAIN AND THEN I DID IT AGAIN",
+                  "font": "six-caps", "size": 96, "x": 0, "y": 0,
+                  "color": "ink", "case": "upper", "tracking": 1.5
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "stack-b",
+        "type": "group",
+        "transform": { "translate": [-136, -181], "rotate": 8 },
+        "children": [
+          {
+            "id": "lines-b",
+            "type": "repeat",
+            "rngKey": "if/lines-b",
+            "count": 12,
+            "layout": { "type": "line", "origin": [0, 0], "dx": 0, "dy": 104 },
+            "children": [
+              {
+                "id": "line-b",
+                "type": "op",
+                "op": "text",
+                "rngKey": "if/line-b",
+                "args": {
+                  "text": "I COUNTED THEM I COUNTED THEM I COUNTED THEM I COUNTED",
+                  "font": "saira-stencil", "size": 110, "x": 0, "y": 0,
+                  "color": "rust", "case": "upper", "tracking": 1
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "stack-c",
+        "type": "group",
+        "transform": { "translate": [-466, 233], "rotate": -31 },
+        "children": [
+          {
+            "id": "lines-c",
+            "type": "repeat",
+            "rngKey": "if/lines-c",
+            "count": 18,
+            "layout": { "type": "line", "origin": [0, 0], "dx": 0, "dy": 72 },
+            "children": [
+              {
+                "id": "line-c",
+                "type": "op",
+                "op": "text",
+                "rngKey": "if/line-c",
+                "args": {
+                  "text": "ONE AND ONE AND ONE AND ONE AND ONE AND ONE AND ONE",
+                  "font": "vt323", "size": 84, "x": 0, "y": 0,
+                  "color": "ink", "case": "upper", "tracking": 0.5
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "stack-d",
+        "type": "group",
+        "transform": { "translate": [464, -405.5], "rotate": 62 },
+        "children": [
+          {
+            "id": "lines-d",
+            "type": "repeat",
+            "rngKey": "if/lines-d",
+            "count": 17,
+            "layout": { "type": "line", "origin": [0, 0], "dx": 0, "dy": 66 },
+            "children": [
+              {
+                "id": "line-d",
+                "type": "op",
+                "op": "text",
+                "rngKey": "if/line-d",
+                "args": {
+                  "text": "I STOPPED WHEN THE SHEET RAN OUT I STOPPED WHEN THE SHEET RAN OUT",
+                  "font": "major-mono", "size": 76, "x": 0, "y": 0,
+                  "color": "rust", "case": "upper", "tracking": 1
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "stack-e",
+        "type": "group",
+        "transform": { "translate": [-143.5, -127.5], "rotate": 3 },
+        "children": [
+          {
+            "id": "lines-e",
+            "type": "repeat",
+            "rngKey": "if/lines-e",
+            "count": 12,
+            "layout": { "type": "line", "origin": [0, 0], "dx": 0, "dy": 100 },
+            "children": [
+              {
+                "id": "line-e",
+                "type": "op",
+                "op": "text",
+                "rngKey": "if/line-e",
+                "args": {
+                  "text": "STILL NOT DONE STILL NOT DONE STILL NOT DONE STILL NOT DONE",
+                  "font": "stardos-stencil", "size": 118, "x": 0, "y": 0,
+                  "color": "ink", "case": "upper", "tracking": 2
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

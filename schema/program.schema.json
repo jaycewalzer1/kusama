@@ -626,7 +626,15 @@
       "required": ["region", "softness"],
       "properties": {
         "region": { "$ref": "#/$defs/region" },
-        "softness": { "type": "number", "minimum": 0, "maximum": 0.6 }
+        "softness": { "type": "number", "minimum": 0, "maximum": 0.6 },
+        "destroys": {
+          "description": "Source node ids this covering claims to have destroyed: the marks it was painted over the top of, named in the tree so that what was taken away is readable without diffing pixels. Optional, and a claim rather than an instruction -- the renderer draws exactly the same picture with it and without it. env/validate.ts refuses the program if the claim is not geometrically true: every name must exist in the resolved output, must be drawn before this covering rather than after it, and must have bounds that actually overlap the covering's. A macro id counts for its parts.",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        }
       }
     }
   }

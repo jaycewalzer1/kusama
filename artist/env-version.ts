@@ -17,6 +17,7 @@ import { loadPackFor } from '../env/pack.js';
 import { contentHash, loadProfileFor } from '../env/profile.js';
 import { loadCommission } from './field.js';
 import { OBSERVATION_HASH, PROTOCOL_HASH } from './observation.js';
+import { SAMPLING_OBSERVATION_HASH } from './sampling-observation.js';
 import { seedProgram } from './seed.js';
 import type { EnvVersion } from './types.js';
 
@@ -49,7 +50,8 @@ export function envVersionNow(
   briefId: string,
   seed: number,
   elementIds: string[] = [],
-  influencesHash?: string
+  influencesHash?: string,
+  sampling = false
 ): EnvVersion {
   const program = seedProgram(seed);
   const { hash: profileHash } = loadProfileFor(program);
@@ -71,6 +73,7 @@ export function envVersionNow(
     // anyway, which is exactly the kind of difference between the object and its JSON that makes a
     // byte-identity test pass while the behaviour is wrong.
     ...(influencesHash ? { influencesHash } : {}),
+    ...(sampling ? { samplingObservationHash: SAMPLING_OBSERVATION_HASH } : {}),
   };
 }
 
@@ -97,7 +100,7 @@ export const ABSENT = '(absent)';
  * required fields (which `current` always carries) plus exactly this list, and nothing read off the
  * record.
  */
-const OPTIONAL_FIELDS = ['influencesHash'] as const satisfies readonly (keyof EnvVersion)[];
+const OPTIONAL_FIELDS = ['influencesHash', 'samplingObservationHash'] as const satisfies readonly (keyof EnvVersion)[];
 
 /**
  * Which of them moved. A field the record does not carry is skipped rather than reported as

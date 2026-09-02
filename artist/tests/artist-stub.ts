@@ -9,6 +9,7 @@
 // poster. It is trying to exercise every branch the driver has: an edit that lands, an edit that is
 // refused, a risk move, a destruction, a replan and a finish.
 
+import { contentHash } from '../../env/profile.js';
 import { setEnvModel, type EnvRequest, type EnvResponse } from '../env-model.js';
 import type { Policy, PolicyRequest, PolicyResponse } from '../policy/interface.js';
 
@@ -107,6 +108,28 @@ export class StubPolicy implements Policy {
   }
 
   private answer(request: PolicyRequest): unknown {
+    if (request.name === 'sample') {
+      return {
+        intents: [{
+          problem: 'The marks need a directional pressure that keeps the date block from settling into a notice.',
+          channel: 'mark_rhythm',
+          transformation: 'counterpoint',
+          salience: 0.42,
+          scope: 0.5,
+          bindingRole: 'sample_subject',
+        }],
+      };
+    }
+
+    if (request.name === 'sample_feedback') return { rejections: [] };
+    if (request.name === 'bind') return { bindings: { sample_subject: ['sheet'] } };
+    if (request.name === 'sample_review') {
+      return {
+        assessment: 'The ablation shows a restrained directional interruption without replacing the date block or importing a source image.',
+        revision: { kind: 'none' },
+      };
+    }
+
     if (request.name === 'find') {
       return {
         questions: [
@@ -255,6 +278,11 @@ export class StubPolicy implements Policy {
   }
 }
 
+/** A short stable token for whatever image the request carried, or none when it carried no image. */
+function imageMark(request: EnvRequest): string {
+  return request.imageBase64 ? contentHash(request.imageBase64).slice(0, 8) : 'nothing-was-shown';
+}
+
 /**
  * A describer that is not a model. Installed with setEnvModel, so it also bypasses the disk cache —
  * which is what makes the stubbed tests independent of whatever a real run left behind.
@@ -267,7 +295,16 @@ export function installStubEnvModel(
     requests.push(request);
     const value =
       request.name === 'describe'
-        ? { description: 'A pale sheet. Dark text sits at the upper left. A red bar crosses it. The rest is empty. The eye goes to the text.' }
+        ? // Varies with the picture, and only with the picture. A stub returning one constant
+          // sentence forever is the exact pathology `describedTheSame` was built to detect, so it
+          // would fire that trigger on every stubbed run after three kept steps — a fixture
+          // asserting a fact about the fixture. A real describer shown two different sheets says
+          // two different things, and shown the same bytes twice is answered from cache.
+          {
+            description:
+              'A pale sheet. Dark text sits at the upper left. A red bar crosses it. The rest is ' +
+              `empty. The eye goes to the text. The marks fall in the arrangement ${imageMark(request)}.`,
+          }
         : request.name === 'transcribe'
           ? // Stands in for a reader who can make out everything the stub policy wrote. A stub that
             // returned less would block the gate on every run and there would be no accept path

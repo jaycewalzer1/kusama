@@ -26,6 +26,7 @@ function metrics(v: number): Omit<RenderMetrics, 'pixelHash'> {
     inkOffset: v,
     symmetry: { vertical: v, horizontal: v },
     edgeContact: { top: v, right: v, bottom: v, left: v },
+    opaqueRegions: [],
   };
 }
 

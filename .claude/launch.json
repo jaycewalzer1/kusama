@@ -9,6 +9,14 @@
         "ui"
       ],
       "port": 4321
+    },
+    {
+      "name": "studio-built",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "dist/studio/ui.js"
+      ],
+      "port": 4321
     }
   ]
 }

@@ -478,6 +478,25 @@ export const SKETCH_SCHEMA: Schema = {
   },
 };
 
+/** The original object is returned on ordinary runs so their logged schema stays byte-identical. */
+export function sketchSchema(withBindings: boolean): Schema {
+  if (!withBindings) return SKETCH_SCHEMA;
+  return {
+    ...SKETCH_SCHEMA,
+    properties: {
+      ...(SKETCH_SCHEMA['properties'] as Schema),
+      bindings: {
+        type: 'object',
+        description: 'Optional advisory map from a declared sampling bindingRole to node IDs in this sketch.',
+        additionalProperties: {
+          type: 'array', minItems: 1, uniqueItems: true,
+          items: { type: 'string' },
+        },
+      },
+    },
+  };
+}
+
 /**
  * The distribution the three sketches of a problem are drawn from.
  *

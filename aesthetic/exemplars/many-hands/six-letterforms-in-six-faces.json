@@ -1,0 +1,220 @@
+{
+  "version": "0.2",
+  "profile": "default-v1",
+  "assetPack": "core-v1",
+  "seed": 70311,
+  "canvas": { "width": 600, "height": 900, "ground": "#f2efe9", "brushScale": 1 },
+  "palette": {
+    "ink": "#17191d",
+    "iron": "#3f4852",
+    "oxide": "#7d3421",
+    "pencil": "#b4afa6"
+  },
+  "meta": {
+    "aesthetic": "many-hands",
+    "exemplar": "six letterforms, six faces",
+    "reads_as": "six enormous single characters set in six faces that share nothing — a black grotesque R, a condensed 8, a slab-mono Q, a marker B, a blackletter W and a heavy display M — arranged two to a row down the left two thirds of the sheet, with six small settings in six further faces wedged into the gaps between them, three of those small ones ruled straight across the big characters in pencil rather than around them, and one line running off the right edge at the bottom",
+    "note": "The six characters are within thirteen per cent of each other in size, so none of them is the display line and the others captions. Two pale tinted panels lie under the upper left, laid by two parties over their own portion of the sheet and not over the whole of it. The pencil hands cross the big characters; nothing was reflowed to let them past."
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "panel-iron",
+        "type": "op",
+        "op": "wash",
+        "rngKey": "mh6/panel-iron",
+        "args": {
+          "region": { "type": "rect", "x": 0, "y": 0, "w": 300, "h": 430 },
+          "style": { "kind": "wash", "color": "iron", "opacity": 55, "bleed": 0, "texture": [0.15, 0.4] }
+        }
+      },
+      {
+        "id": "panel-oxide",
+        "type": "op",
+        "op": "wash",
+        "rngKey": "mh6/panel-oxide",
+        "args": {
+          "region": { "type": "rect", "x": 240, "y": 210, "w": 300, "h": 330 },
+          "style": { "kind": "wash", "color": "oxide", "opacity": 50, "bleed": 0, "texture": [0.2, 0.5] }
+        }
+      },
+      {
+        "id": "big-r",
+        "type": "op",
+        "op": "text",
+        "rngKey": "mh6/big-r",
+        "args": { "text": "R", "font": "archivo-black", "size": 250, "x": 12, "y": 200, "color": "ink" }
+      },
+      {
+        "id": "big-eight",
+        "type": "op",
+        "op": "text",
+        "rngKey": "mh6/big-eight",
+        "args": { "text": "8", "font": "anton", "size": 265, "x": 290, "y": 200, "color": "ink" }
+      },
+      {
+        "id": "big-q",
+        "type": "op",
+        "op": "text",
+        "rngKey": "mh6/big-q",
+        "args": { "text": "Q", "font": "rubik-mono-one", "size": 240, "x": 12, "y": 445, "color": "oxide" }
+      },
+      {
+        "id": "big-b",
+        "type": "op",
+        "op": "text",
+        "rngKey": "mh6/big-b",
+        "args": { "text": "B", "font": "permanent-marker", "size": 265, "x": 290, "y": 445, "color": "ink" }
+      },
+      {
+        "id": "big-w",
+        "type": "op",
+        "op": "text",
+        "rngKey": "mh6/big-w",
+        "args": { "text": "W", "font": "unifraktur", "size": 260, "x": 12, "y": 690, "color": "ink" }
+      },
+      {
+        "id": "big-m",
+        "type": "op",
+        "op": "text",
+        "rngKey": "mh6/big-m",
+        "args": { "text": "M", "font": "bungee", "size": 235, "x": 290, "y": 690, "color": "iron" }
+      },
+      {
+        "id": "clerk-a",
+        "type": "op",
+        "op": "text",
+        "rngKey": "mh6/clerk-a",
+        "args": {
+          "text": "entered under the older numbering, which the office continues to keep",
+          "font": "share-tech-mono",
+          "size": 13,
+          "x": 12,
+          "y": 232,
+          "color": "ink",
+          "maxWidth": 200
+        }
+      },
+      {
+        "id": "clerk-b",
+        "type": "op",
+        "op": "text",
+        "rngKey": "mh6/clerk-b",
+        "args": {
+          "text": "THE SAME MATTER, NUMBERED OTHERWISE, BY THE BOARD SITTING IN THE SAME WEEK",
+          "font": "cutive-mono",
+          "size": 12,
+          "x": 300,
+          "y": 236,
+          "color": "ink",
+          "maxWidth": 230,
+          "tracking": 0.4
+        }
+      },
+      {
+        "id": "clerk-c",
+        "type": "op",
+        "op": "text",
+        "rngKey": "mh6/clerk-c",
+        "args": {
+          "text": "and it is not for this office to say which of the two numbers is the number",
+          "font": "special-elite",
+          "size": 16,
+          "x": -12,
+          "y": 344,
+          "color": "pencil",
+          "maxWidth": 600
+        }
+      },
+      {
+        "id": "clerk-d",
+        "type": "op",
+        "op": "text",
+        "rngKey": "mh6/clerk-d",
+        "args": {
+          "text": "STANDS AS ISSUED",
+          "font": "vt323",
+          "size": 19,
+          "x": 12,
+          "y": 486,
+          "color": "ink",
+          "maxWidth": 200,
+          "tracking": 0.5
+        }
+      },
+      {
+        "id": "clerk-e",
+        "type": "op",
+        "op": "text",
+        "rngKey": "mh6/clerk-e",
+        "args": {
+          "text": "NOT SIGNED HERE",
+          "font": "press-start",
+          "size": 11,
+          "x": 300,
+          "y": 486,
+          "color": "ink",
+          "maxWidth": 230
+        }
+      },
+      {
+        "id": "clerk-f",
+        "type": "op",
+        "op": "text",
+        "rngKey": "mh6/clerk-f",
+        "args": {
+          "text": "the fourth party has never been asked and has never volunteered a form of words",
+          "font": "reenie-beanie",
+          "size": 23,
+          "x": 372,
+          "y": 828,
+          "color": "pencil"
+        }
+      },
+      {
+        "id": "ruled-pen",
+        "type": "op",
+        "op": "rule",
+        "rngKey": "mh6/ruled-pen",
+        "args": { "from": [12, 214], "to": [200, 218], "brush": "pen", "color": "ink", "weight": 1.6 }
+      },
+      {
+        "id": "ruled-rotring",
+        "type": "op",
+        "op": "rule",
+        "rngKey": "mh6/ruled-rotring",
+        "args": { "from": [-20, 262], "to": [620, 270], "brush": "rotring", "color": "pencil", "weight": 1.2 }
+      },
+      {
+        "id": "ruled-2b",
+        "type": "op",
+        "op": "rule",
+        "rngKey": "mh6/ruled-2b",
+        "args": { "from": [292, 468], "to": [470, 460], "brush": "2B", "color": "ink", "weight": 2.4 }
+      },
+      {
+        "id": "ruled-crayon",
+        "type": "op",
+        "op": "rule",
+        "rngKey": "mh6/ruled-crayon",
+        "args": { "from": [-20, 504], "to": [540, 516], "brush": "crayon", "color": "pencil", "weight": 6 }
+      },
+      {
+        "id": "ruled-charcoal",
+        "type": "op",
+        "op": "rule",
+        "rngKey": "mh6/ruled-charcoal",
+        "args": { "from": [16, 712], "to": [232, 718], "brush": "charcoal", "color": "ink", "weight": 3.5 }
+      },
+      {
+        "id": "ruled-margin",
+        "type": "op",
+        "op": "rule",
+        "rngKey": "mh6/ruled-margin",
+        "args": { "from": [258, -20], "to": [266, 560], "brush": "rotring", "color": "pencil", "weight": 1 }
+      }
+    ]
+  }
+}

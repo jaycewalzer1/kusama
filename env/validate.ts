@@ -11,7 +11,7 @@ import type { ValidateFunction } from 'ajv';
 import { ROOT } from './browser.js';
 import { contentHash, estimateBudget, type Budget, type MediumProfile } from './profile.js';
 import { packHash, type AssetPack } from './pack.js';
-import { ResolveError, resolveProgram, fragmentPolygon, tearPointCount, sprayParticleCount, type ResolvedProgram } from '../renderer/resolve.js';
+import { ResolveError, resolveProgram, fragmentPolygon, tearPointCount, sprayParticleCount, type Bounds, type ResolvedProgram } from '../renderer/resolve.js';
 import { MacroError } from '../renderer/macros.js';
 
 const Ajv = _Ajv2020 as unknown as typeof _Ajv2020.default;
@@ -99,6 +99,9 @@ export function validateProgram(program: unknown, profile: MediumProfile, pack: 
     throw e;
   }
 
+  // Needs resolved geometry, so it cannot run with the rest of the tree checks above.
+  issues.push(...checkDestroys(prog, resolved));
+
   const budget = estimateBudget(resolved, profile);
   for (const message of budget.over) issues.push({ code: 'budget', path: '/root', message });
 
@@ -147,6 +150,73 @@ function checkAssets(prog: ProgramShape, profile: MediumProfile, pack: AssetPack
   }
   if (packHash(pack) !== pack.hash) {
     issues.push({ code: 'pack.hash', path: '/assetPack', message: `asset pack "${pack.id}" does not match its declared hash` });
+  }
+  return issues;
+}
+
+/**
+ * A cover may name, in `destroys`, the source nodes it painted out. The claim is checked here rather
+ * than believed. Everything downstream reads the tree as the account of what happened, so a covering
+ * that records a destruction it did not perform is worse than one that records nothing at all. A
+ * claim is true only if the named node reached the canvas, reached it before the covering, and
+ * shared ground with it.
+ *
+ * This has to run on the resolved output, because not one of those three things is visible in the
+ * source tree: order is document order over the resolved leaves, and bounds exist only once
+ * transforms, repeats and macros have been applied.
+ */
+function checkDestroys(prog: ProgramShape, resolved: ResolvedProgram): Issue[] {
+  const issues: Issue[] = [];
+
+  // Which covers make a claim at all, and where in the source they made it, so that a refusal points
+  // at the JSON somebody wrote rather than at a resolved id they never typed.
+  const claims: { id: string; names: string[]; at: string }[] = [];
+  const walk = (node: NodeShape, at: string) => {
+    const named = node.type === 'op' && node.op === 'cover' ? node.args?.['destroys'] : undefined;
+    if (Array.isArray(named)) claims.push({ id: node.id, names: named as string[], at: `${at}/args/destroys` });
+    (node.children ?? []).forEach((c, i) => walk(c, `${at}/children/${i}`));
+  };
+  walk(prog.root, '/root');
+  if (claims.length === 0) return issues;
+
+  // One source node is a set of leaves rather than one leaf: a repeat unrolls it and a macro expands
+  // into parts. The first of them is the moment the node first reaches the canvas, which is the
+  // moment the ordering rule is about, so it is the leaf both sides of every comparison below use.
+  // Matching a `name/part` sourceId against `name` is what makes a macro answer for its own parts.
+  const firstLeaf = (name: string): number => {
+    for (let i = 0; i < resolved.nodes.length; i++) {
+      const src = resolved.nodes[i]!.sourceId;
+      if (src === name || src.startsWith(`${name}/`)) return i;
+    }
+    return -1;
+  };
+
+  // Touching along an edge is not overlapping: a covering flush against a mark did not paint over it.
+  const overlaps = (a: Bounds, b: Bounds) =>
+    a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+  const box = (b: Bounds) => `[${b.x}, ${b.y}, ${b.w}x${b.h}]`;
+
+  for (const claim of claims) {
+    const coverAt = firstLeaf(claim.id);
+    // A cover that resolved to nothing painted nothing, and the leaves it would have to be compared
+    // against do not exist. Whatever went wrong there is not this check's to report.
+    if (coverAt < 0) continue;
+    const cover = resolved.nodes[coverAt]!;
+    for (const name of claim.names) {
+      const at = firstLeaf(name);
+      if (at < 0) {
+        issues.push({ code: 'destroys.unknown', path: claim.at, message: `cover "${claim.id}" claims to have destroyed "${name}", which is not a drawing node in this program` });
+        continue;
+      }
+      if (at >= coverAt) {
+        issues.push({ code: 'destroys.order', path: claim.at, message: `cover "${claim.id}" claims to have destroyed "${name}", but "${name}" is drawn at or after the covering, so it sits on top of it rather than under it` });
+        continue;
+      }
+      const target = resolved.nodes[at]!;
+      if (!overlaps(cover.bounds, target.bounds)) {
+        issues.push({ code: 'destroys.disjoint', path: claim.at, message: `cover "${claim.id}" claims to have destroyed "${name}", but their bounds do not overlap: the covering is ${box(cover.bounds)} and "${name}" is ${box(target.bounds)}` });
+      }
+    }
   }
   return issues;
 }

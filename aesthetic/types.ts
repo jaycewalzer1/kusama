@@ -35,6 +35,7 @@ export type ConstraintKind =
   | 'palette'
   | 'forbidNode'
   | 'requireNode'
+  | 'requireErasure'
   | 'nodeCount'
   | 'textCase'
   | 'textMaxWords'
@@ -48,7 +49,58 @@ export type ConstraintKind =
   | 'inkOffsetRange'
   | 'coverageRange'
   | 'edgeContactRange'
+  | 'regionCountRange'
   | 'rubric';
+
+/**
+ * Kinds that count nodes in the source tree. None of them may be `hard`, and loadAestheticProgram
+ * refuses a position that makes one so.
+ *
+ * The rule is not aesthetic tidiness, it is a measured failure. Two runs spent their whole budget
+ * churning the tree to satisfy hard node counts with no visible change to the picture: `rule` ops
+ * swapped for `stroke` ops to clear a `forbidNode`, and `paint`-with-a-solid-style added purely to
+ * clear a `requireMark {styles:['solid']}` that a `cover` had made unreachable. In both cases the
+ * constraint went green and nobody could see a difference. Meanwhile the render-measured
+ * constraints — ink density, edge contact, symmetry — were never once gamed, because the only way
+ * to move them is to move pixels.
+ *
+ * So: what a position insists on is measured on the canvas, and what it counts in the tree is a
+ * preference it can express and lose.
+ */
+export const COUNTING_KINDS: readonly ConstraintKind[] = [
+  'requireNode',
+  'requireMark',
+  'requireErasure',
+  'nodeCount',
+];
+
+/**
+ * Tree-scope kinds a position may still make hard. Every one of them is a ceiling or a ban: it can
+ * be satisfied by not doing something, so there is no way to satisfy it by adding a node that does
+ * nothing. `textRequired` is not here — it is a brief's instrument, not a position's, and it is the
+ * structurally weakest kind in the language (see docs/constraints.md).
+ */
+export const HARD_TREE_KINDS: readonly ConstraintKind[] = [
+  'maxDistinctColors',
+  'palette',
+  'forbidNode',
+  'forbidMark',
+  'maxRepeatDepth',
+  'textMaxWords',
+  'textMinHeight',
+  'textCase',
+];
+
+/**
+ * The most hard, decidable constraints a position may carry.
+ *
+ * Four is not a round number chosen for its roundness. The three positions on disk carried ten to
+ * thirteen apiece, and at that density they no longer describe a practice — between them they admit
+ * about one object, and every trajectory under them converges on it. Judge rubrics are exempt and
+ * uncapped: a rubric is read by somebody who can weigh it, which is where the content of a practice
+ * belongs, and it is `unverified` here so it can never be satisfied by accident.
+ */
+export const MAX_HARD_CONSTRAINTS = 4;
 
 export interface Constraint {
   id: string;
@@ -168,6 +220,17 @@ export interface RenderMetrics {
    * shown it.
    */
   edgeContact: { top: number; right: number; bottom: number; left: number };
+  /**
+   * Area share of each connected opaque region of the sheet, largest first. Four-connected, so two
+   * areas meeting at a corner are two. Regions below 0.0005 of the sheet are not listed and the
+   * list stops at 64 entries; both are storage floors, not the definition of a region — a
+   * constraint sets its own floor with `minArea`.
+   *
+   * This is what a position asks when it wants "four opaque areas", and it is deliberately not a
+   * count of `solid` nodes. Four solid marks that overlap into one blot are one region here; three
+   * that a covering cuts in half are four. The tree cannot tell those apart and this can.
+   */
+  opaqueRegions: number[];
   /** The pixel hash the metrics were taken over, so a report can say which image it means. */
   pixelHash: string;
 }

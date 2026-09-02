@@ -20,6 +20,7 @@ function metrics(inkDensity: number, inkOffset: number, rest: Partial<RenderMetr
     inkOffset,
     symmetry: { vertical: 0.5, horizontal: 0.5 },
     edgeContact: { top: 0.5, right: 0.5, bottom: 0.5, left: 0.5 },
+    opaqueRegions: [],
     pixelHash: `h${inkDensity}-${inkOffset}`,
     ...rest,
   };

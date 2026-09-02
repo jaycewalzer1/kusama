@@ -24,6 +24,7 @@ import { treeFacts } from '../aesthetic/facts.js';
 import {
   descriptionDisagrees,
   audienceDisagrees,
+  describedTheSame,
   stalled,
   unplannedViolation,
   type Fired,
@@ -162,6 +163,15 @@ export interface StepOutcome {
   done: boolean;
 }
 
+export interface DetachedLook {
+  look: Look;
+  plate: Buffer;
+  programHash: string;
+  pixelHash: string;
+  width: number;
+  height: number;
+}
+
 export class ArtistEnv {
   program: Program;
   programHash = '';
@@ -191,6 +201,13 @@ export class ArtistEnv {
   k = 0;
   private sinceImprovement = 0;
   private best = -Infinity;
+  /**
+   * The blind describer's read after every step that was kept, oldest first, including the opening
+   * one from `reset`. Accepted steps only: a reverted step leaves the canvas exactly where it was,
+   * so its read repeats the previous one by construction and counting it would fire
+   * `description-unchanged` on a branch that was moving between two failures.
+   */
+  private keptReads: string[] = [];
 
   /** Accumulated cost of everything the environment did. Policy spend is the driver's to count. */
   envUsd = 0;
@@ -218,11 +235,55 @@ export class ArtistEnv {
     this.sinceImprovement = 0;
     this.program = this.o.seedProgram;
     this.look = await this.observe(this.program);
+    this.keptReads = [this.look.description];
     this.baseline = this.plate;
     this.change = null;
     this.best = standing(this.look.checkReport);
     this.o.log.append('phase', { phase: 'reset', programHash: this.programHash, standing: this.best });
     return this.look;
+  }
+
+  /** Observe a finish-gate derivative without replacing the unsampled program MAKE is editing. */
+  async inspect(program: Program): Promise<DetachedLook> {
+    const rendered = await this.o.canvas.render(program, { metrics: true });
+    const report = check(program, this.o.commission.effective, rendered.metrics);
+    const d = await describe(rendered.png);
+    this.account(d);
+    const look: Look = { renderHash: rendered.pixelHash, checkReport: report, description: d.value.description };
+    if (this.o.useAudience) {
+      const a = await audience(rendered.png, this.o.commission.field.whoIsWatching.audience);
+      this.account(a);
+      look.audienceRead = a.value.read;
+      look.wouldAct = a.value.wouldAct;
+    }
+    this.o.log.append('render', {
+      programHash: rendered.programHash,
+      pixelHash: rendered.pixelHash,
+      standing: standing(report),
+      hardViolations: report.hardViolations,
+      softViolations: report.softViolations,
+      treeScore: report.treeScore,
+      renderScore: report.renderScore,
+      description: look.description,
+      audienceRead: look.audienceRead ?? null,
+      wouldAct: look.wouldAct ?? null,
+      satisfied: report.results.filter((r) => r.status === 'satisfied').map((r) => r.id),
+      violated: report.results.filter((r) => r.status === 'violated').map((r) => r.id),
+      derivative: 'sampled-finish',
+    });
+    return {
+      look, plate: rendered.png, programHash: rendered.programHash, pixelHash: rendered.pixelHash,
+      width: rendered.width, height: rendered.height,
+    };
+  }
+
+  /** Commit a validated base-program revision made by the one sampling review. */
+  async replaceProgram(program: Program): Promise<void> {
+    this.program = program;
+    this.look = await this.observe(program);
+    this.baseline = this.plate;
+    this.change = null;
+    this.best = Math.max(this.best, standing(this.look.checkReport));
   }
 
   /** Render, check, describe, and — when asked — hear an audience. One render, at most two calls. */
@@ -279,13 +340,13 @@ export class ArtistEnv {
    * answer one question — can the facts the brief requires actually be read — and asking it every
    * step would buy a call per step to be told what the tree already says on all but the last one.
    */
-  async readBack(): Promise<ReadString[]> {
-    if (!this.plate) return [];
-    const t = await transcribe(this.plate);
+  async readBack(plate: Buffer | null = this.plate, programHash = this.programHash): Promise<ReadString[]> {
+    if (!plate) return [];
+    const t = await transcribe(plate);
     this.account(t);
     this.o.log.append('env-call', {
       name: 'transcribe',
-      programHash: this.programHash,
+      programHash,
       strings: t.value.strings,
       cached: t.cached,
     });
@@ -297,15 +358,15 @@ export class ArtistEnv {
    * an independent call so one question cannot anchor the answer to the next. The caller selects
    * severity; this method only gathers readings and records their evidence.
    */
-  async readRubrics(rubrics: { id: string; text: string }[]): Promise<RubricAnswer[]> {
-    if (!this.plate) return [];
+  async readRubrics(rubrics: { id: string; text: string }[], plate: Buffer | null = this.plate, programHash = this.programHash): Promise<RubricAnswer[]> {
+    if (!plate) return [];
     const out: RubricAnswer[] = [];
     for (const rubric of rubrics) {
-      const reading = await readRubric(this.plate, rubric.text);
+      const reading = await readRubric(plate, rubric.text);
       this.account(reading);
       this.o.log.append('env-call', {
         name: 'rubric',
-        programHash: this.programHash,
+        programHash,
         rubricId: rubric.id,
         verdict: reading.value.verdict,
         evidence: reading.value.evidence,
@@ -454,6 +515,7 @@ export class ArtistEnv {
     this.program = candidate;
     this.programHash = contentHash(candidate);
     this.look = after;
+    this.keptReads.push(after.description);
     this.change = this.baseline && this.plate ? changeSince(this.baseline, this.plate) : null;
     this.baseline = this.plate;
     step.pixelsMoved = this.change?.fraction ?? 0;
@@ -497,6 +559,16 @@ export class ArtistEnv {
     if (broke) return broke;
     const stall = this.checkStall();
     if (stall) return stall;
+
+    // Before the two paid triggers, because this one reads descriptions that have already been
+    // bought and asks a different question of them: not whether the sheet says what the artist meant
+    // but whether it has said anything new in the last few kept steps. It is only reached on a step
+    // that was kept, so `keptReads` has just gained an entry.
+    const same = describedTheSame(this.keptReads);
+    if (same) {
+      this.o.log.append('trigger', same);
+      return same;
+    }
 
     const d = await descriptionDisagrees(this.intention, after.description, this.affect);
     if (d) {

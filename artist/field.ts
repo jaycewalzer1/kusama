@@ -35,7 +35,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { ROOT } from '../env/browser.js';
 import { canonicalJson, contentHash } from '../env/profile.js';
-import { loadAestheticProgram } from '../aesthetic/check.js';
+import { loadAestheticProgram, positionIssues } from '../aesthetic/check.js';
 import { contradictions, type Contradiction } from '../aesthetic/contradictions.js';
 import { compose } from '../aesthetic/elements/compose.js';
 import { elementPackHash, loadElements } from '../aesthetic/elements/pack.js';
@@ -303,9 +303,18 @@ function resolveIn(dir: string, idOrPath: string): string {
  * A position by id, or by path if it is given one. `loadAestheticProgram` takes a file, so every
  * caller that has only an id has to know where positions live; naming that once keeps the answer in
  * one place.
+ *
+ * This is also the gate for the position budget. The schema will accept a program with twelve hard
+ * constraints; a *position* may not have one, because at that density the constraints stop admitting
+ * a practice and admit a single object. The check lives here rather than in the loader so the
+ * over-determined cross-check programs in examples/aesthetic/ still load — they are the exhibit.
  */
 export function loadPosition(idOrPath: string): AestheticProgram {
-  return loadAestheticProgram(resolveIn('aesthetic/positions', idOrPath));
+  const file = resolveIn('aesthetic/positions', idOrPath);
+  const ap = loadAestheticProgram(file);
+  const issues = positionIssues(ap);
+  if (issues.length) throw new Error(`${file} is not a usable position:\n  ${issues.join('\n  ')}`);
+  return ap;
 }
 
 export function loadBrief(idOrPath: string): Brief {

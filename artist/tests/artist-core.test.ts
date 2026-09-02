@@ -366,6 +366,7 @@ test('intention: the render-measure vocabulary is the aesthetic layer own', () =
     inkOffset: 0,
     symmetry: { vertical: 0, horizontal: 0 },
     edgeContact: { top: 0, right: 0, bottom: 0, left: 0 },
+    opaqueRegions: [],
     pixelHash: '',
   };
   // The nested names are walked out of the literal rather than listed per field. The old version

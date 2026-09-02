@@ -8,11 +8,12 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { judgeSummary, judgeTrajectory, judgeVersion, setJudgeModel, type Judgment } from '../judge.js';
+import { judgeSummary, judgeTrajectory, judgeVersion, redactedSamplingEvidence, setJudgeModel, type Judgment } from '../judge.js';
 import { loadPosition, practiceOf } from '../field.js';
+import { StudioLog } from '../studio-log.js';
 
 const POSITIONS = ['interference', 'many-hands', 'withheld'];
 
@@ -40,18 +41,26 @@ interface Seen {
   name: string;
   system: string;
   text: string;
+  images: number;
 }
 
 /** Installs a stand-in that records every question and answers with the letter given. */
 function stub(answers: { chose?: string; verdict?: 'derives' | 'quotes'; score?: number; cliches?: string[] }): Seen[] {
   const seen: Seen[] = [];
-  setJudgeModel(async <T,>(request: { name: string; system: string; text: string }) => {
-    seen.push({ name: request.name, system: request.system, text: request.text });
+  setJudgeModel(async <T,>(request: { name: string; system: string; text: string; additionalImages?: string[] }) => {
+    seen.push({ name: request.name, system: request.system, text: request.text, images: 1 + (request.additionalImages?.length ?? 0) });
     const value =
       request.name === 'attribution'
         ? { chose: answers.chose ?? 'A', why: 'because' }
         : request.name === 'necessity'
           ? { score: answers.score ?? 4, mostNecessary: 'a', mostArbitrary: 'b', answer: 'c' }
+          : request.name === 'samplingProcess'
+            ? {
+                problemMotivatesChannel: true,
+                bindingCorresponds: true,
+                revisionResponds: true,
+                evidence: 'The named rhythm answers the stated interruption and the bound node remains visible in the pixel comparison.',
+              }
           : { verdict: answers.verdict ?? 'derives', clichesTaken: answers.cliches ?? [], beyond: 'd', why: 'e' };
     return { value: value as T, cached: false, usd: 0 };
   });
@@ -147,9 +156,67 @@ test('the two dimensions the spec struck are absent: nothing here re-decides com
   assert.ok(!necessity.text.includes('"status"'), 'the necessity prompt carries checker verdicts');
 });
 
-test('judgeVersion is stable and covers all three prompts', () => {
+test('judgeVersion is stable and covers every prompt', () => {
   assert.equal(judgeVersion(), judgeVersion());
   assert.match(judgeVersion(), /^[0-9a-f]{12}$/);
+});
+
+test('the optional process judge sees final plus ablation and no source identity', async () => {
+  const dir = trajectoryDir('withheld', 'sampled');
+  const final = JSON.parse(readFileSync(path.join(dir, 'final.json'), 'utf8')) as Record<string, unknown>;
+  final['sampling'] = {
+    plan: {}, bindings: { sampled_subject: ['root'] }, resolutions: [], baseProgram: final['finalProgram'],
+    sampledFile: 'final.png', ablationFile: 'ablation.png', ablationPixelHash: 'ablation-hash',
+  };
+  writeFileSync(path.join(dir, 'final.json'), JSON.stringify(final));
+  writeFileSync(path.join(dir, 'ablation.png'), Buffer.from('89504e470d0a1a0a', 'hex'));
+
+  const log = new StudioLog(dir);
+  log.append('sample_requested', {
+    intents: [{
+      problem: 'The occupied mass needs resistance from an asymmetric interval.', channel: 'composition',
+      transformation: 'transpose', salience: 0.5, scope: 0.6, bindingRole: 'sampled_subject',
+    }],
+    fallback: false,
+  });
+  log.append('sample_selected', {
+    plan: {
+      sourceTitle: 'FORBIDDEN_SOURCE_TITLE', culture: 'FORBIDDEN_CULTURE',
+      date: 'FORBIDDEN_DATE', medium: 'FORBIDDEN_MEDIUM', museumId: 'FORBIDDEN_MUSEUM_ID',
+    },
+  });
+  log.append('sample_rejected', {
+    requestId: 'FORBIDDEN_REQUEST_ID', fragmentId: 'FORBIDDEN_FRAGMENT_ID',
+    reason: 'FORBIDDEN_SOURCE_TITLE was too recognizable to use for the declared relation',
+  });
+  log.append('binding_declared', {
+    status: 'bound', bindings: { sampled_subject: ['root'] }, accepted: true, faults: [],
+  });
+  log.append('ablation_rendered', {
+    sampledProgramHash: 'sampled-program', sampledPixelHash: 'sampled-pixel',
+    ablationProgramHash: 'ablation-program', ablationPixelHash: 'ablation-pixel',
+    differingPixels: 12, totalPixels: 100, sampledFile: 'final.png', ablationFile: 'ablation.png',
+    resolutions: [{ role: 'primary-mass', nodeIds: ['root'], measuredNodeIds: ['root'], resolvedBy: 'binding' }],
+    effects: [{
+      sampleId: 'sample-1', problem: 'The occupied mass needs resistance from an asymmetric interval.',
+      channel: 'composition', claimedEffect: 'shift the primary mass', touchedNodeIds: ['root'],
+    }],
+  });
+  log.append('sample_revised', { revision: { kind: 'none' }, accepted: true, faults: [] });
+
+  const evidence = redactedSamplingEvidence(dir)!;
+  for (const forbidden of [
+    'FORBIDDEN_SOURCE_TITLE', 'FORBIDDEN_CULTURE', 'FORBIDDEN_DATE', 'FORBIDDEN_MEDIUM',
+    'FORBIDDEN_MUSEUM_ID', 'FORBIDDEN_REQUEST_ID', 'FORBIDDEN_FRAGMENT_ID',
+  ]) {
+    assert.ok(!evidence.includes(forbidden), `process evidence leaked ${forbidden}`);
+  }
+
+  const seen = stub({});
+  const judgment = await judgeTrajectory(dir, { catalog: POSITIONS });
+  const process = seen.find((request) => request.name === 'samplingProcess')!;
+  assert.equal(process.images, 2);
+  assert.ok(judgment.samplingProcess?.problemMotivatesChannel);
 });
 
 test('the summary keeps the arms apart and states the chance rate', () => {

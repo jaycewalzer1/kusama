@@ -235,6 +235,7 @@ function header() {
     .filter(Boolean)
     .join(' · ');
   $('stop').hidden = run.status !== 'running';
+  $('inspect').hidden = false;
 
   const s = run.scores;
   $('scores').innerHTML = '';
@@ -484,6 +485,7 @@ function docHeader(title) {
   $('title').textContent = title;
   $('subtitle').textContent = '';
   $('stop').hidden = true;
+  $('inspect').hidden = true;
   $('scores').innerHTML = '';
   $('strip').innerHTML = '';
   $('export').hidden = true;
@@ -757,6 +759,11 @@ $('expand').addEventListener('click', () => {
 // holds is the small form of each line, and the observations and raw answers are the point of it.
 $('export').addEventListener('click', () => {
   if (selected) window.location.href = `/api/transcript?run=${encodeURIComponent(selected)}`;
+});
+// The same run with nothing folded: every prompt, every tree, every corpus work. Its own tab, so a
+// run being watched here keeps polling.
+$('inspect').addEventListener('click', () => {
+  if (selected) window.open(`/inspect?run=${encodeURIComponent(selected)}`, '_blank', 'noopener');
 });
 $('stop').addEventListener('click', async () => {
   if (!confirm('Stop this run? What it has written stays; the rest is lost.')) return;

@@ -86,6 +86,7 @@ function metrics(over: Partial<RenderMetrics> = {}): RenderMetrics {
     inkOffset: 0.1,
     symmetry: { vertical: 0.5, horizontal: 0.5 },
     edgeContact: { top: 0.1, right: 0.1, bottom: 0.1, left: 0.1 },
+    opaqueRegions: [],
     pixelHash: 'x',
     ...over,
   };

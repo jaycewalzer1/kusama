@@ -7,8 +7,11 @@
 //
 // A sketch is one policy call and one render. It is allowed to fail: a sketch whose edits are all
 // refused, or which will not render, is recorded as failed and the contact sheet is simply shorter.
-// Failing sketches are informative — a problem that cannot be sketched at all is a fact about the
-// problem — so nothing here retries.
+// A failure gets exactly one retry, and the retry is told what was refused and why. It gets one
+// because dropping a refused sketch silently hands CHOOSE a contact sheet of whatever happened to
+// render, and in one measured run that meant choosing a problem the artist had itself ranked at 8%:
+// the choice was made among survivors rather than among problems. It gets only one because a problem
+// that cannot be drawn even when told what stopped it is a fact about the problem, not an accident.
 
 import { treeFacts } from '../../aesthetic/facts.js';
 import { applyEdit } from '../../env/edits.js';
@@ -19,10 +22,13 @@ import { contactSheet } from '../../env/sheet.js';
 import { callPolicy, type Spend } from '../call.js';
 import { capabilitySheet } from '../capability-sheet.js';
 import { distribution, rng, sampleIndices, streamSeed, tookTheMode } from '../sampling.js';
-import { bareEdit, PROPOSE_SCHEMA, SKETCH_SCHEMA } from '../schemas.js';
+import { bareEdit, PROPOSE_SCHEMA, sketchSchema } from '../schemas.js';
 import { stack } from '../observation.js';
 import { artistLayers } from '../field.js';
 import { withInfluences, type InfluenceDoc } from '../influence-doc.js';
+import { withSamplingCommitments } from '../sampling-observation.js';
+import { validateSamplingBindings, type SamplingBindings } from '../../aesthetic/sample-targets.js';
+import type { SamplingPlan } from '../../aesthetic/sample-types.js';
 import type { AestheticProgram } from '../../aesthetic/types.js';
 import type { Canvas } from '../canvas.js';
 import type { Commission } from '../field.js';
@@ -104,6 +110,7 @@ export interface SketchResult {
   programHash: string;
   png: Buffer | null;
   failure: string | null;
+  bindings?: SamplingBindings;
 }
 
 export interface ProposedApproach {
@@ -150,12 +157,13 @@ export async function propose(
   commission: Commission,
   problem: Problem,
   runSeed: number,
-  n: number
+  n: number,
+  sampling: SamplingPlan | null = null
 ): Promise<{ drawn: ProposedApproach[]; proposed: ProposedApproach[] }> {
   const result = await callPolicy<{ approaches: ProposedApproach[] }>(policy, log, spend, {
     name: 'propose',
     system: PROPOSE_SYSTEM,
-    observation: proposeObservation(commission, problem, n),
+    observation: withSamplingCommitments(proposeObservation(commission, problem, n), sampling),
     schema: PROPOSE_SCHEMA,
     maxTokens: 4000,
   });
@@ -206,7 +214,8 @@ export async function sketch(
   seed: Program,
   canvas: Canvas,
   assigned: ProposedApproach | null = null,
-  influences: InfluenceDoc | null = null
+  influences: InfluenceDoc | null = null,
+  sampling: SamplingPlan | null = null
 ): Promise<SketchResult> {
   const base: SketchResult = {
     problemId: problem.id,
@@ -225,57 +234,94 @@ export async function sketch(
   // The sheet is built from the sketch profile, not the finished one: an artist handed the finished
   // budgets writes to a limit it was never going to be measured against, and every edit over the
   // sketch profile's own smaller limits is refused for a rule it was never shown.
-  const result = await callPolicy<{ approach: string; edits: (EditAction & { servesElementId?: string })[] }>(policy, log, spend, {
-    name: 'sketch',
-    system: SYSTEM,
-    observation: withInfluences(
-      observation(
-        commission,
-        problem,
-        capabilitySheet(profile, pack),
-        index,
-        start,
-        { used: treeFacts(start).texts.length, max: profile.limits.maxTextOps },
-        assigned
-      ),
-      influences,
-      // Catalogue entries only. The pictures were attached once, at FIND, and re-attaching them to
-      // all nine sketch calls costs about 4,500 image tokens each for a set the artist has already
-      // seen — roughly 40,000 input tokens to say the same thing nine times. Looking at a shelf is
-      // something you do once; what carries forward is that you know what is on it.
-      0
+  const observed = withSamplingCommitments(withInfluences(
+    observation(
+      commission,
+      problem,
+      capabilitySheet(profile, pack),
+      index,
+      start,
+      { used: treeFacts(start).texts.length, max: profile.limits.maxTextOps },
+      assigned
     ),
-    schema: SKETCH_SCHEMA,
-    maxTokens: 8000,
-  });
-  base.approach = result.action.approach;
+    influences,
+    // Catalogue entries only. The pictures were attached once, at FIND, and re-attaching them to
+    // all nine sketch calls costs about 4,500 image tokens each for a set the artist has already
+    // seen — roughly 40,000 input tokens to say the same thing nine times. Looking at a shelf is
+    // something you do once; what carries forward is that you know what is on it.
+    0
+  ), sampling);
 
-  let program = start;
-  let applied = 0;
-  for (const edit of result.action.edits) {
-    const r = applyEdit(program, bareEdit(edit), profile, pack);
-    if (!r.valid) {
-      log.append('edit-refused', { phase: 'sketch', problemId: problem.id, index, actionId: edit.actionId, reason: r.reason });
+  // What the sketch will be recorded as failing with, and the longer text the retry gets told. They
+  // differ for refused edits: the record keeps the same short sentence it always did, while the model
+  // needs the validator's actual sentences to have any chance of avoiding them.
+  let failure = '';
+  let detail = '';
+  for (const attempt of [0, 1]) {
+    if (attempt === 1) log.append('note', { phase: 'sketch', problemId: problem.id, index, retry: failure });
+    const result = await callPolicy<{ approach: string; edits: (EditAction & { servesElementId?: string })[]; bindings?: SamplingBindings }>(policy, log, spend, {
+      name: 'sketch',
+      system: SYSTEM,
+      observation:
+        attempt === 0
+          ? observed
+          : `${observed}\n${'-'.repeat(88)}\nWHAT HAPPENED THE FIRST TIME YOU DREW THIS\nNothing was drawn. ${detail}\nThis is the retry and there is not another one. Send edits that avoid what is described above.\nIf the idea will not fit these budgets, draw a plainer version of it rather than the same edits again.`,
+      schema: sketchSchema(sampling !== null),
+      maxTokens: 8000,
+    });
+    base.approach = result.action.approach;
+
+    let program = start;
+    let applied = 0;
+    const refusals: string[] = [];
+    for (const edit of result.action.edits) {
+      const r = applyEdit(program, bareEdit(edit), profile, pack);
+      if (!r.valid) {
+        log.append('edit-refused', { phase: 'sketch', problemId: problem.id, index, actionId: edit.actionId, reason: r.reason });
+        refusals.push(`${edit.kind} ${edit.actionId}: ${r.reason}`);
+        continue;
+      }
+      program = r.nextProgram;
+      applied++;
+    }
+    if (applied === 0) {
+      failure = 'every edit was refused';
+      detail = `Every edit was refused:\n${refusals.join('\n')}`;
       continue;
     }
-    program = r.nextProgram;
-    applied++;
-  }
-  if (applied === 0) {
-    base.failure = 'every edit was refused';
-    log.append('note', { phase: 'sketch', problemId: problem.id, index, failure: base.failure });
-    return base;
+
+    if (sampling && result.action.bindings !== undefined) {
+      const checked = validateSamplingBindings(program, new Set(sampling.requests.map((request) => request.role)), result.action.bindings);
+      log.append('binding_declared', {
+        status: 'intended', bindings: checked.bindings, accepted: checked.valid, faults: checked.faults,
+        problemId: problem.id, sketchIndex: index,
+      });
+      if (!checked.valid) {
+        failure = 'sampling bindings were invalid';
+        detail = checked.faults.join('\n');
+        continue;
+      }
+      program = {
+        ...program,
+        meta: { ...((program as Record<string, any>).meta ?? {}), samplingBindings: checked.bindings },
+      };
+      base.bindings = checked.bindings;
+    }
+
+    try {
+      const rendered = await canvas.render(program);
+      base.program = program;
+      base.programHash = rendered.programHash;
+      base.png = rendered.png;
+      return base;
+    } catch (e) {
+      failure = e instanceof Error ? e.message : String(e);
+      detail = `The program you built would not render: ${failure}`;
+    }
   }
 
-  try {
-    const rendered = await canvas.render(program);
-    base.program = program;
-    base.programHash = rendered.programHash;
-    base.png = rendered.png;
-  } catch (e) {
-    base.failure = e instanceof Error ? e.message : String(e);
-    log.append('note', { phase: 'sketch', problemId: problem.id, index, failure: base.failure });
-  }
+  base.failure = failure;
+  log.append('note', { phase: 'sketch', problemId: problem.id, index, failure: base.failure });
   return base;
 }
 

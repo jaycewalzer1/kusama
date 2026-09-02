@@ -98,12 +98,13 @@
       "properties": {
         "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
         "kind": {
-          "description": "The closed set. Eighteen kinds, each with one pure checker.",
+          "description": "The closed set. Twenty kinds, each with one pure checker.",
           "enum": [
             "maxDistinctColors",
             "palette",
             "forbidNode",
             "requireNode",
+            "requireErasure",
             "nodeCount",
             "textCase",
             "textMaxWords",
@@ -117,6 +118,7 @@
             "inkOffsetRange",
             "coverageRange",
             "edgeContactRange",
+            "regionCountRange",
             "rubric"
           ]
         },
@@ -144,6 +146,7 @@
         { "if": { "properties": { "kind": { "const": "palette" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/paletteParams" } } } },
         { "if": { "properties": { "kind": { "const": "forbidNode" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/forbidNodeParams" } } } },
         { "if": { "properties": { "kind": { "const": "requireNode" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/requireNodeParams" } } } },
+        { "if": { "properties": { "kind": { "const": "requireErasure" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/requireErasureParams" } } } },
         { "if": { "properties": { "kind": { "const": "nodeCount" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/nodeCountParams" } } } },
         { "if": { "properties": { "kind": { "const": "textCase" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/textCaseParams" } } } },
         { "if": { "properties": { "kind": { "const": "textMaxWords" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "tree" }, "params": { "$ref": "#/$defs/textMaxWordsParams" } } } },
@@ -157,6 +160,7 @@
         { "if": { "properties": { "kind": { "const": "inkOffsetRange" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "render" }, "params": { "$ref": "#/$defs/rangeParams" } } } },
         { "if": { "properties": { "kind": { "const": "coverageRange" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "render" }, "params": { "$ref": "#/$defs/rangeParams" } } } },
         { "if": { "properties": { "kind": { "const": "edgeContactRange" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "render" }, "params": { "$ref": "#/$defs/edgeContactRangeParams" } } } },
+        { "if": { "properties": { "kind": { "const": "regionCountRange" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "render" }, "params": { "$ref": "#/$defs/regionCountRangeParams" } } } },
         { "if": { "properties": { "kind": { "const": "rubric" } }, "required": ["kind"] }, "then": { "properties": { "scope": { "const": "judge" }, "params": { "$ref": "#/$defs/rubricParams" } } } }
       ]
     },
@@ -208,6 +212,38 @@
         "op": { "$ref": "#/$defs/opName" },
         "macro": { "$ref": "#/$defs/macroName" },
         "min": { "type": "integer", "minimum": 1, "maximum": 300 }
+      }
+    },
+
+    "requireErasureParams": {
+      "description": "How many coverings must declare what they destroyed. A `cover` carrying a `destroys` list names nodes that were already on the sheet where it landed, and env/validate.ts refuses the program if any of them does not exist, is drawn later, or lies somewhere else entirely. So this is a count of made-then-taken-away, not of dark rectangles: the one distinction the medium could not previously record.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min"],
+      "properties": {
+        "min": { "type": "integer", "minimum": 1, "maximum": 300 },
+        "minDestroyed": {
+          "description": "Nodes each covering must name, at least. Default 1.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 300
+        }
+      }
+    },
+
+    "regionCountRangeParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "min": { "type": "integer", "minimum": 0, "maximum": 64 },
+        "max": { "type": "integer", "minimum": 0, "maximum": 64 },
+        "minArea": {
+          "description": "Smallest share of the sheet this position is willing to call a region. Default 0.005, which on an 800x1200 sheet is about 70 by 70.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        }
       }
     },
 

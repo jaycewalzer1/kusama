@@ -31,6 +31,7 @@ import {
   temperamentOf,
   type Brief,
 } from '../artist/field.js';
+import { influenceSection, loadInfluenceDoc, shownWorks } from '../artist/influence-doc.js';
 import { storyOf, summarise } from '../artist/story.js';
 import { readLog } from '../artist/studio-log.js';
 import { transcriptMarkdown } from '../artist/transcript.js';
@@ -38,6 +39,9 @@ import type { AestheticProgram } from '../aesthetic/types.js';
 
 /** Where a run's intermediate plates live, keyed by program hash. Written by artist/canvas.ts. */
 const PNG_CACHE = path.join(ROOT, '.cache', 'artist-png');
+
+/** The resolved influence sets, which exist on disk whether or not any run has ever used one. */
+const INFLUENCES = path.join(ROOT, 'aesthetic', 'influences');
 
 /**
  * Everything the page itself may load. Runs are served through /api, never from here.
@@ -504,6 +508,7 @@ cli.action((opts: { runs: string; port: string }) => {
     };
 
     if (url.pathname === '/') return send(200, MIME['.html']!, await readFile(path.join(ROOT, 'studio/ui/index.html')));
+    if (url.pathname === '/inspect') return send(200, MIME['.html']!, await readFile(path.join(ROOT, 'studio/ui/inspect.html')));
 
     if (url.pathname === '/api/catalog') {
       return json(200, {
@@ -570,6 +575,90 @@ cli.action((opts: { runs: string; port: string }) => {
         return send(200, MIME['.json']!, buf.toString('utf8'));
       } finally {
         closeSync(fd);
+      }
+    }
+
+    // Every whole line from `from` onwards, as the raw bytes of the log.
+    //
+    // /api/line is one line at a time because the story page only ever wants the one beat you
+    // clicked. The inspector wants all of them — it shows the observation, the schema and the raw
+    // answer of every call side by side — and asking for four hundred lines one at a time over a
+    // polling interval is not a view of a run, it is a denial of service against yourself. `from`
+    // makes the poll incremental: the page keeps what it has and asks only for what is new.
+    if (url.pathname === '/api/lines') {
+      const id = runId();
+      if (id === null) return json(404, { error: 'no such run' });
+      const file = path.join(root, id, 'studio.jsonl');
+      const entries = tail(file, id);
+      const from = Math.max(0, Number(url.searchParams.get('from') ?? '0') || 0);
+      const wanted = entries.filter((e) => e.seq >= from);
+      if (wanted.length === 0) return send(200, 'application/x-ndjson', '');
+      const start = wanted[0]!.at;
+      const end = wanted.at(-1)!.at + wanted.at(-1)!.len;
+      const fd = openSync(file, 'r');
+      try {
+        const buf = Buffer.alloc(end - start);
+        readSync(fd, buf, 0, buf.length, start);
+        return send(200, 'application/x-ndjson', buf);
+      } finally {
+        closeSync(fd);
+      }
+    }
+
+    // The tree that made a plate, by the same hash the strip uses for its picture. Written by
+    // artist/canvas.ts beside the PNG; absent for a plate rendered before that cache existed, which
+    // is a 404 rather than a reconstruction, because a tree guessed from edits is not the tree.
+    if (url.pathname === '/api/program') {
+      const hash = url.searchParams.get('hash') ?? '';
+      if (!/^[0-9a-f]{16,64}$/.test(hash)) return json(400, { error: 'not a program hash' });
+      try {
+        return send(200, MIME['.json']!, await readFile(path.join(PNG_CACHE, `${hash}.program.json`)), 'max-age=31536000, immutable');
+      } catch {
+        return json(404, { error: 'that tree is not in the render cache' });
+      }
+    }
+
+    // What the artist was shown of the corpus, and how it was found.
+    //
+    // The retrieval is a document on disk, not a step of the run, so this reads the same two files
+    // `loadInfluenceDoc` reads and adds the two things only this process can say: which works got a
+    // picture on THIS machine (`shownWorks` checks the 3 GB of untracked pixels) and the block text
+    // verbatim, which is the actual thing that entered the prompt.
+    if (url.pathname === '/api/influences') {
+      // Every set that resolves on disk, always, whether or not a run used one. A page that could
+      // only show the corpus a run was given would show nothing at all here, because so far no run
+      // has been given one — and "nothing" would read as "the corpus is broken" rather than as the
+      // fact it is, which is that this layer is built and not yet wired into a trajectory.
+      const sets = existsSync(INFLUENCES)
+        ? readdirSync(INFLUENCES)
+            .filter((f) => f.endsWith('.resolved.json'))
+            .map((f) => f.replace(/\.resolved\.json$/, ''))
+            .sort()
+        : [];
+
+      const id = runId();
+      const first = id === null ? null : firstLine(path.join(root, id, 'studio.jsonl'));
+      const ranWith = typeof first?.data['influencesId'] === 'string' ? (first.data['influencesId'] as string) : null;
+      const asked = url.searchParams.get('set');
+      const setId = asked && sets.includes(asked) ? asked : ranWith;
+      if (setId === null) return json(200, { influencesId: null, ranWith, sets, reason: 'this run was given no influence set' });
+
+      try {
+        const doc = loadInfluenceDoc(setId);
+        const specFile = path.join(INFLUENCES, `${setId}.json`);
+        return json(200, {
+          influencesId: setId,
+          ranWith,
+          sets,
+          hash: doc.hash,
+          inMake: Boolean(first?.data['influencesInMake']),
+          spec: existsSync(specFile) ? (JSON.parse(readFileSync(specFile, 'utf8')) as unknown) : null,
+          resolved: doc.resolved,
+          shown: shownWorks(doc).map((w) => w.sha256),
+          section: influenceSection(doc),
+        });
+      } catch (e) {
+        return json(404, { error: e instanceof Error ? e.message : String(e), sets, ranWith });
       }
     }
 

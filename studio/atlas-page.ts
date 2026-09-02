@@ -32,6 +32,14 @@ export interface PageOptions {
   /** The other map, if it has been built. Omitted rather than rendered dead when it has not. */
   alsoSee?: { href: string; label: string };
   /**
+   * Where `<sha256>.jpg` lives, relative to wherever this page is written.
+   *
+   * A relative path and not a URL, because the page is opened as a file as often as it is served,
+   * and both work from a relative one. The default is right for a page written beside `images/` in
+   * `corpus/`; anything written elsewhere has to say so, or every dot shows a broken image.
+   */
+  imageBase?: string;
+  /**
    * Things that are not corpus works, placed on the corpus's coordinates without refitting them.
    * When present the corpus is drawn grey and dim by default, because the overlay is the subject
    * and 19,791 coloured dots underneath it are not a background, they are camouflage.
@@ -122,7 +130,19 @@ export function atlasPage(a: Atlas, generatedAt: string, opts: PageOptions = {})
   const basis = opts.basis ?? 'metadata only &mdash; no model, no pixels read';
   // Only the columns the page draws with. The full record stays in atlas.json; duplicating it here
   // would triple the file for fields nothing on the page reads.
-  const points = a.points.map((p) => [Number(p.x.toFixed(3)), Number(p.y.toFixed(3)), p.source, p.kind, p.period, p.title, p.id]);
+  const points = a.points.map((p) => [
+    Number(p.x.toFixed(3)),
+    Number(p.y.toFixed(3)),
+    p.source,
+    p.kind,
+    p.period,
+    p.title,
+    p.id,
+    p.sha256,
+    p.creator,
+    p.date,
+    p.medium,
+  ]);
   const p = a.preservation;
   // A decimal below ten, because "chance 0%" beside "same kind 4%" reads as a broken measurement
   // when the true baseline is 0.3% and the effect is the largest one on the page at 11.6x.
@@ -155,7 +175,14 @@ export function atlasPage(a: Atlas, generatedAt: string, opts: PageOptions = {})
   button[aria-pressed=true] { background:#3a3a3a; border-color:#888 }
   .key { display:flex; align-items:center; gap:6px; margin:2px 0; font-size:11px }
   .sw { width:10px; height:10px; flex:none; border-radius:2px }
-  #hover { position:fixed; pointer-events:none; background:#000d; border:1px solid #555; padding:5px 8px; max-width:380px; display:none; font-size:11px; white-space:pre-line }
+  #hover { position:fixed; pointer-events:none; background:#000e; border:1px solid #555; padding:6px 8px; width:230px; display:none; font-size:11px }
+  /* A fixed height, not the image's own: the box is positioned before the bytes arrive, and a card
+     measured while its picture is still 0px tall gets placed off the bottom of the window. */
+  #hover img { display:block; width:100%; height:180px; object-fit:contain; background:#000; margin-bottom:6px }
+  #hover .t { color:#fff }
+  #hover .m { color:#999; margin-top:3px }
+  #hover .pre { white-space:pre-line }
+  #hover .none { color:#777; border:1px dashed #444; height:60px; line-height:60px; text-align:center; margin-bottom:6px }
   #footer { padding:14px 18px; border-top:1px solid #333; max-width:860px }
   #footer h2 { font-size:14px; margin:0 0 8px }
   #footer p { color:#aaa; margin:8px 0 }
@@ -195,6 +222,7 @@ const LANDMARKS = ${JSON.stringify(marks)};
 const MARK = ${JSON.stringify(MARK)};
 const PALETTE = ${JSON.stringify(PALETTE)};
 const FIELD = { source: 2, kind: 3, period: 4 };
+const IMG = ${JSON.stringify(opts.imageBase ?? 'images/')};
 let by = 'source';
 // With an overlay the corpus is background. Coloured is still one button away, because "is that
 // cluster the Met" is the first question anyone asks and the answer should not need a rerun.
@@ -343,6 +371,26 @@ c.addEventListener('pointerup', endDrag);
 c.addEventListener('pointercancel', endDrag);
 c.addEventListener('dblclick', () => { zoom = 1; panX = 0; panY = 0; showView(); draw(); });
 
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+
+// The whole record the map was drawn from, and the picture it was drawn from where there is one.
+// The image is the point: a dot on a map of appearance that cannot be looked at asks the reader to
+// take the layout on trust. A work with no pixels says so rather than showing a broken image —
+// metadata-only rows are a legitimate state of the manifest, and on the metadata map they are dots
+// like any other.
+function card(p) {
+  const line = (v, cls) => v ? '<div class="' + cls + '">' + esc(v) + '</div>' : '';
+  return (p[7] ? '<img src="' + IMG + p[7] + '.jpg" alt="">' : '<div class="none">no image on disk</div>') +
+    line(p[5], 't') +
+    line([p[8], p[9]].filter(Boolean).join(', '), 'm') +
+    line(p[10], 'm') +
+    line(p[3] + ' · ' + p[4], 'm') +
+    line(p[2] + ' · ' + p[6], 'm');
+}
+
+// Rebuilding the card on every mousemove would restart the image request on every mousemove, so
+// the contents are only replaced when the thing under the cursor changes; the box still follows.
+let hovered = null;
 c.addEventListener('mousemove', e => {
   const r = c.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
   if (drag) {
@@ -351,30 +399,36 @@ c.addEventListener('mousemove', e => {
     drag.x = e.clientX; drag.y = e.clientY; drag.moved = true;
     clampPan();
     hover.style.display = 'none';
+    hovered = null;
     draw();
     return;
   }
   // Landmarks win ties over corpus points, and over a wider radius: they are what the page is for,
   // and there is a corpus dot within two pixels of almost everything.
-  let best = null, bd = 196;
+  let best = null, key = null, bd = 196;
   for (const l of LANDMARKS) {
     const d = (px(l) - mx) ** 2 + (py(l) - my) ** 2;
-    if (d < bd) { bd = d; best = l[4]; }
+    if (d < bd) { bd = d; best = '<div class="pre">' + esc(l[4]) + '</div>'; key = 'mark:' + l[3] + ':' + l[6]; }
   }
   if (best === null) {
     bd = 64;
     for (const p of POINTS) {
       const d = (px(p) - mx) ** 2 + (py(p) - my) ** 2;
-      if (d < bd) { bd = d; best = p[6] + ' — ' + p[5] + '  [' + p[3] + ', ' + p[4] + ']'; }
+      if (d < bd) { bd = d; best = card(p); key = p[6]; }
     }
   }
-  if (best === null) { hover.style.display = 'none'; return; }
+  if (best === null) { hover.style.display = 'none'; hovered = null; return; }
+  if (key !== hovered) { hover.innerHTML = best; hovered = key; }
   hover.style.display = 'block';
-  hover.style.left = (e.clientX + 14) + 'px';
-  hover.style.top = (e.clientY + 14) + 'px';
-  hover.textContent = best;
+  // Kept inside the window: the card is tall enough that near the bottom of a plot it would
+  // otherwise be mostly off screen, which is where the interesting dense region tends to be.
+  const w = hover.offsetWidth, h = hover.offsetHeight;
+  const x = e.clientX + 14 + w > innerWidth - 8 ? e.clientX - 14 - w : e.clientX + 14;
+  const y = e.clientY + 14 + h > innerHeight - 8 ? Math.max(8, innerHeight - 8 - h) : e.clientY + 14;
+  hover.style.left = Math.max(8, x) + 'px';
+  hover.style.top = y + 'px';
 });
-c.addEventListener('mouseleave', () => hover.style.display = 'none');
+c.addEventListener('mouseleave', () => { hover.style.display = 'none'; hovered = null; });
 
 document.getElementById('controls').innerHTML = 'colour by ' + Object.keys(FIELD)
   .map(k => '<button data-by="' + k + '" aria-pressed="' + (k === by) + '">' + k + '</button>').join('')

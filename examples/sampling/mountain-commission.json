@@ -1,0 +1,8 @@
+{
+  "goal": {
+    "subject": "a mountain that reads as approximately 100,000 feet tall",
+    "percepts": ["impossible scale", "fear", "loneliness"],
+    "avoid": ["fantasy concept-art cliché", "heroic adventure", "generic foggy landscape"]
+  }
+}
+

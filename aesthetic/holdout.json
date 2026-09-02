@@ -4,7 +4,7 @@
   "positions": [
     {
       "id": "many-hands",
-      "hash": "19ce1fa64067c1524c338868f2d488565c04580f1278f6793aa3ee38655114ac"
+      "hash": "ad3ba2f06856d91713dd2b550b8e3e2849f688d57417185cd8768c3b7743c0af"
     }
   ],
   "briefs": [
@@ -12,6 +12,15 @@
       "id": "two-million-slips",
       "hash": "c640905f5c15accd43db3ab28cfcd8f29ee97c42bf951a7cf9848a3485a31ed4",
       "fieldHash": "90629f5b7c2b62eeabb2f4505024d71952b41abcc67710339e49d01699bce970"
+    }
+  ],
+  "breaks": [
+    {
+      "kind": "position",
+      "id": "many-hands",
+      "on": "2026-09-01",
+      "was": "19ce1fa64067c1524c338868f2d488565c04580f1278f6793aa3ee38655114ac",
+      "why": "The hard-constraint budget. Two full runs were spent clearing hard `requireNode`/`requireMark` constraints by swapping one op for another with no visible change to the picture, so counting kinds may no longer be hard and no position may carry more than four hard decidable constraints. Every position on disk was rewritten to that rule in the same pass, this one included, and `many-hands` was cut from thirteen hard constraints to four the same way `interference` and `withheld` were. Not tuning: no run against this cell was consulted, and no threshold here was moved to make a failing check pass — the surviving four are its own former constraints re-expressed against the canvas, and what was cut went into judge rubrics. But the freeze from 2026-08-31 is dead for this document, and any number taken on it from here is held out only from what came after."
     }
   ]
 }

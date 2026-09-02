@@ -53,37 +53,36 @@
   ],
   "commitments": [
     {
+      "id": "r-opaque-areas",
+      "kind": "regionCountRange",
+      "params": { "min": 3, "minArea": 0.02 },
+      "scope": "render",
+      "severity": "hard",
+      "why": "Three areas on the sheet that admit nothing at all, each big enough to be a decision rather than a mark. This used to be a count of `solid` styles in the tree, which was a guess at the picture and could be satisfied by adding a paint node under a covering where nobody would ever see it. Read off the image it is the claim itself: opaque regions are what a viewer meets, four solid marks that overlap into one blot are one of them, and three that a covering cuts in half are four."
+    },
+    {
       "id": "c-covered",
       "kind": "requireNode",
       "params": { "op": "cover", "min": 3 },
       "scope": "tree",
-      "severity": "hard",
-      "why": "Three separate acts of covering. One is an incident and can be read as a compositional block; three is a policy, and a policy is the only thing that makes the withholding legible as a decision rather than as a shape."
-    },
-    {
-      "id": "c-opaque",
-      "kind": "requireMark",
-      "params": { "styles": ["solid"], "min": 4 },
-      "scope": "tree",
-      "severity": "hard",
-      "why": "Four areas that admit nothing at all. A translucent covering is a hint, and a hint invites the guess that the position exists to refuse; opacity is what makes the refusal total."
+      "severity": "soft",
+      "why": "Three separate acts of covering. One is an incident and can be read as a compositional block; three is a policy, and a policy is the only thing that makes the withholding legible as a decision rather than as a shape. Soft, because it counts nodes: what the position insists on is the opaque areas on the sheet, and how many `cover` ops made them is a preference it can hold and lose."
     },
     {
       "id": "c-sealed",
       "kind": "requireNode",
       "params": { "macro": "quarantine", "min": 1 },
       "scope": "tree",
-      "severity": "hard",
-      "why": "One region sealed off from the rest of the surface rather than merely obscured. Something has to be set apart and kept apart, or the sheet is a picture with dark passages in it."
+      "severity": "soft",
+      "why": "One region sealed off from the rest of the surface rather than merely obscured. Something has to be set apart and kept apart, or the sheet is a picture with dark passages in it. Soft for the same reason as `c-covered`: a quarantine macro is a way of getting there, not the thing wanted."
     },
     {
-      "id": "b-ruined-region",
-      "kind": "requireNode",
-      "params": { "op": "fragment", "min": 2 },
+      "id": "c-erased",
+      "kind": "requireErasure",
+      "params": { "min": 2, "minDestroyed": 1 },
       "scope": "tree",
-      "severity": "hard",
-      "why": "Two places where what is present is the remainder of something larger that was destroyed. The distinction between a remnant and a shape drawn to look like one is the position's whole subject.",
-      "blocked_by": "a subtractive operation: every operation in this medium adds, so `cover` lays an opaque mark over a thing rather than removing it, and nothing anywhere in the tree records that a region was made and then destroyed as against never having been drawn. An absence and a concealment produce identical trees, and a fragment is authored as a fragment rather than being what survived"
+      "severity": "soft",
+      "why": "Two coverings that name what they destroyed. This was the position's central commitment and it was reported blocked for the whole life of the medium: an absence and a concealment produced identical trees, so nothing could tell a remnant from a shape drawn to look like one. `cover.destroys` records the claim and the environment refuses the program unless the named nodes exist, were drawn earlier, and lie underneath. Soft because it counts nodes; what it buys is that the count is finally about something."
     },
     {
       "id": "j-necessity",
@@ -104,6 +103,16 @@
       "scope": "judge",
       "severity": "soft",
       "why": "The failure this position falls into is a tidy arrangement of black rectangles, which is indistinguishable from the position from a distance and completely distinguishable at the edges. Only a reader can look at the edges."
+    },
+    {
+      "id": "j-refusals",
+      "kind": "rubric",
+      "params": {
+        "text": "This practice holds five refusals, and each one is a thing it would be easy and wrong to do. It will not show the thing: whatever the reason for wanting it shown, the showing ends the work, and no argument about context changes that. It will not let a covering be translucent: a partial view invites a guess, the guess is usually right, and a correct guess destroys the piece more completely than showing it would. It will not repeat: twelve coverings in a row are a pattern, and a pattern is how somebody avoids answering for the placement of any one of them. It will not explain itself in words: a caption naming what is missing hands over the content in the one form that fits on the surface. It will not make a covering fit what is under it: an outline that matches is a measurement, and a measurement is a description with the middle taken out. Take each refusal in turn. Say whether this work honours it, breaks it, or never came near enough to it for the question to arise — and for any it breaks, say whether breaking it bought anything."
+      },
+      "scope": "judge",
+      "severity": "hard",
+      "why": "What this practice is, put where it can be weighed. It was previously spread across four hard tree constraints — no repetition, four words, no small text, no hatching — which between them admitted about one object and could each be satisfied by not doing something the artist was not going to do anyway. Three of those four are still here and soft, which is the right weight for a preference. The content of the refusal is not a count and never was, so it lives in a rubric, where somebody who can see the sheet decides whether it was honoured."
     }
   ],
   "prohibitions": [
@@ -112,23 +121,23 @@
       "kind": "maxRepeatDepth",
       "params": { "max": 0 },
       "scope": "tree",
-      "severity": "hard",
-      "why": "Nothing may be repeated. Repetition is how a maker avoids deciding — if one covering is not working, twelve of them make a pattern and the pattern excuses the first. This position has to place each one and answer for it."
+      "severity": "soft",
+      "why": "Nothing may be repeated. Repetition is how a maker avoids deciding — if one covering is not working, twelve of them make a pattern and the pattern excuses the first. This position has to place each one and answer for it. Soft, not because the rule is weak but because the position has four hard slots and the picture has first claim on them; `j-refusals` asks a reader whether the pattern happened anyway."
     },
     {
       "id": "p-few-words",
       "kind": "textMaxWords",
       "params": { "max": 4 },
       "scope": "tree",
-      "severity": "hard",
-      "why": "Nothing here explains itself. A sentence long enough to have a clause is long enough to say what is being withheld, and saying it is the one thing that cannot happen."
+      "severity": "soft",
+      "why": "Nothing here explains itself. A sentence long enough to have a clause is long enough to say what is being withheld, and saying it is the one thing that cannot happen. Soft: most sheets from this practice carry no words at all, so a ceiling on words is a rule that almost never fires and does not deserve a hard slot."
     },
     {
       "id": "p-no-caption",
       "kind": "textMinHeight",
       "params": { "min": 0.05 },
       "scope": "tree",
-      "severity": "hard",
+      "severity": "soft",
       "why": "`p-few-words` limits how much may be said; this limits what saying it can be. A short line set small in a corner is not a mark on the surface, it is a label attached to it, and a label naming what has been covered hands over the content in the one form that fits. Any word here is at the scale of the coverings or it is not there."
     },
     {

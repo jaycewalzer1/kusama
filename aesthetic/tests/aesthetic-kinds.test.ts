@@ -62,6 +62,7 @@ function metrics(over: Partial<RenderMetrics> = {}): RenderMetrics {
     inkOffset: 0.2,
     symmetry: { vertical: 0.2, horizontal: 0.2 },
     edgeContact: { top: 0.2, right: 0.2, bottom: 0.2, left: 0.2 },
+    opaqueRegions: [0.2, 0.1],
     pixelHash: 'deadbeef',
     ...over,
   };
@@ -84,9 +85,55 @@ function bothWays(
   assert.ok(bad.evidence.length > 0, `${kind} must say why`);
 }
 
-test('the constraint language is closed at eighteen kinds', () => {
-  assert.equal(CONSTRAINT_KINDS.length, 18);
-  assert.equal(new Set(CONSTRAINT_KINDS).size, 18);
+test('the constraint language is closed at twenty kinds', () => {
+  assert.equal(CONSTRAINT_KINDS.length, 20);
+  assert.equal(new Set(CONSTRAINT_KINDS).size, 20);
+});
+
+/**
+ * The point of `regionCountRange`, stated as a case the tree cannot answer. Both trees below have
+ * exactly two solid marks, so `requireMark {styles:['solid']}` reports them identically; the images
+ * do not, because in one of them the marks merged. Nothing about the JSON distinguishes these, which
+ * is the whole reason a position that wants "four opaque areas" has to ask the canvas.
+ */
+test('regionCountRange reads the image, so two marks that merged are one region', () => {
+  const c = constraint('regionCountRange', { min: 2, minArea: 0.01 }, 'render');
+  const apart = checkConstraint(c, {}, metrics({ opaqueRegions: [0.2, 0.15] }));
+  const merged = checkConstraint(c, {}, metrics({ opaqueRegions: [0.35] }));
+  assert.equal(apart.status, 'satisfied');
+  assert.equal(merged.status, 'violated');
+  assert.ok(merged.evidence.includes('0.3500'), `evidence must show the areas: ${merged.evidence}`);
+});
+
+/** `minArea` is the constraint's own floor, not the storage floor: specks are not areas. */
+test('regionCountRange counts only regions at or above its own minArea', () => {
+  const m = metrics({ opaqueRegions: [0.3, 0.02, 0.001, 0.0008] });
+  assert.equal(checkConstraint(constraint('regionCountRange', { min: 2, minArea: 0.01 }, 'render'), {}, m).status, 'satisfied');
+  assert.equal(checkConstraint(constraint('regionCountRange', { min: 2, minArea: 0.1 }, 'render'), {}, m).status, 'violated');
+});
+
+/**
+ * `requireErasure` is the kind that unblocked the one thing the medium could not say. It counts
+ * coverings that name what they destroyed, and it is worth having only because env/validate.ts has
+ * already refused any program whose claim was not geometrically true — so a covering that declares
+ * nothing and a covering that destroyed nothing are the same thing here, on purpose.
+ */
+test('requireErasure counts only coverings that name what they destroyed', () => {
+  const declared = prog([
+    op('a', 'paint', { region: { type: 'rect', x: 0, y: 0, w: 40, h: 40 }, style: { kind: 'solid', color: 'ink' } }),
+    op('c1', 'cover', { region: { type: 'rect', x: 0, y: 0, w: 50, h: 50 }, softness: 0, destroys: ['a'] }),
+  ]);
+  const silent = prog([
+    op('a', 'paint', { region: { type: 'rect', x: 0, y: 0, w: 40, h: 40 }, style: { kind: 'solid', color: 'ink' } }),
+    op('c1', 'cover', { region: { type: 'rect', x: 0, y: 0, w: 50, h: 50 }, softness: 0 }),
+  ]);
+  const c = constraint('requireErasure', { min: 1 });
+  const good = checkConstraint(c, declared, null);
+  const bad = checkConstraint(c, silent, null);
+  assert.equal(good.status, 'satisfied');
+  assert.deepEqual(good.nodeIds, ['c1'], 'the covering carries the verdict');
+  assert.equal(bad.status, 'violated');
+  assert.deepEqual(bad.nodeIds, []);
 });
 
 /**

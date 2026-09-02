@@ -10,6 +10,8 @@
 import type { EditAction, Program } from '../env/edits.js';
 import type { CheckReport } from '../aesthetic/types.js';
 import type { StepWarrant } from './warrant.js';
+import type { SamplingPlan } from '../aesthetic/sample-types.js';
+import type { SamplingBindings, TargetResolution } from '../aesthetic/sample-targets.js';
 
 export type { EditAction, CheckReport, Program };
 
@@ -61,6 +63,13 @@ export interface Problem {
   tension: Tension;
   /** Which lines of the field this problem was read out of. Free text, quoted back for the record. */
   fieldRefs: string[];
+  /**
+   * Museum ids of works this problem was read out of. Present only on a run that did RESEARCH, and
+   * not on every problem even then: a problem read only out of the field is still allowed. Absent
+   * and empty both mean "cited no work", and neither is a claim that the artist looked and found
+   * nothing.
+   */
+  workRefs?: string[];
   /**
    * The weight the artist put on this problem when it named the whole distribution. Optional because
    * trajectories collected before verbalized sampling existed do not carry it, and — the standing
@@ -311,6 +320,8 @@ export interface Look {
 export type TriggerName =
   | 'description-disagrees'
   | 'audience-disagrees'
+  /** Consecutive kept steps a blind reader could not tell apart. See `describedTheSame`. */
+  | 'description-unchanged'
   | 'unplanned-violation'
   | 'artist-declares'
   | 'stall'
@@ -743,6 +754,8 @@ export interface EnvVersion {
    * the layer was off** in a log written before the field existed.
    */
   influencesHash?: string;
+  /** Sampling-only observation serializer; absent means the sampling phase did not exist in this run. */
+  samplingObservationHash?: string;
 }
 
 export interface Trajectory {
@@ -780,6 +793,16 @@ export interface Trajectory {
   questions: Question[];
   problems: Problem[];
   sketches: Sketch[];
+  /** Present only on an opt-in sampling trajectory. */
+  sampling?: {
+    plan: SamplingPlan;
+    bindings: SamplingBindings;
+    resolutions: TargetResolution[];
+    baseProgram: Program;
+    sampledFile: string;
+    ablationFile: string;
+    ablationPixelHash: string;
+  };
   /** Protocol step 2. Null only if CHOOSE never ran. */
   collision: Collision | null;
   /** Protocol step 4. Null only if CHOOSE never ran. */

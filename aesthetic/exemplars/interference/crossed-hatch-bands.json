@@ -1,0 +1,103 @@
+{
+  "version": "0.2",
+  "profile": "default-v1",
+  "assetPack": "core-v1",
+  "seed": 30211,
+  "canvas": { "width": 600, "height": 900, "ground": "#f2efe9", "brushScale": 1 },
+  "palette": {
+    "ink": "#16181d",
+    "rust": "#8a3a1c"
+  },
+  "meta": {
+    "aesthetic": "interference",
+    "exemplar": "four lattices of hatched bands",
+    "reads_as": "a woven grey sheet: nine wide horizontal bands of fine parallel lines, eight tall vertical bands crossing them, and two diagonal chains of square patches laid over the weave at two further angles, so the tone anywhere is the number of bands that reached that spot",
+    "note": "No band is placed. Four repeat rules lay the bands down on four lattices and the picture is whatever the four lattices make where they meet. The bands are wider than their lattice step on purpose, so every band overlaps its own neighbours before any of them meets another lattice."
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "warp",
+        "type": "repeat",
+        "rngKey": "if/warp",
+        "count": 9,
+        "layout": { "type": "line", "origin": [-20, -30], "dx": 0, "dy": 108 },
+        "jitter": { "translate": 8 },
+        "children": [
+          {
+            "id": "warp-band",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "if/warp-band",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 0, "w": 640, "h": 172 },
+              "style": { "kind": "hatch", "brush": "2H", "color": "ink", "spacing": 11, "angle": 21, "rand": 0.14 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "weft",
+        "type": "repeat",
+        "rngKey": "if/weft",
+        "count": 8,
+        "layout": { "type": "line", "origin": [-30, -20], "dx": 84, "dy": 0 },
+        "jitter": { "translate": 8 },
+        "children": [
+          {
+            "id": "weft-band",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "if/weft-band",
+            "args": {
+              "region": { "type": "rect", "x": 0, "y": 0, "w": 132, "h": 960 },
+              "style": { "kind": "hatch", "brush": "cpencil", "color": "rust", "spacing": 12, "angle": 104, "rand": 0.14 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "bias",
+        "type": "repeat",
+        "rngKey": "if/bias",
+        "count": 6,
+        "layout": { "type": "line", "origin": [-70, -70], "dx": 100, "dy": 152 },
+        "jitter": { "translate": 10, "rotate": 18 },
+        "children": [
+          {
+            "id": "bias-patch",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "if/bias-patch",
+            "args": {
+              "region": { "type": "rect", "x": -110, "y": -130, "w": 220, "h": 260 },
+              "style": { "kind": "hatch", "brush": "2B", "color": "ink", "spacing": 14, "angle": 63, "rand": 0.2 }
+            }
+          }
+        ]
+      },
+      {
+        "id": "counter",
+        "type": "repeat",
+        "rngKey": "if/counter",
+        "count": 5,
+        "layout": { "type": "line", "origin": [640, 60], "dx": -108, "dy": 130 },
+        "jitter": { "translate": 10, "rotate": 14 },
+        "children": [
+          {
+            "id": "counter-patch",
+            "type": "op",
+            "op": "paint",
+            "rngKey": "if/counter-patch",
+            "args": {
+              "region": { "type": "rect", "x": -105, "y": -120, "w": 210, "h": 240 },
+              "style": { "kind": "hatch", "brush": "2B", "color": "rust", "spacing": 14.5, "angle": 148, "rand": 0.2 }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

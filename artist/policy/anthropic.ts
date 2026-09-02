@@ -24,7 +24,7 @@ export class AnthropicPolicy implements Policy {
 
   constructor() {
     const key = process.env['ANTHROPIC_API_KEY'];
-    if (!key) throw new PolicyError('ANTHROPIC_API_KEY is not set, so there is no policy to call');
+    if (!key) throw new PolicyError('ANTHROPIC_API_KEY is not set, so there is no policy to call', 'configuration');
     this.client = new Anthropic({ apiKey: key });
     this.model = process.env['ARTIST_MODEL'] ?? 'claude-sonnet-4-6';
     this.temperature = Number(process.env['ARTIST_TEMPERATURE'] ?? '1');
@@ -35,6 +35,7 @@ export class AnthropicPolicy implements Policy {
     let inputTokens = 0;
     let outputTokens = 0;
     let raw = '';
+    let truncated = false;
 
     for (let attempt = 1; attempt <= 2; attempt++) {
       const text =
@@ -63,10 +64,12 @@ export class AnthropicPolicy implements Policy {
 
       const block = response.content.find((c): c is Anthropic.ToolUseBlock => c.type === 'tool_use' && c.name === TOOL);
       if (!block) {
+        truncated = response.stop_reason === 'max_tokens';
         raw = JSON.stringify(response.content);
         failures.push('/ the model answered without calling the emit tool, so there is no action');
         continue;
       }
+      truncated = false;
       raw = JSON.stringify(block.input);
       const errors = schemaErrors(block.input, request.schema);
       if (errors.length === 0) {
@@ -83,7 +86,8 @@ export class AnthropicPolicy implements Policy {
     }
 
     throw new PolicyError(
-      `${request.name}: the policy did not produce a schema-valid action in two attempts:\n  ${failures.join('\n  ')}`
+      `${request.name}: the policy did not produce a schema-valid action in two attempts:\n  ${failures.join('\n  ')}`,
+      truncated ? 'output' : 'schema'
     );
   }
 }

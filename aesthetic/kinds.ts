@@ -1,8 +1,15 @@
-// The constraint language: sixteen kinds, one pure checker each.
+// The constraint language: twenty kinds, one pure checker each.
 //
 // Closed on purpose. Every kind here is something the program tree or the canonical image actually
-// exposes, and a position that needs a seventeenth has to give one up. The four render kinds read a
+// exposes, and a position that needs a twenty-first has to give one up. The six render kinds read a
 // RenderMetrics and nothing else; the one judge kind decides nothing at all and says so.
+//
+// The tree kinds and the render kinds are not equals, and the split matters more than the count.
+// A tree kind reads the JSON, so it can be satisfied by editing the JSON — twice now a run has spent
+// its whole budget swapping one op for another to turn a counting constraint green with no visible
+// change to the picture. A render kind reads pixels, and the only way to move pixels is to move
+// pixels. That is why `regionCountRange` exists beside `requireMark`: "four opaque areas" is a claim
+// about the image, and counting `solid` styles in the tree was only ever a guess at it.
 //
 // A checker returns a status, its evidence, and the node ids the verdict rests on. Evidence is the
 // point: "violated" with no node ids and no measured number is an opinion, and this layer does not
@@ -148,6 +155,33 @@ const treeCheckers: Record<string, (f: TreeFacts, p: Record<string, unknown>) =>
     const what = op ?? macro ?? '(nothing named)';
     // The clearest load-bearing case in the language: these nodes are the requirement.
     return verdict(found.length >= min, `${found.length} ${what} of at least ${min}: ${ids(found)}`, found);
+  },
+
+  /**
+   * Coverings that say what they took away.
+   *
+   * The difference between this and `requireNode {op: 'cover'}` is the only reason it exists. A
+   * `cover` is three lines of JSON and can be laid on bare paper; counting them measures whether
+   * somebody typed the word. A `cover` carrying `destroys` has passed env/validate.ts, which
+   * refuses the program unless every named node exists, is drawn before the covering, and has
+   * bounds the covering actually overlaps. So this counts acts of subtraction, and a tree cannot
+   * satisfy it without something having been made first and then lost under something else.
+   *
+   * It is still a count, and counts are still soft — a position may not make this hard. What the
+   * validator removed is the free move, not the incentive to make the move look done.
+   */
+  requireErasure(f, p) {
+    const min = num(p, 'min') ?? 1;
+    const each = num(p, 'minDestroyed') ?? 1;
+    const found = f.covers.filter((c) => c.destroys.length >= each);
+    const ids = found.map((c) => c.nodeId);
+    const detail = found.map((c) => `${c.nodeId} over ${c.destroys.join('+')}`);
+    return verdict(
+      found.length >= min,
+      `${found.length} coverings naming at least ${each} destroyed node of at least ${min}` +
+        (found.length ? `: ${detail.slice(0, 6).join(', ')}` : `; ${f.covers.length} covers declare nothing`),
+      ids
+    );
   },
 
   nodeCount(f, p) {
@@ -305,6 +339,33 @@ const renderCheckers: Record<string, (m: RenderMetrics, p: Record<string, unknow
    * The message names the sides that failed and the value each of them had. A verdict that said only
    * "edge contact out of range" would send an artist to look at all four.
    */
+  /**
+   * How many separate opaque areas the finished sheet has.
+   *
+   * This is the kind that exists so nothing has to count `solid` styles. The two are not the same
+   * question and were never close to it: a tree with four solid marks is a picture with one blot if
+   * they overlap, with none if a wash went over them, and with six if a covering cut two of them in
+   * half. The first is the exact move a policy makes when a hard `requireMark {styles:['solid'],
+   * min:4}` is in its way — four marks, no visible change, constraint green — and it is the reason
+   * counting nodes was demoted.
+   *
+   * `minArea` is the position's own floor for what it is willing to call a region, as a share of
+   * the sheet. It defaults to half a percent, which on an 800x1200 sheet is about 70 by 70: below
+   * that a person looking at the print says "a mark", not "an area". The metric stores everything
+   * down to 0.0005 so this can be moved without measuring the image again.
+   */
+  regionCountRange(m, p) {
+    const minArea = num(p, 'minArea') ?? 0.005;
+    const min = num(p, 'min');
+    const max = num(p, 'max');
+    const kept = m.opaqueRegions.filter((a) => a >= minArea);
+    const shown = kept.length === 0 ? 'none' : kept.slice(0, 6).map((a) => a.toFixed(4)).join(', ');
+    return verdict(
+      within(kept.length, min, max),
+      `${kept.length} opaque regions at or above ${minArea} of the sheet, wanted ${rangeLabel(min, max)} — areas ${shown}${kept.length > 6 ? `, +${kept.length - 6} more` : ''}`
+    );
+  },
+
   edgeContactRange(m, p) {
     const named = list(p, 'sides') ?? ['top', 'right', 'bottom', 'left'];
     const sides = named.filter((s): s is keyof RenderMetrics['edgeContact'] => s in m.edgeContact);
@@ -343,5 +404,5 @@ export function checkConstraintWithFacts(constraint: Constraint, facts: TreeFact
   return { status: 'unverified', evidence: `no checker for kind "${constraint.kind}"`, nodeIds: [] };
 }
 
-/** The closed set, as data, so a test can assert nobody added a seventeenth quietly. */
+/** The closed set, as data, so a test can assert nobody added a twenty-first quietly. */
 export const CONSTRAINT_KINDS = [...Object.keys(treeCheckers), ...Object.keys(renderCheckers), 'rubric'] as const;

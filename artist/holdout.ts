@@ -51,11 +51,33 @@ export interface FrozenDoc {
   fieldHash?: string;
 }
 
+/**
+ * A freeze that was broken, and the reason, kept as a record rather than erased by the re-freeze.
+ *
+ * The move this file exists to catch is editing a held-out document and updating its hash in the
+ * same commit, which leaves no trace at all. So a re-freeze is allowed, but it costs an entry here,
+ * and `holdoutText` prints every entry above the INTACT line. A reader can then decide for
+ * themselves whether the stated reason is a structural change that happened to touch the document
+ * or a threshold that was loosened because it was failing — which is the judgement no checker can
+ * make and the one that matters.
+ */
+export interface FreezeBreak {
+  kind: 'position' | 'brief' | 'field';
+  id: string;
+  /** When the document moved. */
+  on: string;
+  /** The hash it had before this break, so the chain back to the original freeze is readable. */
+  was: string;
+  why: string;
+}
+
 export interface Holdout {
   frozenAt: string;
   note: string;
   positions: FrozenDoc[];
   briefs: FrozenDoc[];
+  /** Every re-freeze since `frozenAt`, oldest first. Empty means the original freeze still stands. */
+  breaks: FreezeBreak[];
 }
 
 export function loadHoldout(): Holdout {
@@ -139,12 +161,22 @@ export function splitBySample<T>(
 
 export function holdoutText(h = loadHoldout()): string {
   const drift = holdoutDrift(h);
+  const breaks =
+    h.breaks.length === 0
+      ? ['The original freeze still stands: no held-out document has been re-frozen.']
+      : [
+          `${h.breaks.length} freeze break(s) since ${h.frozenAt}. A number taken on one of these documents`,
+          'is held out from everything that happened before its break and from nothing after it:',
+          ...h.breaks.map((b) => `  ${b.on}  ${b.kind} ${b.id} (was ${b.was.slice(0, 12)})\n      ${b.why}`),
+        ];
   const lines = [
     `frozen ${h.frozenAt}`,
     `positions held out: ${heldOutPositions(h).join(', ') || '(none)'}`,
     `briefs held out:    ${heldOutBriefs(h).join(', ') || '(none)'}`,
     '',
     h.note,
+    '',
+    ...breaks,
     '',
     drift.length === 0
       ? 'INTACT — every frozen document hashes to what it hashed at the freeze.'

@@ -64,7 +64,14 @@ export interface Policy {
   call<T>(request: PolicyRequest): Promise<PolicyResponse<T>>;
 }
 
-export class PolicyError extends Error {}
+export type PolicyErrorKind = 'schema' | 'output' | 'transport' | 'configuration' | 'replay' | 'unknown';
+
+export class PolicyError extends Error {
+  constructor(message: string, readonly kind: PolicyErrorKind = 'unknown') {
+    super(message);
+    this.name = 'PolicyError';
+  }
+}
 
 /**
  * Which implementation this process uses. `ARTIST_POLICY` picks it; there is no silent default to a
@@ -81,5 +88,5 @@ export async function selectPolicy(): Promise<Policy> {
     const { OpenAICompatiblePolicy } = await import('./openai-compatible.js');
     return new OpenAICompatiblePolicy();
   }
-  throw new PolicyError(`ARTIST_POLICY="${kind}" is not a policy; use "anthropic" or "openai-compatible"`);
+  throw new PolicyError(`ARTIST_POLICY="${kind}" is not a policy; use "anthropic" or "openai-compatible"`, 'configuration');
 }

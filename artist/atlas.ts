@@ -604,6 +604,10 @@ export interface AtlasPoint {
   kind: string;
   period: string;
   title: string;
+  /** As the museum wrote them. Carried so a dot can show the record, not just its coordinates. */
+  creator: string | null;
+  date: string;
+  medium: string;
   sha256: string | null;
 }
 
@@ -706,6 +710,9 @@ export function atlas(
       kind: classificationsOf(w)[0] as string,
       period: periodOf(w),
       title: w.title,
+      creator: w.creator,
+      date: w.date_display,
+      medium: w.medium,
       sha256: w.image?.sha256 ?? null,
     })),
   };

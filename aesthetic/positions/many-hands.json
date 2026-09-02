@@ -53,28 +53,36 @@
   ],
   "commitments": [
     {
+      "id": "r-several-hands",
+      "kind": "regionCountRange",
+      "params": { "min": 4, "minArea": 0.01 },
+      "scope": "render",
+      "severity": "hard",
+      "why": "Four separate areas of ink on the sheet, each big enough to be a party rather than a stray mark. This used to be a count of seven `text` operations, which was a guess at the picture: seven lines set down one column and read top to bottom satisfy it, and that is a main text with annotations. Read off the image it is the claim itself — several things are going on and none of them contains the others. Four rather than seven because two hands that run over each other merge into one area, and the position asks for exactly that."
+    },
+    {
       "id": "c-several-hands",
       "kind": "requireNode",
       "params": { "op": "text", "min": 7 },
       "scope": "tree",
-      "severity": "hard",
-      "why": "Seven separate pieces of setting, because the disagreement has to be between parties and two parties is a comparison rather than a condition. Below this the sheet has a main text and some annotations, which is the hierarchy the position refuses."
+      "severity": "soft",
+      "why": "Seven separate pieces of setting, because the disagreement has to be between parties and two parties is a comparison rather than a condition. Below this the sheet has a main text and some annotations, which is the hierarchy the position refuses. Soft, because it counts nodes: seven text operations stacked in one column clear it and still read as one voice. It lost its hard slot to `r-several-hands`, which asks the same question of the image."
     },
     {
       "id": "c-different-tools",
       "kind": "requireMark",
       "params": { "brushes": ["pen", "rotring", "2B", "crayon", "charcoal"], "min": 3 },
       "scope": "tree",
-      "severity": "hard",
-      "why": "Three marks made with three different instruments. Different hands used different tools because they were writing at different times for different reasons, and reconciling the tools would be the maker overruling all of them at once."
+      "severity": "soft",
+      "why": "Three marks made with three different instruments. Different hands used different tools because they were writing at different times for different reasons, and reconciling the tools would be the maker overruling all of them at once. Soft, because it counts marks: a third brush used once in a corner clears it without anybody seeing a third hand. It lost its hard slot to `r-off-centre`, which cannot be moved without moving ink."
     },
     {
       "id": "b-scribal-hand",
       "kind": "requireNode",
       "params": { "op": "text", "min": 30 },
       "scope": "tree",
-      "severity": "hard",
-      "why": "A line should be set by a hand rather than by a rule: crowding where it runs out of room, drifting where the writer tired, varying because a person varies. This is the position's whole claim about what a hand is.",
+      "severity": "soft",
+      "why": "A line should be set by a hand rather than by a rule: crowding where it runs out of room, drifting where the writer tired, varying because a person varies. This is the position's whole claim about what a hand is. Soft now as well as blocked: it counts text operations, and thirty of them would not add up to the thing it wants. The blockage below is about placing glyphs one at a time, not about how many times something may repeat, so a higher repeat ceiling does not reach it.",
       "blocked_by": "per-character placement: a text operation is a string with transforms applied uniformly to the whole of it, not glyphs that can be positioned one at a time, so a line cannot follow a curve or crowd at its end. The profile also stops at 12 text operations, so even one operation per word is out of reach, and `jitter` randomises every glyph by the same rule, which is the opposite of a hand"
     },
     {
@@ -96,6 +104,16 @@
       "scope": "judge",
       "severity": "soft",
       "why": "The move this position is nearest to, and least distinguishable from, is ordinary layout with a lot of type on it. Only a reader can say whether the refusal happened."
+    },
+    {
+      "id": "j-refusals",
+      "kind": "rubric",
+      "params": {
+        "text": "This practice holds five refusals, and each one is a thing it would be easy and wrong to do. It will not put one hand above another: anything that establishes a reading order is a hierarchy, and hierarchy is the single thing this practice exists to withhold from the reader. It will not invent a mark: every element must have been issued by somebody entitled to issue it, and a device the maker made up is an authority that does not exist. It will not reconcile the parts: harmonising the sizes, the tools or the spacing is the maker overruling every party at once while appearing to serve them. It will not translate or gloss: explaining one hand in terms of another puts the explainer above both, and the explainer is always the maker. It will not draw a border: an enclosing edge subordinates everything inside it to whoever drew it. Take each refusal in turn. Say whether this work honours it, breaks it, or never came near enough to it for the question to arise, and for any it breaks, say whether breaking it bought anything. Then answer the thing the practice cannot settle about itself. Somebody laid this sheet out, and equal standing is asserted by an arrangement rather than found. Decide whether the equality here is a fact about the parts — four hands that would not have yielded to each other — or a maker who governed and then hid the governing, in which case the better it looks the more complete the deception."
+      },
+      "scope": "judge",
+      "severity": "hard",
+      "why": "What this practice is, put where it can be weighed. It was previously carried by three hard tree constraints — seven pieces of setting, three brushes, a hand that varies — which between them admitted about one sheet and could each be cleared by adding something nobody would see. All three are still here and soft, which is the right weight for a preference. The content of a refusal is not a count and never was, so it lives in a rubric, where somebody who can see the sheet decides whether it was honoured."
     }
   ],
   "prohibitions": [
@@ -104,16 +122,16 @@
       "kind": "forbidMark",
       "params": { "styles": ["field"] },
       "scope": "tree",
-      "severity": "hard",
-      "why": "A graduated area is a mood applied to the whole surface by one hand, and a mood is the most complete kind of governing there is. It tells the reader how to feel about texts that disagree."
+      "severity": "soft",
+      "why": "A graduated area is a mood applied to the whole surface by one hand, and a mood is the most complete kind of governing there is. It tells the reader how to feel about texts that disagree. Soft, not because the rule is weak but because the position has four hard slots and the picture has first claim on them. `j-refusals` asks a reader whether a mood was imposed anyway, which catches the versions of it that are not a `field` style."
     },
     {
       "id": "p-no-emblem",
       "kind": "forbidNode",
       "params": { "macros": ["motif"] },
       "scope": "tree",
-      "severity": "hard",
-      "why": "An invented device is an authority nobody issued. Every mark here has to have somebody behind it who was entitled to make it, and a made-up emblem is the maker's own hand claiming a standing it does not have."
+      "severity": "soft",
+      "why": "An invented device is an authority nobody issued. Every mark here has to have somebody behind it who was entitled to make it, and a made-up emblem is the maker's own hand claiming a standing it does not have. It lost its hard slot to the render measures, which decide what the sheet looks like where this decides only what is missing from the tree. The refusal is unchanged and `j-refusals` now carries it."
     },
     {
       "id": "p-nothing-encloses",
@@ -121,7 +139,7 @@
       "params": { "macros": ["frame"] },
       "scope": "tree",
       "severity": "hard",
-      "why": "A border is a single edge drawn around everything, which subordinates every hand inside it to the one that drew it. It is the cheapest way to reimpose the hierarchy the sheet exists to refuse."
+      "why": "A border is a single edge drawn around everything, which subordinates every hand inside it to the one that drew it. It is the cheapest way to reimpose the hierarchy the sheet exists to refuse. It keeps the position's one hard tree slot because it is a ban: there is no way to satisfy it by adding a node nobody sees, and it costs one node to break."
     },
     {
       "id": "r-crowded",
@@ -136,8 +154,8 @@
       "kind": "inkOffsetRange",
       "params": { "min": 0.12 },
       "scope": "render",
-      "severity": "soft",
-      "why": "A single centre of gravity is a sheet with a main thing on it. Where several hands genuinely share a surface, the weight sits off to one side because nobody was arranging the whole."
+      "severity": "hard",
+      "why": "A single centre of gravity is a sheet with a main thing on it. Where several hands genuinely share a surface, the weight sits off to one side because nobody was arranging the whole. Hard now, because it is measured on the canvas and the only way to move it is to move ink. It took the slot `c-different-tools` held, which counted brushes and could be cleared without changing where the weight sat."
     }
   ],
   "generative_rules": [

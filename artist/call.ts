@@ -16,9 +16,24 @@
 // line. Nothing reads back from it.
 
 import { contentHash } from '../env/profile.js';
-import type { Policy, PolicyImage, PolicyResponse } from './policy/interface.js';
-import type { StudioLog } from './studio-log.js';
+import { PolicyError, type Policy, type PolicyImage, type PolicyResponse } from './policy/interface.js';
 import { traceCall, tracingEnabled } from './trace.js';
+
+/**
+ * Where a logged call is written. `StudioLog` and `DiscoveryLog` both satisfy it and they are the
+ * only two.
+ *
+ * It is an interface rather than `StudioLog` because RESEARCH's calls must not enter the hash chain.
+ * The brief is explicit that what crosses into the trajectory is the material sheet the artist
+ * wrote, and that the corpus query which produced it is not logged into the chain. Those calls still
+ * have to be logged in full and still have to be billed, so they come through this same funnel and
+ * land in `discovery.jsonl` instead. Widening the parameter is the whole change: nothing about what
+ * gets written, billed or traced differs between the two sinks.
+ */
+export interface CallSink {
+  readonly file: string;
+  append(kind: 'policy-call', data: unknown): unknown;
+}
 
 export interface Spend {
   policyCalls: number;
@@ -41,7 +56,7 @@ export interface CallResult<T> extends PolicyResponse<T> {
 
 export async function callPolicy<T>(
   policy: Policy,
-  log: StudioLog,
+  log: CallSink,
   spend: Spend,
   request: { name: string; system: string; observation: string; schema: object; images?: PolicyImage[]; maxTokens?: number }
 ): Promise<CallResult<T>> {
@@ -65,6 +80,7 @@ export async function callPolicy<T>(
       schema: request.schema,
       hasImages: Boolean(request.images?.length),
       error,
+      ...(e instanceof PolicyError ? { errorKind: e.kind } : {}),
       ok: false,
     });
     if (trace) {

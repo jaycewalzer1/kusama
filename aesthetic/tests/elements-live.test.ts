@@ -76,25 +76,32 @@ test('live catalogue: the clean-compose case has replacements, and there are eig
   assert.deepEqual(cleanEverywhere.sort(), ['chromolith-broadside', 'rodchenko-red-black']);
 });
 
-test('live catalogue: exactly one pairing is both conflicting and runnable', () => {
-  // The cell the layer exists for. A conflict the artist can be asked to resolve has to be a
+test('live catalogue: two pairings are both conflicting and runnable', () => {
+  // The cells the layer exists for. A conflict the artist can be asked to resolve has to be a
   // conflict a program could satisfy either way; an unsatisfiable one is refused before the run.
+  //
+  // This was one cell until the positions were cut back to four hard constraints each.
+  // `many-hands+kuba-shoowa-surface` used to be refused outright and is now merely a conflict, which
+  // is the intended effect of the cut arriving somewhere measurable: a position carrying thirteen
+  // hard constraints rules out most vocabularies before anybody draws anything, and one carrying
+  // four leaves the artist a decision to make. Pinned, so widening it further stays deliberate.
   const usable = grid().filter((r) => r.conflicts > 0 && r.unsatisfiable === 0);
   assert.deepEqual(
-    usable.map((r) => `${r.position}+${r.element}`),
-    ['many-hands+ma-interval'],
-    'if this list grew, an element or a position changed and the layer got wider'
+    usable.map((r) => `${r.position}+${r.element}`).sort(),
+    ['many-hands+kuba-shoowa-surface', 'many-hands+ma-interval'],
+    'if this list changed, an element or a position changed and the layer got wider or narrower'
   );
-  assert.equal(usable[0]!.conflicts, 2);
 });
 
 test('live catalogue: the unsatisfiable pairings are refused with a proof, not a shrug', () => {
-  // Three pairings cannot be run. Each has to say which two constraints collided and why, because
-  // "unsatisfiable" with no proof is indistinguishable from a bug in the checker.
+  // Two pairings cannot be run. Each has to say which two constraints collided and why, because
+  // "unsatisfiable" with no proof is indistinguishable from a bug in the checker. Both survivors are
+  // `ma-interval` and both collide on ink density: a range against a range, which is the kind of
+  // conflict that stays provable now that the counting constraints have all gone soft.
   const blocked = grid().filter((r) => r.unsatisfiable > 0);
   assert.deepEqual(
     blocked.map((r) => `${r.position}+${r.element}`).sort(),
-    ['interference+ma-interval', 'many-hands+kuba-shoowa-surface', 'withheld+ma-interval']
+    ['interference+ma-interval', 'withheld+ma-interval']
   );
   const withheld = loadCommission('withheld', BRIEF, ['ma-interval']).unsatisfiable;
   assert.equal(withheld.length, 1);

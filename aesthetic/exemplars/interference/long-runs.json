@@ -1,0 +1,92 @@
+{
+  "version": "0.2",
+  "profile": "default-v1",
+  "assetPack": "core-v1",
+  "seed": 74621,
+  "canvas": { "width": 600, "height": 900, "ground": "#f2efe9", "brushScale": 1 },
+  "palette": {
+    "ink": "#16191e",
+    "rust": "#893e1d"
+  },
+  "meta": {
+    "aesthetic": "interference",
+    "exemplar": "two hundred and fifty-six meandering runs",
+    "reads_as": "a tangle of long single-stroke runs, each one a slow wave five hundred to seven hundred units long: eighty-eight dark pencil runs held within a quarter-turn of level, eighty-eight rust runs turned through any angle, and eighty straighter charcoal runs at every angle, scattered over an area larger than the paper so that many of them cross an edge and a good number begin or end off the sheet",
+    "note": "Three scatter rules, three run shapes, and whatever the rules produced. Nothing was moved after it landed, so wherever the runs happen to pile up or thin out is what the scatter did and not a decision about balance."
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "runs-a",
+        "type": "repeat",
+        "rngKey": "if/runs-a",
+        "count": 88,
+        "layout": { "type": "scatter", "origin": [-60, -70], "w": 720, "h": 1040 },
+        "jitter": { "rotate": 24 },
+        "children": [
+          {
+            "id": "run-a",
+            "type": "op",
+            "op": "stroke",
+            "rngKey": "if/run-a",
+            "args": {
+              "points": [
+                [-260, -30], [-200, 25], [-140, -15], [-80, 40], [-15, -5],
+                [50, 45], [115, -10], [175, 35], [230, -20], [265, 20]
+              ],
+              "brush": "cpencil", "color": "ink", "weight": 2.2, "curve": 0.85
+            }
+          }
+        ]
+      },
+      {
+        "id": "runs-b",
+        "type": "repeat",
+        "rngKey": "if/runs-b",
+        "count": 88,
+        "layout": { "type": "scatter", "origin": [-80, -60], "w": 760, "h": 1020 },
+        "jitter": { "rotate": 90 },
+        "children": [
+          {
+            "id": "run-b",
+            "type": "op",
+            "op": "stroke",
+            "rngKey": "if/run-b",
+            "args": {
+              "points": [
+                [-300, 10], [-245, -40], [-185, 30], [-125, -30], [-60, 25], [0, -35],
+                [60, 20], [120, -30], [180, 25], [240, -25], [290, 15], [315, -15]
+              ],
+              "brush": "2B", "color": "rust", "weight": 2.4, "curve": 0.6
+            }
+          }
+        ]
+      },
+      {
+        "id": "runs-c",
+        "type": "repeat",
+        "rngKey": "if/runs-c",
+        "count": 80,
+        "layout": { "type": "scatter", "origin": [-70, -80], "w": 740, "h": 1060 },
+        "jitter": { "rotate": 180 },
+        "children": [
+          {
+            "id": "run-c",
+            "type": "op",
+            "op": "stroke",
+            "rngKey": "if/run-c",
+            "args": {
+              "points": [
+                [-350, 0], [-250, -25], [-150, 20], [-50, -20],
+                [50, 25], [150, -20], [250, 20], [350, -5]
+              ],
+              "brush": "charcoal", "color": "ink", "weight": 1.8, "curve": 0.2
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

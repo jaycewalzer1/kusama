@@ -31,6 +31,23 @@ test('every frozen document still hashes to what it hashed at the freeze', () =>
   );
 });
 
+test('a document that was re-frozen says so, and says what it hashed to before', () => {
+  // The hole in the test above: editing a held-out document and updating its hash in the same commit
+  // passes it and leaves no trace. That move is allowed — `many-hands` was rewritten by the
+  // constraint-budget overhaul along with every other position — but it costs an entry, and the
+  // entry has to carry the previous hash so the chain back to the original freeze stays readable.
+  const h = loadHoldout();
+  const frozenNow = new Set([...h.positions, ...h.briefs].map((d) => d.hash));
+  for (const b of h.breaks) {
+    assert.match(b.on, /^\d{4}-\d{2}-\d{2}$/, `${b.id}: a break needs a date`);
+    assert.match(b.was, /^[0-9a-f]{64}$/, `${b.id}: a break needs the hash it broke from`);
+    assert.ok(!frozenNow.has(b.was), `${b.id}: the recorded previous hash is the one still frozen`);
+    assert.ok(b.why.length > 200, `${b.id}: a re-freeze reason has to argue that it was not tuning`);
+  }
+  // And the text a reader sees says how many there were, rather than only what is frozen today.
+  assert.match(holdoutText(), /freeze break\(s\) since|original freeze still stands/);
+});
+
 test('the freeze names at least one position and one brief, and both exist on disk', () => {
   // A holdout.json that had quietly become empty would pass every other test in this file while
   // buying nothing at all, which is the failure mode worth spending a test on.

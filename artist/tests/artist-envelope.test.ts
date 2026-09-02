@@ -36,6 +36,7 @@ function metrics(v: number, hash = `h${v}`): RenderMetrics {
     inkOffset: v,
     symmetry: { vertical: v, horizontal: v },
     edgeContact: { top: v, right: v, bottom: v, left: v },
+    opaqueRegions: [],
     pixelHash: hash,
   };
 }

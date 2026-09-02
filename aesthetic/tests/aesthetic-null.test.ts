@@ -20,11 +20,19 @@
 //      hidden: the day someone adds a composition-sensitive tree kind, this test breaks and the
 //      comment above it stops being true, which is exactly when it should be reread.
 //   3. A score of 1.0 can be 1.0 over a strict subset of the position. Unverified constraints leave
-//      BOTH the numerator and the denominator, so a position whose load-bearing hard commitment is
-//      blocked by a missing primitive still reads 1.000. The count of what was left out is asserted
-//      to be visible in the report, because a number that hides its own denominator is the thing
-//      this whole file exists to catch.
+//      BOTH the numerator and the denominator, so treeScore reads 1.000 over whatever happened to be
+//      decidable from the JSON. This probe used to make its point with a commitment blocked by a
+//      missing primitive; `cover.destroys` closed that gap and `withheld` has no blocked constraint
+//      left. The point did not go away, it moved: every hard demand this position now makes is
+//      measured on the canvas, so a tree score of 1.0 is 1.0 over the soft preferences alone.
 //   4. Positions are not interchangeable. A program made for one does not satisfy all of them.
+//
+// The second probe changed meaning in the same overhaul and the change is worth stating plainly.
+// Removing every covering used to violate a hard constraint, because `requireNode {op:'cover'}` was
+// hard. It is soft now, along with every other count of node types, because two full runs were spent
+// clearing constraints of that kind by editing the tree with no visible change to the picture. The
+// cost is real and is asserted below: the tree scope alone can no longer refuse an uncovered sheet.
+// Only the canvas can, and the last test here is the demonstration that it does.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -33,7 +41,7 @@ import path from 'node:path';
 import { ROOT } from '../../env/browser.js';
 import { checkProgram } from '../check.js';
 import { loadCommission } from '../../artist/field.js';
-import type { CheckReport } from '../types.js';
+import type { CheckReport, RenderMetrics } from '../types.js';
 
 type Node = Record<string, unknown>;
 
@@ -94,9 +102,13 @@ function passing(): Record<string, unknown> {
             labelSize: 20,
           },
         },
-        op('taken-back-1', 'cover', { region: { type: 'rect', x: 50, y: 70, w: 210, h: 70 }, softness: 0 }),
-        op('taken-back-2', 'cover', { region: { type: 'rect', x: 90, y: 240, w: 280, h: 80 }, softness: 0 }),
-        op('taken-back-3', 'cover', { region: { type: 'rect', x: 70, y: 410, w: 190, h: 60 }, softness: 0 }),
+        // Each covering names what it took back. env/validate.ts checks the claim geometrically —
+        // the named node has to exist, to have been drawn earlier, and to lie underneath — so these
+        // three ids are the difference between a covering and a dark rectangle, and they are the
+        // reason `c-erased` is decidable at all.
+        op('taken-back-1', 'cover', { region: { type: 'rect', x: 50, y: 70, w: 210, h: 70 }, softness: 0, destroys: ['made-a'] }),
+        op('taken-back-2', 'cover', { region: { type: 'rect', x: 90, y: 240, w: 280, h: 80 }, softness: 0, destroys: ['made-b'] }),
+        op('taken-back-3', 'cover', { region: { type: 'rect', x: 70, y: 410, w: 190, h: 60 }, softness: 0, destroys: ['made-c'] }),
         op('t-since', 'text', { text: '1961', font: 'anton', size: 64, x: 30, y: 660, color: 'ink' }),
         op('t-extent', 'text', { text: '2.1 MILLION', font: 'anton', size: 48, x: 30, y: 610, color: 'ink' }),
         op('t-date', 'text', { text: '14 JANUARY', font: 'anton', size: 48, x: 30, y: 560, color: 'red' }),
@@ -169,7 +181,12 @@ test('the floor is well below the ceiling: an empty sheet and an uncovered sheet
 
   assert.ok(tree(blank) < ceiling * 0.7, `an empty sheet scored ${tree(blank)} against a ceiling of ${ceiling}`);
   assert.ok(tree(open) < ceiling, `a sheet with nothing covered scored ${tree(open)}, the same as one with coverings`);
-  assert.ok(open.hardViolations > 0, 'removing every covering violated no hard constraint');
+
+  // What removing every covering costs, exactly. It is soft violations now and not a hard one, and
+  // that is the price of refusing to let a node count be hard. Asserted rather than lamented: if
+  // this ever becomes a hard violation again, somebody has put a counting constraint back.
+  assert.ok(open.softViolations > 0, 'removing every covering violated nothing at all');
+  assert.equal(open.hardViolations, 0, 'the tree scope is not supposed to be able to refuse this any more');
 
   // And the counterpart, now that L2 asks for no strings: taking the words out is NOT a failure.
   // A work is allowed to say nothing. If this ever starts violating something, a commission has
@@ -190,25 +207,63 @@ test('the tree scope is blind to composition: scrambling every coordinate change
   assert.equal(after.softViolations, before.softViolations);
 });
 
-test('a tree score of 1.0 is 1.0 over what could be decided, and the rest is countable', () => {
+test('a tree score of 1.0 is 1.0 over the soft preferences, because every hard demand is on the canvas', () => {
   const report = checkProgram(passing(), position, null);
   const treeScoped = report.results.filter((r) => r.scope === 'tree');
-  const undecided = treeScoped.filter((r) => r.status === 'unverified');
 
-  // The position's own load-bearing commitment — a region that is the remainder of something
-  // destroyed — is blocked by a missing primitive. It is hard, it is unverified, and it leaves both
-  // sides of the fraction. So the
-  // headline reads 1.000 while the thing the position is actually about went unmeasured.
+  // 1.000, and worth much less than it looks. Every constraint that asks this position for something
+  // positive is render-scope now, so with no metrics supplied they are all `unverified`, all outside
+  // the fraction, and what is left in the tree is one ban and a handful of soft preferences. That is
+  // a better failure than the one it replaces — a blocked commitment could never be measured at all,
+  // and these can — but it is still a number that hides its own denominator, which is what this file
+  // exists to say.
   assert.equal(tree(report), 1);
-  assert.ok(undecided.length > 0, 'this position is supposed to have an undecidable tree constraint');
+  assert.equal(report.renderScore, null, 'nothing measured the canvas, so there is no render score');
+
+  // A hard tree constraint is allowed, but only if it is a ban. `p-no-hatching` is the one here and
+  // it is satisfied by a tree with no hatching in it — which is to say, by not doing something,
+  // which is the one kind of tree demand that cannot be met by adding a node nobody can see.
   assert.ok(
-    undecided.some((r) => r.severity === 'hard' && r.blocked_by !== undefined),
-    'the blocked hard commitment is what makes this test worth having'
+    treeScoped.filter((r) => r.severity === 'hard').every((r) => r.kind === 'forbidMark'),
+    `the only hard tree constraint should be a ban: ${treeScoped.filter((r) => r.severity === 'hard').map((r) => `${r.id}/${r.kind}`).join(', ')}`
   );
-  // The only defence is that the omission is visible. If it ever stops being counted, fail here.
-  assert.equal(report.blocked, treeScoped.filter((r) => r.blocked_by !== undefined).length);
-  assert.ok(report.blocked > 0);
+
+  const hard = report.results.filter((r) => r.severity === 'hard');
+  const hardDecidable = hard.filter((r) => r.scope !== 'judge' && r.scope !== 'tree');
+  assert.ok(hardDecidable.length > 0 && hardDecidable.every((r) => r.scope === 'render'));
+  assert.ok(
+    hardDecidable.every((r) => r.status === 'unverified'),
+    'the hard constraints are unmeasured here, and the 1.000 above does not know it'
+  );
   assert.ok(report.pendingRubrics.length > 0, 'rubrics are carried forward unread, not dropped');
+});
+
+/**
+ * The other half of that sentence: the canvas can refuse what the tree no longer can.
+ *
+ * The uncovered sheet from the floor test violates nothing hard by tree alone. Hand the same
+ * position a measurement in which the sheet is thin, centred, off the edges and holding one blot
+ * instead of three, and all four hard constraints fail at once. This is the whole argument for
+ * moving them — the numbers below cannot be reached by swapping one op for another.
+ */
+test('the render scope refuses what the tree scope cannot', () => {
+  const thin: RenderMetrics = {
+    inkDensity: 0.04,
+    coverage: 0.1,
+    inkOffset: 0.05,
+    symmetry: { vertical: 0.1, horizontal: 0.1 },
+    edgeContact: { top: 0, right: 0, bottom: 0, left: 0 },
+    opaqueRegions: [0.03],
+    pixelHash: 'not-a-real-hash',
+  };
+  const report = checkProgram(passing(), position, thin);
+  const violated = report.results.filter((r) => r.status === 'violated' && r.severity === 'hard');
+  assert.ok(violated.length >= 3, `expected the canvas to refuse this: ${JSON.stringify(report.results.map((r) => [r.id, r.status]))}`);
+  assert.ok(violated.some((r) => r.kind === 'regionCountRange'), 'one blot is not three opaque areas');
+  assert.ok(violated.some((r) => r.kind === 'inkDensityRange'));
+  assert.ok(violated.some((r) => r.kind === 'edgeContactRange'));
+  assert.notEqual(report.renderScore, null);
+  assert.ok(report.renderScore! < 0.5, `render score ${report.renderScore} is too generous for this sheet`);
 });
 
 test('positions are not interchangeable: one program does not satisfy all of them', () => {

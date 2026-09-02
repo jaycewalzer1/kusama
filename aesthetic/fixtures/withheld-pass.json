@@ -125,7 +125,8 @@
         "rngKey": "wh/taken-back-1",
         "args": {
           "region": { "type": "rect", "x": 206, "y": 196, "w": 120, "h": 78 },
-          "softness": 0
+          "softness": 0,
+          "destroys": ["held-1"]
         }
       },
       {
@@ -135,7 +136,8 @@
         "rngKey": "wh/taken-back-2",
         "args": {
           "region": { "type": "rect", "x": 300, "y": 380, "w": 152, "h": 64 },
-          "softness": 0
+          "softness": 0,
+          "destroys": ["held-2"]
         }
       },
       {
@@ -145,7 +147,8 @@
         "rngKey": "wh/taken-back-3",
         "args": {
           "region": { "type": "rect", "x": 92, "y": 508, "w": 138, "h": 90 },
-          "softness": 0
+          "softness": 0,
+          "destroys": ["held-3"]
         }
       },
       {

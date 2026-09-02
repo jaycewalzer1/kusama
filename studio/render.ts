@@ -28,6 +28,8 @@ import { runPrint } from '../env/print.js';
 import { grain, misregister } from '../env/present.js';
 import type { ResolvedProgram } from '../renderer/resolve.js';
 import { fontsUsed } from '../renderer/resolve.js';
+import { compileSamplingPlan } from '../aesthetic/sample-compiler.js';
+import { assertSamplingPlan, type SamplingCompilation } from '../aesthetic/sample-types.js';
 
 const MASK_DIR = 'masks';
 
@@ -92,6 +94,8 @@ const cli = new Command()
   .option('-a, --pack <id|path>', 'asset pack (defaults to the pack the program names)')
   .option('--grain <amount>', 'display only: per-pixel luminance noise, as a fraction of full scale')
   .option('--misregister <dx,dy>', 'display only: pull the colour plates apart by whole pixels')
+  .option('--sampling-plan <file>', 'compile this typed sampling plan into the program before validation')
+  .option('--disable-sample <id...>', 'sampling-plan sample ids to ablate before rendering')
   .option('--trace-masks', 'render once per leaf with that leaf omitted, and save each diff as a mask');
 
 interface Options {
@@ -100,12 +104,21 @@ interface Options {
   pack?: string;
   grain?: string;
   misregister?: string;
+  samplingPlan?: string;
+  disableSample?: string[];
   traceMasks?: boolean;
 }
 
 cli.action(async (file: string, opts: Options) => {
   const started = Date.now();
-  const program = JSON.parse(readFileSync(file, 'utf8')) as { assetPack?: string; meta?: { provenance?: unknown } };
+  let program = JSON.parse(readFileSync(file, 'utf8')) as { assetPack?: string; meta?: { provenance?: unknown } };
+  let sampling: SamplingCompilation | null = null;
+  if (opts.samplingPlan) {
+    const plan: unknown = JSON.parse(readFileSync(opts.samplingPlan, 'utf8'));
+    assertSamplingPlan(plan);
+    sampling = compileSamplingPlan(program as Record<string, unknown>, plan, opts.disableSample ?? []);
+    program = sampling.program as typeof program;
+  }
   let profile, profileHash: string;
   try {
     ({ profile, hash: profileHash } = loadProfileFor(program, opts.profile));
@@ -138,6 +151,7 @@ cli.action(async (file: string, opts: Options) => {
 
   const outDir = path.resolve(opts.out);
   mkdirSync(outDir, { recursive: true });
+  if (sampling) writeJson(path.join(outDir, 'sampling.json'), { ...sampling, program: undefined });
 
   const leaves = resolved.nodes;
   if (opts.traceMasks) {
@@ -237,6 +251,12 @@ cli.action(async (file: string, opts: Options) => {
       totalMs: Date.now() - started,
     },
     provenance: program.meta?.provenance,
+    sampling: sampling ? {
+      plan: path.resolve(opts.samplingPlan!),
+      disabledSampleIds: sampling.disabledSampleIds,
+      applied: sampling.constraints.filter((constraint) => constraint.supported).length,
+      unsupported: sampling.unsupported,
+    } : null,
   };
   writeJson(path.join(outDir, 'trace.json'), trace);
 

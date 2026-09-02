@@ -1,0 +1,81 @@
+{
+  "version": "0.2",
+  "profile": "default-v1",
+  "assetPack": "core-v1",
+  "seed": 41809,
+  "canvas": { "width": 600, "height": 900, "ground": "#f2efe9", "brushScale": 1 },
+  "palette": {
+    "ink": "#171a1e",
+    "rust": "#87401f"
+  },
+  "meta": {
+    "aesthetic": "interference",
+    "exemplar": "sixty-four overlapping aerosol clouds",
+    "reads_as": "a granular sheet made of sixty-four separate sprayings: thirty-two broad dark clouds scattered edge to edge, eighteen paler hollow rings from a can held too close, and fourteen small tight bursts stepping in a straight diagonal line from the top-left corner off the bottom-right, the tone anywhere being how many clouds fell on that spot",
+    "note": "Every cloud is a particle count fixed by its radius and density, so the tone is literally a sum of particles and no passage of it could have been laid down in one operation. The clouds are placed by two scatter rules and one line rule, not by eye."
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "drift",
+        "type": "repeat",
+        "rngKey": "if/drift",
+        "count": 32,
+        "layout": { "type": "scatter", "origin": [-40, -40], "w": 680, "h": 980 },
+        "children": [
+          {
+            "id": "drift-cloud",
+            "type": "op",
+            "op": "spray",
+            "rngKey": "if/drift-cloud",
+            "args": {
+              "x": 0, "y": 0, "r": 104, "density": 2.8, "falloff": 1,
+              "brush": "charcoal", "color": "ink", "weight": 8
+            }
+          }
+        ]
+      },
+      {
+        "id": "rings",
+        "type": "repeat",
+        "rngKey": "if/rings",
+        "count": 18,
+        "layout": { "type": "scatter", "origin": [-30, -30], "w": 660, "h": 960 },
+        "children": [
+          {
+            "id": "ring-cloud",
+            "type": "op",
+            "op": "spray",
+            "rngKey": "if/ring-cloud",
+            "args": {
+              "x": 0, "y": 0, "r": 92, "density": 2.6, "falloff": 0.6,
+              "brush": "pastel", "color": "rust", "weight": 8.5
+            }
+          }
+        ]
+      },
+      {
+        "id": "seam",
+        "type": "repeat",
+        "rngKey": "if/seam",
+        "count": 14,
+        "layout": { "type": "line", "origin": [-30, 40], "dx": 48, "dy": 66 },
+        "children": [
+          {
+            "id": "seam-burst",
+            "type": "op",
+            "op": "spray",
+            "rngKey": "if/seam-burst",
+            "args": {
+              "x": 0, "y": 0, "r": 46, "density": 6, "falloff": 2.4,
+              "brush": "spray", "color": "ink", "weight": 4.5,
+              "drip": { "count": 6, "length": 78, "wander": 3 }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

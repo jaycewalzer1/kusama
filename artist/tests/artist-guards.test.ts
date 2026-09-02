@@ -164,12 +164,16 @@ test('tracing is off by default, and off for policies that never reached a model
   }
 });
 
-test('every observation a policy sees is built by observation.ts and nothing else', () => {
+test('every observation a policy sees is built by a hashed observation serializer and nothing else', () => {
   // A phase that built its own prompt would be invisible to the observation hash, and every
   // trajectory recorded before and after that change would be silently incomparable.
   const phases = FILES.filter((f) => rel(f).startsWith('phases'));
   assert.ok(phases.length >= 5);
   for (const file of phases) {
-    assert.match(read(file), /from '\.\.\/observation\.js'/, `${rel(file)} does not use the serializer`);
+    assert.match(
+      read(file),
+      /from '\.\.\/(?:sampling-)?observation\.js'/,
+      `${rel(file)} does not use a hashed serializer`
+    );
   }
 });

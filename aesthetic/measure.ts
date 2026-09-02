@@ -44,6 +44,8 @@ const CACHE_DIR = path.join(ROOT, '.cache', 'aesthetic-metrics');
  * 4: added edgeContact. Every v3 entry is missing the field entirely, and a checker handed
  *    `undefined` reads it as inside every bound — the exact failure the first rule above exists to
  *    prevent.
+ * 5: added opaqueRegions. Same story as edgeContact: a v4 entry has no such field, and a region
+ *    count taken off `undefined.length` is a crash at best and a zero at worst.
  *
  * The rule is about *redefinition*, not about where the code sits. Moving the arithmetic into
  * ./metrics.ts changed no number -- the same map, the same grid, the same bands -- so this stayed at
@@ -56,7 +58,7 @@ const CACHE_DIR = path.join(ROOT, '.cache', 'aesthetic-metrics');
  * change like 6b7601e invalidates these entries whether or not anyone thinks to edit this line.
  * Deliberately not done here: it is a second change riding along with the one that was asked for.
  */
-const METRICS_VERSION = 4;
+const METRICS_VERSION = 5;
 
 function cacheFile(programHash: string): string {
   return path.join(CACHE_DIR, `${programHash}.v${METRICS_VERSION}.json`);

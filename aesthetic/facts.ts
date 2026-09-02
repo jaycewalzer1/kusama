@@ -36,6 +36,19 @@ export interface TextUse {
   size?: number;
 }
 
+export interface CoverUse {
+  nodeId: string;
+  /**
+   * The node ids this covering says it destroyed. Empty when it declared none.
+   *
+   * Nothing here checks the claim — env/validate.ts does, geometrically, and refuses the program if
+   * a named node does not exist, is drawn after the covering, or does not lie under it. That is the
+   * whole reason this field is worth reading: by the time a tree reaches this layer, a non-empty
+   * `destroys` is a fact about the picture and not an assertion the author made about themselves.
+   */
+  destroys: string[];
+}
+
 export interface TreeFacts {
   ground: string;
   /** Canvas height in the same units as `text.args.size`, so a set size can be read as a fraction. */
@@ -47,6 +60,8 @@ export interface TreeFacts {
   macros: Record<string, string[]>;
   marks: MarkUse[];
   texts: TextUse[];
+  /** Every `cover` op, in tree order, with whatever it declared it destroyed. */
+  covers: CoverUse[];
   /** Deepest nesting of `repeat` nodes. 0 when the tree has none. */
   repeatDepth: number;
   drawingNodes: number;
@@ -87,6 +102,7 @@ export function treeFacts(program: unknown): TreeFacts {
     macros: {},
     marks: [],
     texts: [],
+    covers: [],
     repeatDepth: 0,
     drawingNodes: 0,
     containerNodes: 0,
@@ -138,6 +154,11 @@ export function treeFacts(program: unknown): TreeFacts {
     color(args['color'], id, 'args.color');
     if (isDict(args['style'])) color((args['style'] as Dict)['color'], id, 'args.style.color');
     mark(id, args['style'], args['brush']);
+    if (op === 'cover') {
+      const declared = args['destroys'];
+      const destroys = Array.isArray(declared) ? declared.filter((d): d is string => typeof d === 'string') : [];
+      facts.covers.push({ nodeId: id, destroys });
+    }
     if (op === 'text') {
       const text = str(args['text']);
       const size = typeof args['size'] === 'number' ? args['size'] : undefined;

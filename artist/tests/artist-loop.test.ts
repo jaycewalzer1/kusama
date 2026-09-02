@@ -68,15 +68,29 @@ test('the loop runs a whole trajectory: find, sketch, choose, make, examine, fin
   assert.ok(policy.calls.indexOf('choose') > policy.calls.lastIndexOf('sketch'));
 
   const rubricCalls = envRequests.filter((r) => r.name === 'rubric');
-  assert.equal(rubricCalls.length, 2, 'the one hard rubric was read once per finish attempt');
-  assert.ok(rubricCalls.every((r) => r.imageBase64), 'the rubric reader looked at the plate');
   const rubricResults = trajectory.steps[trajectory.steps.length - 1]!.look.checkReport.results.filter(
     (r) => r.kind === 'rubric'
   );
-  const hard = rubricResults.find((r) => r.severity === 'hard')!;
-  const soft = rubricResults.find((r) => r.severity === 'soft')!;
-  assert.ok(rubricCalls.every((r) => r.text.includes(hard.rubric!)), 'the hard rubric text reached the reader');
-  assert.ok(rubricCalls.every((r) => !r.text.includes(soft.rubric!)), 'the soft rubric did not buy an unused call');
+  // Counted off the position rather than hard-coded, because the number of hard rubrics is exactly
+  // what the constraint-budget rewrite moves: what used to be a hard tree constraint nobody could
+  // see is now a question a reader answers, and `withheld` gained one that way. What has to stay
+  // true is the ratio — every hard rubric read once per finish attempt, and no call bought by a
+  // soft one.
+  const hard = rubricResults.filter((r) => r.severity === 'hard');
+  const soft = rubricResults.filter((r) => r.severity === 'soft');
+  assert.ok(hard.length >= 1 && soft.length >= 1, 'the position has both kinds, or this proves nothing');
+  assert.equal(rubricCalls.length, hard.length * 2, 'every hard rubric was read once per finish attempt');
+  assert.ok(rubricCalls.every((r) => r.imageBase64), 'the rubric reader looked at the plate');
+  for (const h of hard) {
+    assert.equal(
+      rubricCalls.filter((r) => r.text.includes(h.rubric!)).length,
+      2,
+      `the hard rubric ${h.id} reached the reader on both attempts`
+    );
+  }
+  for (const s of soft) {
+    assert.ok(rubricCalls.every((r) => !r.text.includes(s.rubric!)), 'a soft rubric did not buy an unused call');
+  }
   assert.ok(rubricCalls.every((r) => !r.text.includes('withheld')), 'the rubric reader was not told the position id');
 
   const gateNotes = readLog(path.join(CELL, 'studio.jsonl')).filter(

@@ -1,0 +1,74 @@
+{
+  "version": "0.2",
+  "profile": "default-v1",
+  "assetPack": "core-v1",
+  "seed": 52147,
+  "canvas": { "width": 600, "height": 900, "ground": "#f2efe9", "brushScale": 1 },
+  "palette": {
+    "ink": "#15171b",
+    "rust": "#8d3d1d"
+  },
+  "meta": {
+    "aesthetic": "interference",
+    "exemplar": "two ruled pencils at unequal pitch",
+    "reads_as": "a striped optical sheet: eighty-eight dark ruled lines at a pitch of seven and a half, running off the top and bottom of the paper, ninety-two paler ones at a pitch of seven leaning the other way, and eighteen long horizontals laid across both, so vertical bands of darkening stand about a hundred units apart where the two pitches come into step -- crisp near the top of the sheet and smeared out toward the bottom",
+    "note": "The beat is not drawn. It is what two unequal pitches do to each other, and the only way to change it is to change one of the two counts. Each line is also given up to a degree of its own about its top end, so the interval opens and closes on the way down and the pattern stops being a screen."
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      {
+        "id": "pencil-a",
+        "type": "repeat",
+        "rngKey": "if/pencil-a",
+        "count": 88,
+        "layout": { "type": "line", "origin": [-34, 0], "dx": 7.5, "dy": 0 },
+        "jitter": { "translate": 1.5, "rotate": 1 },
+        "children": [
+          {
+            "id": "rule-a",
+            "type": "op",
+            "op": "rule",
+            "rngKey": "if/rule-a",
+            "args": { "from": [0, -40], "to": [9, 940], "brush": "rotring", "color": "ink", "weight": 1.3 }
+          }
+        ]
+      },
+      {
+        "id": "pencil-b",
+        "type": "repeat",
+        "rngKey": "if/pencil-b",
+        "count": 92,
+        "layout": { "type": "line", "origin": [-28, 0], "dx": 7, "dy": 0 },
+        "jitter": { "translate": 1.5, "rotate": 1 },
+        "children": [
+          {
+            "id": "rule-b",
+            "type": "op",
+            "op": "rule",
+            "rngKey": "if/rule-b",
+            "args": { "from": [0, 940], "to": [-11, -40], "brush": "2H", "color": "rust", "weight": 1.1 }
+          }
+        ]
+      },
+      {
+        "id": "cross",
+        "type": "repeat",
+        "rngKey": "if/cross",
+        "count": 18,
+        "layout": { "type": "line", "origin": [0, -16], "dx": 0, "dy": 52 },
+        "jitter": { "translate": 2 },
+        "children": [
+          {
+            "id": "rule-c",
+            "type": "op",
+            "op": "rule",
+            "rngKey": "if/rule-c",
+            "args": { "from": [-40, 0], "to": [640, 11], "brush": "2B", "color": "ink", "weight": 1.6 }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -17,6 +17,7 @@ import { contentHash } from '../env/profile.js';
 import { envDrift, envVersionNow, type EnvDrift } from './env-version.js';
 import { loadInfluenceDoc, type InfluenceDoc } from './influence-doc.js';
 import { readLog, verifyChain, type LogLine } from './studio-log.js';
+import { recordedSamplingPlans } from './sampling-events.js';
 import { runTrajectory } from './run.js';
 import { PolicyError, type Policy, type PolicyRequest, type PolicyResponse } from './policy/interface.js';
 import type { EnvVersion, Mode, Trajectory } from './types.js';
@@ -32,6 +33,7 @@ interface RecordedCall {
   usage?: { inputTokens: number; outputTokens: number; usd: number };
   model?: string;
   ok: boolean;
+  errorKind?: PolicyError['kind'];
 }
 
 /**
@@ -51,18 +53,23 @@ export class RecordedPolicy implements Policy {
 
   async call<T>(request: PolicyRequest): Promise<PolicyResponse<T>> {
     const recorded = this.calls[this.at];
-    if (!recorded) throw new PolicyError(`replay ran out of recorded calls at call ${this.at} ("${request.name}")`);
+    if (!recorded) throw new PolicyError(`replay ran out of recorded calls at call ${this.at} ("${request.name}")`, 'replay');
     this.at++;
 
     if (recorded.name !== request.name) {
-      throw new PolicyError(`replay expected call ${this.at - 1} to be "${recorded.name}" but the driver asked for "${request.name}"`);
+      throw new PolicyError(`replay expected call ${this.at - 1} to be "${recorded.name}" but the driver asked for "${request.name}"`, 'replay');
     }
     const got = contentHash(request.observation);
     if (got !== recorded.observationHash) {
       this.mismatches.push({ index: this.at - 1, name: request.name, expected: recorded.observationHash, got });
     }
     // A call that failed originally fails again, at the same point, for the same reason.
-    if (!recorded.ok) throw new PolicyError(`replay of call ${this.at - 1} ("${request.name}"): the original call failed`);
+    if (!recorded.ok) {
+      throw new PolicyError(
+        `replay of call ${this.at - 1} ("${request.name}"): the original call failed`,
+        recorded.errorKind ?? 'unknown'
+      );
+    }
 
     return {
       action: recorded.action as T,
@@ -125,6 +132,8 @@ interface StartLine {
    */
   influencesId?: string;
   influencesInMake?: boolean;
+  sampling?: boolean;
+  samplingIndexId?: string;
 }
 
 /** The start line also carries the environment hashes, and has since before it carried all of them. */
@@ -157,7 +166,7 @@ export async function replay(dir: string, into: string): Promise<ReplayResult> {
   }
   const drifted = envDrift(
     start,
-    envVersionNow(start.positionId, start.briefId, start.seed, start.elementIds ?? [], influences?.hash)
+    envVersionNow(start.positionId, start.briefId, start.seed, start.elementIds ?? [], influences?.hash, start.sampling ?? false)
   );
   if (drifted.length > 0) {
     return {
@@ -174,6 +183,8 @@ export async function replay(dir: string, into: string): Promise<ReplayResult> {
 
   // The position id in the log is the real one even in a control run, so it round-trips as written.
   const policy = new RecordedPolicy(recordedCalls(lines));
+  const samplingPlans = recordedSamplingPlans(lines);
+  if (start.sampling && samplingPlans.length === 0) throw new Error('sampling replay has no sample_selected plan in the log');
   const replayed = await runTrajectory({
     policy,
     positionId: start.positionId,
@@ -191,6 +202,7 @@ export async function replay(dir: string, into: string): Promise<ReplayResult> {
     ...(start.influencesId
       ? { influences: start.influencesId, influencesInMake: start.influencesInMake ?? false }
       : {}),
+    ...(start.sampling ? { recordedSamplingPlans: samplingPlans } : {}),
   });
 
   const differences: string[] = [];

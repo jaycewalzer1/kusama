@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kusama.invalid/schema/sampling-plan.schema.json",
+  "title": "Intentional artwork sampling plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "planId", "seed", "indexId", "goal", "requests", "samples", "createdBy"],
+  "properties": {
+    "schemaVersion": { "const": "kusama.sampling.v1" },
+    "planId": { "type": "string", "pattern": "^plan_[0-9a-f]{20}$" },
+    "seed": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+    "indexId": { "type": "string", "minLength": 1 },
+    "goal": { "$ref": "#/$defs/goal" },
+    "requests": { "type": "array", "minItems": 1, "maxItems": 8, "items": { "$ref": "#/$defs/request" } },
+    "samples": { "type": "array", "minItems": 1, "maxItems": 8, "items": { "$ref": "#/$defs/sample" } },
+    "createdBy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": { "kind": { "enum": ["artist", "deterministic-fallback"] }, "profile": { "type": "string" } }
+    },
+    "fallback": { "type": "boolean" },
+    "rejections": {
+      "type": "array", "maxItems": 2,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["requestId", "fragmentId", "reason"],
+        "properties": {
+          "requestId": { "type": "string" },
+          "fragmentId": { "type": "string" },
+          "reason": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "channel": { "enum": ["composition", "scale_relation", "spatial_density", "negative_space", "silhouette", "motif", "gesture", "gaze_or_direction", "occlusion", "palette", "value_structure", "edge_language", "mark_rhythm", "texture", "symbolic_role", "material_logic"] },
+    "mode": { "enum": ["reference_transfer", "structural_analogy", "motif_adaptation", "literal_fragment"] },
+    "transformation": { "enum": ["echo", "transpose", "invert", "compress", "exaggerate", "fragment", "hybridize", "counterpoint"] },
+    "preset": { "enum": ["whisper", "accent", "dialogue", "dominant", "rupture"] },
+    "controls": {
+      "type": "object", "additionalProperties": false,
+      "required": ["salience", "scope", "abstraction", "exaggeration"],
+      "properties": {
+        "salience": { "type": "number", "minimum": 0, "maximum": 1 },
+        "scope": { "type": "number", "minimum": 0, "maximum": 1 },
+        "abstraction": { "type": "number", "minimum": 0, "maximum": 1 },
+        "exaggeration": { "type": "number", "minimum": -1, "maximum": 1 }
+      }
+    },
+    "goal": {
+      "type": "object", "additionalProperties": false, "required": ["subject", "percepts", "avoid"],
+      "properties": {
+        "subject": { "type": "string", "minLength": 1 },
+        "percepts": { "type": "array", "items": { "type": "string" } },
+        "avoid": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "request": {
+      "type": "object", "additionalProperties": false,
+      "required": ["requestId", "role", "query", "channels", "mode", "transformation", "preset", "controls", "perceptualGoal", "origin"],
+      "properties": {
+        "requestId": { "type": "string", "minLength": 1 },
+        "role": { "type": "string", "minLength": 1 },
+        "query": { "type": "string", "minLength": 1 },
+        "negativeQueries": { "type": "array", "items": { "type": "string" } },
+        "channels": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/channel" } },
+        "mode": { "$ref": "#/$defs/mode" },
+        "transformation": { "$ref": "#/$defs/transformation" },
+        "preset": { "$ref": "#/$defs/preset" },
+        "controls": { "$ref": "#/$defs/controls" },
+        "perceptualGoal": { "type": "string", "minLength": 1 },
+        "origin": { "enum": ["artist", "fallback"] },
+        "filters": { "type": "object" }
+      }
+    },
+    "fragment": {
+      "type": "object", "additionalProperties": true,
+      "required": ["fragmentId", "objectId", "sourceImageHash", "sourceRelativePath", "normalizedBounds", "pixelBounds", "cropScale", "fragmentKind", "embeddingId", "formalFeatures", "provenance", "wholeFragmentId", "contextFragmentId"],
+      "properties": {
+        "fragmentId": { "type": "string", "minLength": 1 },
+        "objectId": { "type": "integer" },
+        "sourceImageHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "sourceRelativePath": { "type": "string", "minLength": 1 },
+        "normalizedBounds": { "type": "array", "minItems": 4, "maxItems": 4, "items": { "type": "number", "minimum": 0, "maximum": 1 } },
+        "pixelBounds": { "type": "array", "minItems": 4, "maxItems": 4, "items": { "type": "integer", "minimum": 0 } },
+        "cropScale": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "fragmentKind": { "enum": ["whole", "context", "detail", "segment"] },
+        "embeddingId": { "type": "string", "minLength": 1 },
+        "formalFeatures": { "type": "object" },
+        "provenance": { "type": "object" },
+        "wholeFragmentId": { "type": "string" },
+        "contextFragmentId": { "type": ["string", "null"] }
+      }
+    },
+    "candidate": {
+      "type": "object", "additionalProperties": false, "required": ["rank", "fragment", "scores"],
+      "properties": { "rank": { "type": "integer", "minimum": 1 }, "fragment": { "$ref": "#/$defs/fragment" }, "scores": { "type": "object" } }
+    },
+    "sample": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sampleId", "requestId", "role", "requestedRole", "fragment", "candidates", "borrowed", "whyChosen", "perceptualGoal", "channels", "mode", "preset", "controls", "transformation", "intendedDifference", "enabled"],
+      "properties": {
+        "sampleId": { "type": "string", "minLength": 1 }, "requestId": { "type": "string", "minLength": 1 },
+        "role": { "enum": ["anchor", "support", "counterpoint"] }, "requestedRole": { "type": "string" },
+        "fragment": { "$ref": "#/$defs/fragment" }, "candidates": { "type": "array", "items": { "$ref": "#/$defs/candidate" } },
+        "borrowed": { "type": "string" }, "whyChosen": { "type": "string" }, "perceptualGoal": { "type": "string" },
+        "channels": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/channel" } },
+        "mode": { "$ref": "#/$defs/mode" }, "preset": { "$ref": "#/$defs/preset" }, "controls": { "$ref": "#/$defs/controls" },
+        "transformation": { "$ref": "#/$defs/transformation" }, "intendedDifference": { "type": "string" }, "enabled": { "type": "boolean" }
+      }
+    }
+  }
+}

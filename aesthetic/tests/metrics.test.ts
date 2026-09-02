@@ -193,3 +193,58 @@ test('ink starts exactly at the threshold, from either side of the ground', () =
   assert.deepEqual([...ink], [8, 0, 8, 0], 'at the threshold is ink; one step inside it is not');
   assert.equal(metricsFromInk(ink, w, h).inkDensity, 0.5);
 });
+
+/**
+ * opaqueRegions is the field that exists so a position can stop counting nodes. "Four opaque areas"
+ * used to be `requireMark {styles:['solid'], min:4}`, which is a claim about the JSON and was
+ * satisfiable by adding a solid paint underneath a covering where nobody would ever see it. Here it
+ * is a claim about the sheet, and the two easiest ways to get it wrong are both checked below: a
+ * region is an area of the *image*, so marks that merge are one, and it is four-connected, so marks
+ * that meet only at a corner are two.
+ */
+test('opaqueRegions counts separated marks separately, largest first', () => {
+  const b = sheet();
+  paint(b, 10, 10, 10, 10, 0, 0, 0); // 100 px
+  paint(b, 60, 60, 20, 20, 0, 0, 0); // 400 px
+  assert.deepEqual(metricsFromRgba(b, W, H, WHITE).opaqueRegions, [0.04, 0.01]);
+});
+
+test('two marks that overlap are one region, and two that meet at a corner are two', () => {
+  const merged = sheet();
+  paint(merged, 10, 10, 20, 20, 0, 0, 0);
+  paint(merged, 25, 10, 20, 20, 0, 0, 0); // shares columns 25..29
+  assert.deepEqual(
+    metricsFromRgba(merged, W, H, WHITE).opaqueRegions,
+    [(35 * 20) / (W * H)],
+    'the tree has two solid marks here and the picture has one area'
+  );
+
+  const diagonal = sheet();
+  paint(diagonal, 10, 10, 10, 10, 0, 0, 0); // x 10..19, y 10..19
+  paint(diagonal, 20, 20, 10, 10, 0, 0, 0); // x 20..29, y 20..29, touching only at the corner
+  assert.deepEqual(
+    metricsFromRgba(diagonal, W, H, WHITE).opaqueRegions,
+    [0.01, 0.01],
+    'four-connected: a shared corner is not a connection'
+  );
+});
+
+/**
+ * The two floors, and the difference between them. OPAQUE_THRESHOLD is about tone — a mark can be
+ * ink and still not be opaque, which is exactly the distinction `withheld` lives on, because a
+ * translucent covering is a hint and a hint invites the guess. REGION_FLOOR is about storage and
+ * nothing else: it keeps a stray antialiased speck out of the list. A constraint that cares sets its
+ * own `minArea` well above it.
+ */
+test('a mark can be ink without being opaque, and a speck is below the storage floor', () => {
+  const pale = sheet();
+  paint(pale, 10, 10, 40, 40, 0xd0, 0xd0, 0xd0); // distance 47: ink, nowhere near opaque
+  const m = metricsFromRgba(pale, W, H, WHITE);
+  assert.ok(m.inkDensity > 0.15, 'it is plainly ink');
+  assert.deepEqual(m.opaqueRegions, [], 'and it is not an opaque region');
+
+  const speck = sheet();
+  paint(speck, 50, 50, 20, 20, 0, 0, 0); // 400 px, 0.04 of the sheet
+  paint(speck, 5, 5, 2, 2, 0, 0, 0); // 4 px, 0.0004, under the 0.0005 floor
+  assert.deepEqual(metricsFromRgba(speck, W, H, WHITE).opaqueRegions, [0.04]);
+});

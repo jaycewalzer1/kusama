@@ -17,6 +17,7 @@ import _Ajv2020 from 'ajv/dist/2020.js';
 import type { ValidateFunction } from 'ajv';
 import { treeFacts } from './facts.js';
 import { checkConstraintWithFacts } from './kinds.js';
+import { COUNTING_KINDS, HARD_TREE_KINDS, MAX_HARD_CONSTRAINTS } from './types.js';
 import type { AestheticProgram, CheckReport, Constraint, ConstraintResult, RenderMetrics } from './types.js';
 
 const Ajv = _Ajv2020 as unknown as typeof _Ajv2020.default;
@@ -66,6 +67,44 @@ export function constraintsOf(ap: AestheticProgram): { constraint: Constraint; p
       .filter((r): r is { rule: string; constraint: Constraint } => r.constraint !== undefined)
       .map((r) => ({ constraint: r.constraint, part: 'generative_rule' as const })),
   ];
+}
+
+/**
+ * What a *position* may insist on, over and above what the schema allows any aesthetic program.
+ *
+ * Not in loadAestheticProgram on purpose: the six cross-check programs in examples/aesthetic/ are
+ * read through the same loader and are meant to be over-determined — they exist to show what a
+ * position looks like when it is a picture spec. This runs where a position enters a run.
+ *
+ * Returns human-readable issues, empty when the position is within budget.
+ */
+export function positionIssues(ap: AestheticProgram): string[] {
+  const issues: string[] = [];
+  const hard = constraintsOf(ap).filter(({ constraint }) => constraint.severity === 'hard');
+
+  for (const { constraint: c } of hard) {
+    if (COUNTING_KINDS.includes(c.kind)) {
+      issues.push(
+        `${c.id}: "${c.kind}" counts nodes in the source tree and may not be hard. Make it soft, or say what ` +
+          `you mean about the picture — "four opaque areas" is regionCountRange, not requireMark.`
+      );
+    } else if (c.scope === 'tree' && !HARD_TREE_KINDS.includes(c.kind)) {
+      issues.push(
+        `${c.id}: "${c.kind}" is a tree-scope requirement and may not be hard. A hard constraint has to be a ` +
+          `ban, a ceiling, or a render measure; anything else can be satisfied by adding a node nobody sees.`
+      );
+    }
+  }
+
+  const decidable = hard.filter(({ constraint }) => constraint.scope !== 'judge');
+  if (decidable.length > MAX_HARD_CONSTRAINTS) {
+    issues.push(
+      `${decidable.length} hard decidable constraints (${decidable.map(({ constraint }) => constraint.id).join(', ')}), ` +
+        `and a position may carry ${MAX_HARD_CONSTRAINTS}. Past four they stop describing a practice and start ` +
+        `describing one object. Move the rest into rubrics, where a reader can weigh them, or make them soft.`
+    );
+  }
+  return issues;
 }
 
 /**

@@ -13,6 +13,8 @@ import { callPolicy, type CallResult, type Spend } from '../call.js';
 import { makeObservation, replanObservation, type MakeContext } from '../observation.js';
 import { REPLAN_SCHEMA, actSchema } from '../schemas.js';
 import { withInfluences, type InfluenceDoc } from '../influence-doc.js';
+import { withSamplingCommitments } from '../sampling-observation.js';
+import type { SamplingPlan } from '../../aesthetic/sample-types.js';
 import type { Policy, PolicyImage } from '../policy/interface.js';
 import type { StudioLog } from '../studio-log.js';
 import type { Action, Intention, TriggerName } from '../types.js';
@@ -84,7 +86,8 @@ export async function act(
   context: MakeContext,
   plate: Buffer | null = null,
   change: Buffer | null = null,
-  influences: InfluenceDoc | null = null
+  influences: InfluenceDoc | null = null,
+  sampling: SamplingPlan | null = null
 ): Promise<CallResult<Action>> {
   return callPolicy<Action>(policy, log, spend, {
     name: 'act',
@@ -92,7 +95,7 @@ export async function act(
     // Catalogue entries and no pictures, hence the 0. The images this call carries are the canvas
     // and what the last step moved, and the observation says so by position — "the canvas itself is
     // attached" stops being true of image 1 if eight museum works are prepended to the list.
-    observation: withInfluences(makeObservation(context), influences, 0),
+    observation: withSamplingCommitments(withInfluences(makeObservation(context), influences, 0), sampling),
     schema: actSchema(),
     images: framesOf(context, plate, change),
     maxTokens: 8000,
@@ -108,13 +111,14 @@ export async function replan(
   detail: string,
   plate: Buffer | null = null,
   change: Buffer | null = null,
-  influences: InfluenceDoc | null = null
+  influences: InfluenceDoc | null = null,
+  sampling: SamplingPlan | null = null
 ): Promise<Intention> {
   log.append('phase', { phase: 'replan', trigger });
   const result = await callPolicy<{ intention: Intention; why: string }>(policy, log, spend, {
     name: 'replan',
     system: REPLAN_SYSTEM,
-    observation: withInfluences(replanObservation(context, trigger, detail), influences, 0),
+    observation: withSamplingCommitments(withInfluences(replanObservation(context, trigger, detail), influences, 0), sampling),
     schema: REPLAN_SCHEMA,
     images: framesOf(context, plate, change),
     maxTokens: 4000,

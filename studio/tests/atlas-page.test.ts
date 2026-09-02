@@ -21,9 +21,9 @@ function base(projection: Atlas['projection'] = 'umap'): Atlas {
     preservation: { k: 20, n: 3, preserved: 0.5, chance: 0.1, informative: true },
     composition: [{ field: 'same museum', share: 0.6, chance: 0.39 }],
     points: [
-      { id: 'a', source: 'met', x: 0, y: 0, kind: 'Print', period: '19c', title: 'A', sha256: null },
-      { id: 'b', source: 'aic', x: 1, y: 1, kind: 'Print', period: '19c', title: 'B', sha256: null },
-      { id: 'c', source: 'cma', x: 2, y: 0, kind: 'Bowl', period: '18c', title: 'C', sha256: null },
+      { id: 'a', source: 'met', x: 0, y: 0, kind: 'Print', period: '19c', title: 'A', creator: 'Hokusai', date: '1830', medium: 'woodblock', sha256: 'f'.repeat(64) },
+      { id: 'b', source: 'aic', x: 1, y: 1, kind: 'Print', period: '19c', title: 'B & <b>', creator: null, date: '', medium: 'ink', sha256: null },
+      { id: 'c', source: 'cma', x: 2, y: 0, kind: 'Bowl', period: '18c', title: 'C', creator: null, date: '', medium: '', sha256: null },
     ],
   };
 }
@@ -99,6 +99,34 @@ test('hover reads the same transform the plot is drawn with', () => {
   assert.equal((html.match(/const px = p =>/g) ?? []).length, 1);
   assert.match(html, /px = p => bx\(p\) \* zoom \+ panX/);
   assert.match(html, /if \(drag\)/, 'a drag must suppress the tooltip rather than chase it');
+});
+
+test('hovering a dot offers the work itself, not only its coordinates', () => {
+  const html = atlasPage(base(), '2026-01-01');
+  // The sha is what an image can be found by, so it has to survive into the page; the record the
+  // map was drawn from has to be there too, or the card is a title and a filename.
+  assert.match(html, /"f{64}"/);
+  assert.match(html, /"Hokusai"/);
+  assert.match(html, /"woodblock"/);
+  assert.match(html, /IMG \+ p\[7\] \+ '\.jpg/);
+  // A work whose pixels never arrived is a legitimate manifest row: it must not render an <img>
+  // pointing at a file that does not exist.
+  assert.match(html, /no image on disk/);
+  // Museum prose goes through innerHTML, so it goes through an escape first.
+  assert.match(html, /function esc|const esc =/);
+  assert.ok(!/hover\.innerHTML = *['"`]/.test(html), 'nothing may be written into the card unescaped');
+});
+
+test('the card is rebuilt only when the thing under the cursor changes', () => {
+  // Otherwise every mousemove restarts the image request for the dot the cursor is already on.
+  const html = atlasPage(base(), '2026-01-01');
+  assert.match(html, /if \(key !== hovered\) \{ hover\.innerHTML = best; hovered = key; \}/);
+});
+
+test('a page written away from the images is told where they are', () => {
+  const html = atlasPage(base(), '2026-01-01', { imageBase: '../../../corpus/images/' });
+  assert.match(html, /const IMG = "\.\.\/\.\.\/\.\.\/corpus\/images\/"/);
+  assert.match(atlasPage(base(), '2026-01-01'), /const IMG = "images\/"/);
 });
 
 test('the view is clamped so the corpus cannot be dragged off the canvas', () => {
