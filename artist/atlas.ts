@@ -287,6 +287,246 @@ export function preservation(high: Float64Array[], low: number[][], k = 20): Pre
   return { k, n, preserved, chance, informative: preserved > chance * 2 };
 }
 
+// --- is it the SAME map twice ----------------------------------------------------------------
+
+/**
+ * One UMAP fit, identified by everything that could have changed the picture.
+ */
+export interface StabilityRun {
+  seed: number;
+  neighbours: number;
+  minDist: number;
+  /** `preservation()` for this fit, on the same points. */
+  preserved: number;
+}
+
+export interface StabilityPair {
+  a: number;
+  b: number;
+  /** Mean over points of the share of a point's 2-D top-k that both fits name. Local structure. */
+  neighbourAgreement: number;
+  /** Spearman correlation of pairwise 2-D distances between the two fits. Global structure. */
+  distanceRho: number;
+}
+
+export interface Stability {
+  n: number;
+  k: number;
+  /** `k / (n - 1)` — what two independent random layouts would share. */
+  chance: number;
+  runs: StabilityRun[];
+  /** Pairs differing ONLY in seed. */
+  seedPairs: StabilityPair[];
+  /** Pairs differing in `nNeighbors` or `minDist`. */
+  paramPairs: StabilityPair[];
+  preservedMean: number;
+  preservedSd: number;
+}
+
+/** Spearman rho between two equal-length series. Ties averaged, as the definition requires. */
+export function spearman(xs: number[], ys: number[]): number {
+  const rank = (v: number[]) => {
+    const order = v.map((x, i) => [x, i] as [number, number]).sort((a, b) => a[0] - b[0]);
+    const r = new Float64Array(v.length);
+    let i = 0;
+    while (i < order.length) {
+      let j = i;
+      while (j + 1 < order.length && (order[j + 1] as [number, number])[0] === (order[i] as [number, number])[0]) j++;
+      const avg = (i + j) / 2 + 1;
+      for (let t = i; t <= j; t++) r[(order[t] as [number, number])[1]] = avg;
+      i = j + 1;
+    }
+    return r;
+  };
+  const a = rank(xs);
+  const b = rank(ys);
+  const n = a.length;
+  if (n < 2) return 0;
+  let ma = 0;
+  let mb = 0;
+  for (let i = 0; i < n; i++) {
+    ma += a[i] as number;
+    mb += b[i] as number;
+  }
+  ma /= n;
+  mb /= n;
+  let num = 0;
+  let da = 0;
+  let db = 0;
+  for (let i = 0; i < n; i++) {
+    const u = (a[i] as number) - ma;
+    const v = (b[i] as number) - mb;
+    num += u * v;
+    da += u * u;
+    db += v * v;
+  }
+  return da > 0 && db > 0 ? num / Math.sqrt(da * db) : 0;
+}
+
+/** Deterministic stride sample of index pairs, for the global-structure correlation. */
+function pairSample(n: number, want: number): [number, number][] {
+  const total = (n * (n - 1)) / 2;
+  const take = Math.min(want, total);
+  const stride = total / take;
+  const out: [number, number][] = [];
+  for (let t = 0; t < take; t++) {
+    // Invert the triangular index so the sample is spread over all pairs, not over the first rows.
+    let m = Math.floor(t * stride);
+    let i = 0;
+    let row = n - 1;
+    while (m >= row) {
+      m -= row;
+      row--;
+      i++;
+    }
+    out.push([i, i + 1 + m]);
+  }
+  return out;
+}
+
+/**
+ * Run UMAP several times and ask whether it drew the same picture.
+ *
+ * A single seeded UMAP at library defaults is reproducible, which is not the same as stable: it
+ * reproduces one arbitrary answer exactly. The question a reader of the atlas actually has is
+ * whether the clusters they are looking at survive a different seed and a different `nNeighbors`,
+ * and the honest answer has to be measured, because UMAP will always produce clean-looking islands.
+ *
+ * Two agreements are reported because they can disagree, and when they do the disagreement IS the
+ * finding: `nNeighbors` trades local for global by construction, so a layout can keep almost every
+ * neighbourhood while rearranging the whole plane. Local agreement licenses "these works sit
+ * together"; only the distance correlation licenses "this cluster is far from that one".
+ *
+ * Fitted on the points passed in — normally the same stride sample `preservation()` uses. The map on
+ * the page is fitted on every work, and a layout fitted on fewer points is not that layout, so this
+ * measures the method's seed-sensitivity and not the published picture's.
+ */
+export function stability(
+  rows: Float64Array[],
+  k = 20,
+  seeds: readonly number[] = [1, 2, 3],
+  params: readonly { neighbours: number; minDist: number }[] = [
+    { neighbours: 15, minDist: 0.1 },
+    { neighbours: 5, minDist: 0.1 },
+    { neighbours: 50, minDist: 0.1 },
+  ],
+  pairs = 50_000,
+): Stability {
+  const n = rows.length;
+  const base = params[0] as { neighbours: number; minDist: number };
+  const specs: { seed: number; neighbours: number; minDist: number }[] = [
+    ...seeds.map((seed) => ({ seed, neighbours: base.neighbours, minDist: base.minDist })),
+    ...params.slice(1).map((p) => ({ seed: seeds[0] as number, ...p })),
+  ];
+
+  const fits = specs.map((s) => umapProject(rows, s.seed, s.neighbours, s.minDist));
+  const runs: StabilityRun[] = specs.map((s, i) => ({
+    ...s,
+    preserved: preservation(rows, fits[i] as number[][], k).preserved,
+  }));
+
+  const sample = pairSample(n, pairs);
+  const dists = fits.map((f) =>
+    sample.map(([i, j]) => {
+      const a = f[i] as number[];
+      const b = f[j] as number[];
+      return Math.hypot((a[0] as number) - (b[0] as number), (a[1] as number) - (b[1] as number));
+    }),
+  );
+
+  const nearest = fits.map((f) =>
+    Array.from({ length: n }, (_, i) => {
+      const order = Array.from({ length: n }, (_, j) => j).filter((j) => j !== i);
+      const p = f[i] as number[];
+      const d = (j: number) => {
+        const q = f[j] as number[];
+        return ((p[0] as number) - (q[0] as number)) ** 2 + ((p[1] as number) - (q[1] as number)) ** 2;
+      };
+      order.sort((x, y) => d(x) - d(y) || x - y);
+      return new Set(order.slice(0, k));
+    }),
+  );
+
+  const compare = (a: number, b: number): StabilityPair => {
+    let kept = 0;
+    for (let i = 0; i < n; i++) {
+      for (const j of (nearest[a] as Set<number>[])[i] as Set<number>) {
+        if (((nearest[b] as Set<number>[])[i] as Set<number>).has(j)) kept++;
+      }
+    }
+    return {
+      a,
+      b,
+      neighbourAgreement: n > 0 ? kept / (n * k) : 0,
+      distanceRho: spearman(dists[a] as number[], dists[b] as number[]),
+    };
+  };
+
+  const seedPairs: StabilityPair[] = [];
+  for (let i = 0; i < seeds.length; i++) for (let j = i + 1; j < seeds.length; j++) seedPairs.push(compare(i, j));
+  const paramPairs: StabilityPair[] = [];
+  for (let j = seeds.length; j < specs.length; j++) paramPairs.push(compare(0, j));
+
+  const ps = runs.map((r) => r.preserved);
+  const pm = ps.reduce((s, x) => s + x, 0) / (ps.length || 1);
+  return {
+    n,
+    k,
+    chance: n > 1 ? k / (n - 1) : 0,
+    runs,
+    seedPairs,
+    paramPairs,
+    preservedMean: pm,
+    preservedSd:
+      ps.length > 1 ? Math.sqrt(ps.reduce((s, x) => s + (x - pm) ** 2, 0) / (ps.length - 1)) : 0,
+  };
+}
+
+/** Below this, two seeds have not drawn the same picture and no cluster on it may be named. */
+export const STABILITY_BAND = 0.5;
+
+export function stabilityText(s: Stability, specLabel = (r: StabilityRun) => `seed ${r.seed}, nn ${r.neighbours}, minDist ${r.minDist}`): string {
+  const pct = (v: number) => `${(100 * v).toFixed(1)}%`;
+  const out: string[] = [
+    `UMAP stability over ${s.n.toLocaleString()} points at k=${s.k}. ${s.runs.length} fits, one input.`,
+    '',
+    'EACH FIT, AND WHAT IT PRESERVED',
+  ];
+  for (const r of s.runs) out.push(`  ${specLabel(r).padEnd(34)} preserved ${pct(r.preserved)}  (chance ${pct(s.chance)})`);
+  out.push(
+    `  spread across fits: mean ${pct(s.preservedMean)}, sd ${pct(s.preservedSd)}`,
+    '',
+    'SAME PARAMETERS, DIFFERENT SEED — how much of the picture is the random start',
+  );
+  for (const p of s.seedPairs) {
+    out.push(`  fit ${p.a} vs ${p.b}   neighbours shared ${pct(p.neighbourAgreement)}   distance rho ${p.distanceRho.toFixed(3)}`);
+  }
+  out.push('', 'SAME SEED, DIFFERENT nNeighbors — how much is the parameter');
+  for (const p of s.paramPairs) {
+    out.push(`  fit ${p.a} vs ${p.b}   neighbours shared ${pct(p.neighbourAgreement)}   distance rho ${p.distanceRho.toFixed(3)}`);
+  }
+  const seedMin = s.seedPairs.reduce((m, p) => Math.min(m, p.neighbourAgreement), 1);
+  const rhoMin = s.seedPairs.reduce((m, p) => Math.min(m, p.distanceRho), 1);
+  out.push(
+    '',
+    'WHAT MAY BE SAID ABOUT THIS MAP',
+    seedMin >= STABILITY_BAND
+      ? `  Two seeds keep ${pct(seedMin)} of each point's ${s.k} nearest, so "these works sit together" is a`
+        + `\n  statement about the data and not about the seed.`
+      : `  Two seeds keep only ${pct(seedMin)} of each point's ${s.k} nearest. The clusters on this map are`
+        + `\n  substantially an artefact of the random start; NAME NO CLUSTER from it.`,
+    rhoMin >= STABILITY_BAND
+      ? `  Pairwise distances correlate at rho ${rhoMin.toFixed(3)} across seeds, so relative distance on the plane`
+        + `\n  carries some information.`
+      : `  Pairwise distances correlate at only rho ${rhoMin.toFixed(3)} across seeds. DISTANCE BETWEEN CLUSTERS ON`
+        + `\n  THIS PLOT MEANS NOTHING — this is UMAP's documented behaviour, now measured here rather`
+        + `\n  than assumed, and it is the single most over-read property of every plot of this kind.`,
+    `  Local and global need not agree: nNeighbors trades one for the other by construction, so a`,
+    `  layout can hold every neighbourhood while rearranging the plane.`,
+  );
+  return out.map((x) => `${x}\n`).join('');
+}
+
 export interface Composition {
   /** The recorded field a neighbourhood was checked against. */
   field: string;
@@ -378,6 +618,11 @@ export interface Atlas {
   /** Per axis, the columns it is most made of. The reason for choosing PCA over a nicer picture. */
   loadings: { axis: number; column: string; weight: number }[][];
   preservation: Preservation;
+  /**
+   * Whether the same input drew the same picture twice. Only present for UMAP and only when asked
+   * for: it is six more fits. PCA has no seed, so for PCA the question does not arise.
+   */
+  stability?: Stability;
   /** What the full space calls near, in terms a museum recorded. The answer loadings cannot give. */
   composition: Composition[];
   points: AtlasPoint[];
@@ -408,7 +653,14 @@ export function loadingsOf(names: string[], axes: Float64Array[], top = 8): Atla
  *   measure and the same page get pointed at image embeddings without this file learning what an
  *   embedding is or where the matrix lives.
  */
-export function atlas(works: Work[], sampleSize = 1500, k = 20, space?: Vectors, method: Projection = 'pca'): Atlas {
+export function atlas(
+  works: Work[],
+  sampleSize = 1500,
+  k = 20,
+  space?: Vectors,
+  method: Projection = 'pca',
+  withStability = false,
+): Atlas {
   const { names, rows } = space ?? vectorise(works);
   if (rows.length !== works.length) {
     throw new Error(`space has ${rows.length} rows for ${works.length} works`);
@@ -423,6 +675,9 @@ export function atlas(works: Work[], sampleSize = 1500, k = 20, space?: Vectors,
     works: works.length,
     projection: method,
     columns: names,
+    ...(withStability && method === 'umap'
+      ? { stability: stability(index.map((i) => rows[i] as Float64Array), k) }
+      : {}),
     // Still computed under UMAP, and still true: it says how much of the spread a *linear* map
     // would have caught, which is the thing UMAP is being used instead of.
     varianceExplained: varianceExplained(rows, axes),

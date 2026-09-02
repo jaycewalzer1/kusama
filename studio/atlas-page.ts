@@ -8,7 +8,7 @@
 // rather than beneath it. That ordering is the entire point. A scatter plot is read in a second and
 // its caveats are read never, so the caveat goes where the eye lands first.
 
-import type { Atlas } from '../artist/atlas.js';
+import { STABILITY_BAND, type Atlas, type Stability } from '../artist/atlas.js';
 import type { Overlay } from '../artist/overlay.js';
 
 /** One colour and radius per landmark kind. Fixed, so two overlay pages can be compared. */
@@ -79,6 +79,35 @@ function overlayFooter(o: Overlay): string {
 </section>`;
 }
 
+/**
+ * What six fits of the same input agreed on, printed beside the plot rather than assumed.
+ *
+ * The page has always carried the sentence "the gap between two clusters here means nothing".
+ * That was received wisdom about UMAP, correctly stated and never checked on this data. When the
+ * atlas was built with `--stability` it has been checked, and the sentence is replaced by the
+ * measurement — including in the case where the measurement disagrees with the wisdom.
+ */
+function stabilityBlock(s: Stability): string {
+  const pct = (x: number) => `${(100 * x).toFixed(0)}%`;
+  const worstSeed = s.seedPairs.reduce((m, p) => Math.min(m, p.neighbourAgreement), 1);
+  const worstRho = s.seedPairs.reduce((m, p) => Math.min(m, p.distanceRho), 1);
+  const worstParam = s.paramPairs.reduce((m, p) => Math.min(m, p.neighbourAgreement), 1);
+  const ok = worstSeed >= STABILITY_BAND;
+  return `<div class="verdict" style="border-left-color:${ok ? '#3cb44b' : '#e6194b'}">
+    ${
+      ok
+        ? `Two seeds keep <b>${pct(worstSeed)}</b> of each point's ${s.k} nearest, so togetherness on this map is about the works and not about the random start.`
+        : `SEED-DEPENDENT. Two seeds keep only <b>${pct(worstSeed)}</b> of each point's ${s.k} nearest. Name no cluster from this map.`
+    }<br>
+    <span style="color:#999">Measured over ${s.runs.length} fits of the same ${s.n.toLocaleString()} points, not assumed.
+    Pairwise distances correlate at rho <b>${worstRho.toFixed(2)}</b> across seeds &mdash;
+    ${worstRho >= STABILITY_BAND ? 'relative distance carries some information' : 'the distance between two clusters here means nothing'}.
+    Changing nNeighbors keeps ${pct(worstParam)} of neighbourhoods, so the parameter moves the picture
+    ${worstParam < worstSeed ? 'more' : 'less'} than the seed does.
+    Preserved across fits: ${s.preservedMean.toFixed(3)} &plusmn; ${s.preservedSd.toFixed(3)}.
+    These fits are over the same stride sample the verdict above uses; the plotted map is fitted on every work.</span></div>`;
+}
+
 export function atlasPage(a: Atlas, generatedAt: string, opts: PageOptions = {}): string {
   const o = opts.overlay;
   const marks = (o?.landmarks ?? []).map((l) => [
@@ -118,7 +147,9 @@ export function atlasPage(a: Atlas, generatedAt: string, opts: PageOptions = {})
   .cols b { color:#ddd; font-weight:600 }
   .cols div { max-width:320px }
   main { display:flex }
-  canvas { background:#0b0b0b; cursor:crosshair }
+  canvas { background:#0b0b0b; cursor:crosshair; touch-action:none }
+  canvas.dragging { cursor:grabbing }
+  #view { margin-top:8px; color:#888; font-size:11px }
   aside { width:270px; padding:12px 14px; border-left:1px solid #333; height:calc(100vh - 190px); overflow:auto }
   button { background:#222; color:#ddd; border:1px solid #444; padding:4px 9px; margin:0 4px 4px 0; cursor:pointer; font:inherit }
   button[aria-pressed=true] { background:#3a3a3a; border-color:#888 }
@@ -140,9 +171,10 @@ export function atlasPage(a: Atlas, generatedAt: string, opts: PageOptions = {})
     <span style="color:#999">${p.k}-neighbourhoods over ${p.n} works: ${p.preserved.toFixed(3)} preserved, ${p.chance.toFixed(3)} by chance.
     ${
       a.projection === 'umap'
-        ? `Projected with UMAP over ${a.columns.length} columns, which keeps neighbourhoods and does not keep distance: the gap between two clusters here means nothing, and only which points sit together does.`
+        ? `Projected with UMAP over ${a.columns.length} columns, which keeps neighbourhoods and does not keep distance: ${a.stability ? 'how much of either survived a change of seed is measured below.' : 'the gap between two clusters here means nothing, and only which points sit together does.'}`
         : `The two axes hold ${(((a.varianceExplained[0] ?? 0) + (a.varianceExplained[1] ?? 0)) * 100).toFixed(1)}% of the variance in ${a.columns.length} columns, so most of the spread is not on this page at all.`
     }</span></div>
+  ${a.stability ? stabilityBlock(a.stability) : ''}
   <div class="cols">
     ${
       // Only under PCA. The loadings describe the principal axes, and under UMAP the axes on this
@@ -201,7 +233,43 @@ function fit() {
   sx = (W - pad * 2) / (x1 - x0 || 1); sy = (H - pad * 2) / (y1 - y0 || 1);
   ox = pad - x0 * sx; oy = pad - y0 * sy;
 }
-const px = p => p[0] * sx + ox, py = p => H - (p[1] * sy + oy);
+
+// The view. fit() puts the whole corpus on the canvas once; this rides on top of it, so resizing
+// the window never loses where the reader had navigated to.
+//
+// Dot RADIUS is deliberately NOT scaled by zoom. 20,000 points on 900 pixels overlap so heavily
+// that at 1x a dot is mostly other dots; growing the dots with the zoom would keep that overlap at
+// every magnification and the reader would never get to see individual works, which is the only
+// reason to zoom in at all.
+const MAX_ZOOM = 60, MIN_ZOOM = 1;
+let zoom = 1, panX = 0, panY = 0;
+const bx = p => p[0] * sx + ox, byy = p => H - (p[1] * sy + oy);
+const px = p => bx(p) * zoom + panX, py = p => byy(p) * zoom + panY;
+
+function clampPan() {
+  // Never let the plot be dragged entirely off the canvas: at zoom 1 it is pinned, and beyond that
+  // the reader may pan within the magnified image and no further.
+  const lo = W - W * zoom, hi = 0;
+  panX = Math.min(hi, Math.max(lo, panX));
+  panY = Math.min(hi, Math.max(H - H * zoom, panY));
+}
+
+function setZoom(next, cx, cy) {
+  const z = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, next));
+  if (z === zoom) return;
+  // Hold the point under the cursor still: it is the only zoom that feels like a magnifier.
+  panX = cx - ((cx - panX) / zoom) * z;
+  panY = cy - ((cy - panY) / zoom) * z;
+  zoom = z;
+  clampPan();
+  showView();
+  draw();
+}
+
+function showView() {
+  const v = document.getElementById('view');
+  if (v) v.textContent = zoom > 1.001 ? 'zoom ' + zoom.toFixed(1) + 'x — drag to pan, double-click to reset' : 'scroll to zoom, drag to pan';
+}
 
 function draw() {
   ctx.clearRect(0, 0, W, H);
@@ -254,8 +322,38 @@ function drawLandmarks() {
   }
 }
 
+let drag = null;
+c.addEventListener('wheel', e => {
+  e.preventDefault();
+  const r = c.getBoundingClientRect();
+  setZoom(zoom * Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top);
+}, { passive: false });
+c.addEventListener('pointerdown', e => {
+  drag = { x: e.clientX, y: e.clientY, moved: false };
+  c.classList.add('dragging');
+  c.setPointerCapture(e.pointerId);
+});
+const endDrag = e => {
+  if (!drag) return;
+  drag = null;
+  c.classList.remove('dragging');
+  if (e && e.pointerId !== undefined && c.hasPointerCapture(e.pointerId)) c.releasePointerCapture(e.pointerId);
+};
+c.addEventListener('pointerup', endDrag);
+c.addEventListener('pointercancel', endDrag);
+c.addEventListener('dblclick', () => { zoom = 1; panX = 0; panY = 0; showView(); draw(); });
+
 c.addEventListener('mousemove', e => {
   const r = c.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+  if (drag) {
+    panX += e.clientX - drag.x;
+    panY += e.clientY - drag.y;
+    drag.x = e.clientX; drag.y = e.clientY; drag.moved = true;
+    clampPan();
+    hover.style.display = 'none';
+    draw();
+    return;
+  }
   // Landmarks win ties over corpus points, and over a wider radius: they are what the page is for,
   // and there is a corpus dot within two pixels of almost everything.
   let best = null, bd = 196;
@@ -280,8 +378,15 @@ c.addEventListener('mouseleave', () => hover.style.display = 'none');
 
 document.getElementById('controls').innerHTML = 'colour by ' + Object.keys(FIELD)
   .map(k => '<button data-by="' + k + '" aria-pressed="' + (k === by) + '">' + k + '</button>').join('')
-  + (LANDMARKS.length ? '<div style="margin-top:8px">corpus <button id="dim" aria-pressed="' + dim + '">grey</button></div>' : '');
+  + (LANDMARKS.length ? '<div style="margin-top:8px">corpus <button id="dim" aria-pressed="' + dim + '">grey</button></div>' : '')
+  + '<div style="margin-top:8px"><button id="zin">zoom +</button><button id="zout">zoom &minus;</button><button id="zreset">reset</button></div>'
+  + '<div id="view"></div>';
 document.getElementById('controls').onclick = e => {
+  if (e.target.id === 'zin' || e.target.id === 'zout') {
+    setZoom(zoom * (e.target.id === 'zin' ? 1.6 : 1 / 1.6), W / 2, H / 2);
+    return;
+  }
+  if (e.target.id === 'zreset') { zoom = 1; panX = 0; panY = 0; showView(); draw(); return; }
   if (e.target.id === 'dim') {
     dim = !dim;
     e.target.setAttribute('aria-pressed', dim);
@@ -294,8 +399,8 @@ document.getElementById('controls').onclick = e => {
   for (const b of document.querySelectorAll('#controls button[data-by]')) b.setAttribute('aria-pressed', b.dataset.by === by);
   recolour();
 };
-addEventListener('resize', () => { fit(); draw(); });
-fit(); recolour();
+addEventListener('resize', () => { fit(); clampPan(); draw(); });
+fit(); showView(); recolour();
 </script>
 <!-- generated ${generatedAt} -->
 `;

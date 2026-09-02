@@ -52,7 +52,7 @@ import {
   saveWorks,
 } from '../artist/corpus.js';
 import { type AicRecord, metadataFrom as aicFrom, searchUrl, walkPublicDomain } from '../artist/aic.js';
-import { type Vectors, atlas, evenSample } from '../artist/atlas.js';
+import { type Vectors, atlas, evenSample, stabilityText } from '../artist/atlas.js';
 import { atlasPage } from './atlas-page.js';
 import { SOURCES, type Source, type Work, imagePath, readManifest, workId } from '../artist/manifest.js';
 import { type CorpusEmbeddings, embeddingsAvailable, embeddingsUnavailableMessage, loadCorpusEmbeddings, rowAt } from '../artist/clip-index.js';
@@ -74,6 +74,8 @@ import {
   textSpaceComparison,
   textSpaceComparisonText,
 } from '../artist/text-embed.js';
+import { fusionComparison, fusionComparisonText } from '../artist/fuse.js';
+import { drawPool, hubnessReport, hubnessReportText } from '../artist/hubness.js';
 import { PER_SEED, expansion, expansionText } from '../artist/expand.js';
 import {
   available as resemblanceAvailable,
@@ -774,6 +776,7 @@ program
   .option('--neighbours <k>', 'neighbourhood size for that measure', '20')
   .option('--clip', 'lay out what the works look like, from corpus/clip.f32, instead of what the museums wrote')
   .option('--umap', 'project with UMAP, which keeps neighbourhoods, instead of PCA, which keeps variance')
+  .option('--stability', 'refit UMAP six times and measure whether it drew the same picture. Needs --umap, adds ~1min')
   .option('--overlay <dir>', 'lay a trajectory\'s plates over the map, without refitting it. Needs --clip')
   .option('--influences <id>', 'also mark a resolved influence set and its axis extremes')
   .action((opts: {
@@ -781,6 +784,7 @@ program
     neighbours: string;
     clip?: boolean;
     umap?: boolean;
+    stability?: boolean;
     overlay?: string;
     influences?: string;
   }) => {
@@ -800,10 +804,22 @@ program
       process.exitCode = 1;
       return;
     }
+    if (opts.stability && !opts.umap) {
+      process.stdout.write('--stability needs --umap: PCA has no seed, so there is no picture to redraw\n');
+      process.exitCode = 1;
+      return;
+    }
     const built = opts.clip ? clipSpace() : { works: all, space: undefined, corpus: null };
     const { works, space } = built;
     const stem = opts.clip ? 'atlas-clip' : 'atlas';
-    const a = atlas(works, Number(opts.sample), Number(opts.neighbours), space, opts.umap ? 'umap' : 'pca');
+    const a = atlas(
+      works,
+      Number(opts.sample),
+      Number(opts.neighbours),
+      space,
+      opts.umap ? 'umap' : 'pca',
+      Boolean(opts.stability),
+    );
     writeFileSync(path.join(CORPUS_DIR, `${stem}.json`), `${JSON.stringify(a, null, 1)}\n`);
 
     const xy = a.points.map((q) => [q.x, q.y]);
@@ -858,6 +874,10 @@ program
         ? `the layout carries ${(p.preserved / p.chance).toFixed(1)}x chance — neighbourhoods on the map are real\n`
         : `NOTHING MEASURED — ${(p.preserved / (p.chance || 1)).toFixed(1)}x chance. Do not read clusters off this plot.\n`,
     );
+    // Measured, so printed. The page carries this block too, but a run that only writes it into an
+    // HTML file leaves the terminal saying "25.1x chance" and nothing about whether a second seed
+    // would have drawn the same 25.1x somewhere else on the plane.
+    if (a.stability) process.stdout.write(`\n${stabilityText(a.stability)}\n`);
     if (over) {
       process.stdout.write(`\n${over.caption}\n`);
       const counts = new Map<string, number>();
@@ -1872,6 +1892,52 @@ program
     process.stdout.write(
       textSpaceComparisonText(textSpaceComparison(Number(opts.k), Number(opts.queries))),
     );
+  });
+
+/** Both hybrid commands need the `all` text matrix and the image matrix. One check, one message. */
+function textAndImagesReady(): boolean {
+  if (!textMatrixAvailable('all')) {
+    process.stdout.write(
+      'No CLIP-text matrix for the `all` field set.\n' +
+        'Build it first: npm run corpus -- text-embed   (local CLIP text tower, no API key)\n',
+    );
+    process.exitCode = 1;
+    return false;
+  }
+  if (!embeddingsAvailable()) {
+    process.stdout.write(`${embeddingsUnavailableMessage()}\n`);
+    process.exitCode = 1;
+    return false;
+  }
+  return true;
+}
+
+program
+  .command('fuse')
+  .description('hybrid retrieval: BM25 and CLIP-text fused by Reciprocal Rank Fusion, against both arms alone')
+  .option('-k, --k <n>', 'neighbours per work in the answer', '12')
+  .option('-d, --depth <n>', 'how deep each arm is retrieved before fusing', '100')
+  .option('-n, --queries <n>', 'works to query, drawn by stride', '1000')
+  .option('--k0 <n>', "RRF's damping constant; 60 is the published value and is not tuned here", '60')
+  .action((opts: { k: string; depth: string; queries: string; k0: string }) => {
+    if (!textAndImagesReady()) return;
+    process.stdout.write(
+      fusionComparisonText(
+        fusionComparison(Number(opts.k), Number(opts.depth), Number(opts.queries), undefined, Number(opts.k0)),
+      ),
+    );
+  });
+
+program
+  .command('hubness')
+  .description('hubness (CSLS) and the modality gap (centering), scored on the one labelled task in the corpus')
+  .option('-k, --k <n>', 'neighbourhood size', '12')
+  .option('-r, --r <n>', "how many neighbours CSLS averages for a point's local density", '10')
+  .option('--pool <n>', 'stride-drawn pool; quadratic, so 0 (the whole corpus) is slow', '4000')
+  .action((opts: { k: string; r: string; pool: string }) => {
+    if (!textAndImagesReady()) return;
+    const pool = drawPool(undefined, Number(opts.pool));
+    process.stdout.write(hubnessReportText(hubnessReport(pool, Number(opts.k), Number(opts.r))));
   });
 
 await program.parseAsync(process.argv);

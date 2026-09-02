@@ -303,7 +303,7 @@ const stdev = (xs: number[], m: number) =>
  * finding about cataloguing. `text-space.ts` pins a test against exactly that on the lexical side;
  * the dense side gets the same rule and the same id hash, so the two are broken identically.
  */
-function nearestRows(
+export function nearestRows(
   from: Float32Array,
   into: Float32Array,
   n: number,
