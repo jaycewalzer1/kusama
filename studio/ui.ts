@@ -115,6 +115,22 @@ function catalog(): {
   };
 }
 
+/**
+ * The corpus atlases, and only the ones that are actually on disk.
+ *
+ * Both are derived and gitignored — `corpus atlas` rebuilds them in seconds — so a fresh clone has
+ * neither. Listing them unconditionally would put a link to a 404 in the one place the studio is
+ * supposed to say what exists, so the page is told what is there and says the command for what is
+ * not. `docs/demo/rendered/` copies are deliberately not offered: they are a frozen fallback for the
+ * demo, and a link that silently shows yesterday's corpus is worse than no link.
+ */
+function atlases(): { href: string; label: string }[] {
+  return [
+    { href: '/corpus/atlas-clip.html', label: 'appearance (CLIP)' },
+    { href: '/corpus/atlas.html', label: 'catalogue' },
+  ].filter((a) => existsSync(path.join(ROOT, a.href.slice(1))));
+}
+
 // --- reading and writing what the artist is held to -----------------------------------------------
 
 const NAME = /^[a-z0-9][a-z0-9-]{0,63}$/;
@@ -492,6 +508,7 @@ cli.action((opts: { runs: string; port: string }) => {
     if (url.pathname === '/api/catalog') {
       return json(200, {
         ...catalog(),
+        atlases: atlases(),
         hasKey: Boolean(process.env['ANTHROPIC_API_KEY'] ?? envFile()['ANTHROPIC_API_KEY']),
         runs: opts.runs,
         observed: observed(root),

@@ -191,6 +191,26 @@
         color: var(--dim);
         margin-top: 8px;
       }
+      #atlases {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: -4px 0 4px;
+      }
+      #atlases a {
+        padding: 3px 7px;
+        border: 1px solid #3a3a3a;
+        border-radius: 3px;
+        background: #242424;
+        color: #ddd;
+        text-decoration: none;
+      }
+      #atlases a:hover {
+        background: #303030;
+      }
+      #atlases .missing {
+        color: var(--dim);
+      }
       .note.bad {
         color: var(--bad);
       }
@@ -497,6 +517,7 @@
   <body>
     <aside>
       <h1>studio</h1>
+      <div id="atlases"></div>
 
       <label>position <i>— the taste it works from</i> <button class="add" id="new-position">+ new</button></label>
       <div class="picks" id="positions"></div>

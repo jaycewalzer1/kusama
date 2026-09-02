@@ -7,7 +7,7 @@
 
 const $ = (id) => document.getElementById(id);
 
-let catalog = { positions: [], briefs: [], hasKey: false };
+let catalog = { positions: [], briefs: [], atlases: [], hasKey: false };
 let selected = null;
 let plates = [];
 let pinned = null;
@@ -712,6 +712,31 @@ async function write(body, note) {
 function fillLists() {
   picks($('positions'), catalog.positions, (p) => p.name, 'position');
   picks($('briefs'), catalog.briefs, (b) => b.title, 'brief');
+  fillAtlases();
+}
+
+// The corpus, in the two atlases that exist on disk. They open in their own tab because a run in
+// progress is polling here and losing it to a back button would lose nothing on disk but everything
+// on screen.
+function fillAtlases() {
+  const box = $('atlases');
+  box.textContent = '';
+  const found = catalog.atlases ?? [];
+  if (!found.length) {
+    const hint = document.createElement('span');
+    hint.className = 'missing';
+    hint.textContent = 'no corpus atlas — npm run corpus -- atlas --clip --umap';
+    box.append(hint);
+    return;
+  }
+  for (const a of found) {
+    const link = document.createElement('a');
+    link.href = a.href;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = `corpus: ${a.label}`;
+    box.append(link);
+  }
 }
 
 // --- start up ---------------------------------------------------------------------------------
