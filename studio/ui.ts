@@ -32,6 +32,7 @@ import {
   type Brief,
 } from '../artist/field.js';
 import { influenceSection, loadInfluenceDoc, shownWorks } from '../artist/influence-doc.js';
+import { loadPracticeVersion, type PracticeVersion } from '../artist/practice-version.js';
 import { storyOf, summarise } from '../artist/story.js';
 import { readLog } from '../artist/studio-log.js';
 import { transcriptMarkdown } from '../artist/transcript.js';
@@ -39,6 +40,13 @@ import type { AestheticProgram } from '../aesthetic/types.js';
 
 /** Where a run's intermediate plates live, keyed by program hash. Written by artist/canvas.ts. */
 const PNG_CACHE = path.join(ROOT, '.cache', 'artist-png');
+
+/**
+ * Every picture any policy call was ever given, keyed by the sha256 of its bytes. Written by
+ * artist/call.ts. Not the same thing as PNG_CACHE: a plate is keyed by the program that made it and
+ * exists whether or not anyone looked at it, and half of what a call is shown is not a plate at all.
+ */
+const SHOWN_CACHE = path.join(ROOT, '.cache', 'artist-shown');
 
 /** The resolved influence sets, which exist on disk whether or not any run has ever used one. */
 const INFLUENCES = path.join(ROOT, 'aesthetic', 'influences');
@@ -74,12 +82,21 @@ const RUN_KINDS: Record<string, (p: Params, dir: string) => string[]> = {
     '--seed', String(p.seed), '--steps', String(p.steps), '--sketches', String(p.sketches),
     ...(p.control ? ['--control'] : []),
     ...(p.audience ? [] : ['--no-audience']),
+    // The discovery half. Until this line existed `RunOptions.discovery` had no caller anywhere —
+    // RESEARCH, DIVERGE, the wide sketch and COMPARE were built, tested and unreachable, so no run
+    // ever looked at a corpus work or borrowed anything from one.
+    ...(p.discovery ? ['--discovery'] : []),
+    // Seven resolved sets have been on disk since the influence layer was built and no run has ever
+    // been handed one, because nothing outside the CLI could name one.
+    ...(p.influences ? ['--influences', p.influences] : []),
+    ...(p.blind ? ['--blind'] : []),
   ],
   grid: (p, dir) => [
     'grid', '-o', dir,
     '--seed', String(p.seed), '--steps', String(p.steps),
     '--positions', p.positions!.join(','), '--briefs', p.briefs!.join(','),
     ...(p.control ? [] : ['--no-control']),
+    ...(p.influences ? ['--influences', p.influences] : []),
   ],
 };
 
@@ -94,6 +111,12 @@ interface Params {
   sketches: number;
   control: boolean;
   audience: boolean;
+  /** Research the corpus, widen into lenses, and sketch a dozen a lens instead of three a problem. */
+  discovery: boolean;
+  /** A resolved influence set the artist is shown in FIND and SKETCH. Empty means none. */
+  influences: string;
+  /** The ablation: take the canvas away during MAKE. */
+  blind: boolean;
 }
 
 // --- what can be asked for ----------------------------------------------------------------------
@@ -105,6 +128,7 @@ interface Params {
 function catalog(): {
   positions: { id: string; name: string }[];
   briefs: { id: string; title: string }[];
+  influences: string[];
 } {
   const read = (dir: string, skipField: boolean) => {
     const abs = path.join(ROOT, 'aesthetic', dir);
@@ -116,7 +140,26 @@ function catalog(): {
   return {
     positions: read('positions', false).map((p) => ({ id: p['id']!, name: p['name'] ?? p['id']! })),
     briefs: read('briefs', true).map((b) => ({ id: b['id']!, title: b['title'] ?? b['id']! })),
+    influences: influenceSets(),
   };
+}
+
+/**
+ * The influence sets that have actually been resolved against the museum records.
+ *
+ * `.resolved.json` and not `.json`: an unresolved set names works the manifest may not hold, and
+ * `--influences` refuses one at the top of the run. Offering it here would put a choice on the page
+ * that fails after the button is pressed. Seven of these have been sitting on disk unreferenced —
+ * until this listed them nothing in the studio could hand one to a run, which is the whole of why
+ * every logged trajectory carries `influences: null`.
+ */
+function influenceSets(): string[] {
+  const dir = path.join(ROOT, 'aesthetic', 'influences');
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((f) => f.endsWith('.resolved.json'))
+    .map((f) => f.slice(0, -'.resolved.json'.length))
+    .sort();
 }
 
 /**
@@ -291,6 +334,34 @@ function firstLine(file: string): { t: string; data: Record<string, unknown> } |
   }
 }
 
+/**
+ * The last whole line of a log, read without loading the file.
+ *
+ * Only used to ask whether a run died. `runOnce` writes `trajectory-failed` last and then rethrows,
+ * so if a run failed the answer is the final line — but a log line carries a whole observation and
+ * can be tens of kilobytes, so this reads a tail window rather than a fixed small buffer, and
+ * returns null rather than a partial line if no newline is found inside it.
+ */
+function lastLine(file: string): { kind: string; data: Record<string, unknown> } | null {
+  let fd: number | null = null;
+  try {
+    const size = statSync(file).size;
+    const want = Math.min(size, 262144);
+    fd = openSync(file, 'r');
+    const buf = Buffer.alloc(want);
+    const n = readSync(fd, buf, 0, want, size - want);
+    const text = buf.toString('utf8', 0, n).trimEnd();
+    const nl = text.lastIndexOf('\n');
+    // At the head of the file there is no preceding newline, but the whole file is in the window.
+    if (nl < 0 && want < size) return null;
+    return JSON.parse(text.slice(nl + 1)) as { kind: string; data: Record<string, unknown> };
+  } catch {
+    return null;
+  } finally {
+    if (fd !== null) closeSync(fd);
+  }
+}
+
 // --- runs this server started -------------------------------------------------------------------
 
 interface Live {
@@ -304,12 +375,18 @@ interface Live {
 
 const live = new Map<string, Live>();
 
-/** The child responsible for a run id: itself, or the grid it is a cell of. */
-function liveFor(id: string): Live | undefined {
+/** The child responsible for a run id: itself, or the grid it is a cell of. Alive or dead. */
+function childFor(id: string): Live | undefined {
   for (const l of live.values()) {
-    if (l.exit === null && (l.id === id || id.startsWith(`${l.id}/`))) return l;
+    if (l.id === id || id.startsWith(`${l.id}/`)) return l;
   }
   return undefined;
+}
+
+/** The same child, but only while it is still going. */
+function liveFor(id: string): Live | undefined {
+  const l = childFor(id);
+  return l && l.exit === null ? l : undefined;
 }
 
 // --- tailing a log ------------------------------------------------------------------------------
@@ -392,15 +469,23 @@ interface RunView {
   control: boolean;
   seed: number;
   started: string;
-  status: 'running' | 'finished' | 'stopped';
+  status: 'running' | 'finished' | 'stopped' | 'failed';
+  /** Why it died, when it died of something it wrote down. Null for every other status. */
+  error: string | null;
   scores: Record<string, unknown> | null;
 }
 
 function runView(root: string, id: string): RunView | null {
-  const first = firstLine(path.join(root, id, 'studio.jsonl'));
+  const log = path.join(root, id, 'studio.jsonl');
+  const first = firstLine(log);
   if (!first) return null;
   const done = existsSync(path.join(root, id, 'final.json'));
   const scoresFile = path.join(root, id, 'scores.json');
+  const running = Boolean(liveFor(id));
+  // A dead run is only asked how it died. `stopped` stays what it has always meant: it ended and
+  // left no account of itself, which is now the case of a kill or a crash below the catch.
+  const failed = !running && !done ? lastLine(log) : null;
+  const why = failed?.kind === 'trajectory-failed' ? String(failed.data['error'] ?? 'no message') : null;
   return {
     id,
     position: String(first.data['positionId'] ?? '?'),
@@ -408,7 +493,8 @@ function runView(root: string, id: string): RunView | null {
     control: Boolean(first.data['control']),
     seed: Number(first.data['seed'] ?? 0),
     started: first.t,
-    status: liveFor(id) ? 'running' : done ? 'finished' : 'stopped',
+    status: running ? 'running' : done ? 'finished' : why ? 'failed' : 'stopped',
+    error: why,
     scores: existsSync(scoresFile) ? (JSON.parse(readFileSync(scoresFile, 'utf8')) as Record<string, unknown>) : null,
   };
 }
@@ -668,11 +754,15 @@ cli.action((opts: { runs: string; port: string }) => {
       const id = runId();
       if (id === null) return json(404, { error: 'no such run' });
       const entries = tail(path.join(root, id, 'studio.jsonl'), id);
-      const l = liveFor(id);
+      // A dead child's output is kept, not dropped. It used to vanish the instant the process
+      // exited, which is precisely when somebody wants to read it, and it is the only account of a
+      // death that happens before the log exists or below the catch that writes to it.
+      const l = childFor(id);
       return json(200, {
         run: runView(root, id),
         story: storyOf(entries),
-        stderr: l ? l.stderr.slice(-6) : [],
+        stderr: l ? l.stderr.slice(-12) : [],
+        exit: l?.exit ?? null,
       });
     }
 
@@ -723,6 +813,103 @@ cli.action((opts: { runs: string; port: string }) => {
       return json(200, existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.png')).sort() : []);
     }
 
+    // A picture a policy call was given, by the sha256 of its bytes.
+    //
+    // /api/plate answers "what did the canvas look like", which is a question about the program. This
+    // answers "what was put in front of the model", which is a different question with a different
+    // key: a corpus work, a contact sheet of six sketches and the mark showing what the last step
+    // moved are all things a call was shown and none of them is a plate. Content-addressed, so
+    // immutable, so the page fetches each one once however many calls saw it.
+    if (url.pathname === '/api/shown') {
+      const sha = url.searchParams.get('sha') ?? '';
+      if (!/^[0-9a-f]{64}$/.test(sha)) return json(400, { error: 'not a sha256' });
+      for (const ext of ['.png', '.jpg']) {
+        try {
+          return send(200, MIME[ext]!, await readFile(path.join(SHOWN_CACHE, `${sha}${ext}`)), 'max-age=31536000, immutable');
+        } catch {
+          // Try the other extension; a miss on both is the 404 below.
+        }
+      }
+      return json(404, { error: 'those bytes are not kept — the run predates the shown-image cache' });
+    }
+
+    // The discovery half of a run, which nothing in this repo displayed until now.
+    //
+    // Deliberately a second route rather than a widened /api/lines. discovery.jsonl is NOT the chain:
+    // its lines carry a seq of their own file but no `prev` and no `hash`, because what RESEARCH
+    // asked the corpus is by design not part of what the trajectory replays from, and discovery is
+    // allowed to be reordered, resumed and thrown away. Serving it through the same route would
+    // invite the page to check a chain that is not supposed to exist. `from` counts lines, not seqs.
+    if (url.pathname === '/api/discovery') {
+      const id = runId();
+      if (id === null) return json(404, { error: 'no such run' });
+      const file = path.join(root, id, 'discovery.jsonl');
+      if (!existsSync(file)) return send(200, 'application/x-ndjson', '');
+      const from = Math.max(0, Number(url.searchParams.get('from') ?? '0') || 0);
+      const lines = readFileSync(file, 'utf8').split('\n').filter((l) => l.trim());
+      return send(200, 'application/x-ndjson', lines.slice(from).join('\n'));
+    }
+
+    // Everything the run left on disk, so the page can show it rather than know the names in advance.
+    //
+    // /api/sketches stays because the story page uses it, but it only ever knew about `sketches/`,
+    // and a sampling run's evidence — the sampled plate beside its salience-zero ablation — is in
+    // `sampling/`. One directory walk, names and sizes only; the bytes come back through /api/file,
+    // which already refuses to leave the run's own directory.
+    if (url.pathname === '/api/artefacts') {
+      const id = runId();
+      if (id === null) return json(404, { error: 'no such run' });
+      const dir = path.join(root, id);
+      const out: { name: string; bytes: number }[] = [];
+      const walk = (sub: string) => {
+        const here = path.join(dir, sub);
+        if (!existsSync(here)) return;
+        for (const entry of readdirSync(here, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
+          const name = sub ? `${sub}/${entry.name}` : entry.name;
+          if (entry.isDirectory()) walk(name);
+          else if (/\.(png|jpg)$/.test(entry.name)) out.push({ name, bytes: statSync(path.join(dir, name)).size });
+        }
+      };
+      walk('');
+      return json(200, out);
+    }
+
+    // The trajectory's plates placed in corpus space: novelty, nearest corpus work, influence
+    // percentile. Written by `corpus plates`, not by the run itself, so it is absent for any
+    // trajectory that has not been through that command.
+    if (url.pathname === '/api/corpus-scores') {
+      const id = runId();
+      if (id === null) return json(404, { error: 'no such run' });
+      const file = path.join(root, id, 'scores.corpus.json');
+      if (!existsSync(file)) return json(200, null);
+      try {
+        return json(200, JSON.parse(readFileSync(file, 'utf8')));
+      } catch {
+        return json(500, { error: 'scores.corpus.json is not valid JSON' });
+      }
+    }
+
+    // Every practice version for a position, oldest first. Null when none exist.
+    if (url.pathname === '/api/practice') {
+      const positionId = url.searchParams.get('position') ?? '';
+      if (!positionId) return json(400, { error: 'position is required' });
+      const versions: PracticeVersion[] = [];
+      try {
+        let n = 1;
+        while (true) {
+          try {
+            versions.push(loadPracticeVersion(positionId, n));
+            n++;
+          } catch {
+            break;
+          }
+        }
+      } catch {
+        // No versions at all.
+      }
+      return json(200, versions.length > 0 ? versions : null);
+    }
+
     // Start a run. Positions and briefs are checked against what is on disk and the numbers are
     // clamped, so the argv handed to the child is built from choices this server offers.
     if (url.pathname === '/api/launch' && req.method === 'POST') {
@@ -734,7 +921,7 @@ cli.action((opts: { runs: string; port: string }) => {
       } catch {
         return json(400, { error: 'not JSON' });
       }
-      const { positions, briefs } = catalog();
+      const { positions, briefs, influences } = catalog();
       const knownP = new Set(positions.map((x) => x.id));
       const knownB = new Set(briefs.map((x) => x.id));
       const int = (v: unknown, lo: number, hi: number, fallback: number) => {
@@ -752,6 +939,12 @@ cli.action((opts: { runs: string; port: string }) => {
         sketches: int(p.sketches, 0, 6, 3),
         control: Boolean(p.control),
         audience: p.audience !== false,
+        discovery: Boolean(p.discovery),
+        // An unknown name becomes no influences rather than an error: `--influences` refuses an
+        // unresolved set at the top of the run, and a run that dies after the button is pressed is
+        // worse than a run that goes without.
+        influences: influences.includes(String(p.influences ?? '')) ? String(p.influences) : '',
+        blind: Boolean(p.blind),
       };
       if (params.kind === 'run' && (!knownP.has(params.position ?? '') || !knownB.has(params.brief ?? ''))) {
         return json(400, { error: 'pick a position and a brief that exist' });

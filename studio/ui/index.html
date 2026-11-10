@@ -248,7 +248,8 @@
       .dot.finished {
         background: var(--good);
       }
-      .dot.stopped {
+      .dot.stopped,
+      .dot.failed {
         background: var(--bad);
       }
       @keyframes pulse {
@@ -546,6 +547,31 @@
             <option value="1">yes</option>
           </select>
         </div>
+      </div>
+      <div class="two">
+        <div>
+          <label for="discovery">discovery <i>— look at the corpus, widen into lenses</i></label>
+          <select id="discovery">
+            <option value="">no</option>
+            <option value="1">yes</option>
+          </select>
+        </div>
+        <div>
+          <label for="blind">canvas <i>— blind is the ablation</i></label>
+          <select id="blind">
+            <option value="">shown</option>
+            <option value="1">blind</option>
+          </select>
+        </div>
+      </div>
+      <div class="two">
+        <div>
+          <label for="influences">influences <i>— corpus works it is shown</i></label>
+          <select id="influences">
+            <option value="">none</option>
+          </select>
+        </div>
+        <div></div>
       </div>
 
       <button id="start">Start</button>

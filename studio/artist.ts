@@ -220,6 +220,7 @@ async function runCells(opts: Record<string, string | boolean>): Promise<void> {
           outDir: dir,
           maxSteps: Number(opts['steps']),
           control: c.control,
+          ...(opts['influences'] ? { influences: String(opts['influences']) } : {}),
         });
         rows.push({ cell: cellName(c), scores: t.scores });
         done.push(t);
@@ -258,7 +259,16 @@ program
   .option('--no-audience', 'skip the audience read and its trigger (saves one env call per look)')
   .option('--control', 'strip the position: same brief, same checker, no steering')
   .option('--blind', 'the ablation: take the canvas away during MAKE and work from the tree and the describer alone')
+  // `RunOptions.maxFinishAttempts` had no caller anywhere, in production or in tests, so the one
+  // ablation docs/artist/NEEDS.md promises is runnable — 0 turns the finish gate off and restores the
+  // pre-gate environment — could not in fact be run. That is the whole reason this flag exists.
+  .option('--finish-attempts <n>', 'times it may ask to finish and be refused; 0 turns the finish gate off entirely')
   .option('--elements <ids>', 'comma-separated lineage elements to compose into the position', '')
+  .option(
+    '--discovery',
+    'the discovery half: RESEARCH the corpus, DIVERGE into 20+ lenses, cut to 4, then a dozen wide ' +
+      'sketches each — in place of three canonical sketches per problem. --sketches becomes the per-lens count.'
+  )
   .option('--influences <id>', 'a resolved influence set the artist has looked at: shown in FIND and SKETCH')
   .option('--influences-in-make', 'also carry the influence text into THINK+ACT and REPLAN (text only, no thumbnails)')
   .option('--sampling <index-dir>', 'opt in to artist-loop sampling with this deterministic fragment index')
@@ -280,6 +290,8 @@ program
       useAudience: opts['audience'] !== false,
       control: Boolean(opts['control']),
       showCanvas: !opts['blind'],
+      ...(opts['discovery'] ? { discovery: true } : {}),
+      ...(opts['finishAttempts'] === undefined ? {} : { maxFinishAttempts: Number(opts['finishAttempts']) }),
       ...(opts['influences']
         ? { influences: String(opts['influences']), influencesInMake: Boolean(opts['influencesInMake']) }
         : {}),
@@ -336,6 +348,7 @@ program
   .option('--include-held-out', 'run the frozen cells too; see `artist holdout` before you do')
   .option('--control-brief <id>', 'the brief the control column runs', OPEN_BRIEFS[0])
   .option('--no-control', 'skip the control column')
+  .option('--influences <id>', 'a resolved influence set shown to the artist in FIND and SKETCH')
   .option(
     '--cells <list>',
     'comma-separated position:brief[:control]; runs --k seeds of each instead of the cross-product'
@@ -388,6 +401,7 @@ program
             outDir: dir,
             maxSteps: Number(opts['steps']),
             control,
+            ...(opts['influences'] ? { influences: String(opts['influences']) } : {}),
           });
           done.push(t);
           row.push({ dir });

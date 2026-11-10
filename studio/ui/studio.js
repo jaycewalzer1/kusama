@@ -91,11 +91,19 @@ function plan() {
  */
 const PROBLEMS_SKETCHED = 3;
 
+/** How many lenses DIVERGE keeps of the twenty-odd it proposes. `KEEP_DEFAULT` in diverge.ts. */
+const KEPT_LENSES = 4;
+
 function estimate(cells) {
   const o = catalog.observed ?? { runs: 0, usdPerCall: 0.08, msPerCall: 55000, leastSteps: 3 };
   const sketches = Math.max(0, Number($('sketches').value) || 0);
   const budget = Math.max(1, Number($('steps').value) || 1);
-  const calls = (steps) => 2 + PROBLEMS_SKETCHED * (1 + sketches) + 2 * steps;
+  // The discovery half replaces PROPOSE and the three sketches a problem with: two research query
+  // rounds and a material sheet (3), propose and cut lenses (2), `sketches` wide sketches through
+  // each of the KEPT_LENSES survivors, up to a dozen pairwise judgments, and UPDATE PRACTICE (1).
+  const wide = Boolean($('discovery').value);
+  const calls = (steps) =>
+    2 + 2 * steps + (wide ? 3 + 2 + KEPT_LENSES * sketches + 12 + 1 : PROBLEMS_SKETCHED * (1 + sketches));
   const lo = cells * calls(Math.min(o.leastSteps, budget));
   const hi = cells * calls(budget);
   const money = (n) => (n * o.usdPerCall).toFixed(n * o.usdPerCall < 10 ? 1 : 0);
@@ -119,6 +127,9 @@ async function start() {
     steps: Number($('steps').value),
     sketches: Number($('sketches').value),
     control: Boolean($('control').value),
+    discovery: Boolean($('discovery').value),
+    influences: $('influences').value,
+    blind: Boolean($('blind').value),
   };
   $('start').disabled = true;
   const res = await fetch('/api/launch', { method: 'POST', body: JSON.stringify(body) });
@@ -208,12 +219,18 @@ async function poll() {
   run = data.run;
   story = data.story;
   tellStory();
-  if (data.stderr?.length && run.status !== 'finished') {
-    $('stderr').hidden = false;
-    $('stderr').textContent = data.stderr.join('\n');
-  } else {
-    $('stderr').hidden = true;
-  }
+  // Why it ended, above whatever the process last printed. The run's own account comes first
+  // because it is the one that survives a server restart; the stderr under it is the fallback for a
+  // death that happened before the log could be written.
+  const said = [
+    run.error ? `the run threw and stopped:\n${run.error}` : '',
+    run.status === 'stopped' && data.exit !== null && data.exit !== 0
+      ? `the process exited ${data.exit} without writing why`
+      : '',
+    ...(run.status === 'finished' ? [] : (data.stderr ?? [])),
+  ].filter(Boolean);
+  $('stderr').hidden = said.length === 0;
+  $('stderr').textContent = said.join('\n');
   header();
   stage();
   if (!sketchSheet) await sketches();
@@ -714,7 +731,27 @@ async function write(body, note) {
 function fillLists() {
   picks($('positions'), catalog.positions, (p) => p.name, 'position');
   picks($('briefs'), catalog.briefs, (b) => b.title, 'brief');
+  fillInfluences();
   fillAtlases();
+}
+
+// The resolved influence sets on disk. Seven have been sitting there since the influence layer was
+// built and no run has ever been handed one, because nothing outside the CLI could name one.
+function fillInfluences() {
+  const sel = $('influences');
+  const keep = sel.value;
+  sel.textContent = '';
+  const none = document.createElement('option');
+  none.value = '';
+  none.textContent = 'none';
+  sel.append(none);
+  for (const id of catalog.influences ?? []) {
+    const opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = id;
+    sel.append(opt);
+  }
+  sel.value = keep;
 }
 
 // The corpus, in the two atlases that exist on disk. They open in their own tab because a run in
@@ -745,6 +782,7 @@ function fillAtlases() {
 
 $('start').addEventListener('click', start);
 $('control').addEventListener('change', plan);
+$('discovery').addEventListener('change', plan);
 for (const id of ['steps', 'sketches']) $(id).addEventListener('input', plan);
 $('new-position').addEventListener('click', newPosition);
 $('new-brief').addEventListener('click', newBrief);

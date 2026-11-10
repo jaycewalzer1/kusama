@@ -169,6 +169,65 @@
       .k-trajectory-end {
         color: #fff;
       }
+      .k-trajectory-failed {
+        color: var(--bad);
+        font-weight: 600;
+      }
+      /* The sampling half of a run, which had no colour because it had no row. */
+      .k-sample_requested,
+      .k-sample_selected,
+      .k-sample_revised {
+        color: #c9a06a;
+      }
+      .k-sample_rejected {
+        color: var(--bad);
+      }
+      .k-binding_declared {
+        color: #a8b87f;
+      }
+      .k-ablation_rendered {
+        color: #7fb8a8;
+      }
+      /* discovery.jsonl */
+      .k-query,
+      .k-material-sheet {
+        color: #8fb8d8;
+      }
+      .k-lens-proposed {
+        color: #c8a8d8;
+      }
+      .k-lens-kept {
+        color: var(--good);
+      }
+      .k-lens-cut {
+        color: var(--bad);
+      }
+      .k-sketch,
+      .k-pairwise {
+        color: #d8b878;
+      }
+      .row.disc {
+        background: #121417;
+      }
+      .row.disc:hover {
+        background: #1a1e22;
+      }
+      .row.disc .seq {
+        color: #3f4a52;
+      }
+      .band {
+        padding: 6px 10px;
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--dimmer);
+        background: #101010;
+        border-bottom: 1px solid var(--line);
+        border-top: 1px solid var(--line);
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
 
       /* --- panes ---------------------------------------------------------- */
       .pane {
@@ -344,6 +403,45 @@
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+      /* Two lines, wrapped: an approach or a failure is a sentence and truncating it hides the point. */
+      .work .v2 {
+        color: var(--dim);
+        margin-top: 3px;
+        white-space: normal;
+      }
+      .work .v2.bad {
+        color: var(--bad);
+      }
+      /* A picture the model was handed is shown whole. `cover` is right for browsing a corpus and
+         wrong here: a cropped contact sheet is not what the call saw. */
+      .work.shown img {
+        object-fit: contain;
+        height: 160px;
+      }
+      .work.died {
+        border-style: dashed;
+        border-color: var(--del);
+      }
+      .work .gone {
+        height: 118px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--del);
+        background: #1a1414;
+        font-style: italic;
+      }
+      /* A label/value table, not a grid of data: the rule under every row reads as a spreadsheet. */
+      .facts th {
+        border-bottom: 0;
+        white-space: nowrap;
+        width: 1%;
+        padding-right: 14px;
+      }
+      .facts td {
+        color: #cfcfcf;
+        word-break: break-word;
+      }
       .bar {
         height: 2px;
         background: #2a2a2a;
@@ -361,6 +459,41 @@
       }
       a {
         color: #8fb8d8;
+      }
+      .progression-strip {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 6px 0 10px;
+      }
+      .progression-strip .step-frame {
+        flex: 0 0 auto;
+        width: 180px;
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        overflow: hidden;
+        background: #121212;
+        cursor: pointer;
+      }
+      .progression-strip .step-frame.current {
+        border-color: #ddd;
+        box-shadow: 0 0 0 1px #ddd;
+      }
+      .progression-strip .step-frame img {
+        width: 100%;
+        height: 140px;
+        object-fit: contain;
+        display: block;
+        background: #000;
+      }
+      .progression-strip .step-label {
+        padding: 4px 6px;
+        font-size: 10px;
+        color: var(--dim);
+        line-height: 1.4;
+      }
+      .progression-strip .step-label .idx {
+        color: #ccc;
       }
       .miss {
         color: var(--dimmer);
@@ -389,6 +522,9 @@
       <h2>spine</h2>
       <input type="text" id="filter" placeholder="filter text" />
       <div id="kind-toggles" style="margin-top: 6px"></div>
+
+      <h2>discovery</h2>
+      <div id="disc-toggles"></div>
 
       <h2>prompt parts</h2>
       <div id="part-toggles"></div>
