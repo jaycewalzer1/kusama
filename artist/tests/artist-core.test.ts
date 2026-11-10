@@ -46,6 +46,9 @@ import { declarationOf, unplannedViolation } from '../triggers.js';
 import { StudioLog, readLog, verifyChain } from '../studio-log.js';
 import { artistLayers, loadCommission, effectivePosition, temperamentOf } from '../field.js';
 import { OBSERVATION_HASH, describeObservation, audienceObservation, findObservation } from '../observation.js';
+import { capabilitySheet } from '../capability-sheet.js';
+import { loadProfile } from '../../env/profile.js';
+import { loadPack } from '../../env/pack.js';
 import { ROOT } from '../../env/browser.js';
 import type { CheckReport, RenderMetrics } from '../../aesthetic/types.js';
 import type { Affect, EdgeEstimate, Field, Intention, Problem } from '../types.js';
@@ -887,8 +890,48 @@ test('observation: the serializer hashes its own bytes, so an edit is a version 
   assert.match(OBSERVATION_HASH, /^[0-9a-f]{16,64}$/);
 });
 
+/** The MATERIAL block alone, so a name characterised nowhere cannot be found in the schema dump. */
+const materialOf = (sheet: string): string => sheet.slice(sheet.indexOf('\nMATERIAL')).split('\n\n')[0]!;
+
+// The MATERIAL section is the one hand-written part of the sheet, so it is the one part that can
+// silently fall behind the profile. A brush the profile gained and the table never described would
+// otherwise reach the artist as a bare name with ten characterised neighbours, which reads as
+// "do not use this one".
+test('capability sheet: every brush and every fill the profile allows is described', () => {
+  const { profile } = loadProfile('default-v1');
+  const material = materialOf(capabilitySheet(profile, loadPack('core-v1')));
+  assert.ok(!material.includes('(undescribed'), 'default-v1 has a brush or a fill with no MATERIAL entry');
+  for (const name of [...profile.brushes, ...(profile.styles ?? [])]) {
+    assert.match(material, new RegExp(`^ {2}${name} +\\S`, 'm'), `${name} is missing from MATERIAL`);
+  }
+});
+
+// The finding this section exists to answer: three finished trajectories used `solid` 40 times and
+// every other fill 12 times between them. If the sheet stops saying so, nothing else will.
+test('capability sheet: MATERIAL warns against solid as primary surface and leads with wash', () => {
+  const material = materialOf(capabilitySheet(loadProfile('default-v1').profile, loadPack('core-v1')));
+  assert.match(material, /never as the primary surface/, 'MATERIAL no longer warns against solid as primary');
+  assert.match(material, /WHERE COLOUR LIVES/, 'MATERIAL no longer leads with wash as the primary fill');
+});
+
+// A sheet cannot describe a medium that no longer exists. v0 allows one blend mode and no print
+// pass, and the two paragraphs about them must not appear on a v0 sheet.
+test('capability sheet: MATERIAL drops the blend and print paragraphs the profile does not have', () => {
+  const { profile } = loadProfile('default-v0');
+  const v0 = capabilitySheet(profile, loadPack('core-v1'));
+  assert.ok(!v0.includes('overprinting ink'), 'v0 has no blend modes but the sheet talks about them');
+  assert.ok(!v0.includes('photocopy of a photocopy'), 'v0 has no print pass but the sheet talks about one');
+  // v0 carries the `spray` BRUSH and refuses the `spray` OPERATOR, which is the trap a hand-written
+  // description walks into: a brush line that cross-references an operator is right under v1 and
+  // names a refused primitive under v0.
+  for (const op of ['wash', 'paint', 'stroke', 'fragment', 'text', 'rule', 'cover', 'spray']) {
+    if (profile.primitives.includes(op)) continue;
+    assert.ok(!materialOf(v0).includes(`\`${op}\``), `MATERIAL names the ${op} operator, which v0 refuses`);
+  }
+});
+
 test('observation: the environment describers are blind to everything but the image', () => {
-  const c = loadCommission('many-hands', 'nine-returned');
+  const c = loadCommission('overlooked', 'nine-returned');
   const leak = [
     c.positionAsWritten.name,
     c.positionAsWritten.worldview.slice(0, 40),
@@ -910,7 +953,7 @@ test('observation: the environment describers are blind to everything but the im
 });
 
 test('observation: FIND sees the field, because that is where a problem has to come from', () => {
-  const c = loadCommission('many-hands', 'nine-returned');
+  const c = loadCommission('overlooked', 'nine-returned');
   const obs = findObservation(artistLayers(c), c.field);
   assert.ok(obs.includes(c.field.whoIsWatching.adversary));
   assert.ok(obs.includes(c.field.transplants[0]!.ref));

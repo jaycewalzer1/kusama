@@ -26,6 +26,7 @@ import { loadCommission } from '../field.js';
 import { seedProgram } from '../seed.js';
 import { corpusAvailable } from '../research-query.js';
 import { sheetNotes, wideSketch, type Lens } from '../phases/wide-sketch.js';
+import { SKETCH_PROFILE } from '../phases/sketch.js';
 import type { MaterialSheet } from '../material-sheet.js';
 import type { Policy, PolicyRequest, PolicyResponse } from '../policy/interface.js';
 import type { Program } from '../types.js';
@@ -93,7 +94,12 @@ class SketchStub implements Policy {
   readonly model = 'stub';
   readonly requests: PolicyRequest[] = [];
 
-  constructor(private readonly seed: Program) {}
+  // The seed as the model sees it: wideSketch rewrites profile to SKETCH_PROFILE before the model
+  // is called, so a correct model copies sketch-v1 into its programs, not default-v1.
+  private readonly seed: Program;
+  constructor(originalSeed: Program) {
+    this.seed = { ...originalSeed, profile: SKETCH_PROFILE };
+  }
 
   async call<T>(request: PolicyRequest): Promise<PolicyResponse<T>> {
     this.requests.push(request);
@@ -135,7 +141,7 @@ async function run(perLens: number) {
     policy,
     discovery,
     newSpend(),
-    loadCommission('interference', 'fifty-year-embargo'),
+    loadCommission('same-everywhere', 'fifty-year-embargo'),
     LENSES,
     SHEET,
     seed,

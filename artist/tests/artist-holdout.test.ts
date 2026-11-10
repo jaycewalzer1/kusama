@@ -48,11 +48,22 @@ test('a document that was re-frozen says so, and says what it hashed to before',
   assert.match(holdoutText(), /freeze break\(s\) since|original freeze still stands/);
 });
 
-test('the freeze names at least one position and one brief, and both exist on disk', () => {
+test('the freeze names a brief, everything it names exists, and an empty axis is explained', () => {
   // A holdout.json that had quietly become empty would pass every other test in this file while
   // buying nothing at all, which is the failure mode worth spending a test on.
-  assert.ok(heldOutPositions().length >= 1, 'no position is held out');
+  //
+  // The position axis IS empty as of 2026-09-02, and that is a real state rather than rot: the three
+  // positions that existed were deleted and the three that replaced them were written by an author
+  // who was looking at the loop's failure while writing them, so none can honestly be called unseen.
+  // An empty axis is therefore allowed — but only when a break record says why, which is what stops
+  // this from becoming the silent emptiness the test was written to catch.
   assert.ok(heldOutBriefs().length >= 1, 'no brief is held out');
+  if (heldOutPositions().length === 0) {
+    assert.ok(
+      loadHoldout().breaks.some((b) => b.kind === 'position'),
+      'the position axis is empty and no break record explains it'
+    );
+  }
 
   for (const id of heldOutPositions()) {
     assert.equal(loadPosition(id).id, id);
@@ -66,32 +77,40 @@ test('the freeze names at least one position and one brief, and both exist on di
 test('the cell that has recorded runs is not claimed as held out', () => {
   // withheld x fifty-year-embargo is where the L2 A/B was measured. Freezing it retroactively would
   // be the one move that makes the whole split a lie, so it is asserted against rather than trusted.
-  assert.equal(isHeldOut('withheld', 'fifty-year-embargo'), false);
+  assert.equal(isHeldOut('switchback', 'fifty-year-embargo'), false);
 });
 
 test('a cell is held out when either axis is', () => {
-  const p = heldOutPositions()[0]!;
   const b = heldOutBriefs()[0]!;
-  const openPosition = ['interference', 'many-hands', 'withheld'].find((id) => id !== p)!;
+  const open = ['same-everywhere', 'overlooked', 'switchback'].filter((id) => !heldOutPositions().includes(id));
 
-  assert.equal(isHeldOut(p, b), true, 'both axes held out');
-  assert.equal(isHeldOut(p, 'fifty-year-embargo'), true, 'held-out position, open brief');
-  assert.equal(isHeldOut(openPosition, b), true, 'open position, held-out brief');
-  assert.equal(isHeldOut('withheld', 'fifty-year-embargo'), false, 'neither axis held out');
+  // The brief axis alone is enough to hold a cell out, and with the position axis empty it is the
+  // only thing doing so. Asserted over every open position rather than one, because "either axis"
+  // is the claim and a single example would still pass if the OR had become an AND.
+  for (const id of open) {
+    assert.equal(isHeldOut(id, b), true, `open position ${id}, held-out brief`);
+    assert.equal(isHeldOut(id, 'fifty-year-embargo'), false, `neither axis held out for ${id}`);
+  }
+
+  for (const p of heldOutPositions()) {
+    assert.equal(isHeldOut(p, b), true, 'both axes held out');
+    assert.equal(isHeldOut(p, 'fifty-year-embargo'), true, 'held-out position, open brief');
+  }
 });
 
 test('splitBySample never puts a held-out cell in the in-sample list', () => {
-  const p = heldOutPositions()[0]!;
   const b = heldOutBriefs()[0]!;
+  // One open cell, one held out by the brief axis, plus one per held-out position if there are any.
+  // Built from the freeze rather than hard-coded so this keeps working whichever axis is populated.
   const items = [
-    { positionId: 'withheld', briefId: 'fifty-year-embargo' },
-    { positionId: p, briefId: 'fifty-year-embargo' },
-    { positionId: 'withheld', briefId: b },
+    { positionId: 'switchback', briefId: 'fifty-year-embargo' },
+    { positionId: 'switchback', briefId: b },
+    ...heldOutPositions().map((p) => ({ positionId: p, briefId: 'fifty-year-embargo' })),
   ];
   const { inSample, heldOut } = splitBySample(items, (i) => i);
   assert.equal(inSample.length, 1);
-  assert.equal(heldOut.length, 2);
-  assert.equal(inSample[0]?.positionId, 'withheld');
+  assert.equal(heldOut.length, 1 + heldOutPositions().length);
+  assert.equal(inSample[0]?.positionId, 'switchback');
 });
 
 test('holdout.json is on disk beside the documents it freezes', () => {

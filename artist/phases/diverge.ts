@@ -84,48 +84,26 @@ export const KEEP_DEFAULT = 4;
 const RULE = '-'.repeat(88);
 
 const PROPOSE_SYSTEM = [
-  'You are widening, not deciding. Nothing on this list gets drawn, nothing on it costs anything',
-  'yet, and you will cut most of it yourself in a few minutes. Write the ones you do not believe in.',
+  'Widen, not decide. You will cut most of this yourself. Write the ones you do not believe in.',
   '',
-  'A lens is a way of looking at the problem borrowed from somewhere else. The somewhere else can be',
-  'a craft, a discipline, a machine, a failure mode, a legal procedure, a way a material behaves —',
-  'and it should usually be one of the works or materials you have just been looking at, because you',
-  'went and looked at them and this is what looking was for.',
+  'A lens borrows a way of looking from somewhere else — a craft, a machine, a failure mode, or a',
+  'work you just looked at. One test: the combination must have structure belonging to neither half.',
+  'Delete one input; if the sentence survives, nothing was combined.',
   '',
-  'There is one test and it is the only thing between this list and prompt soup. The combination has',
-  'to have structure that belongs to neither half. Write your sentence, then delete one of the two',
-  'inputs and read it again. If it is still true, you combined nothing and the lens is dead.',
+  '"Both are old" fails — a shared property. "A margin ruled before anyone knew what would fill it',
+  'commits the sheet to shape before content" passes — delete either input and it collapses.',
   '',
-  '"The archive is old and the manuscript is old" fails: old is a property they share, not one the',
-  'combination produced. Nothing came out that was not already in both.',
-  '',
-  '"A margin that was ruled before anyone knew what would be written in it means the sheet commits',
-  'to a shape before it commits to a content" is the kind of thing that passes: delete the ruling or',
-  'delete the archive and the sentence stops being about anything.',
-  '',
-  'Do not hand back the source or the lens as the emergent sentence. Saying it again is not building.',
-  '',
-  'Spread out. Twenty lenses borrowed from three places are three lenses.',
+  'Spread out. Twenty lenses from three places are three lenses.',
 ].join('\n');
 
 function cutSystem(keep: number): string {
   return [
     'Now cut your own list.',
     '',
-    `Keep ${keep}. Everything else dies, and that is what the list was for — you wrote more than you`,
-    'believed so that cutting would be a real decision instead of a formality.',
+    `Keep ${keep}. Everything else dies. Every cut needs a reason — "weaker" is not one.`,
+    'Say what is wrong with the lens: shared property, emergent claim survives deletion, restatement.',
     '',
-    'Every cut carries a reason and the reasons are the part worth keeping. "The emergent sentence is',
-    'still true after I delete the manuscript, so nothing was built" is a reason. "This one is about a',
-    'shared property, not an emergent one" is a reason. "Weaker" is not a reason, and neither is',
-    '"less interesting" — say what is wrong with the lens.',
-    '',
-    'Keeping the ones you liked writing is the failure mode here. Keep the ones whose emergent',
-    'structure actually holds and that you could not have arrived at without both inputs.',
-    '',
-    'You weighted these problems yourself, and the weights are printed. A lens on a problem you gave',
-    'four percent is a lens on a problem you said was unlikely — that is a reason to keep it or a',
-    'reason to cut it, but decide it rather than letting it decide itself.',
+    'Keep the ones whose emergent structure holds, not the ones you liked writing.',
   ].join('\n');
 }
 

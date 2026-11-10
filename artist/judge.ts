@@ -6,7 +6,7 @@
 // ablation grid has no dependent variable. Separation between two arms could be proven. Improvement
 // could not.
 //
-// Three image dimensions and one opt-in process dimension. The other two that were proposed — "does it obey the stated formal
+// Four image dimensions and one opt-in process dimension. The other two that were proposed — "does it obey the stated formal
 // rules" and "does it violate a stated refusal" — are struck permanently, because `check.ts` already
 // decides both on the tree and on the render without a model. Routing them through here would
 // launder a deterministic check into a subjective score and then report the agreement between the
@@ -15,6 +15,24 @@
 //   attribution   forced choice over the catalog. Which practice made this? Chance is 1/n.
 //   necessity     could this have been otherwise at no cost? Consumes the position's own rubrics.
 //   derivation    does the work derive from the practice or quote it? Consumes the cliche list.
+//   materiality   was this made with the material, or only with its geometry?
+//
+// `materiality` is the newest and the only one that asks about the medium rather than the practice.
+// It was added because the medium is a brush engine — wet washes, grain, scatter, overprint, a print
+// pass — and three finished trajectories used none of it: 40 solid fills against 12 of everything
+// else, zero wash/spray/fragment/stroke operators, zero print stages, zero blend groups. Nothing in
+// the loop could see that. `check.ts` has no opinion about it, `reward.ts` counts edits and not
+// marks, and the other three critics all score a flat vector poster exactly as they score a painting
+// — a work can be maximally necessary, plainly derived and correctly attributed while using a tenth
+// of the material it was made with. This dimension is the dependent variable for that.
+//
+// Deliberately it is judged FROM THE IMAGE ALONE and is never shown the program. Counting operators
+// in the tree is a thing a script can do and would measure intent rather than result: ten washes at
+// opacity 250 are a solid, and one charcoal stroke can carry a picture. What is being asked is
+// whether the material is visible in the thing, which is a question only a reader can answer. For
+// the same reason it does not consume the position or its rubrics — a practice that has talked
+// itself into flat colour still made a flat picture, and this critic is not the place to relitigate
+// that.
 //
 // Four rules hold this honest and each one is load-bearing:
 //
@@ -112,6 +130,23 @@ The cliche list is the sharpest test available. A work that lands on a named cli
 
 Then say what the work does that the practice's description does not already contain. If you cannot name anything, that is quotation and you should say so.`;
 
+const MATERIALITY_SYSTEM = `You are shown one work. It was drawn by a brush engine on a simulated sheet of paper — the same machinery that gives you a wet wash that bleeds past its own edge, a pencil that leaves grain, charcoal that smudges, ruled hatching, scattered dry marks, overprinting ink, and a print pass that can grain or misregister or photocopy the whole sheet.
+
+Decide one thing: is the material visible in this work, or was the engine used only for its geometry?
+
+A work uses the material when you can see what made the marks. Edges that are wet, dry, torn or broken rather than uniformly clean. Tone arriving from grain, spacing or layered translucency rather than from a chosen flat value. Colour that changes where two things overlap. Surface that belongs to a sheet rather than to a screen.
+
+A work uses only the geometry when every region is an even fill inside a clean boundary — when the same picture could have been drawn by a chart library, and nothing about the result tells you a brush was involved. This is not a judgement about style. A hard-edged geometric composition can be entirely material: the question is whether the marks have a maker.
+
+Rate 1 to 7 and use the whole scale:
+1  nothing but flat fills and clean boundaries. No evidence a brush was involved.
+4  mixed. Some passages carry the material and others are flat placeholder.
+7  the material is doing the work; the picture would not survive being redrawn in flat colour.
+
+Do not reward texture for its own sake. Noise sprayed over a picture that does not need it is not materiality, and a deliberately austere work that uses one material well scores higher than a busy one that uses six badly. Say so if that is what you are looking at.
+
+Name the passage where the material is most present and say what it is doing there. Then name the largest passage that is inert — flat where nothing required it to be flat. If there is no inert passage, say there is none; an empty answer is an answer.`;
+
 const SAMPLING_PROCESS_SYSTEM = `You audit one sampling decision as process evidence, not as art history.
 
 Image 1 is the final sampled work. Image 2 is the same unsampled base compiled with every sample at salience zero. The text is a redacted record: it names the artist's problem, formal channel, binding role and node IDs, measured pixel difference, compiler effects, and any revision. It deliberately contains no source title, museum ID, culture, date, medium, or artist.
@@ -122,6 +157,7 @@ const SYSTEMS = {
   attribution: ATTRIBUTION_SYSTEM,
   necessity: NECESSITY_SYSTEM,
   derivation: DERIVATION_SYSTEM,
+  materiality: MATERIALITY_SYSTEM,
   samplingProcess: SAMPLING_PROCESS_SYSTEM,
 } as const;
 
@@ -168,6 +204,15 @@ export interface Derivation {
   why: string;
 }
 
+export interface Materiality {
+  /** 1..7. See MATERIALITY_SYSTEM for what the ends mean. */
+  score: number;
+  mostMaterial: string;
+  /** The largest passage flat where nothing required it to be. Empty is an answer. */
+  mostInert: string;
+  why: string;
+}
+
 export interface Judgment {
   trajectoryId: string;
   positionId: string;
@@ -178,6 +223,7 @@ export interface Judgment {
   attribution: Attribution;
   necessity: Necessity;
   derivation: Derivation;
+  materiality: Materiality;
   samplingProcess?: SamplingProcess;
   usd: number;
   cached: boolean;
@@ -355,6 +401,18 @@ const DERIVATION_SCHEMA = {
   },
 };
 
+const MATERIALITY_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['score', 'mostMaterial', 'mostInert', 'why'],
+  properties: {
+    score: { type: 'integer', minimum: 1, maximum: 7 },
+    mostMaterial: { type: 'string', description: 'The passage where the material is most present, and what it is doing.' },
+    mostInert: { type: 'string', description: 'The largest passage flat where nothing required it. Empty is an answer.' },
+    why: { type: 'string' },
+  },
+};
+
 const SAMPLING_PROCESS_SCHEMA = {
   type: 'object', additionalProperties: false,
   required: ['problemMotivatesChannel', 'bindingCorresponds', 'revisionResponds', 'evidence'],
@@ -484,6 +542,16 @@ export async function judgeTrajectory(dir: string, options: JudgeOptions = {}): 
     schema: DERIVATION_SCHEMA,
   });
 
+  // No text beyond the question in its own system prompt. It is the one critic that is shown neither
+  // the practice nor the program, and adding either would let it score the intention.
+  const materiality = await ask<Materiality>({
+    name: 'materiality',
+    system: MATERIALITY_SYSTEM,
+    text: 'Here is the work. Answer for this image alone.',
+    imageBase64: png,
+    schema: MATERIALITY_SCHEMA,
+  });
+
   let samplingProcess: { value: SamplingProcess; cached: boolean; usd: number } | null = null;
   const processEvidence = trajectory.sampling ? redactedSamplingEvidence(dir) : null;
   if (trajectory.sampling && processEvidence) {
@@ -507,9 +575,11 @@ export async function judgeTrajectory(dir: string, options: JudgeOptions = {}): 
     attribution: attribution.value,
     necessity: { ...necessity.value, rubricIds: pending.map((r) => r.id) },
     derivation: derivation.value,
+    materiality: materiality.value,
     ...(samplingProcess ? { samplingProcess: samplingProcess.value } : {}),
-    usd: attribution.usd + necessity.usd + derivation.usd + (samplingProcess?.usd ?? 0),
-    cached: attribution.cached && necessity.cached && derivation.cached && (samplingProcess?.cached ?? true),
+    usd: attribution.usd + necessity.usd + derivation.usd + materiality.usd + (samplingProcess?.usd ?? 0),
+    cached:
+      attribution.cached && necessity.cached && derivation.cached && materiality.cached && (samplingProcess?.cached ?? true),
   };
 }
 
@@ -539,9 +609,11 @@ export function judgeSummary(judgments: Judgment[]): string {
     const necessity = rows.reduce((a, j) => a + j.necessity.score, 0) / rows.length;
     const derives = rows.filter((j) => j.derivation.verdict === 'derives').length;
     const cliches = rows.reduce((a, j) => a + j.derivation.clichesTaken.length, 0);
+    const materiality = rows.reduce((a, j) => a + j.materiality.score, 0) / rows.length;
     lines.push(
       `  ${label}  n=${rows.length}  attribution ${hits}/${rows.length} (chance ${chance.toFixed(1)})  ` +
-        `necessity ${necessity.toFixed(2)}/7  derives ${derives}/${rows.length}  cliches ${cliches}`
+        `necessity ${necessity.toFixed(2)}/7  materiality ${materiality.toFixed(2)}/7  ` +
+        `derives ${derives}/${rows.length}  cliches ${cliches}`
     );
   }
   return lines.join('\n');

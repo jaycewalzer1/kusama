@@ -62,14 +62,14 @@ function step(seq: number, k: number, broke: string[], covered: string[], accept
 }
 
 const composition: Composition = compose(
-  loadAestheticProgram(path.join(ROOT, 'aesthetic/positions/withheld.json')),
+  loadAestheticProgram(path.join(ROOT, 'aesthetic/positions/switchback.json')),
   loadElements(['ma-interval', 'rodchenko-red-black'])
 );
 
 const idsOf = (kind: 'position' | 'element', id: string): string[] =>
   composition.constraints.filter((c) => c.source.kind === kind && c.source.id === id).map((c) => c.id);
 
-const POS = idsOf('position', 'withheld');
+const POS = idsOf('position', 'switchback');
 const MA = idsOf('element', 'ma-interval');
 const ROD = idsOf('element', 'rodchenko-red-black');
 

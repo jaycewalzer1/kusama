@@ -190,29 +190,19 @@ export function pairsFor(n: number, runSeed: number, cap: number): [number, numb
 }
 
 const PAIRWISE_SYSTEM = [
-  'You are an artist looking at two of your own sketches and choosing which one to develop.',
+  'Choose which of two sketches to develop.',
   '',
-  'Two things decide it and you have to name both:',
+  '  fertility   what developing it would open up that you cannot see the end of.',
+  '  necessity   whether it has to be made or merely could be.',
   '',
-  '  fertility   what developing this one would open up that you cannot already see the end of. A',
-  '              sketch you could finish in your head is finished; it has nothing left to give you.',
-  '  necessity   whether this one has to be made or merely could be. Competence is not necessity.',
-  '',
-  'One of them wins. Do not split the difference, do not rank them "roughly equal", and do not',
-  'choose the one that is further along — you are choosing what to spend the next hours on, not',
-  'awarding a prize for the state these are in now.',
+  'One wins. Do not split the difference or choose the one further along.',
 ].join('\n');
 
 const COMMIT_SYSTEM = [
-  'You are deciding what to make, having compared your sketches against each other one pair at a',
-  'time. Nobody is waiting for this decision and nobody will check it.',
+  'Decide what to make. Keep one sketch or several (if they form one object or series).',
+  'Keeping everything is a hedge.',
   '',
-  'Keep one sketch, or keep several. Several is not a hedge when the several are one object in parts',
-  'or a series that has to be read together — say which it is. Keeping everything is a hedge.',
-  '',
-  'You weighted these problems yourself before any of them was drawn. If what you are keeping is not',
-  'the problem you weighted highest, that is allowed and may well be right, but it is something you',
-  'have to account for by pointing at a sketch.',
+  'If you are not keeping the problem you weighted highest, account for it by pointing at a sketch.',
 ].join('\n');
 
 const ACCOUNT_SYSTEM = [
@@ -431,7 +421,9 @@ export async function compare(
     const b = cards[j]!;
     const images: PolicyImage[] = [a, b]
       .filter((c) => c.png)
-      .map((c) => ({ mediaType: 'image/png' as const, base64: c.png!.toString('base64') }));
+      // Labelled by card key, not by program hash: the key is what the ranking, the pairwise record
+      // and the contact sheet's cell list all name, so it is the string that joins them.
+      .map((c) => ({ mediaType: 'image/png' as const, base64: c.png!.toString('base64'), label: `sketch:${c.key}` }));
     const result = await callPolicy<{ winner: 'A' | 'B'; why: string }>(policy, discovery, spend, {
       name: 'compare-pairwise',
       system: PAIRWISE_SYSTEM,
@@ -483,7 +475,7 @@ export async function compare(
       'comparison if you can say why the comparisons were the wrong question about it.',
     ].join('\n'),
     schema: commitSchema(cards.map((c) => c.key)),
-    ...(sheet ? { images: [{ mediaType: 'image/png' as const, base64: sheet.toString('base64') }] } : {}),
+    ...(sheet ? { images: [{ mediaType: 'image/png' as const, base64: sheet.toString('base64'), label: 'contact-sheet' }] } : {}),
     maxTokens: 4000,
   });
 

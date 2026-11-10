@@ -31,12 +31,12 @@ test('intent validation refuses duplicate binding roles and never pads a one-int
 });
 
 test('envVersion carries no samplingObservationHash key at all when the phase is off', () => {
-  const off = envVersionNow('withheld', 'nine-returned', 1);
+  const off = envVersionNow('switchback', 'nine-returned', 1);
   // Spread, not assigned: `samplingObservationHash: undefined` would still show up in `Object.keys`
   // and so in envDrift's loop, and every sampled run would read as having drifted.
   assert.deepEqual(Object.keys(off).filter((k) => k.includes('sampling')), []);
 
-  const on = envVersionNow('withheld', 'nine-returned', 1, [], undefined, true);
+  const on = envVersionNow('switchback', 'nine-returned', 1, [], undefined, true);
   assert.match(on.samplingObservationHash ?? '', /^[0-9a-f]{16,64}$/);
   // The phase adds one hash and moves nothing else: sampling is not part of the position, the brief,
   // the medium, the protocol, or the observation serializer the unsampled path is stamped with.
@@ -44,8 +44,8 @@ test('envVersion carries no samplingObservationHash key at all when the phase is
 });
 
 test('a sampled run replayed against an environment with the phase off is drift, not silence', () => {
-  const recorded = envVersionNow('withheld', 'nine-returned', 1, [], undefined, true);
-  const now = envVersionNow('withheld', 'nine-returned', 1);
+  const recorded = envVersionNow('switchback', 'nine-returned', 1, [], undefined, true);
+  const now = envVersionNow('switchback', 'nine-returned', 1);
   const drift = envDrift(recorded, now);
   assert.deepEqual(drift.map((d) => d.field), ['samplingObservationHash']);
   assert.equal(drift[0]?.current, ABSENT);

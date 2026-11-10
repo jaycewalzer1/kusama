@@ -94,13 +94,15 @@ test('a run whose blind reader says the same thing every step gets told the bran
   try {
     const trajectory = await runTrajectory({
       policy: new StubPolicy(4),
-      positionId: 'withheld',
+      positionId: 'switchback',
       briefId: 'two-million-slips',
       seed: 4242,
       outDir: path.join(mkdtempSync(path.join(tmpdir(), 'develop-')), 'cell'),
       maxSteps: 6,
       sketchesPerProblem: 1,
       useAudience: false,
+      influences: false,
+      discovery: false,
     });
     const kept = trajectory.steps.filter((s) => s.accepted);
     assert.ok(kept.length >= SAME_READ_STEPS, `the run kept ${kept.length} steps, enough to stall`);

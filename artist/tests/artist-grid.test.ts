@@ -62,17 +62,18 @@ function scores(over: Partial<Scores> = {}): Scores {
       valenceRange: [0, 0],
     },
     pendingRubrics: [],
+    corpus: null,
     ...over,
   };
 }
 
 test('a cell spec is position:brief, with control as a third part', () => {
-  assert.deepEqual(parseCell('interference:nine-returned'), {
-    positionId: 'interference',
+  assert.deepEqual(parseCell('same-everywhere:nine-returned'), {
+    positionId: 'same-everywhere',
     briefId: 'nine-returned',
     control: false,
   });
-  assert.equal(parseCell('interference:nine-returned:control').control, true);
+  assert.equal(parseCell('same-everywhere:nine-returned:control').control, true);
   assert.equal(cellName(parseCell('a:b:control')), 'a__b__control');
   assert.equal(runDir('/out', parseCell('a:b'), 3), '/out/a__b/seed-3');
 });
@@ -80,7 +81,7 @@ test('a cell spec is position:brief, with control as a third part', () => {
 test('a cell spec of the wrong shape is refused rather than defaulted', () => {
   // Defaulting here would run a different experiment than the one on the command line, and the
   // difference would not surface until the scores were already paid for.
-  assert.throws(() => parseCell('interference'), /position:brief/);
+  assert.throws(() => parseCell('same-everywhere'), /position:brief/);
   assert.throws(() => parseCell('a:b:sideways'), /position:brief/);
   assert.throws(() => parseCell('a:'), /empty part/);
 });

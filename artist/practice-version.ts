@@ -66,10 +66,9 @@
 // this decision first and material-sheet.ts followed it; this file follows both. The prompt text and
 // the schema for the one call live here.
 //
-// TODO: when the accumulated versions are to be shown *to* the artist in later runs, the block that
-// renders them belongs in this file for exactly the reason above — not in observation.ts. Nothing
-// renders them today. The record is being accumulated before it is read, on purpose: a history has
-// to exist before it can be quoted.
+// The block that shows the accumulated history *to* the artist in later runs lives here for exactly
+// the reason above — not in observation.ts. The phase appends it, the same way influence-doc.ts
+// and material-sheet.ts append theirs, so the serializer's bytes stay untouched.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -173,6 +172,62 @@ export function latestVersion(positionId: string, store: string = PRACTICE_STORE
   let n = 0;
   while (existsSync(versionFile(positionId, n + 1, store))) n++;
   return n === 0 ? null : loadPracticeVersion(positionId, n, store);
+}
+
+// --- showing the history to the artist ---------------------------------------------------------------
+
+/**
+ * The accumulated history as a text block, or null when there is none.
+ *
+ * The shape follows `influenceSection` and `materialSection`: a block of text that a phase can
+ * append to an observation string. It is not part of `OBSERVATION_HASH` — a run with no history
+ * and a run with ten versions see the same hashed environment, and the history is appended outside
+ * the serializer the same way the influence doc is.
+ */
+export function practiceHistorySection(positionId: string, store: string = PRACTICE_STORE): string | null {
+  const latest = latestVersion(positionId, store);
+  if (!latest) return null;
+
+  const versions: PracticeVersion[] = [];
+  for (let i = 1; i <= latest.version; i++) {
+    versions.push(loadPracticeVersion(positionId, i, store));
+  }
+
+  const lines: string[] = [
+    RULE,
+    'WHAT YOU HAVE DONE BEFORE',
+    RULE,
+    `${versions.length} earlier run${versions.length === 1 ? '' : 's'} under this position. Each entry is what you wrote at the time.`,
+    'You are held to what you said. If you said you took something from a work, that borrowing is on',
+    'record. If you rejected a lens, do not rediscover it without saying why this time is different.',
+    '',
+  ];
+
+  for (const v of versions) {
+    lines.push(`  v${v.version} (run ${v.trajectoryId})`);
+    lines.push(`    ${v.changed}`);
+    if (v.borrowed.length > 0) {
+      lines.push(`    borrowed from: ${v.borrowed.map((b) => b.works.join(', ')).join('; ')}`);
+    }
+    if (v.fertile.length > 0) {
+      lines.push(`    fertile: ${v.fertile.map((f) => f.id).join(', ')}`);
+    }
+    if (v.rejected.length > 0) {
+      lines.push(`    rejected: ${v.rejected.map((r) => `${r.id} (${r.why})`).join('; ')}`);
+    }
+    lines.push('');
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Append the practice history to an observation, the same way `withInfluences` and `withMaterials`
+ * append theirs. A position with no history returns the observation unchanged.
+ */
+export function withPracticeHistory(observation: string, positionId: string, store: string = PRACTICE_STORE): string {
+  const section = practiceHistorySection(positionId, store);
+  return section ? `${observation}\n${section}` : observation;
 }
 
 /**

@@ -22,6 +22,7 @@ import { FIND_SCHEMA } from '../schemas.js';
 import { artistLayers } from '../field.js';
 import { influenceImages, withInfluences, type InfluenceDoc } from '../influence-doc.js';
 import { withMaterials, withWorkRefs, type MaterialSheet } from '../material-sheet.js';
+import { withPracticeHistory } from '../practice-version.js';
 import type { Commission } from '../field.js';
 import type { Policy } from '../policy/interface.js';
 import type { StudioLog } from '../studio-log.js';
@@ -38,16 +39,21 @@ import type { Problem, Question } from '../types.js';
 export const FIND_KEEP = 3;
 
 const SYSTEM = [
-  'You are an artist with a fixed position, working in a situation you did not choose. Nobody has',
-  'asked you for anything. There is no client, no audience owed an explanation, and nothing that has',
-  'to be legible off the surface.',
+  'You are an artist with a fixed position, working in a situation you did not choose.',
   '',
-  'You are not designing yet. You are doing the two things that come before designing: working out',
-  'what the situation has not settled, and looking for the problem. Read the field for what is',
-  'actually difficult here — what is contested, what has been used up, who will refuse to look — and',
-  'find the places where that rubs against the tensions your own position already carries.',
+  'You are not designing yet. You are looking for connections — places where the field collides',
+  'with something from a distant domain, where a structural correspondence between the situation',
+  'and something apparently unrelated would, if fused, transform both.',
   '',
-  'Quote the field. A problem you could have written from the condition alone is not one.',
+  'Each connection is a wager: a bet that a non-obvious pairing will produce something worth',
+  'looking at. Every wager must name what two things are being connected, what the deep structural',
+  'correspondence is between them, and what formal rule follows from that correspondence.',
+  '',
+  'A wager worth making is one that can be put into a depicted thing — a place, a body, an object,',
+  'an event. A viewer who cannot say what they are looking at is not looking at your wager. Blocks',
+  'and bands are what is left when nobody decided what the picture was of.',
+  '',
+  'Quote the field. A wager you could have written from the condition alone found no connection.',
 ].join('\n');
 
 /**
@@ -60,9 +66,9 @@ const SYSTEM = [
  */
 const RESEARCHED = [
   '',
-  'You have also been looking at art. What you found is below what you found in the field. A problem',
-  'may be read out of a work you looked at as well as out of a line of the field; when it is, cite',
-  'the work. Only cite what you actually saw.',
+  'You have also been looking at art. What you found is below what you found in the field. A',
+  'connection may run through a work you looked at — its material, its structure, its subject — as',
+  'well as through a line of the field; when it does, cite the work. Only cite what you actually saw.',
 ].join('\n');
 
 export async function find(
@@ -75,12 +81,19 @@ export async function find(
   sheet: MaterialSheet | null = null
 ): Promise<{ questions: Question[]; problems: Problem[]; proposed: Problem[] }> {
   log.append('phase', { phase: 'find', influences: influences?.id ?? null, materials: sheet?.hash ?? null });
+  // TODO: archive coverage. The archive (archive.ts) has a 6x6 grid showing what visual territory
+  // has been explored, but it is not indexed by position and loading it requires `measureRuns` which
+  // decodes every PNG on disk. When the archive carries a position id and can be loaded cheaply,
+  // append `withArchiveCoverage(obs, positionId)` here beside withPracticeHistory.
   const result = await callPolicy<{ questions: Question[]; problems: Problem[] }>(policy, log, spend, {
     name: 'find',
     system: sheet ? `${SYSTEM}${RESEARCHED}` : SYSTEM,
-    observation: withMaterials(
-      withInfluences(findObservation(artistLayers(commission), commission.field), influences),
-      sheet
+    observation: withPracticeHistory(
+      withMaterials(
+        withInfluences(findObservation(artistLayers(commission), commission.field), influences),
+        sheet
+      ),
+      commission.positionAsWritten.id
     ),
     schema: sheet ? withWorkRefs(FIND_SCHEMA) : FIND_SCHEMA,
     // FIND is where the pictures go if they go anywhere. It is the one phase whose whole job is to

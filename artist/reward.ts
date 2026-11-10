@@ -16,7 +16,7 @@
 // of the measurer's own on-disk cache keyed by program hash, so a rescore of a trajectory that has
 // already been run touches no browser. A rescore after `rm -rf .cache` renders once.
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { applyEdit, type EditAction } from '../env/edits.js';
 import { loadPackFor } from '../env/pack.js';
@@ -301,6 +301,37 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
     // this the moment run.ts was changed on its own.
     const termination = terminationOf(real.estimates, stoppedAs(last, gates), last?.unrealizable ?? null);
 
+    // Corpus resemblance, same computation as run.ts. Uses the on-disk final.png the run wrote.
+    let corpusResult: { novelty: number; copyFlag: boolean; nearestCosine: number; nearestId: string; corpusPercentile: number } | null = null;
+    {
+      const { embeddingsAvailable } = await import('./clip-index.js');
+      const finalPng = path.join(dir, 'final.png');
+      if (embeddingsAvailable() && existsSync(finalPng)) {
+        const { loadCorpusEmbeddings, rowAt } = await import('./clip-index.js');
+        const { embed: embedPlate, similarity: sim } = await import('./resemblance.js');
+        const { corpusBand } = await import('./plates.js');
+        const corpus = loadCorpusEmbeddings();
+        const v = await embedPlate(finalPng);
+        let bestRow = 0, best = -Infinity;
+        for (let i = 0; i < corpus.entries.length; i++) {
+          const s = sim(v, rowAt(corpus.rows, i));
+          if (s > best) { best = s; bestRow = i; }
+        }
+        const e = corpus.entries[bestRow]!;
+        const { sorted } = corpusBand();
+        let lo = 0, hi = sorted.length;
+        while (lo < hi) { const mid = (lo + hi) >> 1; if (sorted[mid]! < best) lo = mid + 1; else hi = mid; }
+        const pctile = sorted.length === 0 ? 0 : lo / sorted.length;
+        corpusResult = {
+          novelty: 1 - best,
+          copyFlag: best > 0.95,
+          nearestCosine: best,
+          nearestId: e.work.id,
+          corpusPercentile: pctile,
+        };
+      }
+    }
+
     const scores: Scores = {
       // Null when the run did not earn its stop — the reasoning is in `scoresOf` (run.ts). Gated on
       // the *recomputed* termination, not the recorded one: gate 2's premise is that the log alone
@@ -360,6 +391,7 @@ export async function recompute(dir: string, canvas?: Canvas): Promise<Recompute
         steps.map((s) => s.affect)
       ),
       pendingRubrics: report.pendingRubrics.map((r) => `[${r.id}] ${r.text}`),
+      corpus: corpusResult,
     };
     return { scores, finalProgram: program, chainProblems };
   } finally {

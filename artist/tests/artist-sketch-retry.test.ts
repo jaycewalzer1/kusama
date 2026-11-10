@@ -81,7 +81,7 @@ let dirs = 0;
 async function run(script: Record<string, unknown>[][], fail: string | null) {
   const policy = new ScriptedPolicy(script);
   const log = new StudioLog(path.join(OUT, `run-${dirs++}`));
-  const commission = loadCommission('interference', 'nine-returned');
+  const commission = loadCommission('same-everywhere', 'nine-returned');
   const result = await sketch(policy, log, newSpend(), commission, PROBLEM, 0, seedProgram(4242), stubCanvas(fail));
   return { result, requests: policy.requests };
 }
@@ -161,7 +161,7 @@ test('an invalid advisory binding rejects the sketch attempt and a valid retry i
   const dir = path.join(OUT, `run-${dirs++}`);
   const log = new StudioLog(dir);
   const result = await sketch(
-    policy, log, newSpend(), loadCommission('interference', 'nine-returned'), PROBLEM,
+    policy, log, newSpend(), loadCommission('same-everywhere', 'nine-returned'), PROBLEM,
     0, seedProgram(4242), stubCanvas(null), null, null, sampling
   );
   assert.equal(policy.calls, 2);

@@ -153,7 +153,17 @@ export function summarise(kind: string, raw: unknown): Record<string, unknown> {
     case 'trigger':
       return { trigger: d['trigger'], detail: d['detail'], cached: d['cached'] };
     case 'trajectory-end':
-      return { outcome: d['outcome'], finalHash: d['finalHash'], scores: d['scores'], cost: d['cost'] };
+      return {
+        outcome: d['outcome'],
+        finalHash: d['finalHash'],
+        scores: d['scores'],
+        cost: d['cost'],
+        terminalStatus: (d['terminalRecord'] as { status?: string } | undefined)?.status ?? null,
+      };
+    // The stack stays out of the small form: the message is what a reader needs, and the whole line
+    // is a fetch away like any other.
+    case 'trajectory-failed':
+      return { error: d['error'], policySpend: d['policySpend'] };
     default:
       return d;
   }
@@ -371,9 +381,22 @@ export function storyOf(entries: Entry[]): Story {
       case 'trajectory-end': {
         const sc = (d['scores'] ?? {}) as Record<string, unknown>;
         const cost = (d['cost'] ?? {}) as Record<string, unknown>;
-        const a = openAct('end', `${s(d['outcome']).toUpperCase()}`);
+        const terminal = s(d['terminalStatus']);
+        const title = terminal ? `${s(d['outcome']).toUpperCase()} (${terminal})` : s(d['outcome']).toUpperCase();
+        const a = openAct('end', title);
         a.summary = `tree ${n(sc['tree']).toFixed(3)} · render ${n(sc['render']).toFixed(3)} · ${n(sc['hardViolations'])} hard · $${n(cost['usd']).toFixed(2)} · ${Math.round(n(cost['wallMs']) / 60000)} min · ${n(cost['policyCalls'])} calls`;
         a.tone = n(sc['hardViolations']) > 0 || s(d['outcome']) !== 'finished' ? 'bad' : 'good';
+        break;
+      }
+
+      // Its own act, like `trajectory-end`, and for the same reason: it is how the run ended. It is
+      // last in the file, so it reads at the bottom of the page without anyone having to open a
+      // beat, which is the whole point of writing it down.
+      case 'trajectory-failed': {
+        const a = openAct('failed', 'FAILED — the run threw and stopped here');
+        a.summary = s(d['error']).split('\n')[0] ?? 'no message';
+        a.tone = 'bad';
+        openBeat(e, 'error', a.summary).tone = 'bad';
         break;
       }
 

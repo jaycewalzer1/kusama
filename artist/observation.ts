@@ -33,7 +33,7 @@
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { contentHash } from '../env/profile.js';
+import { contentHash, type MarkShare } from '../env/profile.js';
 import type { AestheticProgram, CheckReport } from '../aesthetic/types.js';
 import type { Brief, Practice } from './field.js';
 import { affectSentence } from './affect.js';
@@ -45,19 +45,29 @@ import type { Affect, Field, Intention, Problem, Step, TriggerName } from './typ
  * What the policy is shown, hashed. Read from disk at import rather than baked in, so it cannot go
  * stale: there is no way to change the serializer without changing the number.
  *
- * Both files, not just this one. The schemas carry `description` strings the model reads and acts
+ * Three files, not just this one. The schemas carry `description` strings the model reads and acts
  * on — the CHOOSE edge-type descriptions tell it which relations are checkable and how many it may
  * leave unjudgeable — so a run collected before an edit to one of them was collected in a different
  * environment. With only this file hashed, that edit was invisible to `envDrift` and `replay` would
  * have compared the two arms as though nothing had moved.
+ *
+ * `capability-sheet.ts` is here for the same reason and was added late. Almost all of that file is a
+ * pure function of the profile and the pack, whose hashes the trajectory already carries, so for a
+ * long time nothing of it was uncovered. Its `MATERIAL` section broke that: it is prose about what
+ * the brushes and the fills are for, it goes into the substrate block of every artist-side call, and
+ * it is written by hand. An artist told that `solid` is the fill to be suspicious of is in a
+ * different environment from one that was not, and only this hash can say so.
  */
 const here = fileURLToPath(import.meta.url);
-const schemasFile = here.replace(/observation\.(js|ts)$/, 'schemas.$1');
 // Not a defensive check on a path that cannot be wrong: if the rename silently fails to match, this
-// file is hashed twice and the schemas stop being covered again, which is the exact failure above.
-if (schemasFile === here) throw new Error(`cannot locate schemas beside ${here}`);
+// file is hashed twice and the other stops being covered, which is the exact failure above.
+function beside(name: string): string {
+  const file = here.replace(/observation\.(js|ts)$/, `${name}.$1`);
+  if (file === here) throw new Error(`cannot locate ${name} beside ${here}`);
+  return file;
+}
 export const OBSERVATION_HASH = contentHash(
-  `${readFileSync(here, 'utf8')}\n${readFileSync(schemasFile, 'utf8')}`
+  [here, beside('schemas'), beside('capability-sheet')].map((f) => readFileSync(f, 'utf8')).join('\n')
 );
 
 const RULE = '-'.repeat(88);
@@ -123,42 +133,38 @@ function programJson(program: unknown): string {
  * part that was doing the real work — refusal, cost, collision — with nobody on the other side.
  */
 export const PROTOCOL = [
-  'You are making a work. Nobody has asked for it, nobody is paying for it, and nobody is owed it.',
-  'There is no brief to satisfy and no message to deliver. That does not make this free: a thing',
-  'with no client is answerable to itself, which is a harder audit and the only one available.',
+  'You are making a work. Nobody asked for it, nobody is paying, and nobody is owed it. A thing',
+  'with no client is answerable to itself.',
   '',
-  '1. INTERROGATE. Before proposing anything, name what the situation has not settled that would',
-  '   change what you make. Between none and four things. Do not ask to appear thorough: a question',
-  '   whose answer would not change the object is not a question, it is a courtesy. If the situation',
-  '   settles everything, say so. There is nobody to answer these, so name what you are deciding.',
+  '1. INTERROGATE. Name what the situation has not settled that would change what you make. Zero to',
+  '   four things. There is nobody to answer, so name what you are deciding.',
   '',
-  '2. NAME THE COLLISION. State plainly where the situation and your practice are in conflict. Name',
-  '   the specific pressure and the specific principle, as two things, not as a mood. Do not resolve',
-  '   it. If you find no collision, look again: a situation that fits your practice perfectly almost',
-  '   always means you read it loosely, or you have already started softening it.',
+  '2. FIND A CONNECTION. Look across the field, your practice, and anything you have been shown for',
+  '   a non-obvious structural correspondence — two things from different domains that share a deep',
+  '   logic. The connection is not a theme. It is a specific claim: "X works like Y because Z, and',
+  '   that means the picture should do W." A collision is a special case of a connection: the kind',
+  '   where the two things fight. Connections that do not fight are also allowed.',
   '',
-  '3. PROPOSE. Distinct proposals resolve the collision differently. They do not use different',
-  '   colours. For each, say what it physically is, how it handles the collision, and what it costs —',
-  '   what is given up by making it. A proposal with no cost is a proposal you have not thought',
-  '   through.',
+  '3. PROPOSE. Each proposal realizes the connection as a different generative rule — a law that',
+  '   determines the visual logic of the piece. Say what it physically is, what formal rule follows',
+  '   from the connection, and what it costs. A proposal with no cost has not been thought through.',
   '',
-  '4. STATE TERMS. What is out of scope, what you will not change under any circumstances, and what',
-  '   you would abandon the work over. Naming the third one is the point of the other two.',
+  '4. STATE TERMS. What is out of scope, what you will not change, and what you would abandon over.',
   '',
-  '5. REVISE. When the work tells you something, or the situation pushes, do not simply comply.',
-  '   Either do it, or refuse it and say why in one sentence, or answer the thing actually behind it',
-  '   without violating a refusal. Abandoning the work is a valid outcome and you should take it when',
-  '   the alternative is making something you would disown.',
+  '5. REVISE. When the work or the situation pushes: do it, refuse it in one sentence, or answer',
+  '   what is actually behind it. Abandoning is a valid outcome.',
   '',
   'NEVER',
-  '  - Never present a compromise as though it were your first instinct.',
-  '  - Never soften a refusal into a preference.',
-  '  - Never produce work that would be indistinguishable from another artist in this situation.',
-  '  - Never caption the work. A line of type explaining what this is, set small and parked in a',
-  '    corner, is the one move that turns a work into an announcement of itself.',
-  '  - Never leave an untouched border unless the kind of object you are making actually has one. A',
-  '    clean margin of ground on all four sides is a page, and a page is a thing something was placed',
-  '    on. The ground is a surface you made, not the paper this arrived on. Work off the edge.',
+  '  - Present a compromise as though it were your first instinct.',
+  '  - Soften a refusal into a preference.',
+  '  - Produce work indistinguishable from another artist in this situation.',
+  '  - Caption the work. A line of type explaining what this is turns it into an announcement.',
+  '  - Leave an untouched border on all sides. The ground is a surface you made. Work off the edge.',
+  '  - Treat the palette you were given as permanent. The seed colours are a starting point; change',
+  '    them when the connection demands it.',
+  '  - Fill a surface with `solid` and call it finished. Flat colour is a frame or a mask, not a',
+  '    surface. The medium has wash, hatch, field, stroke and spray — use them. A picture whose',
+  '    every region is `solid` has not been made, it has been blocked out.',
 ].join('\n');
 
 export const PROTOCOL_HASH = contentHash(PROTOCOL);
@@ -401,24 +407,24 @@ export function findObservation(l: Layers, field: Field): string {
     stack(l.position, l.practice, l.brief),
     fieldSection(field),
     section(
-      'YOUR TASK: INTERROGATE, THEN FIND THE PROBLEM (protocol step 1)',
+      'YOUR TASK: INTERROGATE, THEN FIND CONNECTIONS (protocol steps 1 and 2)',
       [
-        'Do not design anything yet. Two things.',
+        'Do not design anything yet.',
         '',
-        'First, interrogate the situation. Name between none and four things it has not settled that',
-        'would change what you make. Nobody is going to settle them — there is nobody to ask — so for',
-        'each one also say what you are therefore deciding yourself, and on what grounds. If the',
-        'situation has settled everything that matters, ask nothing and say so.',
+        'Interrogate: name what the situation has not settled, and what you are deciding.',
         '',
-        'Then find between three and six problems.',
+        'Then find three to six artistic wagers. A wager is a bet that a non-obvious connection will',
+        'produce something worth looking at. Each wager must:',
+        '  - Name what two or more things are being connected (at least one from the field)',
+        '  - State the deep structural correspondence — not a theme, not a mood, but a shared logic',
+        '  - Say what formal rule follows from the connection: how it changes colour, pattern, space,',
+        '    density, material, rhythm, or interaction in the picture',
+        '  - Quote the field lines it came from',
         '',
-        'A problem is not a topic and not a feeling. It is a specific difficulty this piece would have',
-        'to overcome, which you found by reading the field above and noticing where it rubs against a',
-        'tension you already hold. Each problem must quote the lines of the field it came out of.',
-        '',
-        'A problem that could have been written without reading the field is not a problem. Neither is',
-        'one that restates the brief. The test is: could someone disagree with this and still want the',
-        'same object? If not, you have written a summary.',
+        'Search broadly. The best connections cross domains: the field against a machine, a ritual, a',
+        'biological process, an architectural principle, a historical accident, a material behaviour.',
+        'A wager that could have been written from the condition alone is not one. A wager whose',
+        'connection is merely thematic — "both involve loss" — has no formal consequence and is not one.',
       ].join('\n')
     ),
   ].join('\n');
@@ -433,25 +439,22 @@ export function chooseObservation(l: Layers, problems: Problem[], sketchNote: st
     ),
     section('THE SKETCHES', sketchNote),
     section(
-      'YOUR TASK: NAME THE COLLISION, CHOOSE, STATE TERMS (protocol steps 2, 3 and 4)',
+      'YOUR TASK: EVALUATE THE WAGERS, CHOOSE, STATE TERMS (protocol steps 3 and 4)',
       [
-        'The contact sheet above is what those problems actually look like when drawn. Look at it, not',
-        'at your own summary of it.',
+        'Look at the contact sheet, not your summary of it.',
         '',
-        'First name the collision: the specific thing this commission requires and the specific',
-        'principle of yours it runs into, as two named things rather than a mood, and then one sentence',
-        'stating the conflict without resolving it. If you cannot find one, look again — a brief that',
-        'fits your practice perfectly means you read it loosely or have already started softening it.',
+        'Evaluate each wager by what the sketch proves about the CONNECTION, not about the execution:',
+        '  - Is the connection non-obvious? Could a generic model have proposed it?',
+        '  - Is it specific to this situation and this practice, or would it work for anything?',
+        '  - Does the formal rule actually change what the picture looks like?',
+        '  - Does the sketch transform both sides of the connection, or just decorate one?',
         '',
-        'Then pick one problem to make the finished piece about, say why in a way that refers to what',
-        'you can see, and state what this choice costs the client: what they give up by getting this',
-        'rather than the other things it could have been. A choice with no cost has not been made.',
-        '',
-        'Then state your terms: what is out of scope, what you will not change under any circumstances,',
-        'and the one thing you would lose the commission over. Naming the third is the point.',
-        '',
-        'Finally state the intention as a graph. It is a plan, so it must be losable: name elements that',
-        'could fail to appear and edges that could fail to hold. A plan that cannot be wrong is not one.',
+        'Choose: the wager whose connection is strongest, referring to what you see in the sketch.',
+        'A competent sketch of an obvious idea loses to a rough sketch of a surprising connection.',
+        'Terms: out of scope, immovable, and what you would abandon over.',
+        'Intention: a graph of elements and edges, governed by a generative design law — the formal',
+        'rule that follows from the connection. The law is what makes one arrangement right and',
+        'another wrong. A plan that cannot be wrong is not one.',
       ].join('\n')
     ),
   ].join('\n');
@@ -498,6 +501,14 @@ export interface MakeContext extends Layers {
    * it it has already spent proposes over it and is refused, which costs a call and teaches nothing.
    */
   textOps: { used: number; max: number };
+  /**
+   * Estimated marks in the tree now, and the most the profile allows. Here for exactly the reason
+   * `textOps` is, and for a budget that is overrun far more often: across every trajectory in `out/`,
+   * 43 of 63 edit refusals were this one limit. The cap alone is not enough — a policy proposing a
+   * fill has to know both what fills cost, which the capability sheet now says, and how much of the
+   * allowance the picture it is looking at has already spent, which only this can say.
+   */
+  marks: { used: number; max: number; heaviest: MarkShare[] };
 }
 
 /** The two readings of the same canvas, and which of them the artist is told to trust. */
@@ -510,18 +521,13 @@ function describerSection(c: MakeContext): string {
       c.description,
       c.audienceRead ? `\nAnd to the person the field says is watching:\n${c.audienceRead}` : '',
       '',
-      'This describer was shown the image and nothing else — not your position, not the brief, not',
-      'your plan. Where it disagrees with what you meant, it is right about what is there.',
+      'This describer saw only the image. Where it disagrees with your intent, that is a fact about',
+      'what the surface currently communicates — not a reason to make the work more literal.',
       c.canvasAttached
-        ? '\nThe canvas itself is attached. Look at it. Where the description and the image disagree the\nimage is the fact and the description is one reading of it.'
+        ? '\nThe canvas is attached. Where description and image disagree, the image is the fact.'
         : '',
       c.changeAttached
-        ? [
-            '',
-            'A second image is attached: the same canvas faded back, with every pixel your last kept step',
-            'moved marked in red. It is where your last move actually landed, as opposed to where you',
-            'said you were putting it. A move that marks nothing did nothing.',
-          ].join('\n')
+        ? '\nA second image shows pixels your last kept step moved, marked in red.'
         : '',
     ]
       .filter(Boolean)
@@ -530,16 +536,46 @@ function describerSection(c: MakeContext): string {
 }
 
 /**
- * The one budget that is spent across steps rather than within one, said as what is left.
+ * The budgets spent across steps rather than within one, said as what is left.
  *
- * Edits and steps are already stated as remainders. Text ops were stated only as a cap, in the
- * capability sheet, and that is the budget the policy actually overran.
+ * Edits and steps are already stated as remainders. Text ops and marks were stated only as caps, in
+ * the capability sheet, and those are the two budgets the policy actually overran.
  */
 function budgetLine(t: { used: number; max: number }): string {
   const left = Math.max(0, t.max - t.used);
   return left === 0
-    ? `The program is at its limit of ${t.max} text ops. Adding another will be refused; to change what it says, edit or delete a text op that is already there.`
-    : `Text ops: ${t.used} of ${t.max} used, ${left} left for the whole rest of the piece.`;
+    ? `Text ops: ${t.max}/${t.max}. Adding another will be refused; edit or delete an existing one.`
+    : `Text ops: ${t.used}/${t.max}, ${left} left.`;
+}
+
+/**
+ * Marks on the sheet now, what is left, and which nodes are holding it.
+ *
+ * The heaviest nodes are named while the artist is still drawing rather than only in the refusal it
+ * gets afterwards, which is the difference between a budget it can plan against and one it discovers
+ * by walking into. Naming them costs nothing and answers the question the total cannot: an artist
+ * told it has 300 marks left and not told that one crosshatch is holding 9,900 of them will shrink
+ * the wrong thing, or shrink everything, or give up on texture altogether — and the last of those is
+ * the failure `MATERIAL` exists to correct, arrived at from the other direction.
+ */
+function markLine(m: { used: number; max: number; heaviest: MarkShare[] }): string {
+  const n = (x: number) => x.toLocaleString('en-US');
+  const left = Math.max(0, m.max - m.used);
+  const share = Math.round((100 * m.used) / m.max);
+  const held = m.heaviest
+    .filter((s) => s.marks > 0)
+    .slice(0, 3)
+    .map((s) => `${s.sourceId} (${s.kind ? `${s.op}/${s.kind}` : s.op}) ${n(s.marks)}`);
+  const lines = [
+    left === 0
+      ? `Marks: ${n(m.used)}/${n(m.max)}. Nothing left — shrink or delete to free marks.`
+      : `Marks: ${n(m.used)}/${n(m.max)} (${share}%), ${n(left)} left.`,
+  ];
+  if (held.length) lines.push(`  heaviest: ${held.join(', ')}`);
+  if (left > 0 && share >= 75) {
+    lines.push('  Near the limit. Size textured regions deliberately — but do not retreat to solid to save marks.');
+  }
+  return lines.join('\n');
 }
 
 export function makeObservation(c: MakeContext): string {
@@ -559,50 +595,34 @@ export function makeObservation(c: MakeContext): string {
         '',
         `You may make up to ${c.maxEdits} edit${c.maxEdits === 1 ? '' : 's'} this step. ${c.stepsLeft} steps remain.`,
         budgetLine(c.textOps),
+        markLine(c.marks),
       ].join('\n')
     ),
     section(
       'YOUR TASK: THINK, THEN ACT — IN ONE MOVE',
       [
-        'Say what you are doing and why, choose a control, and give the edits. All of it at once.',
+        'Say what you are doing and why, choose a control, and give the edits.',
+        '',
+        'Each step is a hypothesis about the connection you chose. The mark you make should TEST',
+        'whether the generative law holds in this material — not merely fill in more of the plan.',
+        'When the sheet surprises you, follow the surprise before correcting it.',
         '',
         'control:',
         '  continue  — keep working to the plan',
-        '  replan    — the canvas has told you something the plan does not account for. Say what.',
-        '  finished  — the piece does what the plan said and the commission is honoured',
-        '  abandon   — this cannot be made from here and you would rather make nothing',
+        '  replan    — the canvas told you something the plan does not account for',
+        '  finished  — every edge holds, or one cannot be made (name it under `unrealizable`)',
+        '  abandon   — this cannot be made from here',
         '',
-        'WHEN TO SAY FINISHED. Not when the steps run out — running out is not a decision and is not',
-        'recorded as one. Stop when every edge of your plan holds in the work, or when one of them',
-        'cannot be made in this medium at all, in which case say `finished`, name that one edge under',
-        '`unrealizable` as "from->to", and stop. Naming one costs you nothing. Stopping with edges',
-        'outstanding and naming none is recorded as the timer expiring, whatever you write in think.',
+        'FINISHING is a request. The environment checks: unreadable required strings, hard constraint',
+        'violations, rubric failures, plan edges that do not hold — any of these puts you back to',
+        'work. You get two asks. Hard rubrics are checked by a reader who sees only the image.',
         '',
-        'SAYING FINISHED IS A REQUEST, NOT A DECISION. The environment checks the sheet when you ask.',
-        'A fact the commission requires that a reader cannot read off the page, a hard constraint still',
-        'violated, the person this is for saying they would walk past it, a self-score you would not',
-        'defend, or relations in your own plan that you can see do not hold — any of these and you are',
-        'handed the reasons and put back to work. You get two asks. Do not spend the first one on a',
-        'piece you already know is not right.',
+        'MOVES: retrieve, reject, copy-as-study, extract-a-relation, reframe. Most steps need none.',
+        'Record one when you made one — a decision only in `think` is not on the record.',
         '',
-        'The questions marked `rubric (hard)` in the checker table are part of that check. They stay',
-        'undecided while you work because the tree cannot answer them. When you ask to stop, each hard',
-        'rubric is put to a frozen reader that sees the sheet and the question, but not your position,',
-        'brief, plan, or intended answer. Only a visible failure blocks; `cannot-tell` does not.',
-        '',
-        'NOT EVERYTHING YOU DO IS A MARK. Beside the edits there are five moves that touch no pixels,',
-        'and `moves` is where they go: retrieve, reject, copy-as-study, extract-a-relation, reframe.',
-        'The empty list is the ordinary answer — most steps are just painting — and recording one buys',
-        'you nothing here: a move does not reset the stall, does not lift your state, and does not stop',
-        'a step counting as one that changed nothing. Record one when you made one, because a decision',
-        'that exists only inside `think` is not on the record as a decision, and turning something down',
-        'and never having looked at it are the same thing to everyone reading afterwards.',
-        '',
-        'Every edit must be legal in the medium described at the top. An illegal edit is refused and',
-        'costs you the step. If you need a node id, take it from the program above.',
-        '',
-        'You may destroy what you have made. Deleting, covering or painting over your own earlier work',
-        'is a legitimate move and is not held against you.',
+        'Edits must be legal in the medium above. An illegal edit is refused and costs the step.',
+        'You may destroy what you have made. Change the palette if the connection demands colours',
+        'the seed did not give you.',
       ].join('\n')
     ),
   ].join('\n');
@@ -616,28 +636,14 @@ export function replanObservation(c: MakeContext, trigger: TriggerName, detail: 
         `trigger: ${trigger}`,
         detail,
         '',
-        'The work has told you something. Do not simply comply with it: either act on it, or refuse it',
-        'and say why in one sentence, or counter with something that solves what it is actually',
-        'complaining about without violating one of your refusals.',
+        'Do not simply comply: act on it, refuse it in one sentence, or counter it without violating',
+        'a refusal.',
         '',
         trigger === 'finish-blocked'
-          ? [
-              'You asked to stop and were refused. The reasons are above and they are not opinions about',
-              'taste — each one names something on the sheet that you can go and change. A revision that',
-              'leaves them all true will be refused again and the run will end with the stop recorded as',
-              'not earned. Deleting something and making it again differently is available to you and is',
-              'usually the cheaper answer.',
-              '',
-            ].join('\n')
+          ? 'You asked to stop and were refused. Each reason names something you can change. A revision\nthat leaves them true will be refused again.\n'
           : '',
-        'Revise the plan. You may keep any part of it that still holds. Changing the purpose is allowed',
-        'and is a bigger move than rearranging elements; do it if the canvas has actually told you that',
-        'you were making the wrong thing, and not otherwise.',
-        '',
-        "Keep an element's id if it is still the same part of the picture, even if you now describe its",
-        'role differently. The nodes already drawn are filed under the id the element had when they were',
-        'made, so renaming a part you have already built unfiles everything it is made of and the piece',
-        'reads as unmade. Give a new id only to a genuinely new part.',
+        'Revise the plan. Keep what holds. Change the purpose only if the canvas says you were making',
+        'the wrong thing. Keep element ids for existing parts — renaming unfiles their nodes.',
       ]
         .filter(Boolean)
         .join('\n')
@@ -668,14 +674,13 @@ export function examineObservation(
     section(
       'YOUR TASK: EXAMINE YOUR OWN WORK',
       [
-        'The finished piece is attached. Judge it.',
+        'The finished piece is attached. Score 0–10 against your position, not effort. Go edge by',
+        'edge: does it hold in the image? Mark `judge-pending` if nobody could tell from looking.',
         '',
-        'Score it 0 to 10 against your own position, not against how hard it was to make. Then go edge',
-        'by edge through your plan and say whether each one actually holds in the image — mark an edge',
-        '`judge-pending` if honestly nobody could tell from looking. Then one paragraph: what this piece',
-        'does, what it fails at, and whether the risk you took was worth taking.',
-        '',
-        'A high score you cannot defend from the image is worse than a low one you can.',
+        'One paragraph: what it does, what it fails at, whether the risk was worth it. Then answer:',
+        'was the central connection non-obvious and specific? Did it change BOTH sides? Could a',
+        'generic model have arrived here? Is the generative law visible in the marks, or only in',
+        'the plan? A competent picture of an obvious idea is not a success.',
       ].join('\n')
     ),
   ].join('\n');
@@ -688,15 +693,12 @@ export function examineObservation(
 // tests/artist/blindness.test.ts asserts this by inspecting the actual request bodies.
 
 export const DESCRIBE_SYSTEM = [
-  'You are shown one image and nothing else. You do not know what it is for, who made it, or why.',
+  'You are shown one image. You do not know what it is for or who made it.',
   '',
-  'Write exactly five sentences describing what is physically there: what shapes and marks you see,',
-  'where they sit, what is dark and what is light, what text you can read and how big it is relative',
-  'to everything else, and what your eye goes to first.',
+  'Five sentences: what shapes and marks you see, where they sit, what is dark and light, what',
+  'text you can read, and what your eye goes to first.',
   '',
-  'Describe only what is on the surface. Do not guess the purpose, do not name a genre or a movement,',
-  'do not say whether it is good, and do not speculate about intent. If text is illegible, say that it',
-  'is illegible rather than guessing the words.',
+  'Describe only the surface. Do not guess purpose, genre, quality, or intent.',
 ].join('\n');
 
 export function describeObservation(): string {
@@ -714,17 +716,11 @@ export function describeObservation(): string {
  * program contains `19:00` and whose transcript reads `10:00` is the failure this exists to catch.
  */
 export const TRANSCRIBE_SYSTEM = [
-  'You are shown one image and nothing else. Transcribe the text in it.',
+  'You are shown one image. Transcribe the text in it.',
   '',
-  'List every piece of text you can make out, one entry per visually distinct piece, in the order',
-  'your eye reaches them. For each, write down exactly the characters you can see. If a piece is',
-  'partly or wholly unreadable, still list it, mark it illegible, and transcribe only the characters',
-  'you are sure of.',
-  '',
-  'Transcribe what is on the surface, not what you expect. If a glyph is ambiguous, write the shape',
-  'you actually see — if a 9 is rotated or broken so that it reads as a 0, write 0. Do not correct',
-  'spelling, do not complete a word that is cut off, do not infer a date or a time from context, and',
-  'do not add text that is not there. If there is no readable text at all, return an empty list.',
+  'One entry per visually distinct piece, in eye order. Write exactly the characters you see.',
+  'Mark illegible pieces as such. Do not correct spelling, complete cut-off words, or infer from',
+  'context. If a glyph is ambiguous, write the shape you see. Empty list if no text.',
 ].join('\n');
 
 export function transcribeObservation(): string {
@@ -739,18 +735,11 @@ export function transcribeObservation(): string {
  * would turn every genuinely undecidable surface into a coin flip at the finish gate.
  */
 export const RUBRIC_SYSTEM = [
-  'You are shown one image and one question about it. You do not know what the image is for, who',
-  'made it, or what answer anybody wants.',
+  'You are shown one image and one question. You do not know what the image is for.',
   '',
-  'Answer from the image alone. Return `holds` if what the question asks for is visibly there,',
-  '`fails` if the image visibly shows the opposite, and `cannot-tell` if the image does not settle',
-  'the question either way.',
-  '',
-  'Your evidence must name something visible: a mark, edge, region, or relation between them. Do not',
-  'infer intention or purpose. If you cannot name visible evidence, answer `cannot-tell`.',
-  '',
-  'Do not answer `holds` because the question was asked confidently, or `fails` because you were',
-  'asked to look for a fault. `cannot-tell` is a complete and acceptable answer.',
+  'Answer from the image alone: `holds` if visibly there, `fails` if visibly the opposite,',
+  '`cannot-tell` if the image does not settle it. Evidence must name something visible.',
+  '`cannot-tell` is a complete answer.',
 ].join('\n');
 
 export function rubricObservation(text: string): string {
@@ -758,18 +747,11 @@ export function rubricObservation(text: string): string {
 }
 
 export const AUDIENCE_SYSTEM = [
-  'You will be given a description of one person and an image. Answer as that person would.',
+  'Given a description of one person and an image, answer as that person would.',
   '',
-  'Two sentences. The first: what they think this is, at a glance, before reading closely. The second:',
-  'what they would do about it, if anything.',
-  '',
-  'Then say which of three things they would actually do: `act` if they would go, buy, attend, keep',
-  'it or pass it on; `consider` if it caught them and they might come back to it; `ignore` if they',
-  'would walk past. Judge the doing, not the looking — a person can find something handsome and',
-  'still ignore it.',
-  '',
-  'You do not know who made the image or what it is meant to achieve. Do not be generous. This person',
-  'is busy and did not ask to see it.',
+  'Two sentences: what they think this is at a glance, and what they would do about it.',
+  'Then: `act` (go, buy, attend, keep), `consider` (caught, might return), or `ignore` (walk past).',
+  'Do not be generous. This person is busy and did not ask to see it.',
 ].join('\n');
 
 export function audienceObservation(watcher: string): string {
@@ -777,13 +759,11 @@ export function audienceObservation(watcher: string): string {
 }
 
 export const AGREES_SYSTEM = [
-  'You compare two short texts about the same picture and decide whether they agree.',
-  '',
-  'They agree if the second is a fair account of the first — same subject, same emphasis, nothing',
-  'central in one that is absent from the other. They disagree if a person reading only the second',
-  'would be surprised by the first.',
-  '',
-  'Wording does not matter. Be strict about substance and indifferent to style.',
+  'Compare two short texts about the same picture. They agree if the second describes the same',
+  'physical subject and the same spatial arrangement as the first. They disagree if the second',
+  'describes a fundamentally different scene or subject. Strict about WHAT IS DEPICTED, indifferent',
+  'to mood, quality, interpretation, or abstract reading. An unfamiliar composition is not a',
+  'disagreement if the subject and arrangement match.',
 ].join('\n');
 
 export function agreesObservation(intended: string, observed: string): string {

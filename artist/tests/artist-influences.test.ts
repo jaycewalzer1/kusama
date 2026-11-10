@@ -110,10 +110,10 @@ test('worldview paragraphs are split into sentences short enough for a 77-token 
 });
 
 test('queries carry the position, and the hash moves when they do', () => {
-  const a = influencesFromPosition(loadPosition('withheld'));
-  const b = influencesFromPosition(loadPosition('interference'));
+  const a = influencesFromPosition(loadPosition('switchback'));
+  const b = influencesFromPosition(loadPosition('same-everywhere'));
   assert.notEqual(influencesHash(a), influencesHash(b));
-  assert.equal(influencesHash(a), influencesHash(influencesFromPosition(loadPosition('withheld'))));
+  assert.equal(influencesHash(a), influencesHash(influencesFromPosition(loadPosition('switchback'))));
   assert.ok(a.queries.length > 0);
   assert.ok(a.queries.some((q) => q.source === 'lineage'));
   assert.ok(a.queries.some((q) => q.source === 'worldview'));
@@ -123,7 +123,7 @@ test('queries carry the position, and the hash moves when they do', () => {
 });
 
 test('every query weight and k is in range, and lineage outranks commitment', () => {
-  const inf = influencesFromPosition(loadPosition('many-hands'));
+  const inf = influencesFromPosition(loadPosition('overlooked'));
   for (const q of inf.queries) {
     assert.ok(q.weight > 0 && q.weight <= 1, `weight ${q.weight} out of range`);
     assert.ok(q.k > 0 && q.k <= 64, `k ${q.k} out of range`);
@@ -136,7 +136,7 @@ test('every query weight and k is in range, and lineage outranks commitment', ()
 // --- the parts that need the tower and the pixels -------------------------------------------------
 
 test('resolution is deterministic, deduped, capped and inside its own limits', { skip: noCorpus }, async () => {
-  const inf = influencesFromPosition(loadPosition('withheld'), DEFAULT_SEED);
+  const inf = influencesFromPosition(loadPosition('switchback'), DEFAULT_SEED);
   const a = await resolve(inf);
   const b = await resolve(inf);
 
@@ -163,7 +163,7 @@ test('resolution is deterministic, deduped, capped and inside its own limits', {
 });
 
 test('excludes are honoured', { skip: noCorpus }, async () => {
-  const inf = influencesFromPosition(loadPosition('withheld'), DEFAULT_SEED);
+  const inf = influencesFromPosition(loadPosition('switchback'), DEFAULT_SEED);
   const first = await resolve(inf);
   const banned = first.works.slice(0, 5).map((w) => w.sha256);
   const second = await resolve({ ...inf, excludes: banned });
@@ -177,7 +177,7 @@ test('picks enter the set and are never capped away', { skip: noCorpus }, async 
   const corpus = loadCorpusEmbeddings();
   // A stride sample, so this is not quietly picking works the queries would have found anyway.
   const picks = [0, 1, 2].map((i) => corpus.entries[i * 4001]!.sha256);
-  const inf = influencesFromPosition(loadPosition('withheld'), DEFAULT_SEED);
+  const inf = influencesFromPosition(loadPosition('switchback'), DEFAULT_SEED);
   const r = await resolve({ ...inf, picks });
   for (const sha of picks) {
     const got = r.works.find((w) => w.sha256 === sha);
@@ -187,7 +187,7 @@ test('picks enter the set and are never capped away', { skip: noCorpus }, async 
 });
 
 test('the axes of a real resolved set are ordered and their walks terminate', { skip: noCorpus }, async () => {
-  const r = await resolve(influencesFromPosition(loadPosition('withheld'), DEFAULT_SEED));
+  const r = await resolve(influencesFromPosition(loadPosition('switchback'), DEFAULT_SEED));
   assert.equal(r.axes.length, 3);
   for (let i = 0; i < r.axes.length; i++) {
     const a = r.axes[i]!;
@@ -206,7 +206,7 @@ test('the axes of a real resolved set are ordered and their walks terminate', { 
 });
 
 test('the stats report every number against a stated chance baseline', { skip: noCorpus }, async () => {
-  const r = await resolve(influencesFromPosition(loadPosition('withheld'), DEFAULT_SEED));
+  const r = await resolve(influencesFromPosition(loadPosition('switchback'), DEFAULT_SEED));
   const s = r.stats;
   assert.equal(s.n, r.works.length);
   assert.ok(s.sameMuseumChance > 0 && s.sameMuseumChance < 1);
@@ -218,8 +218,8 @@ test('the stats report every number against a stated chance baseline', { skip: n
 });
 
 test('two positions with different lineages do not resolve to the same works', { skip: noCorpus }, async () => {
-  const a = await resolve(influencesFromPosition(loadPosition('withheld'), DEFAULT_SEED));
-  const b = await resolve(influencesFromPosition(loadPosition('many-hands'), DEFAULT_SEED));
+  const a = await resolve(influencesFromPosition(loadPosition('switchback'), DEFAULT_SEED));
+  const b = await resolve(influencesFromPosition(loadPosition('overlooked'), DEFAULT_SEED));
   assert.equal(jaccard(a, a), 1);
   // Not a claim that the sets are *good*, only that the derivation is carrying the position at all.
   // If this ever fails the queries have stopped mattering and every downstream number is about CLIP.

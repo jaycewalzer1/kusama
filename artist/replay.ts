@@ -132,6 +132,8 @@ interface StartLine {
    */
   influencesId?: string;
   influencesInMake?: boolean;
+  /** Absent in logs written before discovery defaulted to ON; those runs had it off. */
+  discovery?: boolean;
   sampling?: boolean;
   samplingIndexId?: string;
 }
@@ -198,10 +200,13 @@ export async function replay(dir: string, into: string): Promise<ReplayResult> {
     sketchesPerProblem: start.sketchesPerProblem,
     useAudience: start.useAudience,
     showCanvas: start.showCanvas ?? false,
-    // Past the drift check above, so this is the same set the run saw.
+    // Past the drift check above, so this is the same set the run saw. A run that had no
+    // influences or discovery must replay with them explicitly OFF rather than letting the new
+    // defaults auto-derive them.
     ...(start.influencesId
-      ? { influences: start.influencesId, influencesInMake: start.influencesInMake ?? false }
-      : {}),
+      ? { influences: start.influencesId, influencesInMake: start.influencesInMake ?? true }
+      : { influences: false as const }),
+    discovery: !!start.discovery,
     ...(start.sampling ? { recordedSamplingPlans: samplingPlans } : {}),
   });
 

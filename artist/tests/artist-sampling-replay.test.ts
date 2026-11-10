@@ -94,7 +94,7 @@ const problem = {
 };
 
 test('SAMPLE falls back only after the policy reports two schema failures', async () => {
-  const commission = loadCommission('withheld', 'two-million-slips');
+  const commission = loadCommission('switchback', 'two-million-slips');
   const schemaDir = mkdtempSync(path.join(tmpdir(), 'artist-sample-schema-'));
   const result = await sample(
     new FailingSamplePolicy('schema'), new StudioLog(schemaDir), newSpend(), commission,
@@ -121,10 +121,12 @@ test('sampling replay injects sample_selected plans and never opens the deleted 
   const env = installStubEnvModel({ rubricVerdict: 'fails' });
   try {
     const trajectory = await runTrajectory({
-      policy: new StubPolicy(1), positionId: 'withheld', briefId: 'two-million-slips', seed: 717,
+      policy: new StubPolicy(1), positionId: 'switchback', briefId: 'two-million-slips', seed: 717,
       outDir: original, maxSteps: 3, sketchesPerProblem: 1, useAudience: true,
       sampling: missingIndex,
       recordedSamplingPlans: [plan()],
+      influences: false,
+      discovery: false,
     });
     assert.equal(existsSync(missingIndex), false, 'recorded selection did not recreate or read an index');
     assert.ok(trajectory.sampling, 'the terminal finish attempt produced the sampled derivative');

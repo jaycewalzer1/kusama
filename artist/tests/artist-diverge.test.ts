@@ -150,7 +150,7 @@ test('DIVERGE proposes twenty-plus, cuts most, and loses none of them', async ()
     policy,
     discovery,
     spend,
-    loadCommission('interference', 'fifty-year-embargo'),
+    loadCommission('same-everywhere', 'fifty-year-embargo'),
     PROBLEMS,
     null,
     7
@@ -213,7 +213,7 @@ test("the artist's own problem ranking is on the page when it widens and when it
     policy,
     new DiscoveryLog(mkdtempSync(path.join(tmpdir(), 'diverge-rank-'))),
     newSpend(),
-    loadCommission('interference', 'fifty-year-embargo'),
+    loadCommission('same-everywhere', 'fifty-year-embargo'),
     PROBLEMS,
     null,
     7

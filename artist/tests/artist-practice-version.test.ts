@@ -107,7 +107,7 @@ function store(): string {
 
 function draft(changed: string, trajectoryId: string) {
   return {
-    positionId: 'interference',
+    positionId: 'same-everywhere',
     practice: PRACTICE,
     borrowed: [{ id: 'm1', works: ['met:436535'], borrowing: 'the grid becomes a mark' }],
     fertile: FERTILE,
@@ -120,7 +120,7 @@ function draft(changed: string, trajectoryId: string) {
 test('version 1 is byte-identical and hashes the same after later versions are written', () => {
   const dir = store();
   const v1 = writePracticeVersion(draft('the first entry, naming m1 and lens l2', 'run-a'), dir);
-  const file = versionFile('interference', 1, dir);
+  const file = versionFile('same-everywhere', 1, dir);
   const bytes = readFileSync(file);
   const hash = v1.hash;
 
@@ -128,8 +128,8 @@ test('version 1 is byte-identical and hashes the same after later versions are w
   writePracticeVersion(draft('the third entry', 'run-c'), dir);
 
   assert.deepEqual(readFileSync(file), bytes, 'v1 on disk is byte-for-byte what it was');
-  assert.equal(loadPracticeVersion('interference', 1, dir).hash, hash, 'and it still hashes to the same thing');
-  assert.equal(loadPracticeVersion('interference', 1, dir).changed, 'the first entry, naming m1 and lens l2');
+  assert.equal(loadPracticeVersion('same-everywhere', 1, dir).hash, hash, 'and it still hashes to the same thing');
+  assert.equal(loadPracticeVersion('same-everywhere', 1, dir).changed, 'the first entry, naming m1 and lens l2');
 });
 
 test('loading version 1 after three versions returns version 1, not the latest', () => {
@@ -138,10 +138,10 @@ test('loading version 1 after three versions returns version 1, not the latest',
   writePracticeVersion(draft('second', 'run-b'), dir);
   writePracticeVersion(draft('third', 'run-c'), dir);
 
-  assert.equal(loadPracticeVersion('interference', 1, dir).changed, 'first');
-  assert.equal(loadPracticeVersion('interference', 2, dir).changed, 'second');
-  assert.equal(latestVersion('interference', dir)!.version, 3);
-  assert.equal(latestVersion('interference', dir)!.changed, 'third');
+  assert.equal(loadPracticeVersion('same-everywhere', 1, dir).changed, 'first');
+  assert.equal(loadPracticeVersion('same-everywhere', 2, dir).changed, 'second');
+  assert.equal(latestVersion('same-everywhere', dir)!.version, 3);
+  assert.equal(latestVersion('same-everywhere', dir)!.changed, 'third');
 });
 
 test('the parent hashes form a chain a reader can walk back to the first version', () => {
@@ -151,10 +151,10 @@ test('the parent hashes form a chain a reader can walk back to the first version
   writePracticeVersion(draft('third', 'run-c'), dir);
 
   const walked: PracticeVersion[] = [];
-  let at: PracticeVersion | null = latestVersion('interference', dir);
+  let at: PracticeVersion | null = latestVersion('same-everywhere', dir);
   while (at) {
     walked.push(at);
-    at = at.version === 1 ? null : loadPracticeVersion('interference', at.version - 1, dir);
+    at = at.version === 1 ? null : loadPracticeVersion('same-everywhere', at.version - 1, dir);
     if (at) assert.equal(walked[walked.length - 1]!.parent, at.hash, `v${walked.length} names v${at.version} as its parent`);
   }
   assert.deepEqual(walked.map((v) => v.version), [3, 2, 1]);
@@ -164,12 +164,12 @@ test('the parent hashes form a chain a reader can walk back to the first version
 test('a version that has been edited since it was written is refused, not returned', () => {
   const dir = store();
   writePracticeVersion(draft('first', 'run-a'), dir);
-  const file = versionFile('interference', 1, dir);
+  const file = versionFile('same-everywhere', 1, dir);
   const record = JSON.parse(readFileSync(file, 'utf8')) as PracticeVersion;
   record.changed = 'something the artist never wrote';
   writeFileSync(file, JSON.stringify(record, null, 2));
 
-  assert.throws(() => loadPracticeVersion('interference', 1, dir), /does not match its own hash/);
+  assert.throws(() => loadPracticeVersion('same-everywhere', 1, dir), /does not match its own hash/);
 });
 
 test('a version already sitting where the next one would land is never overwritten', () => {
@@ -179,18 +179,18 @@ test('a version already sitting where the next one would land is never overwritt
   // one version, and writes to slot 2 after the first has already filled it. Copying v1's bytes into
   // slot 2 reproduces that exactly — the file is a whole, hash-consistent record, so nothing but the
   // write flag can catch it.
-  const occupied = readFileSync(versionFile('interference', 1, dir));
-  writeFileSync(versionFile('interference', 2, dir), occupied);
+  const occupied = readFileSync(versionFile('same-everywhere', 1, dir));
+  writeFileSync(versionFile('same-everywhere', 2, dir), occupied);
 
   assert.throws(() => writePracticeVersion(draft('second', 'run-b'), dir));
-  assert.deepEqual(readFileSync(versionFile('interference', 2, dir)), occupied, 'the file was not touched');
+  assert.deepEqual(readFileSync(versionFile('same-everywhere', 2, dir)), occupied, 'the file was not touched');
 });
 
 test('a store with no versions answers null, conjures no file, and does not throw', () => {
   const dir = store();
-  assert.equal(latestVersion('interference', dir), null);
-  assert.equal(existsSync(path.join(dir, 'interference')), false, 'asking created nothing');
-  assert.throws(() => loadPracticeVersion('interference', 3, dir), /no practice version 3/);
+  assert.equal(latestVersion('same-everywhere', dir), null);
+  assert.equal(existsSync(path.join(dir, 'same-everywhere')), false, 'asking created nothing');
+  assert.throws(() => loadPracticeVersion('same-everywhere', 3, dir), /no practice version 3/);
 });
 
 test('UPDATE PRACTICE records the works borrowed from, the fertile lenses and the rejections', async () => {
@@ -207,7 +207,7 @@ test('UPDATE PRACTICE records the works borrowed from, the fertile lenses and th
     policy,
     sink,
     spend,
-    { positionId: 'interference', practice: PRACTICE, trajectoryId: 'run-a', sheet: SHEET, fertile: FERTILE, rejected: REJECTED },
+    { positionId: 'same-everywhere', practice: PRACTICE, trajectoryId: 'run-a', sheet: SHEET, fertile: FERTILE, rejected: REJECTED },
     dir
   );
 
@@ -230,14 +230,14 @@ test('UPDATE PRACTICE records the works borrowed from, the fertile lenses and th
   assert.match(version.changed, /met:436535/);
 
   // It is on disk and it reads back identically.
-  assert.deepEqual(loadPracticeVersion('interference', 1, dir), version);
+  assert.deepEqual(loadPracticeVersion('same-everywhere', 1, dir), version);
 
   // The chain says which version this run produced, and the call went into the chain rather than
   // being lost with the discovery record.
   assert.deepEqual(sink.lines.map((l) => l.kind), ['policy-call', 'note']);
   assert.deepEqual(sink.lines[1]!.data, {
     phase: 'update-practice',
-    positionId: 'interference',
+    positionId: 'same-everywhere',
     version: 1,
     hash: version.hash,
     parent: null,
@@ -251,7 +251,7 @@ test('the artist is shown its own earlier entries, and a second run appends rath
     new UpdateStub(first),
     new Sink(),
     newSpend(),
-    { positionId: 'interference', practice: PRACTICE, trajectoryId: 'run-a', sheet: SHEET, fertile: FERTILE, rejected: REJECTED },
+    { positionId: 'same-everywhere', practice: PRACTICE, trajectoryId: 'run-a', sheet: SHEET, fertile: FERTILE, rejected: REJECTED },
     dir
   );
 
@@ -264,7 +264,7 @@ test('the artist is shown its own earlier entries, and a second run appends rath
     policy,
     new Sink(),
     newSpend(),
-    { positionId: 'interference', practice: PRACTICE, trajectoryId: 'run-b', sheet: null, fertile: [], rejected: REJECTED },
+    { positionId: 'same-everywhere', practice: PRACTICE, trajectoryId: 'run-b', sheet: null, fertile: [], rejected: REJECTED },
     dir
   );
 
@@ -275,7 +275,7 @@ test('the artist is shown its own earlier entries, and a second run appends rath
   assert.match(observation, /this run did no research, and borrowed from no work/);
 
   assert.equal(v2.version, 2);
-  assert.equal(v2.parent, loadPracticeVersion('interference', 1, dir).hash);
+  assert.equal(v2.parent, loadPracticeVersion('same-everywhere', 1, dir).hash);
   assert.deepEqual(v2.borrowed, [], 'a run without a sheet borrowed from nothing and claims nothing');
-  assert.equal(loadPracticeVersion('interference', 1, dir).changed, first, 'v1 still says what it said');
+  assert.equal(loadPracticeVersion('same-everywhere', 1, dir).changed, first, 'v1 still says what it said');
 });

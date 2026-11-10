@@ -55,52 +55,32 @@ const PER_QUERY = 40;
 const RULE = '-'.repeat(88);
 
 const QUERY_SYSTEM = [
-  'You are an artist in a collection of 20,000 works from three museums, looking for material you',
-  'could actually steal. Not a mood, not a period: a specific thing someone did to a surface.',
+  'You are searching a collection of 20,000 works for material you could steal — a specific thing',
+  'someone did to a surface, not a mood or period.',
   '',
-  'You are writing search queries. Two kinds are available and they behave differently:',
+  '  subject   words matched against catalogue text. Matches words, not ideas.',
+  '  where     filter on culture, department, classification, medium, century range.',
   '',
-  '  subject   plain words, matched against catalogue text — titles, classifications, media,',
-  '            cultures, dates. It matches WORDS, not ideas. It has no notion of what a picture',
-  '            depicts beyond what the catalogue happens to say. "five" will return coins called',
-  '            Five Guineas. Write queries whose words a cataloguer would plausibly have typed.',
-  '  where     a filter on the catalogue columns: culture, department, classification, medium, and a',
-  '            century range. Use it to force yourself somewhere you would not otherwise go.',
-  '',
-  'Spread out deliberately. Queries that all circle one period return one period. The collection is',
-  '26% Egyptian Art, so a query that does not push elsewhere will drift there on its own.',
+  'Spread out. The collection is 26% Egyptian Art; queries that do not push elsewhere drift there.',
 ].join('\n');
 
 const FOLLOWUP_SYSTEM = [
-  'You have looked at a first set of works. Now ask better questions.',
+  'Ask better questions. A third query kind is now available:',
   '',
-  'A third kind of query is available to you now, and was not before:',
+  '  like      a work id you saw. Returns works that LOOK like it (pixel similarity, two vision',
+  '            models, ignoring catalogue text). The way to cross periods on appearance alone.',
   '',
-  '  like      a work id you have just seen. Returns works that LOOK like it — measured from the',
-  '            pixels by two different vision models, ignoring what the catalogue says. This is how',
-  '            you cross a period or a culture on the strength of appearance alone, and it is the',
-  '            only way to find a work whose catalogue entry shares no words with anything you know',
-  '            to ask for.',
-  '',
-  'Follow what surprised you. A hit you cannot explain from its catalogue line is the most valuable',
-  'thing on the list; a hit that merely confirms what you already expected is the least.',
+  'Follow what surprised you.',
 ].join('\n');
 
 const SHEET_SYSTEM = [
-  'Write down what you found that is worth taking.',
+  'Write down what you found worth taking.',
   '',
-  'The test for every entry is whether someone else could go to the works you cite and see the thing',
-  'you are describing. "Ruled lines that show through the text, and rubricated initials that ignore',
-  'the column the text is set in" is material. "Medieval feel" is not material, and neither is',
-  '"a sense of accumulated time" — those are moods, and a mood cites nothing because there is',
-  'nothing in a picture to point at.',
+  'The test: could someone go to the cited works and see the thing you describe? A mood cites',
+  'nothing. Cite only ids from the list you were shown.',
   '',
-  'Cite by work id, and only ids that are on the list you were shown. An id you did not see is a',
-  'fabricated provenance and it will be checked against the museum records.',
-  '',
-  'Say what taking each thing would DO in your own work. Not what it does in the original — what it',
-  'would change about a surface you made. If a borrowing has no consequence you can name, it is a',
-  'thing you liked rather than a thing you can use, and it does not belong on the sheet.',
+  'Say what each borrowing would DO in your own work — what it changes about a surface you make.',
+  'A borrowing with no consequence you can name does not belong on the sheet.',
 ].join('\n');
 
 const QUERY_SCHEMA = {
@@ -358,6 +338,8 @@ export async function research(
   const images: PolicyImage[] = shown.map((s) => ({
     mediaType: 'image/jpeg' as const,
     base64: readFileSync(s.file).toString('base64'),
+    // corpus/images/<sha256>.jpg — the basename is the sha256 and the manifest's key.
+    label: `corpus:${path.basename(s.file, path.extname(s.file))}`,
   }));
 
   const sheetCall = await callPolicy<{ materials: Material[] }>(policy, discovery, spend, {

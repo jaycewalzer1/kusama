@@ -95,7 +95,10 @@ export async function reviewSampling(
   sampled: Buffer,
   ablation: Buffer
 ): Promise<{ assessment: string; revision: SampleRevision }> {
-  const images: PolicyImage[] = [sampled, ablation].map((png) => ({ mediaType: 'image/png', base64: png.toString('base64') }));
+  const images: PolicyImage[] = [
+    { mediaType: 'image/png' as const, base64: sampled.toString('base64'), label: 'sampled' },
+    { mediaType: 'image/png' as const, base64: ablation.toString('base64'), label: 'ablation' },
+  ];
   const result = await callPolicy<{ assessment: string; revision: SampleRevision }>(policy, log, spend, {
     name: 'sample_review', system: REVIEW_SYSTEM,
     observation: samplingReviewObservation(plan, compilation),

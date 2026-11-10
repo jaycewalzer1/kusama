@@ -29,6 +29,18 @@ const noTrajectory = existsSync(path.join(DIR, 'final.png'))
   ? false
   : `out/condition-withheld/final.png is not on this machine (it is gitignored and on no remote)`;
 
+// The run in that directory is of `withheld`, a position deleted on 2026-09-02 for not depicting
+// anything. The trajectory is untouched and every plate test above still measures what it always
+// did — but `withheld.resolved.json` went with the document, so `readTrajectory` has no centroid to
+// score against and the influence column is legitimately all null. Skipped with the reason stated,
+// rather than repointed at a set this run was never shown, which would be measuring nothing while
+// looking like a pass.
+const noResolved =
+  noTrajectory ||
+  (existsSync(path.join(ROOT, 'aesthetic', 'influences', 'withheld.resolved.json'))
+    ? false
+    : 'the position this run was made under was deleted, and its resolved influence set with it');
+
 test('plates are enumerated final-first, in a stable order', { skip: noTrajectory }, () => {
   const got = platesIn(DIR);
   assert.ok(got.length > 0);
@@ -41,6 +53,8 @@ test('plates are enumerated final-first, in a stable order', { skip: noTrajector
 
 test('the position comes from the log, not from the directory name', { skip: noTrajectory }, () => {
   // `out/condition-withheld` is named after a condition AND a position. Reading the name is guessing.
+  // `withheld` no longer exists as a document; the log still says it was the position, which is the
+  // whole claim — provenance is what was recorded, not what is on disk now.
   assert.equal(positionOf(DIR), 'withheld');
   assert.equal(positionOf(path.join(ROOT, 'out', 'does-not-exist')), null);
 });
@@ -101,10 +115,10 @@ test('a higher similarity always gets a percentile at least as high', { skip: no
   assert.equal(last, 1, 'a similarity of 1.0 must sit at the top of the band');
 });
 
-test('the influence percentile is calibrated — it is a rank in the corpus, not a raw cosine', { skip: noCorpus || noTrajectory }, async () => {
+test('the influence percentile is calibrated — it is a rank in the corpus, not a raw cosine', { skip: noCorpus || noResolved }, async () => {
   const { sidecar } = await readTrajectory(DIR);
   const scored = sidecar.plates.filter((p) => p.influencePercentile !== null);
-  assert.ok(scored.length > 0, 'withheld has resolved influences, so every plate should be scored');
+  assert.ok(scored.length > 0, 'the position has resolved influences, so every plate should be scored');
   for (const p of scored) {
     assert.ok(p.cosineToInfluenceCentroid !== null);
     assert.ok(p.influencePercentile! >= 0 && p.influencePercentile! <= 1);

@@ -32,16 +32,20 @@ import type { PolicyRequest } from '../policy/interface.js';
 
 const OUT = mkdtempSync(path.join(tmpdir(), 'artist-influences-'));
 
-/** The set that exists on disk. Its 48 works are `withheld`'s, resolved in Stage 2. */
-const SET = 'withheld';
+/**
+ * A resolved set that exists on disk, 48 works deep. Which set is not the point — the shelf is
+ * passed in by `--influences` and is independent of the position, so this pairs an arbitrary
+ * surviving set with an arbitrary surviving position.
+ */
+const SET = 'rodchenko-red-black';
 
-async function run(dir: string, extra: { influences?: string; influencesInMake?: boolean }) {
+async function run(dir: string, extra: { influences?: string | false; influencesInMake?: boolean; discovery?: boolean }) {
   const stub = installStubEnvModel();
   const policy = new StubPolicy(3);
   try {
     const trajectory = await runTrajectory({
       policy,
-      positionId: 'withheld',
+      positionId: 'switchback',
       briefId: 'two-million-slips',
       seed: 4242,
       outDir: path.join(OUT, dir),
@@ -72,7 +76,7 @@ test('the resolved set for the position is on disk and carries works', () => {
 });
 
 test('a run with no influences sends no influence text anywhere', async () => {
-  off = await run('off', {});
+  off = await run('off', { influences: false, discovery: false });
   for (const r of off.requests) {
     for (const marker of MARKERS) assert.ok(!r.observation.includes(marker), `${r.name} carries "${marker}"`);
   }
@@ -85,7 +89,7 @@ test('a run with no influences sends no influence text anywhere', async () => {
 });
 
 test('FIND is shown the block and the pictures; SKETCH the block alone', async () => {
-  on = await run('on', { influences: SET });
+  on = await run('on', { influences: SET, discovery: false });
 
   const find = only(on.requests, 'find');
   assert.equal(find.length, 1);
@@ -117,17 +121,21 @@ test('FIND is shown the block and the pictures; SKETCH the block alone', async (
   }
 });
 
-test('MAKE is blind to the shelf by default and carries it only when asked', async () => {
+test('MAKE carries the shelf by default and hides it only when asked', async () => {
+  // `influencesInMake` defaults to true, so the `on` run (which did not set it) should carry the
+  // block in every act call.
   for (const r of only(on.requests, 'act')) {
-    for (const marker of MARKERS) assert.ok(!r.observation.includes(marker), `act carries "${marker}" by default`);
+    for (const marker of MARKERS) assert.ok(r.observation.includes(marker), `act is missing "${marker}" by default`);
+    // Text only. The canvas is still image 1, which is what `makeObservation` promises by position.
+    assert.match(r.observation, /No pictures are attached to this message/);
+    assert.ok((r.images ?? []).every((i) => i.mediaType === 'image/png'));
   }
 
-  inMake = await run('in-make', { influences: SET, influencesInMake: true });
+  inMake = await run('in-make', { influences: SET, influencesInMake: true, discovery: false });
   const acts = only(inMake.requests, 'act');
   assert.ok(acts.length > 0);
   for (const r of acts) {
     for (const marker of MARKERS) assert.ok(r.observation.includes(marker), `act is missing "${marker}" under the flag`);
-    // Text only. The canvas is still image 1, which is what `makeObservation` promises by position.
     assert.match(r.observation, /No pictures are attached to this message/);
     assert.ok((r.images ?? []).every((i) => i.mediaType === 'image/png'));
   }

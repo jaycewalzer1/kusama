@@ -48,7 +48,7 @@ function work(i: number, over: Partial<ResolvedWork> = {}): ResolvedWork {
 function resolved(n: number, over: Partial<Resolved> = {}): Resolved {
   return {
     version: 1,
-    positionId: 'withheld',
+    positionId: 'switchback',
     seed: 1,
     influencesHash: 'deadbeef',
     works: Array.from({ length: n }, (_, i) => work(i)),
@@ -75,7 +75,7 @@ function resolved(n: number, over: Partial<Resolved> = {}): Resolved {
 }
 
 function doc(n = 12, over: Partial<Resolved> = {}): InfluenceDoc {
-  const d: InfluenceDoc = { id: 'withheld', resolved: resolved(n, over), hash: '' };
+  const d: InfluenceDoc = { id: 'switchback', resolved: resolved(n, over), hash: '' };
   return { ...d, hash: contentHash(influenceSection(d)) };
 }
 
@@ -88,14 +88,14 @@ test('a run without influences gets the identical observation bytes back', () =>
 });
 
 test('envVersion carries no influencesHash key at all when the layer is off', () => {
-  const off = envVersionNow('withheld', 'nine-returned', 1);
+  const off = envVersionNow('switchback', 'nine-returned', 1);
   assert.ok(!('influencesHash' in off), `key present: ${JSON.stringify(Object.keys(off))}`);
   // The distinction the spread in `envVersionNow` exists for. `influencesHash: undefined` would
   // satisfy the assertion above only if it were written `off.influencesHash === undefined`, and
   // would then leak into `Object.keys` and into envDrift's loop.
   assert.deepEqual(Object.keys(off).filter((k) => k.includes('influences')), []);
 
-  const on = envVersionNow('withheld', 'nine-returned', 1, [], 'abc123');
+  const on = envVersionNow('switchback', 'nine-returned', 1, [], 'abc123');
   assert.equal(on.influencesHash, 'abc123');
   // Every other field is untouched by the layer: the influence set is not part of the position, the
   // brief, the medium or the protocol.
@@ -103,8 +103,8 @@ test('envVersion carries no influencesHash key at all when the layer is off', ()
 });
 
 test('a run recorded with influences, replayed against an environment without them, is drift', () => {
-  const recorded = envVersionNow('withheld', 'nine-returned', 1, [], 'abc123');
-  const now = envVersionNow('withheld', 'nine-returned', 1);
+  const recorded = envVersionNow('switchback', 'nine-returned', 1, [], 'abc123');
+  const now = envVersionNow('switchback', 'nine-returned', 1);
   const drift = envDrift(recorded, now);
   assert.equal(drift.length, 1);
   assert.equal(drift[0]?.field, 'influencesHash');

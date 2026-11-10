@@ -25,6 +25,25 @@ export interface PolicyImage {
    */
   mediaType: 'image/png' | 'image/jpeg';
   base64: string;
+  /**
+   * What this picture IS, in the log line the call writes. Required, not optional, so that the
+   * compiler names every site that attaches an image and none can be added later without saying
+   * what it is showing.
+   *
+   * The log used to carry `hasImages: true` and nothing else, which meant the record could say a
+   * decision was made with pictures in front of it and never say which pictures — the one question
+   * worth asking of a run that has been shown a museum. The shapes in use:
+   *
+   *   corpus:<sha256>     a work from corpus/images/, named by the sha256 of its bytes
+   *   plate:<programHash> the canvas as it stood
+   *   change:<programHash> what the last kept step moved
+   *   sketch:<programHash> one sketch's render
+   *   sampled:<programHash> / ablation:<programHash>  the sampling pair
+   *   contact-sheet       several sketches tiled into one image
+   *
+   * Free text on purpose: it is read by a person and by ./studio/ui/inspect.js, never branched on.
+   */
+  label: string;
 }
 
 export interface PolicyRequest {

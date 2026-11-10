@@ -15,9 +15,66 @@
 // record on disk is complete before anything leaves the machine, and a failed trace cannot lose a
 // line. Nothing reads back from it.
 
+import { createHash } from 'node:crypto';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+import { ROOT } from '../env/browser.js';
 import { contentHash } from '../env/profile.js';
 import { PolicyError, type Policy, type PolicyImage, type PolicyResponse } from './policy/interface.js';
 import { traceCall, tracingEnabled } from './trace.js';
+
+/**
+ * Where the pictures a call was given are kept, keyed by the sha256 of their bytes.
+ *
+ * The log used to say `hasImages: true` and stop, which made "what was this decision shown?" — the
+ * only question worth asking of an artist that has been handed a museum — unanswerable from the
+ * record. Some of those images are reconstructible (a plate from its program hash, a corpus work
+ * from its sha) and some are not: the change-mark and the contact sheets exist for the length of one
+ * call and are then gone. Reconstruction would also be a second implementation of what the artist
+ * saw, and a second implementation is a thing that quietly stops agreeing with the first.
+ *
+ * So the bytes are kept instead, content-addressed. Two calls shown the same picture write one file,
+ * every run on this machine shares them, and `.cache/` is already ignored and already holds the
+ * plate cache this sits beside.
+ */
+const SHOWN_DIR = path.join(ROOT, '.cache', 'artist-shown');
+
+export interface ShownImage {
+  /** What the picture is: `corpus:<sha>`, `plate`, `change`, `sketch:<key>`, `contact-sheet`, … */
+  label: string;
+  /** sha256 of the DECODED bytes, so a corpus work's is also its `corpus/images/<sha>.jpg` name. */
+  sha256: string;
+  mediaType: 'image/png' | 'image/jpeg';
+  bytes: number;
+}
+
+/**
+ * Keep every attached picture, and describe it for the log.
+ *
+ * The files are written before the line that names them, so a log line can never point at a picture
+ * that is not there. A failed write is not allowed to cost a trajectory its call: the record of what
+ * was shown is still correct, and a reader is told the bytes are missing rather than told the call
+ * had no images.
+ */
+function keepShown(images: readonly PolicyImage[] | undefined): ShownImage[] {
+  if (!images?.length) return [];
+  const out: ShownImage[] = [];
+  for (const image of images) {
+    const bytes = Buffer.from(image.base64, 'base64');
+    const sha256 = createHash('sha256').update(bytes).digest('hex');
+    const file = path.join(SHOWN_DIR, `${sha256}.${image.mediaType === 'image/png' ? 'png' : 'jpg'}`);
+    try {
+      if (!existsSync(file)) {
+        mkdirSync(SHOWN_DIR, { recursive: true });
+        writeFileSync(file, bytes);
+      }
+    } catch {
+      // Deliberately not logged: a full disk is not a fact about this decision.
+    }
+    out.push({ label: image.label, sha256, mediaType: image.mediaType, bytes: bytes.length });
+  }
+  return out;
+}
 
 /**
  * Where a logged call is written. `StudioLog` and `DiscoveryLog` both satisfy it and they are the
@@ -61,6 +118,8 @@ export async function callPolicy<T>(
   request: { name: string; system: string; observation: string; schema: object; images?: PolicyImage[]; maxTokens?: number }
 ): Promise<CallResult<T>> {
   const observationHash = contentHash(request.observation);
+  // Before the call, so that a call which throws still leaves the pictures it was given on disk.
+  const shown = keepShown(request.images);
   const trace = tracingEnabled(policy.kind);
   const startedAt = Date.now();
   let response: PolicyResponse<T>;
@@ -79,6 +138,7 @@ export async function callPolicy<T>(
       system: request.system,
       schema: request.schema,
       hasImages: Boolean(request.images?.length),
+      images: shown,
       error,
       ...(e instanceof PolicyError ? { errorKind: e.kind } : {}),
       ok: false,
@@ -114,6 +174,7 @@ export async function callPolicy<T>(
     system: request.system,
     schema: request.schema,
     hasImages: Boolean(request.images?.length),
+    images: shown,
     action: response.action,
     raw: response.raw,
     attempts: response.attempts,

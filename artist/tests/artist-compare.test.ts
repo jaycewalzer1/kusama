@@ -24,7 +24,7 @@ import type { SketchResult } from '../phases/sketch.js';
 import type { Policy, PolicyRequest, PolicyResponse } from '../policy/interface.js';
 import type { Problem } from '../types.js';
 
-const COMMISSION = loadCommission('interference', 'fifty-year-embargo');
+const COMMISSION = loadCommission('same-everywhere', 'fifty-year-embargo');
 
 function problem(id: string, probability: number): Problem {
   return {

@@ -209,7 +209,7 @@ test('RESEARCH cites real works, and writes to discovery.jsonl and nowhere else'
   const discovery = new DiscoveryLog(dir);
   const policy = new ResearchStub();
   const spend = newSpend();
-  const result = await research(policy, discovery, spend, loadCommission('interference', 'fifty-year-embargo'));
+  const result = await research(policy, discovery, spend, loadCommission('same-everywhere', 'fifty-year-embargo'));
 
   assert.deepEqual(
     policy.requests.map((r) => r.name),
@@ -277,7 +277,7 @@ test('a problem citing a work is grounded in it, and an invented id is reported'
 test('FIND without a sheet is the call it was before this layer existed', { skip }, async () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'find-plain-'));
   const policy = new FindStub();
-  await find(policy, new StudioLog(dir), newSpend(), loadCommission('interference', 'fifty-year-embargo'), 7);
+  await find(policy, new StudioLog(dir), newSpend(), loadCommission('same-everywhere', 'fifty-year-embargo'), 7);
   const request = policy.requests[0]!;
   // Object identity, not deep equality: the widened schema is a copy, so this is the strongest
   // available statement that an unresearched run is asking for exactly the old shape.
@@ -292,7 +292,7 @@ test('FIND with a sheet reads it, and may quote it', { skip }, async () => {
   const materials = [{ id: 'm1', material: 'x'.repeat(40), borrowing: 'y'.repeat(30), works: [id] }];
   const sheet: MaterialSheet = { materials, queries: [], hash: sheetHash(materials, []) };
   const policy = new FindStub();
-  await find(policy, new StudioLog(dir), newSpend(), loadCommission('interference', 'fifty-year-embargo'), 7, null, sheet);
+  await find(policy, new StudioLog(dir), newSpend(), loadCommission('same-everywhere', 'fifty-year-embargo'), 7, null, sheet);
   const request = policy.requests[0]!;
   assert.match(request.observation, /WHAT YOU FOUND WHEN YOU WENT LOOKING/);
   assert.match(request.system, /looking at art/);
@@ -308,7 +308,7 @@ test('RESEARCH reports a fabricated citation instead of passing it on', { skip }
     new ResearchStub('met:999999999'),
     new DiscoveryLog(dir),
     newSpend(),
-    loadCommission('interference', 'fifty-year-embargo')
+    loadCommission('same-everywhere', 'fifty-year-embargo')
   );
   assert.deepEqual(result.coverage.unresolved, ['met:999999999']);
 });

@@ -225,6 +225,7 @@ test('assembly order is L4 then L1 then L2, in every phase that assembles it', (
     canvasAttached: false,
     changeAttached: false,
     textOps: { used: 0, max: 8 },
+    marks: { used: 0, max: 12000, heaviest: [] },
   };
 
   const observations = {
@@ -247,11 +248,11 @@ test('assembly order is L4 then L1 then L2, in every phase that assembles it', (
   const png = Buffer.from('not really a png');
   const blind = makeObservation(make);
   assert.equal(framesOf(make, png, png), undefined, 'the blind arm attaches nothing');
-  assert.ok(!blind.includes('The canvas itself is attached'), 'and claims nothing');
+  assert.ok(!blind.includes('The canvas is attached'), 'and claims nothing');
 
   const seeing: MakeContext = { ...make, canvasAttached: true, changeAttached: true };
   assert.equal(framesOf(seeing, png, png)?.length, 2);
-  assert.ok(makeObservation(seeing).includes('The canvas itself is attached'));
+  assert.ok(makeObservation(seeing).includes('The canvas is attached'));
   // A first step has a plate and no change yet: one image, and the sentence about the second one
   // is not written either.
   const noChange: MakeContext = { ...make, canvasAttached: true, changeAttached: false };
@@ -271,7 +272,7 @@ test('assembly order is L4 then L1 then L2, in every phase that assembles it', (
 // The tree itself is untouched: this is about what gets serialized into a prompt, and the assertion
 // below is that the nodes still arrive and only the replay log does not.
 test('the artist is shown the tree and not the edit log inside it', () => {
-  const c = loadCommission('many-hands', 'nine-returned');
+  const c = loadCommission('overlooked', 'nine-returned');
   const report: CheckReport = {
     aesthetic: c.effective.id,
     hardViolations: 0,
@@ -309,6 +310,7 @@ test('the artist is shown the tree and not the edit log inside it', () => {
     canvasAttached: false,
     changeAttached: false,
     textOps: { used: 0, max: 8 },
+    marks: { used: 0, max: 12000, heaviest: [] },
   };
 
   for (const [phase, text] of [
@@ -338,7 +340,7 @@ test('the artist is shown the tree and not the edit log inside it', () => {
 const WITH_ELEMENTS = ['ma-interval', 'rodchenko-red-black'];
 
 test('an adopted element reaches every artist-facing prompt, not just the checker', () => {
-  const c = loadCommission('withheld', BRIEFS[0]!, WITH_ELEMENTS);
+  const c = loadCommission('switchback', BRIEFS[0]!, WITH_ELEMENTS);
   assert.ok(c.composition, 'the fixture adopted no elements, so this test proves nothing');
   assert.ok(c.composition.constraints.length > 0, 'the composition is empty');
 
@@ -385,7 +387,7 @@ test('element tensions are merged into what the artist holds (today: none exist,
   );
   const carried = elements.flatMap((e) => e.tensions ?? []);
 
-  const c = loadCommission('withheld', BRIEFS[0]!, WITH_ELEMENTS);
+  const c = loadCommission('switchback', BRIEFS[0]!, WITH_ELEMENTS);
   assert.deepEqual(
     c.effective.tensions,
     [...c.positionAsWritten.tensions, ...carried],

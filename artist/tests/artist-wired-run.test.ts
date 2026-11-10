@@ -172,13 +172,15 @@ test('discovery off writes no second record and shows FIND nothing it did not sh
     const outDir = runIn('unflagged');
     await runTrajectory({
       policy,
-      positionId: 'withheld',
+      positionId: 'switchback',
       briefId: 'two-million-slips',
       seed: 77,
       outDir,
       maxSteps: 3,
       sketchesPerProblem: 1,
       useAudience: false,
+      influences: false,
+      discovery: false,
     });
 
     assert.equal(existsSync(path.join(outDir, 'discovery.jsonl')), false, 'no discovery record was opened');
@@ -205,7 +207,7 @@ test('discovery on runs the whole loop and keeps every proposal out of the chain
     const outDir = runIn('flagged');
     const trajectory = await runTrajectory({
       policy,
-      positionId: 'withheld',
+      positionId: 'switchback',
       briefId: 'two-million-slips',
       seed: 77,
       outDir,
@@ -266,7 +268,7 @@ test('discovery on runs the whole loop and keeps every proposal out of the chain
     // A promoted work with a hash, and a practice version with a place to grow a parent.
     assert.ok(trajectory.finalHash.length > 0);
     assert.equal(existsSync(path.join(outDir, 'final.png')), true);
-    const version = latestVersion('withheld', practiceStore)!;
+    const version = latestVersion('switchback', practiceStore)!;
     assert.equal(version.version, 1);
     assert.equal(version.parent, null, 'the first version has no parent');
     assert.equal(version.trajectoryId, trajectory.id, 'and it names the run that produced it');
@@ -291,7 +293,7 @@ test('a second discovery run on the same position writes a version with a parent
     for (const seed of [11, 12]) {
       await runTrajectory({
         policy: new WiredStub(2),
-        positionId: 'withheld',
+        positionId: 'switchback',
         briefId: 'two-million-slips',
         seed,
         outDir: runIn(`series-${seed}`),
@@ -302,12 +304,12 @@ test('a second discovery run on the same position writes a version with a parent
         practiceStore,
       });
     }
-    const second = latestVersion('withheld', practiceStore)!;
+    const second = latestVersion('switchback', practiceStore)!;
     assert.equal(second.version, 2);
     assert.ok(second.parent, 'the second version points back at the first');
     // The previous version is still on disk and still passes its own hash check, which is what
     // "the previous version stays reproducible" means operationally.
-    const file = path.join(practiceStore, 'withheld', '001.json');
+    const file = path.join(practiceStore, 'switchback', '001.json');
     assert.equal(existsSync(file), true);
     const first = JSON.parse(readFileSync(file, 'utf8')) as { hash: string };
     assert.equal(second.parent, first.hash);

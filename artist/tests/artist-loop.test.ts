@@ -38,13 +38,15 @@ test('the loop runs a whole trajectory: find, sketch, choose, make, examine, fin
   const policy = new StubPolicy(4);
   trajectory = await runTrajectory({
     policy,
-    positionId: 'withheld',
+    positionId: 'switchback',
     briefId: 'two-million-slips',
     seed: 4242,
     outDir: CELL,
     maxSteps: 6,
     sketchesPerProblem: 1,
     useAudience: true,
+    influences: false,
+    discovery: false,
   });
 
   // `unresolved`, not `finished`. This stub asks to stop twice and is refused twice — see the
@@ -91,7 +93,7 @@ test('the loop runs a whole trajectory: find, sketch, choose, make, examine, fin
   for (const s of soft) {
     assert.ok(rubricCalls.every((r) => !r.text.includes(s.rubric!)), 'a soft rubric did not buy an unused call');
   }
-  assert.ok(rubricCalls.every((r) => !r.text.includes('withheld')), 'the rubric reader was not told the position id');
+  assert.ok(rubricCalls.every((r) => !r.text.includes('switchback')), 'the rubric reader was not told the position id');
 
   const gateNotes = readLog(path.join(CELL, 'studio.jsonl')).filter(
     (line) => line.kind === 'note' && (line.data as { phase?: string }).phase === 'finish-gate'
@@ -222,7 +224,7 @@ test('the blind arm scores differently from the default arm, which is the whole 
   installStubEnvModel();
   const blind = await runTrajectory({
     policy: new StubPolicy(4),
-    positionId: 'withheld',
+    positionId: 'switchback',
     briefId: 'two-million-slips',
     seed: 4242,
     outDir: blindCell,
@@ -230,6 +232,8 @@ test('the blind arm scores differently from the default arm, which is the whole 
     sketchesPerProblem: 1,
     useAudience: true,
     showCanvas: false,
+    influences: false,
+    discovery: false,
   });
   assert.equal(blind.scores.canvasVisibleRate, 0);
   assert.equal(blind.scores.changeVisibleRate, 0);
@@ -310,7 +314,7 @@ test('a run whose commission has left the catalog is unscorable, not a crash', a
   const lines = readFileSync(path.join(gone, 'studio.jsonl'), 'utf8')
     .trimEnd()
     .split('\n')
-    .map((l) => l.replace('"positionId":"withheld"', '"positionId":"a-position-that-was-deleted"'));
+    .map((l) => l.replace('"positionId":"switchback"', '"positionId":"a-position-that-was-deleted"'));
   writeFileSync(path.join(gone, 'studio.jsonl'), lines.join('\n') + '\n');
 
   const result = await recomputeMatches(gone);

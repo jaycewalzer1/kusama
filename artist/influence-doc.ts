@@ -164,6 +164,9 @@ export function influenceImages(doc: InfluenceDoc, n = THUMBNAILS): PolicyImage[
   return shownWorks(doc, n).map((w) => ({
     mediaType: 'image/jpeg' as const,
     base64: readFileSync(path.join(ROOT, 'corpus', w.imagePath!)).toString('base64'),
+    // The sha256 of the bytes, which is also the file's name, which is also the manifest's key. One
+    // string joins the log line to the picture on disk and to the row that says why it was chosen.
+    label: `corpus:${w.sha256}`,
   }));
 }
 

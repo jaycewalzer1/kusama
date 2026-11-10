@@ -12,6 +12,11 @@ import type { CheckReport } from '../aesthetic/types.js';
 import type { StepWarrant } from './warrant.js';
 import type { SamplingPlan } from '../aesthetic/sample-types.js';
 import type { SamplingBindings, TargetResolution } from '../aesthetic/sample-targets.js';
+import type { TerminalRecord, TerminalStatus } from './terminal.js';
+import type { Wager } from './wager.js';
+import type { Branch, BranchState } from './branch.js';
+import type { FrozenCore, SemanticRevision } from './frozen-intention.js';
+import type { ArtifactRead } from './artifact-read.js';
 
 export type { EditAction, CheckReport, Program };
 
@@ -657,6 +662,23 @@ export interface Scores {
    * is a list of rubric texts and shares nothing but the word.
    */
   pendingRubrics: string[];
+  /**
+   * Corpus-based metrics. Null when the corpus embeddings are not available on this machine,
+   * or when the run did not earn its stop. These are the same numbers `plates.ts` computes
+   * for the sidecar, brought into the score record so they can steer the finish gate.
+   */
+  corpus: {
+    /** 1 - cosine to nearest corpus work. Higher means further from anything a museum holds. */
+    novelty: number;
+    /** True when cosine to nearest corpus work exceeds 0.95. */
+    copyFlag: boolean;
+    /** Cosine to the single nearest museum work. */
+    nearestCosine: number;
+    /** Museum work id of the nearest. */
+    nearestId: string;
+    /** Where nearestCosine falls in the corpus's own pair distribution, 0..1. */
+    corpusPercentile: number;
+  } | null;
 }
 
 /**
@@ -819,4 +841,31 @@ export interface Trajectory {
   scores: Scores;
   cost: Cost;
   envVersion: EnvVersion;
+  /**
+   * The terminal record — typed terminal status, separate from all component scores.
+   * Optional: absent on trajectories recorded before this existed.
+   */
+  terminalRecord?: TerminalRecord;
+  /**
+   * The frozen intention core, hashed at CHOOSE. Optional: absent on pre-existing trajectories.
+   */
+  frozenIntention?: FrozenCore;
+  frozenIntentionHash?: string;
+  /**
+   * Plan wagers declared at CHOOSE. Optional: absent on pre-existing trajectories.
+   */
+  wagers?: Wager[];
+  /**
+   * Branch state across the MAKE phase. Optional: absent on pre-existing trajectories.
+   */
+  branchState?: BranchState;
+  /**
+   * Semantic revisions — explicit versioned events where the frozen intention was legally
+   * changed. Optional: absent when no semantic revision occurred.
+   */
+  semanticRevisions?: SemanticRevision[];
+  /**
+   * Structured artifact reads taken during the run. Optional: absent on pre-existing trajectories.
+   */
+  artifactReads?: ArtifactRead[];
 }

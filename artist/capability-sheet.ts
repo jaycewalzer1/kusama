@@ -1,19 +1,41 @@
 // What this medium can do, on one page, generated.
 //
-// Never hand-written. Every line below is read off the profile, the asset pack and the two JSON
-// schemas at runtime, so a sheet cannot describe a medium that no longer exists. That matters more
-// than it sounds: the artist writes edits against this sheet, and the single largest source of
-// refused edits in a system like this is a capability list that drifted away from the validator.
-// If the invalid-edit rate is high, this file is the thing to fix, not the validator.
+// The shape of the medium is never hand-written. Every argument list, range, budget and name below
+// is read off the profile, the asset pack and the two JSON schemas at runtime, so a sheet cannot
+// describe a medium that no longer exists. That matters more than it sounds: the artist writes edits
+// against this sheet, and the single largest source of refused edits in a system like this is a
+// capability list that drifted away from the validator. If the invalid-edit rate is high, this file
+// is the thing to fix, not the validator.
 //
 // It is also deliberately blunt about what the medium cannot do. A sheet that only lists powers
-// invites an artist to spend three steps discovering that text cannot be clipped.
+// invites an artist to spend three steps discovering that text cannot be clipped. The budget block
+// says what a mark IS for the same reason: the limits used to be printed as a row of key=value pairs
+// in a unit nothing on the page defined, and 43 of the 63 edit refusals ever recorded in `out/` were
+// a program going over `maxEstimatedMarks`. The rates there are probed out of the estimator, so the
+// prose is hand-written but every number in it comes from the function that does the refusing.
+//
+// THE ONE EXCEPTION IS `MATERIAL`, AND IT IS HAND-WRITTEN ON PURPOSE. A schema can say that a wash
+// takes `bleed` 0..0.6; nothing on disk can say that a wash is the wet fill and `solid` is a flat
+// vector rectangle. Three finished trajectories were measured before this section existed: 40 solid
+// fills, 12 non-solid, and zero uses of the `wash`, `spray`, `fragment` or `stroke` operators, zero
+// print stages and zero blend groups — an artist working a brush engine as though it were a chart
+// library, because the sheet described the parameters of the material and never the material. The
+// descriptions are ordering claims about p5.brush's own per-brush parameters (grain, scatter,
+// opacity), not levels, for the reason every other ordering claim in this repo is preferred to a
+// level: the ordering survives a re-vendor and the numbers do not.
+//
+// Two rules keep the exception from rotting into a second, unversioned medium description. The
+// tables are keyed by the names the profile uses, so a brush or style the profile drops leaves the
+// sheet with it; and a name the profile has that the table does not is printed as `(undescribed)`
+// rather than omitted, so the gap is visible on the sheet the artist is reading. A test pins both.
+// This file's bytes are also hashed into `OBSERVATION_HASH`, which is what stops a run made before
+// an edit here being compared against one made after.
 
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { ROOT } from '../env/browser.js';
 import type { AssetPack } from '../env/pack.js';
-import type { MediumProfile } from '../env/profile.js';
+import { markRates, PROBE_LARGE, PROBE_SMALL, type MediumProfile } from '../env/profile.js';
 import { EDIT_KINDS } from '../env/edits.js';
 
 interface JsonSchema {
@@ -132,6 +154,90 @@ function facesByRole(pack: AssetPack): string[] {
     .map(([role, names]) => `  ${role}: ${names.sort().join(' ')}`);
 }
 
+/**
+ * What each brush does to the sheet, ordered clean to dirty. p5.brush gives every brush a `grain`
+ * (texture samples per mark), a `scatter` (how far each sample strays) and a per-sample `opacity`;
+ * the three together are the whole character, and a low opacity with a high scatter is a dry medium
+ * that can only build by overlapping itself. Insertion order here is the ordering claim.
+ */
+const BRUSH_CHARACTER: Record<string, string> = {
+  marker: 'flat felt tip. No grain and no sharpness at all — the one brush that leaves an even mark.',
+  rotring: 'technical pen. Thin, near-opaque, almost no wander. The most controlled line here.',
+  pen: 'a clean nib. Slight grain, slight scatter. The neutral line.',
+  '2H': 'hard pencil. Faint and grey and it will not go dark however often you draw it.',
+  cpencil: 'coloured pencil. Translucent — the colour arrives by layering, not in one pass.',
+  HB: 'ordinary pencil.',
+  '2B': 'soft pencil. Darker, broader, visibly grainy.',
+  pastel: 'chalk dragged sideways. Very wide, very faint, and it rotates with the stroke.',
+  crayon: 'wax. Heavily broken up; it skips over its own texture and leaves the paper showing.',
+  charcoal: 'the dirtiest mark available. Dusty, wide, and the edge of it smudges.',
+  // No cross-reference to the `spray` operator, however tempting: default-v0 carries this brush and
+  // refuses that operator, so the sentence would name a primitive the profile does not have — the
+  // exact drift the rest of this file is generated to avoid.
+  spray: 'aerosol. Thrown rather than drawn; the mark falls off from wherever it was aimed.',
+};
+
+/**
+ * What each fill is FOR, which is the thing the schema cannot say. `solid` is first because it is
+ * the default failure mode and saying so is the point of the section.
+ */
+const BRUSH_PAD = 11;
+const STYLE_PAD = 14;
+
+const STYLE_CHARACTER: Record<string, string> = {
+  wash: [
+    'WHERE COLOUR LIVES. The wet fill: `bleed` pushes pigment past the region edge, `texture` is',
+    'the paper tooth under it. Depth is made by layering several low-opacity washes over each other.',
+    'This is the primary way to build a surface that reads as painted rather than plotted.',
+  ].join(`\n${' '.repeat(STYLE_PAD + 2)}`),
+  hatch: [
+    'WHERE TONE LIVES. Ruled parallel lines at a spacing and an angle, drawn with a brush;',
+    '`layers: 2` crosses them. Engraving: tone comes from spacing and angle, never from a ramp.',
+    'A crosshatch at charcoal is an entirely different surface from one at rotring.',
+  ].join(`\n${' '.repeat(STYLE_PAD + 2)}`),
+  field: [
+    'WHERE TEXTURE LIVES. Loose marks scattered through the region — dots, dashes or scribble, at',
+    'a density and a length. Where a wash is wet, a field is dry. A field over a wash is grain.',
+  ].join(`\n${' '.repeat(STYLE_PAD + 2)}`),
+  outline: 'the region\'s edge only, in a brush at a weight. Nothing inside it.',
+  solid: [
+    'flat colour, no texture, no brush. Use it for framing, masking and structural elements —',
+    'never as the primary surface. A picture built only from solid is a vector diagram that',
+    'happens to run on a brush engine.',
+  ].join(`\n${' '.repeat(STYLE_PAD + 2)}`),
+};
+
+/**
+ * Names the profile allows, in the table's order, with anything the table does not describe called
+ * out rather than dropped. Omitting it would hide the gap in exactly the file whose job is to not
+ * have gaps.
+ */
+function characterLines(allowed: string[], table: Record<string, string>, pad: number): string[] {
+  const known = Object.keys(table).filter((name) => allowed.includes(name));
+  const missing = allowed.filter((name) => !(name in table));
+  return [...known, ...missing].map(
+    (name) => `  ${name.padEnd(pad)}${table[name] ?? '(undescribed — this file has no entry for it)'}`
+  );
+}
+
+function materialSection(profile: MediumProfile): string[] {
+  const lines = ['MATERIAL     this is a brush engine, not a vector tool. The richness is in the marks.'];
+  lines.push('BRUSHES, cleanest first:');
+  lines.push(...characterLines(profile.brushes, BRUSH_CHARACTER, BRUSH_PAD));
+  lines.push('FILLS:');
+  lines.push(...characterLines(profile.styles ?? [], STYLE_CHARACTER, STYLE_PAD));
+  if (profile.blendModes.some((m) => m !== 'normal')) {
+    lines.push('  A blend mode is carried down to the leaves, so it is per mark: two overlapping stamps of one');
+    lines.push('  hatch multiply with each other as well as with the ground, which is what overprinting ink does.');
+    lines.push('  `normal` throws that away.');
+  }
+  if ((profile.print ?? []).length) {
+    lines.push('  The print pass changes the material of the whole sheet rather than its drawing, once, at the');
+    lines.push('  end. `paper` and `grain` do that and nothing else; `generation` is a photocopy of a photocopy.');
+  }
+  return lines;
+}
+
 function pairs(record: Record<string, number | [number, number]>, format: (v: number | [number, number]) => string): string {
   return Object.entries(record)
     .sort(([a], [b]) => (a < b ? -1 : 1))
@@ -188,7 +294,7 @@ export function capabilitySheet(profile: MediumProfile, pack: AssetPack): string
   say('  {type:"rect",x,y,w,h}  {type:"circle",cx,cy,r}  {type:"polygon",points}');
   say('  {type:"fragment",name,x,y,span,rotate?,flipX?}');
   say(`CLIP SHAPES  ${(profile.clipShapes ?? ['rect']).join(' ')} (convex only; a concave polygon is refused)`);
-  say(`LAYOUTS      ${profile.layouts.map((l) => `${l}${argLine(defs, 'layout') ? '' : ''}`).join(' ')}`);
+  say('LAYOUTS');
   for (const branch of defs['layout']?.oneOf ?? []) {
     const type = String(branch.properties?.['type']?.const ?? '');
     if (!profile.layouts.includes(type)) continue;
@@ -197,7 +303,9 @@ export function capabilitySheet(profile: MediumProfile, pack: AssetPack): string
     say(`  ${type}: required ${required.join(' ')}${optional.length ? `; optional ${optional.join(' ')}` : ''}`);
   }
   say(`BLEND MODES  ${profile.blendModes.join(' ')} (on a group; carried to the leaves, so it is per mark)`);
-  say(`BRUSHES      ${profile.brushes.join(' ')}`);
+  say();
+
+  for (const line of materialSection(profile)) say(line);
   say();
 
   say(`FONTS (${profile.fonts.length} faces, by role)`);
@@ -238,6 +346,32 @@ export function capabilitySheet(profile: MediumProfile, pack: AssetPack): string
       .map(([k, v]) => `${k}=${v}`)
       .join('  ')}`
   );
+  say();
+
+  // `maxEstimatedMarks` above is a number in a unit the artist has no way to convert into. This is
+  // the conversion, probed out of the estimator itself rather than described, so it cannot drift
+  // from the function that will actually refuse the edit.
+  say(`WHAT A MARK IS, AND WHAT EACH FILL COSTS IN THEM — you are budgeting in these, so count them`);
+  say('A mark is one brush stamp. Every fill below is priced by filling a square of the given size:');
+  const small = markRates(profile, PROBE_SMALL);
+  const large = markRates(profile, PROBE_LARGE);
+  const head = (b: { w: number; h: number }) => `${b.w}x${b.h}`;
+  say(`${' '.repeat(14)}${head(PROBE_SMALL).padStart(9)}${head(PROBE_LARGE).padStart(12)}`);
+  for (const [i, rate] of small.entries()) {
+    say(
+      `  ${rate.kind.padEnd(12)}${String(rate.marks).padStart(9)}${String(large[i]!.marks).padStart(12)}` +
+        (rate.params ? `   (${rate.params})` : '')
+    );
+  }
+  say(`The right-hand box is 9x the area of the left. A fill whose two numbers differ scales with the`);
+  say(`area you give it, so doubling a region's width and height quadruples what it costs; one whose`);
+  say('numbers match costs the same at any size. This is the whole reason a picture can be refused:');
+  say(`a single textured fill across a large region can spend the entire ${limits['maxEstimatedMarks']}-mark allowance by`);
+  say('itself, while the same region filled `solid` spends one. Cost is not a reason to reach for');
+  say('`solid` — see MATERIAL — it is a reason to size a textured region deliberately rather than by');
+  say('default, and to know before you send an edit roughly what it will come to.');
+  say('Other ops: `text` is 2 marks per character, `rule` and `stroke` are priced by length, and');
+  say('`spray` is exactly its particle count, so its `density` and `r` are the whole bill.');
   say();
 
   say('EVERY NUMBER must sit on its field\'s quantization step and inside its field\'s range.');

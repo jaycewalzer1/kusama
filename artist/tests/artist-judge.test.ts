@@ -15,7 +15,7 @@ import { judgeSummary, judgeTrajectory, judgeVersion, redactedSamplingEvidence, 
 import { loadPosition, practiceOf } from '../field.js';
 import { StudioLog } from '../studio-log.js';
 
-const POSITIONS = ['interference', 'many-hands', 'withheld'];
+const POSITIONS = ['same-everywhere', 'overlooked', 'switchback'];
 
 /** A minimal trajectory on disk: the judge reads `final.json` and `final.png` and nothing else. */
 function trajectoryDir(positionId: string, id: string, control = false): string {
@@ -45,7 +45,7 @@ interface Seen {
 }
 
 /** Installs a stand-in that records every question and answers with the letter given. */
-function stub(answers: { chose?: string; verdict?: 'derives' | 'quotes'; score?: number; cliches?: string[] }): Seen[] {
+function stub(answers: { chose?: string; verdict?: 'derives' | 'quotes'; score?: number; materiality?: number; cliches?: string[] }): Seen[] {
   const seen: Seen[] = [];
   setJudgeModel(async <T,>(request: { name: string; system: string; text: string; additionalImages?: string[] }) => {
     seen.push({ name: request.name, system: request.system, text: request.text, images: 1 + (request.additionalImages?.length ?? 0) });
@@ -54,6 +54,8 @@ function stub(answers: { chose?: string; verdict?: 'derives' | 'quotes'; score?:
         ? { chose: answers.chose ?? 'A', why: 'because' }
         : request.name === 'necessity'
           ? { score: answers.score ?? 4, mostNecessary: 'a', mostArbitrary: 'b', answer: 'c' }
+          : request.name === 'materiality'
+            ? { score: answers.materiality ?? 4, mostMaterial: 'f', mostInert: 'g', why: 'h' }
           : request.name === 'samplingProcess'
             ? {
                 problemMotivatesChannel: true,
@@ -74,20 +76,20 @@ test('the attribution critic is never told which position it is judging', async 
   // you which position a tree was checked against; the only thing a judge adds is a reading of the
   // picture by something that does not know.
   const seen = stub({});
-  await judgeTrajectory(trajectoryDir('withheld', 't1'), { catalog: POSITIONS });
+  await judgeTrajectory(trajectoryDir('switchback', 't1'), { catalog: POSITIONS });
   const attribution = seen.find((s) => s.name === 'attribution')!;
   const haystack = `${attribution.system}\n${attribution.text}`.toLowerCase();
   for (const id of POSITIONS) {
     assert.ok(!haystack.includes(id), `the attribution prompt names the position "${id}"`);
   }
-  assert.ok(!haystack.includes('withheld'), 'the attribution prompt names the answer');
+  assert.ok(!haystack.includes('switchback'), 'the attribution prompt names the answer');
 });
 
 test('neither does it carry the position name or its lineage', async () => {
   // Same rule the policy prompt lives under: a name is a label for a look, and a model handed one
   // reasons from the label rather than from the sheet.
   const seen = stub({});
-  await judgeTrajectory(trajectoryDir('withheld', 't2'), { catalog: POSITIONS });
+  await judgeTrajectory(trajectoryDir('switchback', 't2'), { catalog: POSITIONS });
   const attribution = seen.find((s) => s.name === 'attribution')!;
   for (const id of POSITIONS) {
     const position = loadPosition(id);
@@ -104,7 +106,7 @@ test('the candidate order is shuffled per work, so a positional bias is not an a
   const orders = new Set<string>();
   for (const id of ['a', 'b', 'c', 'd', 'e', 'f']) {
     const seen = stub({});
-    await judgeTrajectory(trajectoryDir('withheld', id), { catalog: POSITIONS });
+    await judgeTrajectory(trajectoryDir('switchback', id), { catalog: POSITIONS });
     const text = seen.find((s) => s.name === 'attribution')!.text;
     orders.add(POSITIONS.map((p) => `${p}:${text.indexOf(practiceOf(loadPosition(p)).doing)}`).sort().join('|'));
   }
@@ -112,12 +114,12 @@ test('the candidate order is shuffled per work, so a positional bias is not an a
 });
 
 test('a hit and a miss are decided against the position that actually made it', async () => {
-  const dir = trajectoryDir('withheld', 'hit');
+  const dir = trajectoryDir('switchback', 'hit');
   // Whatever letter the stub picks, `correct` must be the comparison of ids and not of letters.
   stub({ chose: 'A' });
   const a = await judgeTrajectory(dir, { catalog: POSITIONS });
-  assert.equal(a.attribution.actual, 'withheld');
-  assert.equal(a.attribution.correct, a.attribution.chose === 'withheld');
+  assert.equal(a.attribution.actual, 'switchback');
+  assert.equal(a.attribution.correct, a.attribution.chose === 'switchback');
   assert.equal(a.attribution.candidates, 3);
   assert.ok(POSITIONS.includes(a.attribution.chose), 'the letter was mapped back to a position id');
 });
@@ -127,16 +129,16 @@ test('a non-answer throws rather than scoring as a miss', async () => {
   // Folding them together would let the first degrade into the second without anybody noticing.
   stub({ chose: 'Z' });
   await assert.rejects(
-    () => judgeTrajectory(trajectoryDir('withheld', 'bad'), { catalog: POSITIONS }),
+    () => judgeTrajectory(trajectoryDir('switchback', 'bad'), { catalog: POSITIONS }),
     /not one of/
   );
 });
 
 test('necessity and derivation consume the position, and derivation gets the cliche list verbatim', async () => {
   const seen = stub({});
-  await judgeTrajectory(trajectoryDir('withheld', 't3'), { catalog: POSITIONS });
+  await judgeTrajectory(trajectoryDir('switchback', 't3'), { catalog: POSITIONS });
   const derivation = seen.find((s) => s.name === 'derivation')!;
-  for (const c of loadPosition('withheld').cliches) {
+  for (const c of loadPosition('switchback').cliches) {
     assert.ok(derivation.text.includes(c), `the cliche list is incomplete: ${c}`);
   }
 });
@@ -146,7 +148,7 @@ test('the two dimensions the spec struck are absent: nothing here re-decides com
   // stated refusal" — are struck permanently. `check.ts` decides both mechanically, and a judge
   // that also decided them would inflate its agreement with the checker and report that as a score.
   const seen = stub({});
-  const j = await judgeTrajectory(trajectoryDir('withheld', 't4'), { catalog: POSITIONS });
+  const j = await judgeTrajectory(trajectoryDir('switchback', 't4'), { catalog: POSITIONS });
   assert.deepEqual(Object.keys(j).filter((k) => ['compliance', 'obedience', 'violations'].includes(k)), []);
   for (const s of seen) {
     assert.ok(!/hard violation|constraint id|does it obey/i.test(s.system), `${s.name} re-decides compliance`);
@@ -162,7 +164,7 @@ test('judgeVersion is stable and covers every prompt', () => {
 });
 
 test('the optional process judge sees final plus ablation and no source identity', async () => {
-  const dir = trajectoryDir('withheld', 'sampled');
+  const dir = trajectoryDir('switchback', 'sampled');
   const final = JSON.parse(readFileSync(path.join(dir, 'final.json'), 'utf8')) as Record<string, unknown>;
   final['sampling'] = {
     plan: {}, bindings: { sampled_subject: ['root'] }, resolutions: [], baseProgram: final['finalProgram'],
@@ -222,20 +224,39 @@ test('the optional process judge sees final plus ablation and no source identity
 test('the summary keeps the arms apart and states the chance rate', () => {
   // The control arm is the arm that predicts chance. Averaging it into the position arm destroys
   // the only comparison in this file that has a baseline.
-  const j = (control: boolean, correct: boolean, score: number): Judgment => ({
+  const j = (control: boolean, correct: boolean, score: number, materiality = 3): Judgment => ({
     trajectoryId: 'x',
-    positionId: 'withheld',
+    positionId: 'switchback',
     briefId: 'b',
     control,
     judgeVersion: judgeVersion(),
-    attribution: { chose: correct ? 'withheld' : 'many-hands', actual: 'withheld', correct, candidates: 3, why: '' },
+    attribution: { chose: correct ? 'switchback' : 'overlooked', actual: 'switchback', correct, candidates: 3, why: '' },
     necessity: { score, mostNecessary: '', mostArbitrary: '', rubricIds: [], answer: '' },
     derivation: { verdict: 'derives', clichesTaken: [], beyond: '', why: '' },
+    materiality: { score: materiality, mostMaterial: '', mostInert: '', why: '' },
     usd: 0,
     cached: false,
   });
-  const text = judgeSummary([j(false, true, 6), j(false, true, 4), j(true, false, 2)]);
+  const text = judgeSummary([j(false, true, 6, 2), j(false, true, 4, 6), j(true, false, 2, 1)]);
   assert.match(text, /position\s+n=2\s+attribution 2\/2 \(chance 0\.7\)/);
   assert.match(text, /control\s+n=1\s+attribution 0\/1 \(chance 0\.3\)/);
   assert.match(text, /necessity 5\.00\/7/);
+  assert.match(text, /materiality 4\.00\/7/);
+});
+
+// The point of this dimension is that it asks about the medium and not about the practice. Show it
+// either the practice or the tree and it stops being able to say "necessary, derived, and flat":
+// it would start scoring the intention, which the other three critics already score.
+test('the materiality critic is shown the picture and nothing else', async () => {
+  const seen = stub({});
+  const judgment = await judgeTrajectory(trajectoryDir('switchback', 't5'), { catalog: POSITIONS });
+  const materiality = seen.find((s) => s.name === 'materiality')!;
+  assert.equal(materiality.images, 1);
+  const position = loadPosition('switchback');
+  const practice = practiceOf(position);
+  for (const leak of [position.name, practice.doing, practice.origin, ...position.cliches]) {
+    assert.ok(!materiality.text.includes(leak), `the materiality prompt carries the practice: ${leak}`);
+  }
+  assert.ok(!/root|rngKey|"op"|profile/.test(materiality.text), 'the materiality prompt carries the program');
+  assert.equal(judgment.materiality.score, 4);
 });

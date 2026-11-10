@@ -24,19 +24,19 @@ function run(dir: string, positionId: string, briefId: string, withPng = true): 
 test('the pack pairs works that answered the same commission', () => {
   const pack = pairsOf(
     [
-      run('a', 'interference', 'nine-returned'),
-      run('b', 'many-hands', 'nine-returned'),
+      run('a', 'same-everywhere', 'nine-returned'),
+      run('b', 'overlooked', 'nine-returned'),
       // A different condition entirely. A reader shown one of each would be sorting by subject while
       // believing they were sorting by practice, which is the one way this test returns a false
       // positive, so it must not be paired with either of the two above.
-      run('c', 'withheld', 'two-million-slips'),
+      run('c', 'switchback', 'two-million-slips'),
     ],
     1
   );
   assert.equal(pack.pairs.length, 1);
   assert.deepEqual(
     pack.pairs[0]!.works.map((w) => w.positionId).sort(),
-    ['interference', 'many-hands']
+    ['overlooked', 'same-everywhere']
   );
   assert.equal(pack.skipped.length, 1);
   assert.match(pack.skipped[0]!.why, /no pair/);
@@ -47,8 +47,8 @@ test('the works and the practices are shuffled separately, so A does not always 
   // both orders vary from pair to pair — and it is a test of whether the reader noticed.
   const runs: PackRun[] = [];
   for (let i = 0; i < 8; i++) {
-    runs.push(run(`p${i}-a`, 'interference', `brief-${i}`));
-    runs.push(run(`p${i}-b`, 'many-hands', `brief-${i}`));
+    runs.push(run(`p${i}-a`, 'same-everywhere', `brief-${i}`));
+    runs.push(run(`p${i}-b`, 'overlooked', `brief-${i}`));
   }
   const pack = pairsOf(runs, 7);
   assert.equal(pack.pairs.length, 8);
@@ -61,9 +61,9 @@ test('the works and the practices are shuffled separately, so A does not always 
 test('a pack regenerates exactly from its seed, and a different seed gives a different order', () => {
   // The key and the folder are written by two runs of this code as soon as anyone regenerates one.
   const runs = [
-    run('s-a', 'interference', 'nine-returned'),
-    run('s-b', 'many-hands', 'nine-returned'),
-    run('s-c', 'withheld', 'nine-returned'),
+    run('s-a', 'same-everywhere', 'nine-returned'),
+    run('s-b', 'overlooked', 'nine-returned'),
+    run('s-c', 'switchback', 'nine-returned'),
   ];
   assert.deepEqual(pairsOf(runs, 42), pairsOf(runs, 42));
   const orders = (seed: number) => pairsOf(runs, seed).pairs.map((p) => p.works.map((w) => w.label + w.positionId).join());
@@ -73,8 +73,8 @@ test('a pack regenerates exactly from its seed, and a different seed gives a dif
 test('a run with no picture is skipped by name rather than dropped', () => {
   const pack = pairsOf(
     [
-      run('n-a', 'interference', 'nine-returned'),
-      run('n-b', 'many-hands', 'nine-returned', false),
+      run('n-a', 'same-everywhere', 'nine-returned'),
+      run('n-b', 'overlooked', 'nine-returned', false),
     ],
     1
   );
@@ -86,8 +86,8 @@ test('a run with no picture is skipped by name rather than dropped', () => {
 test('nothing the reader is given names the position, and the answers are not in plain sight', () => {
   const pack = pairsOf(
     [
-      run('w-a', 'interference', 'nine-returned'),
-      run('w-b', 'many-hands', 'nine-returned'),
+      run('w-a', 'same-everywhere', 'nine-returned'),
+      run('w-b', 'overlooked', 'nine-returned'),
     ],
     3
   );
@@ -102,14 +102,14 @@ test('nothing the reader is given names the position, and the answers are not in
     .filter((f) => !f.endsWith('.png'))
     .map((f) => readFileSync(path.join(f === 'README.md' ? dir : pairDir, f), 'utf8'))
     .join('\n');
-  for (const id of ['interference', 'many-hands', 'nine-returned']) {
+  for (const id of ['same-everywhere', 'overlooked', 'nine-returned']) {
     assert.ok(!shown.includes(id), `the reader was shown "${id}"`);
   }
 
   // The key is on disk and readable — it is a seal against a glance, not a lock — but it is not
   // sitting in plain text next to the pictures.
   const sealed = readFileSync(path.join(dir, 'key', 'SEALED-answers.b64'), 'utf8');
-  assert.ok(!sealed.includes('interference'));
+  assert.ok(!sealed.includes('same-everywhere'));
   const key = JSON.parse(Buffer.from(sealed, 'base64').toString('utf8'));
   const entry = key.pairs[0];
   for (const label of ['A', 'B']) {
@@ -122,7 +122,7 @@ test('nothing the reader is given names the position, and the answers are not in
 test('the practice a reader is handed is the practice the artist was given', () => {
   // Not a paraphrase. If this text drifted from `practiceOf`, the test would be asking people to
   // match pictures against a description of an artist that never existed.
-  const practice = practiceOf(loadPosition('interference'));
+  const practice = practiceOf(loadPosition('same-everywhere'));
   const text = practiceText(practice);
   for (const line of [practice.origin, practice.doing, practice.period, practice.register, ...practice.refusals]) {
     assert.ok(text.includes(line), `the pack drops "${line.slice(0, 40)}..."`);

@@ -64,7 +64,7 @@ const flat = async (phrases: string[]): Promise<Float32Array[]> =>
  */
 const SUBJECTS: CrossingSubject[] = [
   {
-    id: 'withheld',
+    id: 'switchback',
     kind: 'position',
     queries: [
       { source: 'lineage', text: 'On Kawara, Today series', k: 12, weight: 1 },

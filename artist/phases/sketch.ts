@@ -16,7 +16,7 @@
 import { treeFacts } from '../../aesthetic/facts.js';
 import { applyEdit } from '../../env/edits.js';
 import { loadPackFor } from '../../env/pack.js';
-import { loadProfileFor } from '../../env/profile.js';
+import { loadProfileFor, markRates, type MediumProfile } from '../../env/profile.js';
 import { decodePng, encodePng } from '../../env/png.js';
 import { contactSheet } from '../../env/sheet.js';
 import { callPolicy, type Spend } from '../call.js';
@@ -26,6 +26,7 @@ import { bareEdit, PROPOSE_SCHEMA, sketchSchema } from '../schemas.js';
 import { stack } from '../observation.js';
 import { artistLayers } from '../field.js';
 import { withInfluences, type InfluenceDoc } from '../influence-doc.js';
+import { withPracticeHistory } from '../practice-version.js';
 import { withSamplingCommitments } from '../sampling-observation.js';
 import { validateSamplingBindings, type SamplingBindings } from '../../aesthetic/sample-targets.js';
 import type { SamplingPlan } from '../../aesthetic/sample-types.js';
@@ -51,12 +52,17 @@ function sketchSeed(seed: Program): Program {
 /**
  * The fewest text ops this position can be satisfied with: whatever a `requireNode` on `text`
  * demands, and at least one op per required string, since a string has to live in some op.
+ *
+ * Only hard, unblocked constraints count. A soft constraint is scored, not required — `check.ts`
+ * treats exactly the hard ones as what a plate must satisfy — and a blocked one is not checked at
+ * all, so neither can put a floor under the budget. Counting them did: `many-hands` carries a soft
+ * and blocked `requireNode text min 30`, which made every run of that position die between FIND and
+ * SKETCH over a number no plate was ever going to be held to.
  */
 export function textDemand(position: AestheticProgram): number {
-  const constraints = [...(position.commitments ?? []), ...(position.prohibitions ?? [])] as {
-    kind: string;
-    params: Record<string, unknown>;
-  }[];
+  const constraints = [...(position.commitments ?? []), ...(position.prohibitions ?? [])].filter(
+    (c) => c.severity === 'hard' && c.blocked_by === undefined
+  ) as { kind: string; params: Record<string, unknown> }[];
   let required = 0;
   let strings = 0;
   for (const c of constraints) {
@@ -92,14 +98,20 @@ export function assertTextBudget(position: AestheticProgram, limits: { maxTextOp
 }
 
 const SYSTEM = [
-  'You are an artist making a fast, rough sketch to find out what a problem looks like.',
+  'You are an artist making a fast, rough sketch to find out what a connection looks like.',
   '',
-  'This is not the piece. It is a question drawn on paper. Test one idea about composition, weight or',
-  'contrast, and test it clearly enough that the sketch could turn out to be wrong — a sketch that',
-  'proves an approach does not work has done its job.',
+  'Test the connection, not just the layout. The sketch should make the generative rule visible:',
+  'if the rule says "every concealment generates visibility", then the sketch must show that',
+  'happening, not merely arrange elements in a plausible composition. A sketch that proves the',
+  'connection does not work has done its job.',
   '',
-  'You are working under reduced budgets: fewer nodes, fewer text ops, no print pass. Do not attempt',
-  'a finished plate.',
+  'Rough means mark-abundant, not mark-sparse. Use wash, hatch, field and stroke to test what',
+  'the surface will be — a sketch of solids and thin lines tests the layout but not the picture.',
+  'If someone can only say "some rectangles", you tested nothing. Reduced budgets: fewer nodes,',
+  'fewer text ops, no print pass.',
+  '',
+  'Change the palette if the connection demands it. The seed colours are a starting point, not a',
+  'constraint. Different connections should produce visibly different colour worlds.',
 ].join('\n');
 
 export interface SketchResult {
@@ -120,14 +132,12 @@ export interface ProposedApproach {
 }
 
 const PROPOSE_SYSTEM = [
-  'You are about to sketch one problem three times, and you are naming the three before you draw any',
-  'of them.',
+  'You are naming three approaches to sketch before drawing any of them.',
   '',
-  'Spread out. The obvious approach belongs on the list — pretending you did not think of it is its',
-  'own kind of averaging — but so do the ones you suspect will fail, and you should say plainly how',
-  'likely each is rather than flattening them all to the same number.',
-  '',
-  'No edits here. One sentence per approach, said so that a drawing of it could turn out to be wrong.',
+  'Spread out. Each approach should realize the connection through a different visual logic — not',
+  'three compositions of the same idea, but three genuinely different ways the connection could',
+  'become marks on the sheet. Include the obvious one and the ones you suspect will fail. Say',
+  'plainly how likely each is. One sentence per approach, said so a drawing could turn out wrong.',
 ].join('\n');
 
 function proposeObservation(commission: Commission, problem: Problem, n: number): string {
@@ -175,12 +185,37 @@ export async function propose(
   return { drawn: drawnIdx.map((i) => proposed[i]!), proposed };
 }
 
+/**
+ * What this sheet's whole mark allowance actually buys, priced on this canvas.
+ *
+ * SKETCH is one call: the artist writes every edit before any of them is applied, and gets no
+ * feedback until they have all been judged. So the cap is only useful to it if it is already
+ * converted into the thing it is about to write. `sketch-v1` cuts marks to a fifth of `default-v1`
+ * and does not cut the canvas, so a fill that is ordinary in a finished plate is over the limit in a
+ * sketch on its own — and the log says so plainly: every one of the 43 mark refusals in `out/` is a
+ * sketch, and three of them are a first edit against a blank sheet.
+ */
+export function sheetCost(profile: MediumProfile, seed: Program, max: number): string {
+  const canvas = seed['canvas'] as { width: number; height: number };
+  const box = { w: canvas.width, h: canvas.height };
+  const rows = markRates(profile, box)
+    .map((r) => `  ${r.kind.padEnd(10)}${String(r.marks).padStart(7)}  ${Math.round((100 * r.marks) / max)}% of your whole allowance`)
+    .join('\n');
+  return [
+    `WHAT YOUR ${max} MARKS BUY ON THIS SHEET (${canvas.width}x${canvas.height})`,
+    rows,
+    'A fill over a fraction of the sheet costs that fraction. Spend the allowance on purpose.',
+    'Do not reach for `solid` to save marks — that is a vector drawing on a brush engine.',
+  ].join('\n');
+}
+
 function observation(
   commission: Commission,
   problem: Problem,
   capabilitySheet: string,
   index: number,
   seed: Program,
+  profile: MediumProfile,
   textOps: { used: number; max: number },
   assigned: ProposedApproach | null
 ): string {
@@ -200,6 +235,7 @@ function observation(
     // The remainder, not the cap. The cap is in the capability sheet above and was not enough: a
     // measured run overran it twenty-two times, having been told it and not told what was left.
     `THE BUDGET YOU WILL ACTUALLY HIT\nText ops: ${textOps.used} of ${textOps.max} used on this sheet, ${left} you can still add.\nA ${left + 1}th text op is refused, and the refusal costs you the sketch, not just the op.`,
+    sheetCost(profile, seed, profile.limits.maxEstimatedMarks),
     task,
   ].join(`\n${'-'.repeat(88)}\n`);
 }
@@ -234,23 +270,27 @@ export async function sketch(
   // The sheet is built from the sketch profile, not the finished one: an artist handed the finished
   // budgets writes to a limit it was never going to be measured against, and every edit over the
   // sketch profile's own smaller limits is refused for a rule it was never shown.
-  const observed = withSamplingCommitments(withInfluences(
-    observation(
-      commission,
-      problem,
-      capabilitySheet(profile, pack),
-      index,
-      start,
-      { used: treeFacts(start).texts.length, max: profile.limits.maxTextOps },
-      assigned
-    ),
-    influences,
-    // Catalogue entries only. The pictures were attached once, at FIND, and re-attaching them to
-    // all nine sketch calls costs about 4,500 image tokens each for a set the artist has already
-    // seen — roughly 40,000 input tokens to say the same thing nine times. Looking at a shelf is
-    // something you do once; what carries forward is that you know what is on it.
-    0
-  ), sampling);
+  const observed = withPracticeHistory(
+    withSamplingCommitments(withInfluences(
+      observation(
+        commission,
+        problem,
+        capabilitySheet(profile, pack),
+        index,
+        start,
+        profile,
+        { used: treeFacts(start).texts.length, max: profile.limits.maxTextOps },
+        assigned
+      ),
+      influences,
+      // Catalogue entries only. The pictures were attached once, at FIND, and re-attaching them to
+      // all nine sketch calls costs about 4,500 image tokens each for a set the artist has already
+      // seen — roughly 40,000 input tokens to say the same thing nine times. Looking at a shelf is
+      // something you do once; what carries forward is that you know what is on it.
+      0
+    ), sampling),
+    commission.positionAsWritten.id
+  );
 
   // What the sketch will be recorded as failing with, and the longer text the retry gets told. They
   // differ for refused edits: the record keeps the same short sentence it always did, while the model
@@ -313,6 +353,20 @@ export async function sketch(
       base.program = program;
       base.programHash = rendered.programHash;
       base.png = rendered.png;
+      // A sketch that drew used to leave no line at all: the failures were logged and the successes
+      // were not, so the record said which sketches died and never said which ones existed. The hash
+      // that fetches the picture back out of the render cache was nowhere in the file either. The
+      // caller does write a PNG afterwards, but only on the default arm and only under a name built
+      // from two fields the log did not carry.
+      log.append('note', {
+        phase: 'sketch',
+        problemId: problem.id,
+        index,
+        attempt,
+        approach: base.approach,
+        programHash: rendered.programHash,
+        drawn: true,
+      });
       return base;
     } catch (e) {
       failure = e instanceof Error ? e.message : String(e);

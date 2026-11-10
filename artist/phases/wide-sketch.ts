@@ -91,7 +91,7 @@ import { withMaterials, type MaterialSheet } from '../material-sheet.js';
 import { stack } from '../observation.js';
 import { withSamplingCommitments } from '../sampling-observation.js';
 import { bareEdit, SKETCH_SCHEMA } from '../schemas.js';
-import { assertTextBudget } from './sketch.js';
+import { assertTextBudget, SKETCH_PROFILE } from './sketch.js';
 import type { DiscoveryLog } from '../discovery-log.js';
 import type { StudioLog } from '../studio-log.js';
 import type { Policy } from '../policy/interface.js';
@@ -168,28 +168,16 @@ export interface WideSketchResult {
 }
 
 const SYSTEM = [
-  'You are drawing one fast, rough sketch to find out what an idea looks like on a sheet.',
+  'You are drawing one fast, rough sketch to see what an idea looks like.',
   '',
-  'This is not the piece and it is not a candidate for the piece. A dozen sketches are being drawn',
-  'against this same lens and they all land on one contact sheet, which is read as a whole. A sketch',
-  'that draws what the obvious answer would have drawn adds nothing to that sheet even if it is the',
-  'best picture on it. Test one idea, and test it clearly enough that looking at the render could',
-  'prove it wrong.',
+  'A dozen sketches land on one contact sheet. Drawing the obvious answer adds nothing. Test one',
+  'idea clearly enough that the render could prove it wrong.',
   '',
-  'You may answer in either of two ways, and you should choose deliberately:',
+  'Two authoring modes:',
+  '  edits    typed edits applied to the given sheet.',
+  '  program  a whole program replacing the sheet. Same validator, profile and budgets.',
   '',
-  '  edits    the typed edits, applied in order to the sheet you were given.',
-  '  program  a whole program, written out, replacing that sheet entirely.',
-  '',
-  'Writing a whole program is normally forbidden and is allowed here. It exists because a typed edit',
-  'against an empty sheet can only add one node at a time, which pushes every sketch toward the same',
-  'accumulation; a whole program lets you set the ground, the canvas and the order of everything at',
-  'once. Nothing about what counts as a legal program is relaxed with it. The same validator, the',
-  'same profile, the same budgets, and a program that fails them is a sketch that did not get drawn.',
-  '',
-  'Then say what the sketch is doing. Name each thing you took, say what it contributes to THIS',
-  'picture, and cite where you took it from. A logic that would have read the same before the sketch',
-  'existed is not a logic.',
+  'Name each thing you took, what it contributes, and where it came from.',
 ].join('\n');
 
 function borrowingSchema(required: boolean, available: string[]): Record<string, unknown> {
@@ -571,8 +559,12 @@ export async function wideSketch(
   opts: { perLens?: number; sampling?: SamplingPlan; samplingLog?: StudioLog } = {}
 ): Promise<WideSketchResult> {
   const perLens = opts.perLens ?? PER_LENS;
-  const { profile } = loadProfileFor(seedProgram);
-  const pack = loadPackFor(seedProgram);
+  // The seed declares default-v1 but sketches render under sketch-v1 (the canvas is pinned to it).
+  // Without this, validateProgram sees "default-v1" in the program vs "sketch-v1" in the profile and
+  // refuses every sketch with a profile.mismatch. Same rewrite sketch.ts does via sketchSeed().
+  const seed: Program = { ...seedProgram, profile: SKETCH_PROFILE };
+  const { profile } = loadProfileFor(seed);
+  const pack = loadPackFor(seed);
   // Borrowed from ./sketch.ts unchanged: a position demanding more text than the profile allows
   // should say so once, here, rather than through refusals nobody reads on every one of 36 sketches.
   assertTextBudget(commission.effective, profile.limits);
@@ -589,7 +581,7 @@ export async function wideSketch(
           commission,
           lens,
           sheet,
-          seedProgram,
+          seed,
           canvas,
           capabilities,
           i,

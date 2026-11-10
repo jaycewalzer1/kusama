@@ -17,12 +17,12 @@
 // only thing that aborts a trajectory is a policy call that will not produce a schema-valid answer,
 // because a trajectory missing a decision is not a trajectory.
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { applyEdit, type EditAction } from '../env/edits.js';
-import { loadPackFor } from '../env/pack.js';
+import { loadPackFor, type AssetPack } from '../env/pack.js';
 import { decodePng } from '../env/png.js';
-import { canonicalJson, contentHash, loadProfile, loadProfileFor } from '../env/profile.js';
+import { canonicalJson, contentHash, loadProfile, loadProfileFor, type MarkShare, type MediumProfile } from '../env/profile.js';
 import { validateProgram } from '../env/validate.js';
 import { pixelDiff } from '../env/diff.js';
 import { loadSamplingIndexHeader } from '../aesthetic/sample-index.js';
@@ -53,7 +53,9 @@ import {
   totalDrift,
 } from './intention.js';
 import { envVersionNow } from './env-version.js';
-import { loadInfluenceDoc } from './influence-doc.js';
+import { loadInfluenceDoc, type InfluenceDoc } from './influence-doc.js';
+import { embeddingsAvailable } from './clip-index.js';
+import { influencesFromPosition, resolve as resolveInfluences, loadResolved, saveResolved } from './influences.js';
 import { DiscoveryLog } from './discovery-log.js';
 import { coverage, groundedInWorks, type MaterialSheet } from './material-sheet.js';
 import { corpusAvailable } from './research-query.js';
@@ -65,6 +67,12 @@ import { readLog, StudioLog } from './studio-log.js';
 import type { SampleRevision } from './sampling-events.js';
 import { processOf } from './transition.js';
 import { bareEdit } from './schemas.js';
+import { deriveTerminalStatus, buildTerminalRecord, type TerminalStatus } from './terminal.js';
+import { freezeIntention, frozenHash, validateReplan, type FrozenCore, type SemanticRevision } from './frozen-intention.js';
+import { initialBranchState, recordBranchStep, trackRead, isStalled, diagnose, forkBranch, materiallyDifferent, type BranchState } from './branch.js';
+import { createWager, evaluateWager, type Wager } from './wager.js';
+import { buildArtifactRead, type ArtifactRead } from './artifact-read.js';
+import { reconcileBindings, checkBindingInvariants, isValidServes } from './binding-reconcile.js';
 import { act, replan } from './phases/act.js';
 import { choose } from './phases/choose.js';
 import { compare } from './phases/compare.js';
@@ -147,17 +155,21 @@ export interface RunOptions {
    * A resolved influence set — an id under `aesthetic/influences/`, or a path to a
    * `*.resolved.json` — shown to the artist as a shelf of real works it has looked at.
    *
-   * Absent is the default and is byte-identical to the run before this option existed: no block is
-   * appended to any observation, no image is attached, and `envVersion` carries no `influencesHash`.
-   * A test pins that.
+   * **Absent** auto-derives from the position when CLIP embeddings are on this machine: it checks
+   * for an existing resolved file and resolves from scratch only if none exists. The resolved file
+   * is cached on disk so subsequent runs skip the CLIP text tower entirely.
+   *
+   * **A string** loads that specific set (an id or path), throwing if it does not exist.
+   *
+   * **`false`** explicitly disables the layer — no block, no images, no `influencesHash`.
    *
    * Present adds the catalogue block and up to eight thumbnails to FIND and to each SKETCH. It does
-   * NOT reach DESCRIBE or AUDIENCE, which stay blind to everything but the plate, and it does not
-   * reach MAKE unless `influencesInMake` is set.
+   * NOT reach DESCRIBE or AUDIENCE, which stay blind to everything but the plate, and it reaches
+   * MAKE by default (see `influencesInMake`).
    */
-  influences?: string;
+  influences?: string | false;
   /**
-   * Carry the block into THINK+ACT and REPLAN as well. Off by default — see the note above `act`.
+   * Carry the block into THINK+ACT and REPLAN as well. **On by default.**
    * The thumbnails are never attached during MAKE either way; only the text.
    */
   influencesInMake?: boolean;
@@ -234,7 +246,8 @@ function makeContext(
   steps: Step[],
   stepsLeft: number,
   canvasAttached: boolean,
-  textOps: { used: number; max: number }
+  textOps: { used: number; max: number },
+  marks: { used: number; max: number; heaviest: MarkShare[] }
 ): MakeContext {
   return {
     capabilitySheet: sheet,
@@ -251,6 +264,7 @@ function makeContext(
     canvasAttached,
     changeAttached: canvasAttached && env.change !== null,
     textOps,
+    marks,
   };
 }
 
@@ -264,6 +278,30 @@ function makeContext(
  */
 function textOps(env: ArtistEnv, max: number): { used: number; max: number } {
   return { used: env.texts().length, max };
+}
+
+/**
+ * Marks standing in the tree, against the profile's cap, and which nodes are holding them.
+ *
+ * The same argument as `textOps` and a larger bill: across every trajectory in `out/`, 43 of the 63
+ * edit refusals ever recorded were `maxEstimatedMarks`, and none of them told the artist what it had
+ * spent or on what. This is the one budget where the total is not enough on its own — `solid` and
+ * `hatch` are the same op and differ by four orders of magnitude, so "you have used 11,600 of 12,000"
+ * is only actionable beside the node that used them.
+ *
+ * The program on the sheet has already been validated, so this cannot be over; if resolution throws
+ * anyway the budget is reported as spent rather than crashing a run over a prompt line.
+ */
+function marksUsed(
+  env: ArtistEnv,
+  profile: MediumProfile,
+  pack: AssetPack,
+  max: number
+): { used: number; max: number; heaviest: MarkShare[] } {
+  const budget = validateProgram(env.program, profile, pack).budget;
+  return budget
+    ? { used: budget.marks, max, heaviest: budget.heaviest }
+    : { used: max, max, heaviest: [] };
 }
 
 /**
@@ -294,7 +332,8 @@ function scoresOf(
   seen: Examine | null,
   stopped: Termination['kind'],
   affect0: Affect,
-  finishRefusals: number | null
+  finishRefusals: number | null,
+  corpusResult?: { novelty: number; copyFlag: boolean; nearestCosine: number; nearestId: string; corpusPercentile: number } | null
 ): Scores {
   const real = realization(intention, program);
   const risk = steps.find((s) => s.accepted && s.isRiskMove);
@@ -363,6 +402,7 @@ function scoresOf(
     affectTrace: steps.map((s) => s.affect),
     affectArmed: affectArmed(affect0, steps.map((s) => s.affect)),
     pendingRubrics: report.pendingRubrics.map((r) => `[${r.id}] ${r.text}`),
+    corpus: corpusResult ?? null,
   };
 }
 
@@ -667,15 +707,36 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
   const hardStop = o.hardStop ?? 20;
 
   const elementIds = o.elementIds ?? [];
+  const loaded = loadCommission(o.positionId, o.briefId, elementIds);
   // Loaded before anything is written, so a typo in `--influences` fails the run at the top rather
   // than after the first paid call. `loadInfluenceDoc` throws on a missing or empty set: an artist
   // told it has looked at nothing is a different experiment from an artist not told anything, and
   // the two must not be reachable by the same command line.
-  const influences = o.influences ? loadInfluenceDoc(o.influences) : null;
-  const makeInfluences = o.influencesInMake ? influences : null;
+  //
+  // When no explicit set is given but embeddings are on this machine, auto-derive from the
+  // position: check for an existing resolved file first (deterministic given the same position),
+  // and resolve from scratch only if none exists. The resolved file is cached on disk so
+  // subsequent runs skip the CLIP text tower entirely.
+  let influences: InfluenceDoc | null = null;
+  if (o.influences === false) {
+    // Explicitly disabled — no influences.
+  } else if (typeof o.influences === 'string') {
+    influences = loadInfluenceDoc(o.influences);
+  } else if (embeddingsAvailable()) {
+    const posId = loaded.positionAsWritten.id;
+    const existing = loadResolved(posId);
+    if (existing) {
+      influences = loadInfluenceDoc(posId);
+    } else {
+      const inf = influencesFromPosition(loaded.positionAsWritten);
+      const resolved = await resolveInfluences(inf);
+      saveResolved(resolved);
+      influences = loadInfluenceDoc(posId);
+    }
+  }
+  const makeInfluences = (o.influencesInMake ?? true) ? influences : null;
   const samplingIndexId = o.recordedSamplingPlans?.[0]?.indexId ?? (o.sampling ? loadSamplingIndexHeader(o.sampling).indexId : null);
   const samplingEnabled = samplingIndexId !== null;
-  const loaded = loadCommission(o.positionId, o.briefId, elementIds);
   const commission = o.control ? stripped(loaded) : loaded;
   const fieldText = canonicalJson(loaded.field);
 
@@ -708,6 +769,7 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
   // The same ten hashes on the start line and on the finished trajectory, from one place. They
   // used to be two object literals that happened to agree.
   const envVersion = envVersionNow(o.positionId, o.briefId, o.seed, elementIds, influences?.hash, samplingEnabled);
+  const discoveryEnabled = o.discovery ?? (corpusAvailable() && embeddingsAvailable());
   log.append('trajectory-start', {
     id,
     positionId: loaded.positionAsWritten.id,
@@ -739,10 +801,11 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
       ? {
           influencesId: influences.id,
           influenceWorks: influences.resolved.works.length,
-          influencesInMake: o.influencesInMake ?? false,
+          influencesInMake: o.influencesInMake ?? true,
         }
       : {}),
     ...envVersion,
+    discovery: discoveryEnabled,
     // Style words found in L2. Non-empty does not stop the run — it marks it non-comparable, which
     // is a different and more useful thing than a crash on a brief somebody is still drafting.
     contamination: loaded.contamination,
@@ -775,9 +838,10 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
   const sketchCanvas = new Canvas(SKETCH_PROFILE);
   const affect0: Affect = initialAffect(loaded.field, loaded.temperament.value);
 
-  // The second record, opened only when the discovery half is going to run. An unflagged run does
-  // not create the file, so a directory listing says which mode a trajectory was made in.
-  const discovery = o.discovery ? new DiscoveryLog(o.outDir) : null;
+  // The second record, opened only when the discovery half is going to run. Defaults to ON when
+  // both the corpus manifest and the CLIP embeddings are on this machine — the manifest alone is
+  // not enough for the form axis, and research without it is too narrow to be worth the calls.
+  const discovery = discoveryEnabled ? new DiscoveryLog(o.outDir) : null;
 
   try {
     // 0. RESEARCH ---------------------------------------------------------------------------------
@@ -931,6 +995,29 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
     const intention0 = declared(chosen.intention);
     const intentions: Intention[] = [intention0];
 
+    // Freeze the intention semantics after CHOOSE. Replans may change bindings and tactics but
+    // not purpose, tension, element IDs/roles, edge structure, or immovable terms.
+    const frozen = freezeIntention(intention0, chosen.terms, null);
+    const frozenHash0 = frozenHash(frozen);
+    const semanticRevisions: SemanticRevision[] = [];
+    const wagers: Wager[] = [];
+    const artifactReads: ArtifactRead[] = [];
+
+    // Initialize branch state for MAKE phase tracking.
+    const chooseEventSeq = log.append('note', {
+      phase: 'frozen-intention',
+      hash: frozenHash0,
+      elements: frozen.elements.map((e) => e.id),
+      edges: frozen.edges.length,
+    }).seq;
+    let branchState = initialBranchState({
+      problemId: chosen.problemId,
+      sketchIds: sketches.map((s) => s.finalHash),
+      intentionHash: frozenHash0,
+      programHash: contentHash(canonicalJson(seed)),
+      forkEventSeq: chooseEventSeq,
+    });
+
     // 4. MAKE -------------------------------------------------------------------------------------
     const env = new ArtistEnv({
       commission,
@@ -943,7 +1030,7 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
       // a `retrieve` naming it two hours later is grounded whether or not the block was still on the
       // page at that step. `makeInfluences` answers a different question — what the act call carried
       // — and using it here would mark the default arm's every retrieval unfounded by construction.
-      shownWorks: influences?.resolved.works.map((w) => w.id) ?? [],
+      shownWorks: influences?.resolved.works.map((w: { id: string }) => w.id) ?? [],
     });
     await env.reset(intention0, affect0);
     // The ablation's only switch, logged so a trajectory says which arm it is without being diffed
@@ -984,7 +1071,8 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
         steps,
         stepsLeft,
         showCanvas && env.plate !== null,
-        textOps(env, profile.limits.maxTextOps)
+        textOps(env, profile.limits.maxTextOps),
+        marksUsed(env, profile, pack, profile.limits.maxEstimatedMarks)
       );
       const call = await act(o.policy, log, spend, context, env.plate, env.change?.png ?? null, makeInfluences, samplingPlan);
       const result = await env.step(call.action, {
@@ -993,6 +1081,23 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
       });
       result.step.observationHash = call.observationHash;
       steps.push(result.step);
+
+      // Track branch step and reconcile bindings after every patch.
+      branchState = recordBranchStep(branchState);
+      const bindingIssues = checkBindingInvariants(env.intention, env.program);
+      if (bindingIssues.length > 0) {
+        log.append('note', { phase: 'binding-reconcile', step: k, violations: bindingIssues });
+      }
+      // Validate servesElementId references on edits.
+      for (const edit of call.action.edits) {
+        if (edit.servesElementId && !isValidServes(edit.servesElementId, env.intention)) {
+          log.append('note', {
+            phase: 'binding-reconcile',
+            step: k,
+            warning: `servesElementId "${edit.servesElementId}" does not match any element in the intention`,
+          });
+        }
+      }
 
       if (call.action.control === 'abandon') {
         abandonReason = call.action.think;
@@ -1075,6 +1180,37 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
             sampledFinish = gateSample;
             break;
           }
+          // Corpus copy detection for the finish gate. Writes the plate to a temp file so the
+          // CLIP encoder can read it, which is the interface `embed()` expects.
+          let gateCopyFlag = false;
+          let gateNearestId: string | undefined;
+          {
+            const { embeddingsAvailable: gateEmbAvail } = await import('./clip-index.js');
+            if (gateEmbAvail()) {
+              const { loadCorpusEmbeddings, rowAt } = await import('./clip-index.js');
+              const { available: resemblanceAvail } = await import('./resemblance.js');
+              if (resemblanceAvail()) {
+                const tmpPng = path.join(o.outDir, '.gate-plate.png');
+                writeFileSync(tmpPng, gatePlate);
+                try {
+                  const { embed: embedGate, similarity: simGate } = await import('./resemblance.js');
+                  const corpus = loadCorpusEmbeddings();
+                  const gv = await embedGate(tmpPng);
+                  let gBest = -Infinity, gBestRow = 0;
+                  for (let gi = 0; gi < corpus.entries.length; gi++) {
+                    const gs = simGate(gv, rowAt(corpus.rows, gi));
+                    if (gs > gBest) { gBest = gs; gBestRow = gi; }
+                  }
+                  if (gBest > 0.95) {
+                    gateCopyFlag = true;
+                    gateNearestId = corpus.entries[gBestRow]!.work.id;
+                  }
+                } finally {
+                  try { (await import('node:fs')).unlinkSync(tmpPng); } catch { /* best effort */ }
+                }
+              }
+            }
+          }
           const blockers = finishBlockers({
             brief: loaded.brief,
             report: gateLook.checkReport,
@@ -1085,6 +1221,8 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
             rubrics: await env.readRubrics(hardRubrics(gateLook.checkReport), gatePlate, gateProgramHash),
             wouldAct: gateLook.wouldAct,
             declaredUnrealizable: call.action.unrealizable ?? null,
+            corpusCopyFlag: gateCopyFlag || undefined,
+            nearestCorpusId: gateNearestId,
           });
           finishAttempts++;
           log.append('note', {
@@ -1118,7 +1256,12 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
       // A replan happens for a named reason or not at all. `artist-declares` is the artist's own
       // control value; everything else was fired by the environment and is already logged. A
       // refused finish outranks both: it is the only one the artist cannot decline to hear.
-      const fired = blocked ?? result.fired ?? (call.action.control === 'replan'
+      //
+      // Skip environment-fired triggers on inert steps: the canvas did not visibly change, so a
+      // replan call would reason about a picture identical to the one act() just saw. Finish-blocked
+      // and artist-declares still go through — those are about the trajectory, not the pixels.
+      const envFired = result.step.inert ? null : result.fired;
+      const fired = blocked ?? envFired ?? (call.action.control === 'replan'
         ? { trigger: 'artist-declares' as const, detail: call.action.think, usd: 0, cached: true }
         : null);
       if (fired) {
@@ -1137,7 +1280,8 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
             steps,
             stepsLeft,
             showCanvas && env.plate !== null,
-            textOps(env, profile.limits.maxTextOps)
+            textOps(env, profile.limits.maxTextOps),
+            marksUsed(env, profile, pack, profile.limits.maxEstimatedMarks)
           ),
           fired.trigger,
           fired.detail,
@@ -1150,6 +1294,19 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
         result.step.replan = { trigger: fired.trigger, before, after };
         env.intention = after;
         intentions.push(after);
+
+        // Validate the replan against frozen intention semantics.
+        const replanViolations = validateReplan(frozen, after, chosen.terms);
+        if (replanViolations) {
+          // The replan mutated frozen semantics without an explicit revision.
+          // Log the violations — in a future version, this could trigger a semantic revision event.
+          log.append('note', {
+            phase: 'frozen-intention-violation',
+            step: k,
+            violations: replanViolations,
+            trigger: fired.trigger,
+          });
+        }
       }
 
       if (k >= maxSteps) {
@@ -1206,6 +1363,38 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
         o.practiceStore ?? PRACTICE_STORE
       );
       log.append('note', { phase: 'update-practice', version: version.version, hash: version.hash });
+    }
+
+    // Corpus resemblance: how close the final plate is to anything the museums hold. Null when the
+    // embeddings are not on this machine — the same guard `plates.ts` uses, same percentile logic.
+    let corpusResult: { novelty: number; copyFlag: boolean; nearestCosine: number; nearestId: string; corpusPercentile: number } | null = null;
+    {
+      const { embeddingsAvailable } = await import('./clip-index.js');
+      const finalPng = path.join(o.outDir, 'final.png');
+      if (embeddingsAvailable() && existsSync(finalPng)) {
+        const { loadCorpusEmbeddings, rowAt } = await import('./clip-index.js');
+        const { embed: embedPlate, similarity: sim } = await import('./resemblance.js');
+        const { corpusBand } = await import('./plates.js');
+        const corpus = loadCorpusEmbeddings();
+        const v = await embedPlate(finalPng);
+        let bestRow = 0, best = -Infinity;
+        for (let i = 0; i < corpus.entries.length; i++) {
+          const s = sim(v, rowAt(corpus.rows, i));
+          if (s > best) { best = s; bestRow = i; }
+        }
+        const e = corpus.entries[bestRow]!;
+        const { sorted } = corpusBand();
+        let lo = 0, hi = sorted.length;
+        while (lo < hi) { const mid = (lo + hi) >> 1; if (sorted[mid]! < best) lo = mid + 1; else hi = mid; }
+        const pctile = sorted.length === 0 ? 0 : lo / sorted.length;
+        corpusResult = {
+          novelty: 1 - best,
+          copyFlag: best > 0.95,
+          nearestCosine: best,
+          nearestId: e.work.id,
+          corpusPercentile: pctile,
+        };
+      }
     }
 
     // 7. FINISH -----------------------------------------------------------------------------------
@@ -1279,11 +1468,55 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
         stopped,
         affect0,
         // Asks minus the one that was granted. A run that finished on its first ask refused none.
-        Math.max(0, finishAttempts - (stopped === 'declared-finished' ? 1 : 0))
+        Math.max(0, finishAttempts - (stopped === 'declared-finished' ? 1 : 0)),
+        corpusResult
       ),
       cost,
       envVersion,
+      // New reliability fields — optional, absent on pre-existing trajectories.
+      frozenIntention: frozen,
+      frozenIntentionHash: frozenHash0,
+      wagers,
+      branchState,
+      semanticRevisions: semanticRevisions.length > 0 ? semanticRevisions : undefined,
+      artifactReads: artifactReads.length > 0 ? artifactReads : undefined,
     };
+
+    // Build the terminal record — truthful terminal status separate from component scores.
+    const terminalStatus = deriveTerminalStatus({
+      termination: trajectory.scores.termination,
+      examine: seen,
+      report: scoringReport,
+      rubrics: null, // Rubrics were evaluated at the gate; the terminal record derives from scores.
+      artistRequestedCompletion: stopped === 'declared-finished',
+      hasFinalPlate: true,
+      executionError: false,
+    });
+    const terminalRecord = buildTerminalRecord({
+      status: terminalStatus,
+      reason: terminalStatus === 'completed'
+        ? 'artist requested completion and all gates passed'
+        : terminalStatus === 'abandoned'
+          ? abandonReason ?? 'artist abandoned'
+          : terminalStatus === 'budget_exhausted'
+            ? `budget exhausted: ${stopped}`
+            : terminalStatus === 'failed_hard_rubric'
+              ? 'hard rubric failure'
+              : stopped,
+      finalProgramHash: finalRender.programHash,
+      finalPixelHash: finalRender.pixelHash,
+      budgetAllocated: maxSteps,
+      budgetConsumed: steps.length,
+      report: scoringReport,
+      rubrics: null,
+      examine: seen,
+      artistRequestedCompletion: stopped === 'declared-finished',
+      environmentOverruled: stopped === 'finish-blocked',
+      wagers,
+      branches: branchState.branches,
+      supportingEvents: [],
+    });
+    trajectory.terminalRecord = terminalRecord;
 
     log.append('trajectory-end', {
       id,
@@ -1293,6 +1526,7 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
       scores: trajectory.scores,
       cost,
       policySpend: spend,
+      terminalRecord,
     });
 
     writeFileSync(path.join(o.outDir, 'final.json'), `${JSON.stringify(trajectory, null, 2)}\n`);
@@ -1317,6 +1551,16 @@ export async function runTrajectory(o: RunOptions): Promise<Trajectory> {
       `${JSON.stringify(provenanceOf(o.outDir, loaded.elementIds), null, 2)}\n`
     );
     return trajectory;
+  } catch (e) {
+    // The log is the record, so the death goes in it. Appended before the re-throw and with a
+    // synchronous write, so the last line of a crashed run is the reason it crashed.
+    log.append('trajectory-failed', {
+      id,
+      error: e instanceof Error ? e.message : String(e),
+      stack: e instanceof Error ? (e.stack ?? null) : null,
+      policySpend: spend,
+    });
+    throw e;
   } finally {
     await canvas.close();
     await sketchCanvas.close();

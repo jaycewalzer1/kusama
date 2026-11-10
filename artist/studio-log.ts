@@ -30,7 +30,14 @@ export type LineKind =
   | 'replan'
   | 'trigger'
   | 'note'
-  | 'trajectory-end';
+  | 'trajectory-end'
+  /**
+   * The run threw. Written by the one catch in `runOnce`, immediately before the throw is re-raised,
+   * so that a death has a place on disk. Without it a crash left the log ending on whatever phase
+   * happened to be last and the reason existed only on the studio server's stderr buffer, which is
+   * dropped the moment the child exits — the run simply stopped and nothing said why.
+   */
+  | 'trajectory-failed';
 
 export interface LogLine {
   seq: number;

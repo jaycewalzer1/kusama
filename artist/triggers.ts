@@ -203,7 +203,7 @@ export async function descriptionDisagrees(
   if (!disagreementCounts(r.value, affect)) return null;
   return {
     trigger: 'description-disagrees',
-    detail: `someone who cannot see your plan does not read the sheet as doing what you say it does: ${r.value.reason}`,
+    detail: `The describer could not see what you intended: ${r.value.reason}. This is either a failure of execution (fix it) or evidence that your idea is genuinely unfamiliar — in which case, strengthen it rather than retreating to something recognizable. Do not simplify toward recognition. If the connection is real, make it more visible through the material, not by making the picture more literal.`,
     usd: r.usd,
     cached: r.cached,
   };

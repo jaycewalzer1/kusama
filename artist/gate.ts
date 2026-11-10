@@ -35,7 +35,8 @@ export interface Blocker {
     | 'rubric-fails'
     | 'audience-ignores'
     | 'self-score'
-    | 'unrealized-edge';
+    | 'unrealized-edge'
+    | 'corpus-copy';
   /** One sentence, written for the artist. It is put in front of the artist verbatim. */
   detail: string;
 }
@@ -62,6 +63,9 @@ export interface GateEvidence {
   wouldAct?: WouldAct;
   /** True when the artist named something as unrealizable on its terminal step. */
   declaredUnrealizable: string | null;
+  /** Corpus copy detection. Null when embeddings unavailable. */
+  corpusCopyFlag?: boolean;
+  nearestCorpusId?: string;
 }
 
 /**
@@ -162,6 +166,13 @@ export function finishBlockers(e: GateEvidence): Blocker[] {
     out.push({
       kind: 'unrealized-edge',
       detail: `Your own reading of the image says ${unrealized.length} of your plan's relations do not hold: ${named}. Either make them hold, or drop them from the plan and say why.`,
+    });
+  }
+
+  if (e.corpusCopyFlag) {
+    out.push({
+      kind: 'corpus-copy',
+      detail: `This plate's nearest match in the museum corpus is ${e.nearestCorpusId} at cosine > 0.95. A work that reproduces something a museum already holds has not made something new.`,
     });
   }
 

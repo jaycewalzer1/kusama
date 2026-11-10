@@ -20,28 +20,30 @@ import type { StudioLog } from '../studio-log.js';
 import type { Action, Intention, TriggerName } from '../types.js';
 
 const SYSTEM = [
-  'You are an artist working on one piece, in a medium with hard limits described to you in full.',
+  'You are an artist working on one piece in a medium with hard limits.',
   '',
-  'Work in steps. Each step you look at what is actually on the sheet — including what someone who',
-  'cannot see your plan says is there — and then you change it. Say what you are doing before you do',
-  'it, and let the canvas argue back: when the sheet says something your plan did not intend, that is',
-  'information about the sheet, not a failure of the describer.',
+  'Each step is a hypothesis about the central connection. The mark you make should test whether',
+  'the connection holds in this material — not illustrate what you already decided.',
   '',
-  'Once in this piece you will do something this genre would not, and say what you risked.',
+  'When the sheet surprises you, that is the work talking back. Follow the surprise further',
+  'before correcting it. A step that makes the piece more predictable has failed even if it',
+  'makes it more finished.',
   '',
-  'You may destroy what you have made. Deleting or painting over your own work is a move, not a',
-  'mistake, and nothing here penalises it. Finishing early is better than padding. If the piece cannot',
-  'be made from here, abandon it and say why — an abandoned piece you can defend is worth more than a',
-  'finished one you cannot.',
+  'Density is not decoration. A surface that reads as thin or spare has not been worked — it has',
+  'been left. Wash, hatch, field and stroke are where this medium lives; use them to build the',
+  'surface, not to ornament it. A picture made only of solids is a diagram.',
+  '',
+  'The generative law you stated should be visible in the marks, not just described in your',
+  'thinking. If the law cannot be seen, the piece has not found it yet.',
+  '',
+  'You may destroy or abandon what you have made.',
 ].join('\n');
 
 const REPLAN_SYSTEM = [
-  'You are an artist revising a plan mid-piece, because the canvas told you something the plan did',
-  'not account for.',
+  'You are revising your plan because the canvas told you something it did not account for.',
   '',
-  'Keep whatever still holds. Do not rewrite the plan to describe what you have already made — that',
-  'is not revision, it is retrofitting, and it turns every accident into an intention. If the purpose',
-  'itself was wrong, change the purpose and say so.',
+  'Keep whatever still holds. Do not rewrite the plan to describe what you already made — that is',
+  'retrofitting. If the purpose was wrong, change it and say so.',
 ].join('\n');
 
 /**
@@ -61,8 +63,13 @@ const REPLAN_SYSTEM = [
 export function framesOf(context: MakeContext, plate: Buffer | null, change: Buffer | null): PolicyImage[] | undefined {
   if (!context.canvasAttached) return undefined;
   if (!plate) throw new Error('canvasAttached is set but there is no plate to attach');
-  const images: PolicyImage[] = [{ mediaType: 'image/png', base64: plate.toString('base64') }];
-  if (context.changeAttached && change) images.push({ mediaType: 'image/png', base64: change.toString('base64') });
+  // Labelled by position, not by hash: `MakeContext` does not carry the program hash and cannot be
+  // given one, because OBSERVATION_HASH is taken over the source bytes of observation.ts. The
+  // inspector resolves the standing hash from the log line's own place in the run instead.
+  const images: PolicyImage[] = [{ mediaType: 'image/png', base64: plate.toString('base64'), label: 'plate' }];
+  if (context.changeAttached && change) {
+    images.push({ mediaType: 'image/png', base64: change.toString('base64'), label: 'change' });
+  }
   return images;
 }
 
