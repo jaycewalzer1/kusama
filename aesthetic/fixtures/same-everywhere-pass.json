@@ -1,0 +1,49 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 6401,
+  "canvas": { "width": 800, "height": 640, "ground": "#f0ece4", "brushScale": 1 },
+  "palette": { "ink": "#1c1b19", "wood": "#b98a52", "green": "#4f6b45", "steel": "#6d7176" },
+  "meta": {
+    "aesthetic": "same-everywhere",
+    "fixture": "pass",
+    "reads_as": "the same pale-wood cafe corner drawn twice on one sheet, left and right, in four colours and the paper: two tables, two chairs pulled out, two cups, one plant, nothing repeated by operator"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      { "id": "left-light", "type": "op", "op": "wash", "rngKey": "se/left-light", "args": { "region": { "type": "rect", "x": -20, "y": -20, "w": 420, "h": 320 }, "style": { "kind": "wash", "color": "steel", "opacity": 34, "bleed": 0.2, "texture": [0.3, 0.2] } } },
+      { "id": "right-light", "type": "op", "op": "wash", "rngKey": "se/right-light", "args": { "region": { "type": "rect", "x": 400, "y": -20, "w": 420, "h": 300 }, "style": { "kind": "wash", "color": "steel", "opacity": 30, "bleed": 0.22, "texture": [0.35, 0.25] } } },
+
+      { "id": "left-table", "type": "op", "op": "paint", "rngKey": "se/left-table", "args": { "region": { "type": "polygon", "points": [[60, 420], [330, 396], [352, 470], [48, 500]] }, "style": { "kind": "hatch", "brush": "cpencil", "color": "wood", "spacing": 7, "angle": 8, "rand": 0.12 } } },
+      { "id": "right-table", "type": "op", "op": "paint", "rngKey": "se/right-table", "args": { "region": { "type": "polygon", "points": [[470, 404], [744, 384], [762, 458], [456, 484]] }, "style": { "kind": "hatch", "brush": "cpencil", "color": "wood", "spacing": 8, "angle": 5, "rand": 0.14 } } },
+      { "id": "left-felt", "type": "op", "op": "paint", "rngKey": "se/left-felt", "args": { "region": { "type": "rect", "x": 40, "y": 150, "w": 300, "h": 180 }, "style": { "kind": "field", "brush": "pastel", "color": "steel", "density": 4, "length": 9, "angle": 40, "jitter": 30, "marks": "dashes" } } },
+      { "id": "right-felt", "type": "op", "op": "paint", "rngKey": "se/right-felt", "args": { "region": { "type": "rect", "x": 452, "y": 140, "w": 300, "h": 176 }, "style": { "kind": "field", "brush": "pastel", "color": "steel", "density": 3.4, "length": 11, "angle": 36, "jitter": 34, "marks": "dashes" } } },
+
+      { "id": "l-track", "type": "op", "op": "rule", "rngKey": "se/l-track", "args": { "from": [30, 96], "to": [356, 88], "brush": "rotring", "color": "ink", "weight": 1.4 } },
+      { "id": "r-track", "type": "op", "op": "rule", "rngKey": "se/r-track", "args": { "from": [446, 90], "to": [772, 84], "brush": "rotring", "color": "ink", "weight": 1.3 } },
+      { "id": "l-skirting", "type": "op", "op": "rule", "rngKey": "se/l-skirting", "args": { "from": [24, 340], "to": [364, 330], "brush": "2H", "color": "ink", "weight": 1.1 } },
+      { "id": "r-skirting", "type": "op", "op": "rule", "rngKey": "se/r-skirting", "args": { "from": [444, 332], "to": [780, 320], "brush": "2H", "color": "ink", "weight": 1 } },
+      { "id": "l-table-edge", "type": "op", "op": "rule", "rngKey": "se/l-table-edge", "args": { "from": [60, 420], "to": [330, 396], "brush": "rotring", "color": "ink", "weight": 1.5 } },
+      { "id": "r-table-edge", "type": "op", "op": "rule", "rngKey": "se/r-table-edge", "args": { "from": [470, 404], "to": [744, 384], "brush": "rotring", "color": "ink", "weight": 1.4 } },
+      { "id": "l-leg", "type": "op", "op": "rule", "rngKey": "se/l-leg", "args": { "from": [96, 500], "to": [104, 616], "brush": "2B", "color": "ink", "weight": 1.6 } },
+      { "id": "r-leg", "type": "op", "op": "rule", "rngKey": "se/r-leg", "args": { "from": [506, 484], "to": [514, 604], "brush": "2B", "color": "ink", "weight": 1.5 } },
+
+      { "id": "l-chair-back", "type": "op", "op": "stroke", "rngKey": "se/l-chair-back", "args": { "points": [[150, 470], [162, 400], [206, 386], [244, 400]], "brush": "2B", "color": "ink", "weight": 1.5, "curve": 0.35 } },
+      { "id": "r-chair-back", "type": "op", "op": "stroke", "rngKey": "se/r-chair-back", "args": { "points": [[560, 458], [570, 392], [614, 378], [654, 394]], "brush": "2B", "color": "ink", "weight": 1.4, "curve": 0.4 } },
+      { "id": "l-cup-ring", "type": "op", "op": "stroke", "rngKey": "se/l-cup-ring", "args": { "points": [[262, 438], [280, 430], [296, 440], [280, 450], [262, 438]], "brush": "cpencil", "color": "ink", "weight": 0.9, "curve": 0.6 } },
+      { "id": "r-cup-ring", "type": "op", "op": "stroke", "rngKey": "se/r-cup-ring", "args": { "points": [[668, 424], [686, 417], [702, 427], [686, 437], [668, 424]], "brush": "cpencil", "color": "ink", "weight": 0.8, "curve": 0.6 } },
+      { "id": "l-plant", "type": "op", "op": "stroke", "rngKey": "se/l-plant", "args": { "points": [[352, 470], [346, 410], [356, 356], [340, 306]], "brush": "charcoal", "color": "green", "weight": 1.8, "curve": 0.4 } },
+      { "id": "r-plant", "type": "op", "op": "stroke", "rngKey": "se/r-plant", "args": { "points": [[762, 458], [756, 402], [768, 348], [750, 300]], "brush": "charcoal", "color": "green", "weight": 1.7, "curve": 0.45 } },
+
+      { "id": "l-sitter", "type": "op", "op": "fragment", "rngKey": "se/l-sitter", "args": { "name": "figure.seated", "x": 196, "y": 452, "span": 128, "rotate": -1, "style": { "kind": "outline", "brush": "2B", "color": "ink", "weight": 1.4 } } },
+      { "id": "r-sitter", "type": "op", "op": "fragment", "rngKey": "se/r-sitter", "args": { "name": "figure.seated", "x": 604, "y": 440, "span": 122, "rotate": 2, "style": { "kind": "outline", "brush": "2B", "color": "ink", "weight": 1.3 } } },
+      { "id": "l-cup", "type": "op", "op": "fragment", "rngKey": "se/l-cup", "args": { "name": "object.bowl", "x": 280, "y": 428, "span": 40, "rotate": 0, "style": { "kind": "outline", "brush": "cpencil", "color": "ink", "weight": 1.1 } } },
+      { "id": "r-cup", "type": "op", "op": "fragment", "rngKey": "se/r-cup", "args": { "name": "object.bowl", "x": 686, "y": 414, "span": 38, "rotate": 4, "style": { "kind": "outline", "brush": "cpencil", "color": "ink", "weight": 1 } } },
+      { "id": "l-post", "type": "op", "op": "fragment", "rngKey": "se/l-post", "args": { "name": "arch.column", "x": 396, "y": 300, "span": 70, "rotate": 0, "style": { "kind": "outline", "brush": "2H", "color": "steel", "weight": 1.2 } } },
+      { "id": "r-hand", "type": "op", "op": "fragment", "rngKey": "se/r-hand", "args": { "name": "hand.open", "x": 648, "y": 424, "span": 44, "rotate": -6, "style": { "kind": "outline", "brush": "cpencil", "color": "ink", "weight": 1 } } }
+    ]
+  }
+}

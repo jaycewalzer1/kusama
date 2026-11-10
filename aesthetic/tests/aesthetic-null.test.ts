@@ -12,8 +12,8 @@
 //      This second probe used to remove the text, because the brief carried three `textRequired`
 //      constraints. Conditions replaced briefs and no longer require anybody to say anything, so a
 //      mute sheet is now legitimately fine and the probe would have been measuring nothing. It now
-//      removes the coverings instead — a demand the position itself makes, which is the more
-//      honest place for it to have been all along.
+//      removes the structure under the track instead — a demand the position itself makes, which is
+//      the more honest place for it to have been all along.
 //   2. The tree scope is blind to composition. Randomising every coordinate in the tree leaves
 //      treeScore byte-identical, because every tree-scope kind on these positions is an existence or
 //      absence predicate. That is asserted here, deliberately and as a failure recorded rather than
@@ -22,17 +22,23 @@
 //   3. A score of 1.0 can be 1.0 over a strict subset of the position. Unverified constraints leave
 //      BOTH the numerator and the denominator, so treeScore reads 1.000 over whatever happened to be
 //      decidable from the JSON. This probe used to make its point with a commitment blocked by a
-//      missing primitive; `cover.destroys` closed that gap and `withheld` has no blocked constraint
-//      left. The point did not go away, it moved: every hard demand this position now makes is
-//      measured on the canvas, so a tree score of 1.0 is 1.0 over the soft preferences alone.
+//      missing primitive; `cover.destroys` closed that gap and `switchback` has no blocked
+//      constraint. The point did not go away, it moved: every hard demand this position makes is
+//      either measured on the canvas or asked of a viewer, so a tree score of 1.0 is 1.0 over one
+//      ban and a handful of soft preferences.
 //   4. Positions are not interchangeable. A program made for one does not satisfy all of them.
 //
 // The second probe changed meaning in the same overhaul and the change is worth stating plainly.
-// Removing every covering used to violate a hard constraint, because `requireNode {op:'cover'}` was
-// hard. It is soft now, along with every other count of node types, because two full runs were spent
-// clearing constraints of that kind by editing the tree with no visible change to the picture. The
-// cost is real and is asserted below: the tree scope alone can no longer refuse an uncovered sheet.
-// Only the canvas can, and the last test here is the demonstration that it does.
+// Removing a class of act used to violate a hard constraint, because `requireNode` was hard. It is
+// soft now, along with every other count of node types, because two full runs were spent clearing
+// constraints of that kind by editing the tree with no visible change to the picture. The cost is
+// real and is asserted below: the tree scope alone can no longer refuse a track with nothing
+// holding it up. Only the canvas and the judge can, and the last tests here say which.
+//
+// This file was written against `withheld`, which was deleted on 2026-09-02 for not depicting
+// anything. It now runs against `switchback`, and the six claims above survived the move unchanged
+// while every specific number in them had to be rewritten — which is the point of keeping the
+// claims and the fixtures in separate places.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -49,70 +55,90 @@ function op(id: string, name: string, args: Record<string, unknown>): Node {
   return { id, type: 'op', op: name, rngKey: `k/${id}`, args };
 }
 
+const bent = (id: string, from: [number, number], to: [number, number]): Node =>
+  op(id, 'rule', { from, to, brush: 'rotring', color: 'ink', weight: 2.2 });
+const run = (id: string, points: [number, number][]): Node =>
+  op(id, 'stroke', { points, brush: 'charcoal', color: 'ink', weight: 2.2, curve: 0.3 });
+
 /**
- * The smallest tree that satisfies every DECIDABLE tree-scope constraint of withheld crossed with
- * two-million-slips: four opaque blocks, one sealed region, three coverings, three texts of at most
- * four words carrying the three required strings, no hatching, no repeat, and few enough drawing
- * nodes to stay under the ceiling.
+ * The smallest tree that satisfies every DECIDABLE tree-scope constraint of switchback crossed with
+ * two-million-slips: two washes and two hatched passages for the air, ten straight members for the
+ * bents and bracing, six drawn runs for the track and the fence, two scatters of people, no flat
+ * fill anywhere and no frame macro.
  *
  * Hand-written rather than lifted from a run, so the test does not depend on `out/` — which is
  * gitignored, and would make this test pass or fail depending on what happened to be on the disk.
+ * The two signs are not asked for by anything; they are here so the mute probe below has something
+ * to take away.
  */
 function passing(): Record<string, unknown> {
   return {
     profile: 'default-v1',
-    canvas: { width: 500, height: 700, ground: '#f2efe6', brushScale: 1 },
-    palette: { ink: '#111111', red: '#cc2200' },
+    canvas: { width: 900, height: 600, ground: '#efeae0', brushScale: 1 },
+    palette: { ink: '#1a1c20', steel: '#4a5560', rust: '#8c3a1f' },
     root: {
       id: 'root',
       type: 'group',
       children: [
-        op('made-a', 'paint', {
-          region: { type: 'rect', x: 20, y: 40, w: 300, h: 120 },
-          style: { kind: 'solid', color: 'ink', opacity: 255 },
+        // Air and ground. `c-air` wants three built or wet passages; these are four, and not one of
+        // them is a `solid`, which is the position's single hard tree ban.
+        op('sky', 'wash', {
+          region: { type: 'rect', x: -20, y: -20, w: 940, h: 340 },
+          style: { kind: 'wash', color: 'steel', opacity: 38, bleed: 0.2, texture: [0.4, 0.3] },
         }),
-        op('made-b', 'paint', {
-          region: { type: 'rect', x: 60, y: 200, w: 380, h: 150 },
-          style: { kind: 'solid', color: 'ink', opacity: 255 },
+        op('dirt', 'wash', {
+          region: { type: 'rect', x: -20, y: 470, w: 940, h: 150 },
+          style: { kind: 'wash', color: 'rust', opacity: 44, bleed: 0.25, texture: [0.5, 0.3] },
         }),
-        op('made-c', 'paint', {
-          region: { type: 'rect', x: 40, y: 380, w: 260, h: 130 },
-          style: { kind: 'solid', color: 'red', opacity: 255 },
+        op('shade-under', 'paint', {
+          region: { type: 'rect', x: 180, y: 300, w: 520, h: 200 },
+          style: { kind: 'hatch', brush: '2B', color: 'ink', spacing: 9, angle: 74, rand: 0.12 },
         }),
-        op('made-d', 'paint', {
-          region: { type: 'circle', x: 360, y: 560, r: 90 },
-          style: { kind: 'solid', color: 'ink', opacity: 255 },
+        op('steel-tone', 'paint', {
+          region: { type: 'rect', x: 240, y: 120, w: 420, h: 220 },
+          style: { kind: 'hatch', brush: '2H', color: 'steel', spacing: 13, angle: 28, rand: 0.1 },
         }),
-        {
-          id: 'sealed',
-          type: 'macro',
-          macro: 'quarantine',
-          rngKey: 'k/sealed',
-          args: {
-            x: 200,
-            y: 430,
-            w: 180,
-            h: 120,
-            style: { kind: 'solid', color: 'ink', opacity: 255 },
-            boxBrush: 'marker',
-            boxColor: 'ink',
-            boxWeight: 4,
-            label: 'NOT THIS',
-            labelFont: 'anton',
-            labelSize: 20,
-          },
-        },
-        // Each covering names what it took back. env/validate.ts checks the claim geometrically —
-        // the named node has to exist, to have been drawn earlier, and to lie underneath — so these
-        // three ids are the difference between a covering and a dark rectangle, and they are the
-        // reason `c-erased` is decidable at all.
-        op('taken-back-1', 'cover', { region: { type: 'rect', x: 50, y: 70, w: 210, h: 70 }, softness: 0, destroys: ['made-a'] }),
-        op('taken-back-2', 'cover', { region: { type: 'rect', x: 90, y: 240, w: 280, h: 80 }, softness: 0, destroys: ['made-b'] }),
-        op('taken-back-3', 'cover', { region: { type: 'rect', x: 70, y: 410, w: 190, h: 60 }, softness: 0, destroys: ['made-c'] }),
-        op('t-since', 'text', { text: '1961', font: 'anton', size: 64, x: 30, y: 660, color: 'ink' }),
-        op('t-extent', 'text', { text: '2.1 MILLION', font: 'anton', size: 48, x: 30, y: 610, color: 'ink' }),
-        op('t-date', 'text', { text: '14 JANUARY', font: 'anton', size: 48, x: 30, y: 560, color: 'red' }),
-        op('escapes', 'rule', { from: [16, 36], to: [326, 44], brush: 'marker', color: 'ink', weight: 3 }),
+
+        // What holds it up: three bents and four braces, ten members against `g-structure`'s eight.
+        bent('bent-1a', [212, 500], [252, 176]),
+        bent('bent-1b', [300, 500], [268, 176]),
+        bent('bent-2a', [420, 502], [452, 250]),
+        bent('bent-2b', [500, 502], [468, 250]),
+        bent('bent-3a', [606, 504], [632, 318]),
+        bent('bent-3b', [672, 504], [648, 318]),
+        bent('brace-1', [222, 420], [296, 300]),
+        bent('brace-2', [296, 420], [226, 300]),
+        bent('brace-3', [430, 440], [498, 340]),
+        bent('brace-4', [498, 440], [432, 340]),
+
+        // The track, in five runs from lift hill to brake run, plus the fence in the way.
+        run('lift-hill', [[-20, 470], [90, 380], [180, 268], [258, 168]]),
+        run('crest', [[258, 168], [300, 150], [346, 158], [386, 196]]),
+        run('drop', [[386, 196], [412, 300], [434, 400], [462, 452]]),
+        run('valley-turn', [[462, 452], [528, 420], [578, 356], [624, 312]]),
+        run('brake-run', [[624, 312], [720, 322], [820, 330], [920, 344]]),
+        run('fence-line', [[-20, 546], [220, 538], [520, 544], [920, 536]]),
+
+        // Somebody is here.
+        op('queue', 'fragment', {
+          name: 'figure.crowd',
+          x: 200,
+          y: 540,
+          span: 260,
+          rotate: 0,
+          style: { kind: 'outline', brush: 'cpencil', color: 'ink', weight: 1.3 },
+        }),
+        op('watcher', 'fragment', {
+          name: 'figure.standing',
+          x: 738,
+          y: 528,
+          span: 96,
+          rotate: 0,
+          style: { kind: 'outline', brush: '2B', color: 'ink', weight: 1.6 },
+        }),
+
+        op('sign-name', 'text', { text: 'SWITCHBACK', font: 'anton', size: 36, x: 690, y: 152, color: 'ink' }),
+        op('sign-price', 'text', { text: 'ONE RIDE', font: 'anton', size: 22, x: 690, y: 186, color: 'rust' }),
       ],
     },
   };
@@ -129,14 +155,19 @@ function scrambled(p: Record<string, unknown>): Record<string, unknown> {
     s = (s * 1103515245 + 12345) % 2147483648;
     return Math.floor((s / 2147483648) * n);
   };
+  const point = (): [number, number] => [rnd(880) + 10, rnd(580) + 10];
   for (const node of kids(q)) {
     const args = node['args'] as Record<string, unknown>;
-    if (args['x'] !== undefined) args['x'] = rnd(500);
-    if (args['y'] !== undefined) args['y'] = rnd(690) + 10;
+    if (args['x'] !== undefined) args['x'] = rnd(880) + 10;
+    if (args['y'] !== undefined) args['y'] = rnd(580) + 10;
+    if (args['from'] !== undefined) args['from'] = point();
+    if (args['to'] !== undefined) args['to'] = point();
+    const points = args['points'] as unknown[] | undefined;
+    if (points) args['points'] = points.map(point);
     const region = args['region'] as Record<string, number> | undefined;
     if (region) {
-      region['x'] = rnd(400);
-      region['y'] = rnd(600);
+      region['x'] = rnd(700);
+      region['y'] = rnd(500);
     }
   }
   return q;
@@ -148,10 +179,10 @@ function withoutText(p: Record<string, unknown>): Record<string, unknown> {
   return q;
 }
 
-/** Everything else intact: the blocks, the seal, the type, the rule. Only the coverings gone. */
-function withoutCovers(p: Record<string, unknown>): Record<string, unknown> {
+/** Everything else intact: the air, the track, the crowd, the signs. Only what holds it up gone. */
+function withoutStructure(p: Record<string, unknown>): Record<string, unknown> {
   const q = copy(p);
-  (q['root'] as { children: Node[] }).children = kids(q).filter((n) => n['op'] !== 'cover');
+  (q['root'] as { children: Node[] }).children = kids(q).filter((n) => n['op'] !== 'rule');
   return q;
 }
 
@@ -161,7 +192,7 @@ function empty(p: Record<string, unknown>): Record<string, unknown> {
   return q;
 }
 
-const commission = loadCommission('withheld', 'two-million-slips');
+const commission = loadCommission('switchback', 'two-million-slips');
 const position = commission.effective;
 const tree = (r: CheckReport): number => {
   assert.notEqual(r.treeScore, null, 'this position has decidable tree constraints');
@@ -174,19 +205,22 @@ test('the passing program does pass, so the rest of this file is measuring a rea
   assert.equal(tree(report), 1);
 });
 
-test('the floor is well below the ceiling: an empty sheet and an uncovered sheet both score worse', () => {
+test('the floor is well below the ceiling: an empty sheet and an unbraced sheet both score worse', () => {
   const ceiling = tree(checkProgram(passing(), position, null));
   const blank = checkProgram(empty(passing()), position, null);
-  const open = checkProgram(withoutCovers(passing()), position, null);
+  const floating = checkProgram(withoutStructure(passing()), position, null);
 
   assert.ok(tree(blank) < ceiling * 0.7, `an empty sheet scored ${tree(blank)} against a ceiling of ${ceiling}`);
-  assert.ok(tree(open) < ceiling, `a sheet with nothing covered scored ${tree(open)}, the same as one with coverings`);
+  assert.ok(
+    tree(floating) < ceiling,
+    `a track with nothing under it scored ${tree(floating)}, the same as one on a braced frame`
+  );
 
-  // What removing every covering costs, exactly. It is soft violations now and not a hard one, and
+  // What taking the structure out costs, exactly. It is soft violations now and not a hard one, and
   // that is the price of refusing to let a node count be hard. Asserted rather than lamented: if
   // this ever becomes a hard violation again, somebody has put a counting constraint back.
-  assert.ok(open.softViolations > 0, 'removing every covering violated nothing at all');
-  assert.equal(open.hardViolations, 0, 'the tree scope is not supposed to be able to refuse this any more');
+  assert.ok(floating.softViolations > 0, 'removing every straight member violated nothing at all');
+  assert.equal(floating.hardViolations, 0, 'the tree scope is not supposed to be able to refuse this any more');
 
   // And the counterpart, now that L2 asks for no strings: taking the words out is NOT a failure.
   // A work is allowed to say nothing. If this ever starts violating something, a commission has
@@ -220,8 +254,8 @@ test('a tree score of 1.0 is 1.0 over the soft preferences, because every hard d
   assert.equal(tree(report), 1);
   assert.equal(report.renderScore, null, 'nothing measured the canvas, so there is no render score');
 
-  // A hard tree constraint is allowed, but only if it is a ban. `p-no-hatching` is the one here and
-  // it is satisfied by a tree with no hatching in it — which is to say, by not doing something,
+  // A hard tree constraint is allowed, but only if it is a ban. `p-no-flat` is the one here and it
+  // is satisfied by a tree with no opaque fill in it — which is to say, by not doing something,
   // which is the one kind of tree demand that cannot be met by adding a node nobody can see.
   assert.ok(
     treeScoped.filter((r) => r.severity === 'hard').every((r) => r.kind === 'forbidMark'),
@@ -241,27 +275,34 @@ test('a tree score of 1.0 is 1.0 over the soft preferences, because every hard d
 /**
  * The other half of that sentence: the canvas can refuse what the tree no longer can.
  *
- * The uncovered sheet from the floor test violates nothing hard by tree alone. Hand the same
- * position a measurement in which the sheet is thin, centred, off the edges and holding one blot
- * instead of three, and all four hard constraints fail at once. This is the whole argument for
- * moving them — the numbers below cannot be reached by swapping one op for another.
+ * The unbraced sheet from the floor test violates nothing hard by tree alone. Hand the same
+ * position a measurement in which the ride is drawn dead-on from nowhere and the sheet has broken
+ * into four flat plates, and both of its hard render constraints fail at once. This is the whole
+ * argument for moving them — neither number below can be reached by swapping one op for another.
+ *
+ * Two, not the four this test began with. `switchback` puts only `r-somewhere` and `r-not-plated`
+ * on the canvas and sends the rest of its demands to a viewer, and asserting a count of three here
+ * would be asserting a fact about a deleted position rather than about the checker.
  */
 test('the render scope refuses what the tree scope cannot', () => {
-  const thin: RenderMetrics = {
-    inkDensity: 0.04,
-    coverage: 0.1,
-    inkOffset: 0.05,
-    symmetry: { vertical: 0.1, horizontal: 0.1 },
+  const plated: RenderMetrics = {
+    inkDensity: 0.42,
+    coverage: 0.5,
+    inkOffset: 0.02,
+    symmetry: { vertical: 0.94, horizontal: 0.3 },
     edgeContact: { top: 0, right: 0, bottom: 0, left: 0 },
-    opaqueRegions: [0.03],
+    opaqueRegions: [0.3, 0.22, 0.18, 0.09],
     pixelHash: 'not-a-real-hash',
   };
-  const report = checkProgram(passing(), position, thin);
+  const report = checkProgram(passing(), position, plated);
   const violated = report.results.filter((r) => r.status === 'violated' && r.severity === 'hard');
-  assert.ok(violated.length >= 3, `expected the canvas to refuse this: ${JSON.stringify(report.results.map((r) => [r.id, r.status]))}`);
-  assert.ok(violated.some((r) => r.kind === 'regionCountRange'), 'one blot is not three opaque areas');
-  assert.ok(violated.some((r) => r.kind === 'inkDensityRange'));
-  assert.ok(violated.some((r) => r.kind === 'edgeContactRange'));
+  assert.ok(violated.length >= 2, `expected the canvas to refuse this: ${JSON.stringify(report.results.map((r) => [r.id, r.status]))}`);
+  assert.ok(violated.some((r) => r.kind === 'regionCountRange'), 'four plates is not at most two opaque areas');
+  assert.ok(violated.some((r) => r.kind === 'symmetryMax'), 'a mirror-symmetrical ride was drawn from nowhere');
+
+  // Every hard render constraint this position has is in that list, so there is nothing left to
+  // carry the score. If a third is ever added, this drops below 1 instead of to 0 and the assertion
+  // above still holds — which is why the count is a floor and this is a bound, not an equality.
   assert.notEqual(report.renderScore, null);
   assert.ok(report.renderScore! < 0.5, `render score ${report.renderScore} is too generous for this sheet`);
 });
@@ -279,6 +320,6 @@ test('positions are not interchangeable: one program does not satisfy all of the
   // them is not a defect. All of them would mean the position is not doing any work at all.
   assert.ok(
     perfect.length < ids.length,
-    `a program made for withheld scored 1.0 on every position: ${perfect.join(' ')}`
+    `a program made for switchback scored 1.0 on every position: ${perfect.join(' ')}`
   );
 });

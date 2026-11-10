@@ -1,0 +1,177 @@
+{
+  "version": "1.0",
+  "id": "switchback",
+  "name": "Switchback",
+  "lineage": [
+    {
+      "ref": "Giovanni Battista Piranesi, \"Carceri d'invenzione\" (1749-1761)",
+      "why": "Structure drawn so the eye can climb it. Every beam is carrying something, and the space is legible because the load path is."
+    },
+    {
+      "ref": "Charles Sheeler, \"Criss-Crossed Conveyors, River Rouge Plant\" (1927)",
+      "why": "An industrial machine seen from underneath, from where a person could actually stand. The vantage is the whole argument."
+    },
+    {
+      "ref": "Reginald Marsh, \"Pip and Flip\" (1932)",
+      "why": "A fairground drawn from inside the crowd, with bodies in the way. The obstruction is not a flaw in the view; it is the view."
+    },
+    {
+      "ref": "Joseph Stella, \"Battle of Lights, Coney Island, Mardi Gras\" (1913)",
+      "why": "A ride painted as an event with a duration. Shows how far a picture can push motion before it stops being a picture of a place."
+    },
+    {
+      "ref": "Utagawa Hiroshige, \"Fifty-three Stations of the Tokaido\" (1833)",
+      "why": "People kept small under the structure and weather they are passing through, so scale is stated rather than asserted."
+    },
+    {
+      "ref": "Eugene Atget, the Fete foraine photographs (1920s)",
+      "why": "A ride recorded off-season, still bolted to the ground. Establishes that the machine exists on days nobody screams."
+    }
+  ],
+  "worldview": "A rollercoaster is a machine for making people scream in public and also several hundred tons of steel bolted into a field. Draw it from where you are standing: below it, off to one side, behind the fence, with the queue in the way. The track must be followable — the eye should run from the lift hill to the brake run without losing it — and the structure under it must look like it is carrying the load. Everything else is weather and crowd. The moment the picture stops being a ride at a particular hour and becomes a shape describing a ride, it is a graph, and a graph has never made anybody's stomach drop.",
+  "tensions": [
+    {
+      "between": "the ride as a line",
+      "and": "the ride as a load",
+      "claim": "The thing that makes it thrilling is a curve, and the thing that makes it real is the truss holding the curve up. Draw only the curve and you have a logo; draw only the truss and you have a bridge."
+    },
+    {
+      "between": "a thrill that lasts ninety seconds",
+      "and": "a sheet that lasts as long as somebody looks",
+      "claim": "The subject is a duration and the medium has none. Anything the picture does to suggest motion — blur, repetition, a trail — is a substitute for the ninety seconds, and every substitute is a lie about a different length of time."
+    },
+    {
+      "between": "a track the eye can follow",
+      "and": "the fence, the pylon and the head in front of it",
+      "claim": "Legibility wants an uninterrupted silhouette. Honesty wants the things that are actually between you and it. Every obstruction added costs some of the followability the picture exists to have."
+    }
+  ],
+  "commitments": [
+    {
+      "id": "c-track",
+      "kind": "requireNode",
+      "params": { "op": "stroke", "min": 4 },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "The track is a drawn run, not a shape. Four strokes is roughly the fewest that can carry a lift hill, a drop, a turn and a return without any of them being a single decorative sweep."
+    },
+    {
+      "id": "c-crowd",
+      "kind": "requireNode",
+      "params": { "op": "fragment", "min": 2 },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "Somebody is here. Two scattered passages of small stuff — heads, litter, gravel — put the ride in a place people go to rather than in an empty field."
+    },
+    {
+      "id": "c-air",
+      "kind": "requireMark",
+      "params": { "styles": ["hatch", "wash"], "min": 3 },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "Steel and sky have tone. Three built or wet passages is the floor at which light is doing something, below which the picture reads as a diagram with colours."
+    },
+    {
+      "id": "r-somewhere",
+      "kind": "symmetryMax",
+      "params": { "axis": "vertical", "max": 0.45 },
+      "scope": "render",
+      "severity": "hard",
+      "why": "A mirror-symmetrical ride was drawn from nowhere. Being off to one side is what makes the vantage a place a person could stand."
+    },
+    {
+      "id": "j-what-is-it",
+      "kind": "rubric",
+      "params": {
+        "text": "Say what you are looking at, in one sentence, without using the words abstract, composition, form or structure. Then say where you are standing to see it: how far away, how high, what is between you and it. If either sentence cannot be written from the image alone, the picture is of nothing in particular and nothing else in this rubric matters. Then trace the track with your eye from where the train is lifted to where it stops. Name the first place you lose it."
+      },
+      "scope": "judge",
+      "severity": "hard",
+      "why": "The only test that catches the failure this position exists against: a sheet of handsome marks that is not a picture of anything. It has to be asked of a viewer, because a tree cannot say whether its nodes add up to a ride."
+    },
+    {
+      "id": "j-load",
+      "kind": "rubric",
+      "params": {
+        "text": "Find where the weight goes. Follow the heaviest part of the track down through whatever is under it to the ground, and say whether the picture has drawn that path or skipped it. A ride that floats, or that meets the ground at a single tidy point, was drawn from a memory of a photograph. Then name one thing here that only somebody who had stood under one of these would have put in."
+      },
+      "scope": "judge",
+      "severity": "soft",
+      "why": "The first tension, asked of the result. The load path is the difference between a machine and a swoosh, and it is visible on the sheet or it is not there."
+    }
+  ],
+  "prohibitions": [
+    {
+      "id": "p-no-flat",
+      "kind": "forbidMark",
+      "params": { "styles": ["solid"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "A flat opaque area is a poster shape. Nothing outdoors is one tone, and every time this position has been given the fill it has produced a sky-coloured rectangle and called it sky."
+    },
+    {
+      "id": "p-no-panel",
+      "kind": "forbidNode",
+      "params": { "macros": ["frame"] },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "A frame turns a view into a panel and tells the viewer the picture ends where the sheet does. This one is a window on a field that keeps going."
+    },
+    {
+      "id": "r-not-plated",
+      "kind": "regionCountRange",
+      "params": { "max": 2, "minArea": 0.06 },
+      "scope": "render",
+      "severity": "hard",
+      "why": "At most two large opaque areas on the sheet. Three or more is the flat-plate composition this loop falls into when nobody decided what the picture was of, and it is measured on the canvas because the tree cannot see that four marks merged into one plate."
+    }
+  ],
+  "generative_rules": [
+    {
+      "rule": "Draw what is holding it up before drawing any track. The bents, the bracing and the footings come first, because the shape of the track is a consequence of what could be stood underneath it.",
+      "constraint": {
+        "id": "g-structure",
+        "kind": "requireNode",
+        "params": { "op": "rule", "min": 8 },
+        "scope": "tree",
+        "severity": "soft",
+        "why": "Eight straight members is about the fewest that reads as a braced frame rather than as two posts. A floor on the tendency, not a claim about the ninth."
+      }
+    },
+    {
+      "rule": "Put something in front of the ride — a fence, a pole, a head, a tree. A ride with nothing between it and the viewer was drawn from the owner's photograph."
+    },
+    {
+      "rule": "Run the track off at least one edge. The train came from somewhere and is going somewhere, and a ride that fits neatly inside the margins is a model of a ride."
+    },
+    {
+      "rule": "One vantage, one hour. Every part of the sheet is seen from the same place at the same time, or the picture is a diagram assembled out of several."
+    }
+  ],
+  "cliches": [
+    "a single swooping line on an empty sky, used as a logo for fun",
+    "the loop seen dead-on so that it reads as a circle",
+    "a black silhouette against a sunset gradient",
+    "the view down the first drop, borrowed from a phone held over the lap bar",
+    "the empty park at night with one lit car, meaning loneliness",
+    "track drawn with no structure under it, floating",
+    "screaming faces in the front row, drawn large enough to be the subject",
+    "bunting and lightbulbs standing in for a fairground"
+  ],
+  "meta": {
+    "practice": {
+      "origin": "Site drawing. Somebody stands at a fence for an afternoon with a board, draws the thing in front of them, and finds out that the parts they cannot see are the parts holding it up. The vocabulary comes from having to describe steel, sky and a queue with the same hand in the same hour.",
+      "doing": "Depicting a specific machine in a specific place from a specific standing position, so that the structure reads as carrying load and the track reads as followable. What it is about is the gap between the ninety seconds of the ride and the flat, bolted, permanent thing that delivers them.",
+      "period": "1913 to 1935, when industrial structure and public amusement were the same subject and could still be drawn from the ground without irony.",
+      "register": "First person, present tense, direct. It says what it can see and how the surface is built — the bracing, the rust, the sky behind the truss. It does not say what the ride means.",
+      "refusals": [
+        "It will not draw the ride from a place nobody could stand. No plan view, no aerial, no vantage that required a drone or a diagram.",
+        "It will not remove what is in the way. The fence, the pole and the back of somebody's head stay in, because they are what the view actually is.",
+        "It will not draw the track without what holds it up. A curve with nothing under it is a signature, not a machine.",
+        "It will not fill anything flat. Sky, steel and ground are all made of light doing something, and one opaque area is a claim that they are not."
+      ]
+    },
+    "temperament": 0.6,
+    "temperamentWhy": "It likes the thing it is drawing and wants to get every rivet of it down. The pleasure is physical — the weight of the steel, the rust on the bolts, the grease on the track. It builds the surface until the structure is carrying load on the sheet."
+  }
+}

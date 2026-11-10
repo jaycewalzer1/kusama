@@ -1,0 +1,178 @@
+{
+  "version": "1.0",
+  "id": "overlooked",
+  "name": "Overlooked",
+  "lineage": [
+    {
+      "ref": "Walker Evans, \"Many Are Called\" (subway portraits, 1938-1941)",
+      "why": "Photographs made with the lens hidden in a coat. The people are entirely particular and entirely unaware, which is the exact pair this position needs."
+    },
+    {
+      "ref": "Michael Klier, \"Der Riese\" (1983)",
+      "why": "A film assembled from surveillance cameras alone. Establishes what the machine's vantage actually looks like: too high, too wide, nothing happening."
+    },
+    {
+      "ref": "Edward Hopper, \"Night Windows\" (1928)",
+      "why": "A lit room seen from outside and above. The viewer is put in the position of the watcher without ever being told they are one."
+    },
+    {
+      "ref": "Gerhard Richter, \"Eight Student Nurses\" (1966)",
+      "why": "Faces taken from a police record and painted back into being people. The blur is the record's, and painting through it is the argument."
+    },
+    {
+      "ref": "Sophie Calle, \"Suite venitienne\" (1980)",
+      "why": "Following a stranger for days and finding it mostly boring. Watching is a tedious activity, and the tedium is part of what it does to the watcher."
+    },
+    {
+      "ref": "Harun Farocki, \"Eye/Machine\" (2001-2003)",
+      "why": "Pictures made by machines for machines, with no human viewer intended. Names the thing this position is trying to draw from the other side."
+    }
+  ],
+  "worldview": "Being watched does not feel like being watched. It feels like an ordinary Wednesday in a corridor with the lights on. So draw the ordinary hour, but from where the fixture is: too high, too wide, down the length of something, nobody centred, the light coming from the wrong place and doing nobody any favours. Nothing happens. The dread is entirely in the vantage and in the fact that this view exists at all, of these particular people, who did not know. Keep them tellable apart — heights, coats, what their hands are doing. The moment they become interchangeable silhouettes the picture has agreed with the camera, and agreeing with the camera is the one thing this position is for refusing.",
+  "tensions": [
+    {
+      "between": "the machine's vantage, which is the subject",
+      "and": "the machine's way of seeing, which is the enemy",
+      "claim": "To show what it feels like you have to stand where the camera stands. But standing there is what flattens people into shapes, and a picture that flattens them has demonstrated the thing rather than said anything about it."
+    },
+    {
+      "between": "nothing is happening, which is the point",
+      "and": "a picture needs something to look at",
+      "claim": "The content is that this is a boring hour nobody would review. Give the sheet an incident and it becomes a crime scene, which is a genre with a resolution built in, and the resolution is a comfort the subject does not have."
+    },
+    {
+      "between": "showing the apparatus",
+      "and": "showing the condition",
+      "claim": "Draw the camera and the picture is an illustration with a caption implied. Leave it out and the picture is a corridor. Everything this position is trying to do sits in the gap between those two failures, and there is no setting that avoids both."
+    }
+  ],
+  "commitments": [
+    {
+      "id": "c-people",
+      "kind": "requireNode",
+      "params": { "op": "fragment", "min": 3 },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "Three passages of small particular stuff — a person's hands, a bag on the floor, the litter under a bench. Particularity is the whole of the resistance, and it is made of small things."
+    },
+    {
+      "id": "c-fixtures",
+      "kind": "requireNode",
+      "params": { "op": "rule", "min": 6 },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "Six straight runs: a corridor, a ceiling grid, a handrail, a door edge. The room has to be a built room seen in perspective, because the vantage is only legible if there is something for it to be a vantage on."
+    },
+    {
+      "id": "c-bad-light",
+      "kind": "requireMark",
+      "params": { "styles": ["wash", "hatch"], "min": 4 },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "Overhead light, dirty air, the grey that a wide lens gives an interior. Four wet or built passages is the floor at which the light in the room is a fact rather than a colour choice."
+    },
+    {
+      "id": "r-off-centre",
+      "kind": "inkOffsetRange",
+      "params": { "min": 0.12 },
+      "scope": "render",
+      "severity": "hard",
+      "why": "The weight of the picture sits away from the middle. A centred subject is a composed subject, and nothing in this view was composed for anybody: the camera was screwed to a bracket and whoever walked through walked through."
+    },
+    {
+      "id": "j-who",
+      "kind": "rubric",
+      "params": {
+        "text": "Say what room this is and what time of day, from the image alone. Then find the people. How many, and can you tell any two of them apart — by height, by what they are wearing, by what their hands are doing? If you cannot say what room it is, the picture is of nothing. If you can find people but cannot tell any two apart, the picture has done to them exactly what the camera does, and has therefore said nothing about it."
+      },
+      "scope": "judge",
+      "severity": "hard",
+      "why": "The two failures that end this position, in a form a viewer can answer. A tree can be made to contain three fragments and six rules while depicting no room and nobody."
+    },
+    {
+      "id": "j-vantage",
+      "kind": "rubric",
+      "params": {
+        "text": "Where is this seen from? Say the height, the angle and roughly how wide the view is. Then say whether anybody in the picture appears to know. A view that somebody posed for, or that sits at the eye level of a standing adult in the middle of the room, is not this picture. Finally: is there an incident here — a theft, a chase, a collapse? If there is, say what the picture gains by it, because this practice holds that it loses everything."
+      },
+      "scope": "judge",
+      "severity": "soft",
+      "why": "The vantage is the argument, and it is either on the sheet or it is not. Asked with the incident question because the two fail together: a staged event pulls the camera down to eye level almost every time."
+    }
+  ],
+  "prohibitions": [
+    {
+      "id": "p-no-caption",
+      "kind": "forbidNode",
+      "params": { "ops": ["text"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "No words, and no timecode. A legend is the machine's own annotation of its footage, and a picture that carries one has been assimilated into the apparatus it is about."
+    },
+    {
+      "id": "p-no-flat",
+      "kind": "forbidMark",
+      "params": { "styles": ["solid"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "An opaque area is where a person turns into a shape. The one move this position must never make is available for free from a flat fill, so the fill goes."
+    },
+    {
+      "id": "p-no-panel",
+      "kind": "forbidNode",
+      "params": { "macros": ["frame", "quarantine"] },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "A frame makes the view a monitor somebody is looking at, which relocates the dread into a picture of a man in a control room. There is no control room; there is just the view."
+    }
+  ],
+  "generative_rules": [
+    {
+      "rule": "Set the vantage where a fixture would be: high in a corner, wide, looking down the length of something. Then draw what is actually inside that view, including the ceiling and the empty floor nobody would have composed in.",
+      "constraint": {
+        "id": "g-air",
+        "kind": "requireNode",
+        "params": { "op": "wash", "min": 2 },
+        "scope": "tree",
+        "severity": "soft",
+        "why": "Two wet passages, so that there is depth and dirty air between the lens and the far end. A wide interior with no atmosphere in it renders as an elevation drawing."
+      }
+    },
+    {
+      "rule": "Keep every person tellable apart. Different heights, different coats, one of them doing something with their hands. Interchangeable figures are the camera's opinion, not yours."
+    },
+    {
+      "rule": "Let nothing happen. No theft, no chase, no collapse. The hour depicted is the hour nobody would ever have reason to review."
+    },
+    {
+      "rule": "Leave the camera out. It is where you are standing, and a thing cannot be both where you are and in front of you."
+    }
+  ],
+  "cliches": [
+    "an eye, or a lens, drawn large",
+    "a CCTV camera in the corner of the picture, in case it was not clear",
+    "a timecode burned into a corner",
+    "crosshairs or a tracking box around a face",
+    "scan lines or pixellation used as a signifier of the digital",
+    "a face assembled out of ones and zeros",
+    "the panopticon drawn as a ring of cells",
+    "a crowd of identical silhouettes with one figure picked out in red",
+    "a keyhole"
+  ],
+  "meta": {
+    "practice": {
+      "origin": "Sitting with recorded footage for long enough to get bored of it. The vocabulary comes from what a wide fixed lens does to an interior — the barrel, the ceiling in shot, the flat overhead light, the way a person crossing at the far end is four marks — and from drawing those conditions by hand instead of accepting them.",
+      "doing": "Depicting an ordinary interior at an ordinary hour from the position of a mounted camera, with the people in it kept particular. What it is about is the asymmetry: this view exists, of these people, and they did not agree to it and would not be interested if they had.",
+      "period": "1970 to 1990, when the fixed camera became ordinary furniture in public buildings and before anybody thought of the footage as data.",
+      "register": "Third person, present tense, steady and attentive. It describes what is in the view — the overhead light pooling on linoleum, the scuff marks, the coat over the chair — and never says who is watching or why.",
+      "refusals": [
+        "It will not draw the apparatus. No camera, no monitor, no wall of screens; the apparatus is the vantage, and putting it in the picture converts the condition into an illustration of itself.",
+        "It will not make anybody anonymous. A figure that could be anyone has been processed rather than drawn, and that processing is the thing being objected to.",
+        "It will not stage an incident. An event gives the view a reason to exist, and the whole claim is that it exists without one.",
+        "It will not label the picture. No timecode, no caption, no words at all."
+      ]
+    },
+    "temperament": 0.15,
+    "temperamentWhy": "Absorbed rather than detached. It has been looking at this corridor for long enough to see what the light does to the floor and what the air does to the far wall, and it wants to get those facts down in marks — wash for the dirty air, hatch for the fluorescent flicker, the hand's own attention against the camera's indifference."
+  }
+}

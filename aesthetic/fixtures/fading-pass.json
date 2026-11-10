@@ -1,0 +1,29 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 7701,
+  "canvas": { "width": 900, "height": 600, "ground": "#efeae0", "brushScale": 1 },
+  "palette": { "ink": "#3a3a3a" },
+  "meta": {
+    "aesthetic": "fading",
+    "fixture": "pass",
+    "reads_as": "a dissolving flower head in wet grey washes, two drawn stems, scattered petal fragments, no outline, no flat fill"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      { "id": "ground-wash", "type": "op", "op": "wash", "rngKey": "fd/gw", "args": { "region": { "type": "rect", "x": 100, "y": 40, "w": 700, "h": 520 }, "style": { "kind": "wash", "color": "ink", "opacity": 14, "bleed": 0.35, "texture": [0.5, 0.4] } } },
+      { "id": "head-wash-1", "type": "op", "op": "wash", "rngKey": "fd/hw1", "args": { "region": { "type": "rect", "x": 280, "y": 80, "w": 340, "h": 280 }, "style": { "kind": "wash", "color": "ink", "opacity": 28, "bleed": 0.4, "texture": [0.6, 0.3] } } },
+      { "id": "head-wash-2", "type": "op", "op": "wash", "rngKey": "fd/hw2", "args": { "region": { "type": "rect", "x": 320, "y": 120, "w": 260, "h": 200 }, "style": { "kind": "wash", "color": "ink", "opacity": 36, "bleed": 0.3, "texture": [0.4, 0.5] } } },
+      { "id": "petal-bleed", "type": "op", "op": "wash", "rngKey": "fd/pb", "args": { "region": { "type": "rect", "x": 380, "y": 200, "w": 180, "h": 160 }, "style": { "kind": "wash", "color": "ink", "opacity": 42, "bleed": 0.45, "texture": [0.5, 0.6] } } },
+      { "id": "hatch-centre", "type": "op", "op": "paint", "rngKey": "fd/hc", "args": { "region": { "type": "rect", "x": 360, "y": 160, "w": 180, "h": 140 }, "style": { "kind": "hatch", "brush": "2B", "color": "ink", "spacing": 11, "angle": 55, "rand": 0.15 } } },
+      { "id": "hatch-shadow", "type": "op", "op": "paint", "rngKey": "fd/hs", "args": { "region": { "type": "rect", "x": 300, "y": 300, "w": 300, "h": 120 }, "style": { "kind": "hatch", "brush": "2H", "color": "ink", "spacing": 14, "angle": 80, "rand": 0.1 } } },
+      { "id": "stem-1", "type": "op", "op": "stroke", "rngKey": "fd/s1", "args": { "points": [[420, 340], [410, 420], [400, 510], [395, 580]], "brush": "cpencil", "color": "ink", "weight": 1.8, "curve": 0.3 } },
+      { "id": "stem-2", "type": "op", "op": "stroke", "rngKey": "fd/s2", "args": { "points": [[460, 320], [470, 400], [465, 480], [450, 560]], "brush": "cpencil", "color": "ink", "weight": 1.4, "curve": 0.25 } },
+      { "id": "fallen-petals", "type": "op", "op": "fragment", "rngKey": "fd/fp", "args": { "name": "figure.crowd", "x": 340, "y": 520, "span": 220, "rotate": 0, "style": { "kind": "outline", "brush": "cpencil", "color": "ink", "weight": 1.0 } } },
+      { "id": "pollen-dust", "type": "op", "op": "fragment", "rngKey": "fd/pd", "args": { "name": "figure.standing", "x": 520, "y": 440, "span": 80, "rotate": 12, "style": { "kind": "outline", "brush": "2H", "color": "ink", "weight": 0.8 } } }
+    ]
+  }
+}

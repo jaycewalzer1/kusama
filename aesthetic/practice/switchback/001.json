@@ -1,0 +1,230 @@
+{
+  "positionId": "switchback",
+  "practice": {
+    "origin": "Site drawing. Somebody stands at a fence for an afternoon with a board, draws the thing in front of them, and finds out that the parts they cannot see are the parts holding it up. The vocabulary comes from having to describe steel, sky and a queue with the same hand in the same hour.",
+    "doing": "Depicting a specific machine in a specific place from a specific standing position, so that the structure reads as carrying load and the track reads as followable. What it is about is the gap between the ninety seconds of the ride and the flat, bolted, permanent thing that delivers them.",
+    "period": "1913 to 1935, when industrial structure and public amusement were the same subject and could still be drawn from the ground without irony.",
+    "register": "First person, present tense, direct. It says what it can see and how the surface is built — the bracing, the rust, the sky behind the truss. It does not say what the ride means.",
+    "refusals": [
+      "It will not draw the ride from a place nobody could stand. No plan view, no aerial, no vantage that required a drone or a diagram.",
+      "It will not remove what is in the way. The fence, the pole and the back of somebody's head stay in, because they are what the view actually is.",
+      "It will not draw the track without what holds it up. A curve with nothing under it is a signature, not a machine.",
+      "It will not fill anything flat. Sky, steel and ground are all made of light doing something, and one opaque area is a claim that they are not."
+    ]
+  },
+  "borrowed": [
+    {
+      "id": "m1",
+      "works": [
+        "p-no-panel",
+        "r-somewhere"
+      ],
+      "borrowing": "Forces the eye to enter and leave the surface in motion, breaking the model-box feel and anchoring the sheet to a place the ride continues beyond."
+    },
+    {
+      "id": "m2",
+      "works": [
+        "c-crowd"
+      ],
+      "borrowing": "Reduces easy legibility to gain witness — the ride reads as seen-from-behind-a-barrier, tightening scale and honesty."
+    },
+    {
+      "id": "m3",
+      "works": [
+        "c-track",
+        "j-load"
+      ],
+      "borrowing": "Makes the load path read before the thrill line, so the later rail marks inherit constraints and the machine feels weight-bearing."
+    },
+    {
+      "id": "m4",
+      "works": [
+        "p-no-flat",
+        "c-air",
+        "r-not-plated"
+      ],
+      "borrowing": "Prevents the surface from collapsing into poster flatness and gives the steel something luminous to read against."
+    },
+    {
+      "id": "m5",
+      "works": [
+        "c-air",
+        "r-not-plated"
+      ],
+      "borrowing": "Deepens section and curvature without adding a new plate, keeping the air-in-steel feel while staying inside one-pass print logic."
+    },
+    {
+      "id": "m6",
+      "works": [
+        "c-crowd"
+      ],
+      "borrowing": "Sets human scale and makes the place inhabited so the ride is in a field people use, not an empty diagram."
+    },
+    {
+      "id": "m7",
+      "works": [
+        "r-somewhere"
+      ],
+      "borrowing": "Keeps the vantage accountable to a real standing position and prevents the surface reading as a centered emblem."
+    },
+    {
+      "id": "m8",
+      "works": [
+        "p-no-panel"
+      ],
+      "borrowing": "Collapses the frame-as-panel and makes the ground a made surface, so the field feels continuous past the print."
+    },
+    {
+      "id": "m9",
+      "works": [
+        "p-no-flat"
+      ],
+      "borrowing": "Holds the outdoor claim — nothing goes dead — and keeps the ride from slipping into logo or silhouette territory."
+    },
+    {
+      "id": "m10",
+      "works": [
+        "r-somewhere"
+      ],
+      "borrowing": "Pins the drawing to one time so the ninety seconds are set against a fixed hour, sharpening specificity without motion tricks."
+    },
+    {
+      "id": "m11",
+      "works": [
+        "c-crowd"
+      ],
+      "borrowing": "Trades some followability for truth of view, increasing the sense that the ride is being looked at, not diagrammed."
+    },
+    {
+      "id": "m12",
+      "works": [
+        "c-track"
+      ],
+      "borrowing": "Prevents the track from reading as a decorative flourish and helps the eye follow the trainable path through structure."
+    }
+  ],
+  "fertile": [
+    {
+      "id": "fixed-delay-lift#s4",
+      "what": "Phase‑lock the lift’s tick repeat to the sky’s hatch spacing so cadence rides the sheet, while the drop cuts across angle bands too quickly to resolve into a beat.",
+      "why": "won 2 of 2 pairwise comparisons and was committed to"
+    },
+    {
+      "id": "fixed-delay-lift#s6",
+      "what": "Phase‑lock the lift’s tick cadence to the sky’s hatch angles so the screen itself carries a beat the eye must ride, then throw the drop across those angles too fast to resolve.",
+      "why": "won 2 of 2 pairwise comparisons and was committed to"
+    },
+    {
+      "id": "fixed-delay-lift#s5",
+      "what": "Phase-lock the lift’s rung spacing to one of the sky’s hatch screens at 45°, so the eye rides a metered cadence up the lift while the drop shears across the other angles too quickly to settle.",
+      "why": "won 1 of 1 pairwise comparisons and was committed to"
+    }
+  ],
+  "rejected": [
+    {
+      "id": "l1",
+      "what": "Carry the stroke taxonomy onto the delay: render the lift with the densest, metronomic regime while the drop and return collapse to brief, lighter hints, so the surface spends ink on waiting.",
+      "why": "Emergent claim survives deleting the stroke‑taxonomy source; it just restates “spend ink on waiting” without a binding structural rule."
+    },
+    {
+      "id": "l2",
+      "what": "Set evenly spaced visual ticks along the lift catwalks as the sheet’s metronome, running them off the edge while the drop arrives as a single breath between beats.",
+      "why": "Shared‑property only: even ticks already exist on the lift; the metronome adds no constraint, so the claim survives deleting it."
+    },
+    {
+      "id": "l3",
+      "what": "Let the lift’s posts cast a run of equal‑angle shadows that read as a visible schedule, while the drop compresses into a single flare where shadow logic knots.",
+      "why": "Conflates shadow coherence with a countable schedule; the ‘tick’ is ambiguous. Theme overlap, not a determinate mechanism."
+    },
+    {
+      "id": "l4",
+      "what": "Draw the lift as a time‑locked face—rungs and chain housings marking hours that must pass—while the drop is the locked interior shown only as a sliver beyond the door.",
+      "why": "Restatement of the embargo as a time‑lock; invites emblem/diagram reading, violating the refusal against symbolic faces."
+    },
+    {
+      "id": "l5",
+      "what": "Lay the lift’s catwalk posts and chain guards as columnar punches the eye must ‘process’ first; the drop is a narrow overflow beyond the read area.",
+      "why": "Shared grid logic; columnar alignment exists without the tabulator. Emergent order of reading survives deleting the machine."
+    },
+    {
+      "id": "l6",
+      "what": "Let the lift’s cadence run cleanly off the top edge while the drop is cropped inside the sheet, so only delay connects beyond the frame.",
+      "why": "Restates the run‑off‑edge rule; edge bleed is general motion logic. The “only wait continues” claim isn’t enforced structurally."
+    },
+    {
+      "id": "l9",
+      "what": "Use that foreshortening to make equal real‑world ticks draw closer together, translating fixed delay into apparent acceleration without speeding anything.",
+      "why": "Not a generative law; a perspective by‑product. The effect appears wherever foreshortening occurs—shared property, not a rule."
+    },
+    {
+      "id": "l10",
+      "what": "Embed tiny leader‑like cues along the lift railing; the drop is the cut after zero, glimpsed and gone, the sheet having spent itself on the countdown.",
+      "why": "Imports countdown tropes that read as announcement/commemoration; theme, not structure, and risks captioning the surface."
+    },
+    {
+      "id": "l12",
+      "what": "Score short edge‑notches along the sheet for each bent and footing; where the fence interrupts, the edge count runs on as proof the image equals the number.",
+      "why": "Moves the ledger to the page edge; the count decouples from structure. Emergent claim survives deleting the scene entirely."
+    },
+    {
+      "id": "l13",
+      "what": "Number the lattice as it’s built—bay by bay, footing by footing—so quantity and spacing alone complete the image without an emblematic curve.",
+      "why": "Restatement of the problem: “number the lattice and let count be the image” adds no new correspondence or constraint."
+    },
+    {
+      "id": "l14",
+      "what": "Arrange bays as ‘shelves’ in depth: nearer bays read louder in the list, and the count proceeds by position, not by spectacle of the track.",
+      "why": "Shared property of stocktakes—listing by position—relabels perspective depth; no structural binding to the bays."
+    },
+    {
+      "id": "l15",
+      "what": "Use those small marks as commas in the ledger: punctuate the count between bents so the truss parses like a sentence of numbers.",
+      "why": "Emergent claim survives deleting the crowd; punctuation is editorial, not structural, and reduces inhabitation to a device."
+    },
+    {
+      "id": "l16",
+      "what": "Read each cross‑brace as a rod and bays as beads slid to tally; the accounting happens inside the structure rather than beside it.",
+      "why": "Wrong mechanics: treats fixed members as movable beads. Metaphor contradicts structure; theme over determinate rule."
+    },
+    {
+      "id": "l17",
+      "what": "Make every interruption a checkpoint: where the pole occludes, restate the running count as short ticks so enumeration cannot be broken.",
+      "why": "Source used better in l11; it’s a redundancy. Restates “interruptions become ticks” without adding a structural change."
+    },
+    {
+      "id": "l18",
+      "what": "Stamp a faint advancing frank on each bay; where the fence crosses, partial imprints still advance the ledger so omission cannot occur.",
+      "why": "Introduces external franking marks that read as signage/record‑keeping; theme over structure and outside site‑drawing logic."
+    },
+    {
+      "id": "l19",
+      "what": "Render the occluding board as the richest cross‑pass field, and let the ride exist as edge leaks and reflected tone around it.",
+      "why": "Craft restatement of p‑no‑flat; rendering the board richly is technique, not a new structural correspondence."
+    },
+    {
+      "id": "l20",
+      "what": "Place a drawn ‘slide’ across a third of the view; its edges glow while what it shields is only implied in the spill it allows.",
+      "why": "Imports camera apparatus; turns the cover into a diagram of photography. Restatement of “cover” without added law."
+    },
+    {
+      "id": "l21",
+      "what": "Let the occluder also bleed so the cover continues past the frame; the ride must navigate a covering that belongs to the world, not the print.",
+      "why": "Restates full‑bleed; making the occluder bleed adds scale rhetoric but no mechanism. Emergent claim rides an existing rule."
+    },
+    {
+      "id": "l22",
+      "what": "Treat the board as a nonreflective plane that absorbs the finest description, leaving the ride to survive only as a peripheral glint.",
+      "why": "Ritual analogy is thematic; provides no determinate visual law beyond “privilege the cover,” which restates the problem."
+    },
+    {
+      "id": "l24",
+      "what": "Hang tagged blanks forward of the view as official blocks; the track threads around them but never crosses a locked plane.",
+      "why": "Imports contemporary lockout tags that read as signage/procedure, not structure; period clash and theme over mechanism."
+    }
+  ],
+  "trajectoryId": "fc7b466f372d2da9",
+  "changed": "1. Committed the fixed‑delay beat to the sheet: [fixed-delay-lift#s4], [fixed-delay-lift#s6] and [fixed-delay-lift#s5] were adopted together to phase‑lock lift ticks to a chosen sky hatch. This opened a determinate cadence that sits inside the site logic (steel against air) and lets “wait” ride the hatch spacing without importing countdown tropes. The drop now necessarily shears across those angles too fast to resolve, so delay is built into the screen, not narrated beside it.\n\n2. Took from [m3] to lay the load path before the thrill line, forcing later rail marks to inherit constraints so the machine reads weight‑bearing. Took [m4]/[m9] to keep sky/steel from collapsing into poster flats, giving the steel a luminous counterfield. Took [m2]/[m11] to keep the fence/heads in as witness, tightening scale and accepting reduced legibility as truth of view. Took [m1]/[m8] so ground and frame read as continuous beyond the print, anchoring the ride to a place it continues past. Reaffirmed [m7]/[m10] to keep the vantage accountable to one stand and one hour.\n\n3. Cut [l4] because turning the lift into a “time‑locked face” is emblematic and violates the refusal against symbolic diagramming. Cut [l16] for wrong mechanics (fixed members aren’t beads to tally), so it contradicts structure. Cut [l24] for period clash and signage creep; lockout tags read as procedure, not steel. Cut [l12] because the edge ledger decouples count from structure; it can survive deleting the scene. Cut [l21] for restating full‑bleed without adding a binding rule.\n\n4. Net: the practice now binds time to structure by phase‑locking marks already in the world (lift rungs, sky hatch) instead of editorial ticks. Occlusion and bleed are not rhetoric but mechanisms: [m2]/[m11] set the witness, [m1]/[m8] keep the world running past the sheet. The stocktake/count metaphors were found wanting as theme without law and are barred by these cuts. Followability gives way, where needed, to the accountable view set in [m3] and [m7]/[m10].",
+  "version": 1,
+  "parent": null,
+  "hash": "ba3741f9daaecc60c6f4446a3116d8f344569bc52fecb786197f63ca1ecea4ff"
+}

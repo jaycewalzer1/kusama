@@ -1,0 +1,40 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 6302,
+  "canvas": { "width": 800, "height": 600, "ground": "#e9e7e1", "brushScale": 1 },
+  "palette": { "ink": "#181a1d", "grey": "#5b6167", "sick": "#8a8a5e" },
+  "meta": {
+    "aesthetic": "overlooked",
+    "fixture": "fail",
+    "violates": ["p-no-caption", "c-people"],
+    "reads_as": "the same corridor with a timecode burned into the corner and the corridor emptied down to one figure and a bag"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      { "id": "overhead", "type": "op", "op": "wash", "rngKey": "ov/overhead", "args": { "region": { "type": "rect", "x": -20, "y": -20, "w": 840, "h": 300 }, "style": { "kind": "wash", "color": "sick", "opacity": 42, "bleed": 0.15, "texture": [0.3, 0.2] } } },
+      { "id": "far-end", "type": "op", "op": "wash", "rngKey": "ov/far-end", "args": { "region": { "type": "rect", "x": 520, "y": 140, "w": 300, "h": 300 }, "style": { "kind": "wash", "color": "grey", "opacity": 52, "bleed": 0.3, "texture": [0.5, 0.4] } } },
+      { "id": "floor-tone", "type": "op", "op": "paint", "rngKey": "ov/floor-tone", "args": { "region": { "type": "polygon", "points": [[-20, 600], [180, 400], [720, 330], [820, 600]] }, "style": { "kind": "hatch", "brush": "2H", "color": "grey", "spacing": 14, "angle": 12, "rand": 0.1 } } },
+      { "id": "wall-tone", "type": "op", "op": "paint", "rngKey": "ov/wall-tone", "args": { "region": { "type": "polygon", "points": [[-20, 60], [180, 180], [180, 400], [-20, 600]] }, "style": { "kind": "hatch", "brush": "cpencil", "color": "grey", "spacing": 11, "angle": 82, "rand": 0.14 } } },
+
+      { "id": "ceiling-1", "type": "op", "op": "rule", "rngKey": "ov/ceiling-1", "args": { "from": [-20, 40], "to": [700, 200], "brush": "rotring", "color": "ink", "weight": 1.6 } },
+      { "id": "ceiling-2", "type": "op", "op": "rule", "rngKey": "ov/ceiling-2", "args": { "from": [180, 180], "to": [700, 200], "brush": "rotring", "color": "ink", "weight": 1.2 } },
+      { "id": "ceiling-3", "type": "op", "op": "rule", "rngKey": "ov/ceiling-3", "args": { "from": [120, 130], "to": [180, 300], "brush": "2H", "color": "grey", "weight": 1 } },
+      { "id": "wall-base", "type": "op", "op": "rule", "rngKey": "ov/wall-base", "args": { "from": [-20, 600], "to": [700, 330], "brush": "rotring", "color": "ink", "weight": 1.8 } },
+      { "id": "handrail", "type": "op", "op": "rule", "rngKey": "ov/handrail", "args": { "from": [-20, 470], "to": [688, 320], "brush": "2B", "color": "ink", "weight": 1.4 } },
+      { "id": "door-edge", "type": "op", "op": "rule", "rngKey": "ov/door-edge", "args": { "from": [438, 268], "to": [438, 372], "brush": "rotring", "color": "ink", "weight": 1.2 } },
+      { "id": "door-head", "type": "op", "op": "rule", "rngKey": "ov/door-head", "args": { "from": [438, 268], "to": [520, 262], "brush": "rotring", "color": "ink", "weight": 1.2 } },
+
+      { "id": "walker-near", "type": "op", "op": "fragment", "rngKey": "ov/walker-near", "args": { "name": "figure.standing", "x": 232, "y": 470, "span": 150, "rotate": -2, "style": { "kind": "outline", "brush": "2B", "color": "ink", "weight": 1.7 } } },
+      { "id": "bag", "type": "op", "op": "fragment", "rngKey": "ov/bag", "args": { "name": "object.bowl", "x": 300, "y": 500, "span": 46, "rotate": 8, "style": { "kind": "outline", "brush": "cpencil", "color": "ink", "weight": 1.1 } } },
+
+      { "id": "timecode", "type": "op", "op": "text", "rngKey": "ov/timecode", "args": { "x": 596, "y": 566, "size": 18, "text": "CAM 04 14:22:07", "font": "grotesque", "color": "ink", "align": "left", "tracking": 2 } },
+
+      { "id": "scuff-1", "type": "op", "op": "stroke", "rngKey": "ov/scuff-1", "args": { "points": [[60, 520], [180, 496], [320, 486], [470, 472]], "brush": "cpencil", "color": "grey", "weight": 0.9, "curve": 0.2 } },
+      { "id": "scuff-2", "type": "op", "op": "stroke", "rngKey": "ov/scuff-2", "args": { "points": [[120, 566], [280, 540], [430, 520], [600, 500]], "brush": "cpencil", "color": "grey", "weight": 0.8, "curve": 0.2 } }
+    ]
+  }
+}

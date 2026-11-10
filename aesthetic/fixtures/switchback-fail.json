@@ -1,0 +1,39 @@
+{
+  "version": "0.2",
+  "profile": "default-v0",
+  "assetPack": "core",
+  "seed": 6202,
+  "canvas": { "width": 900, "height": 600, "ground": "#efeae0", "brushScale": 1 },
+  "palette": { "ink": "#1a1c20", "steel": "#4a5560", "rust": "#8c3a1f" },
+  "meta": {
+    "aesthetic": "switchback",
+    "fixture": "fail",
+    "violates": ["p-no-flat", "g-structure"],
+    "reads_as": "the same ride with the steel filled in as one flat plate and almost nothing left holding it up: four members under the whole structure"
+  },
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      { "id": "sky", "type": "op", "op": "wash", "rngKey": "sb/sky", "args": { "region": { "type": "rect", "x": -20, "y": -20, "w": 940, "h": 340 }, "style": { "kind": "wash", "color": "steel", "opacity": 38, "bleed": 0.2, "texture": [0.4, 0.3] } } },
+      { "id": "dirt", "type": "op", "op": "wash", "rngKey": "sb/dirt", "args": { "region": { "type": "rect", "x": -20, "y": 470, "w": 940, "h": 150 }, "style": { "kind": "wash", "color": "rust", "opacity": 44, "bleed": 0.25, "texture": [0.5, 0.3] } } },
+      { "id": "shade-under", "type": "op", "op": "paint", "rngKey": "sb/shade-under", "args": { "region": { "type": "rect", "x": 180, "y": 300, "w": 520, "h": 200 }, "style": { "kind": "hatch", "brush": "2B", "color": "ink", "spacing": 9, "angle": 74, "rand": 0.12 } } },
+      { "id": "steel-plate", "type": "op", "op": "paint", "rngKey": "sb/steel-plate", "args": { "region": { "type": "rect", "x": 240, "y": 120, "w": 420, "h": 220 }, "style": { "kind": "solid", "color": "steel", "opacity": 255 } } },
+
+      { "id": "bent-1a", "type": "op", "op": "rule", "rngKey": "sb/bent-1a", "args": { "from": [212, 500], "to": [252, 176], "brush": "rotring", "color": "ink", "weight": 2.4 } },
+      { "id": "bent-1b", "type": "op", "op": "rule", "rngKey": "sb/bent-1b", "args": { "from": [300, 500], "to": [268, 176], "brush": "rotring", "color": "ink", "weight": 2.4 } },
+      { "id": "bent-2a", "type": "op", "op": "rule", "rngKey": "sb/bent-2a", "args": { "from": [420, 502], "to": [452, 250], "brush": "rotring", "color": "ink", "weight": 2.2 } },
+      { "id": "bent-2b", "type": "op", "op": "rule", "rngKey": "sb/bent-2b", "args": { "from": [500, 502], "to": [468, 250], "brush": "rotring", "color": "ink", "weight": 2.2 } },
+
+      { "id": "lift-hill", "type": "op", "op": "stroke", "rngKey": "sb/lift-hill", "args": { "points": [[-20, 470], [90, 380], [180, 268], [258, 168]], "brush": "charcoal", "color": "ink", "weight": 2.2, "curve": 0.25 } },
+      { "id": "crest", "type": "op", "op": "stroke", "rngKey": "sb/crest", "args": { "points": [[258, 168], [300, 150], [346, 158], [386, 196]], "brush": "charcoal", "color": "ink", "weight": 2.2, "curve": 0.5 } },
+      { "id": "drop", "type": "op", "op": "stroke", "rngKey": "sb/drop", "args": { "points": [[386, 196], [412, 300], [434, 400], [462, 452]], "brush": "charcoal", "color": "ink", "weight": 2.4, "curve": 0.3 } },
+      { "id": "valley-turn", "type": "op", "op": "stroke", "rngKey": "sb/valley-turn", "args": { "points": [[462, 452], [528, 420], [578, 356], [624, 312]], "brush": "charcoal", "color": "ink", "weight": 2.2, "curve": 0.4 } },
+      { "id": "brake-run", "type": "op", "op": "stroke", "rngKey": "sb/brake-run", "args": { "points": [[624, 312], [720, 322], [820, 330], [920, 344]], "brush": "charcoal", "color": "ink", "weight": 2, "curve": 0.15 } },
+      { "id": "fence-line", "type": "op", "op": "stroke", "rngKey": "sb/fence-line", "args": { "points": [[-20, 546], [220, 538], [520, 544], [920, 536]], "brush": "cpencil", "color": "ink", "weight": 1.2, "curve": 0.1 } },
+
+      { "id": "queue", "type": "op", "op": "fragment", "rngKey": "sb/queue", "args": { "name": "figure.crowd", "x": 200, "y": 540, "span": 260, "rotate": 0, "style": { "kind": "outline", "brush": "cpencil", "color": "ink", "weight": 1.3 } } },
+      { "id": "watcher", "type": "op", "op": "fragment", "rngKey": "sb/watcher", "args": { "name": "figure.standing", "x": 738, "y": 528, "span": 96, "rotate": 0, "style": { "kind": "outline", "brush": "2B", "color": "ink", "weight": 1.6 } } }
+    ]
+  }
+}

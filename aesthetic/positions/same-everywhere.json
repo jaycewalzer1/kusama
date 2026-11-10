@@ -1,0 +1,187 @@
+{
+  "version": "1.0",
+  "id": "same-everywhere",
+  "name": "Same Everywhere",
+  "lineage": [
+    {
+      "ref": "Giorgio Morandi, the bottle and jug paintings (1940s-1950s)",
+      "why": "The same few objects painted hundreds of times. Establishes that repetition of a subject is a way of finding difference, not of asserting sameness."
+    },
+    {
+      "ref": "Bernd and Hilla Becher, the water tower typologies (from 1963)",
+      "why": "Identical framing across many examples, so that small differences become the only content. The method this position inherits, run by hand instead of by lens."
+    },
+    {
+      "ref": "Ed Ruscha, \"Twentysix Gasoline Stations\" (1963)",
+      "why": "Interchangeable roadside buildings recorded deadpan, without irony or complaint. The refusal to editorialise is what makes the series an argument."
+    },
+    {
+      "ref": "Vilhelm Hammershoi, the Strandgade interiors (1898-1909)",
+      "why": "The same rooms, mostly empty, painted again and again. Shows that an interior with almost nothing in it can still be a picture of somewhere specific."
+    },
+    {
+      "ref": "Camilo Jose Vergara, the rephotographed American storefronts (from 1977)",
+      "why": "One place returned to over years. Proves that the interesting fact is never in the single frame; it is between frames."
+    },
+    {
+      "ref": "Georges Perec, \"Tentative d'epuisement d'un lieu parisien\" (1975)",
+      "why": "Writing down the ordinary contents of one square until the ordinary stops being invisible. The discipline of not waiting for something to happen."
+    }
+  ],
+  "worldview": "Every third place now looks like every other third place: the same pale wood, the same pendant bulbs, the same plant in the corner, because the same feedback loop chose all of them. Draw the room — as a room somebody sits in, with the chair pulled out and the cup where the last person left it. Then draw it again from a slightly different corner, by hand each time. The hand cannot repeat itself exactly, and that is the argument: the convergence is real and the sameness is not. Never use the repeat operator. A copied subtree is the machine's own claim about the world, and that claim is the thing in dispute.",
+  "tensions": [
+    {
+      "between": "the room is genuinely boring",
+      "and": "a boring sheet is a failed sheet",
+      "claim": "The subject's whole property is that nobody would look twice at it. Any move that makes the picture worth looking at risks being a move that makes the room worth looking at, which is a lie about the room."
+    },
+    {
+      "between": "drawing it by hand shows the sameness is false",
+      "and": "the sameness is what the position is about",
+      "claim": "The more the hand shows, the more the picture proves that no two of these rooms are identical — and the more it undercuts the complaint it was making. The practice is always disproving itself slightly, and stopping that would mean tracing."
+    },
+    {
+      "between": "convergence is only visible across many instances",
+      "and": "a sheet holds one view",
+      "claim": "One room is just a room. Put six on a sheet and it becomes a chart of rooms, which reads as data and not as a place. There is no number of rooms per sheet that is both a picture and an argument."
+    }
+  ],
+  "commitments": [
+    {
+      "id": "c-rooms",
+      "kind": "requireNode",
+      "params": { "op": "fragment", "min": 6 },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "Six passages of small particular stuff: crumbs, cables, the ring left by a cup. What separates this room from the render of this room is entirely at that scale."
+    },
+    {
+      "id": "c-surfaces",
+      "kind": "requireMark",
+      "params": { "styles": ["hatch", "field"], "min": 4 },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "Four built passages, because every surface here is a material — wood, felt, concrete, painted steel — and a material drawn as a flat area has been catalogued rather than seen."
+    },
+    {
+      "id": "c-drawn",
+      "kind": "requireNode",
+      "params": { "op": "stroke", "min": 6 },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "Six drawn runs. The evidence that a hand was here is line that varies along its length, and it is the only evidence this position has."
+    },
+    {
+      "id": "c-palette",
+      "kind": "maxDistinctColors",
+      "params": { "max": 6, "includeGround": true },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "The room has a palette and it is short: pale wood, off-white, black metal, one green. A seventh colour is a decision that the room was not interesting enough as it is."
+    },
+    {
+      "id": "b-recurrence",
+      "kind": "nodeCount",
+      "params": { "min": 60 },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "The practice's real claim is that these two drawn passages are the same room seen twice. Nothing in the medium can state that, so this stands in for it by asking for enough marks that a second room could be present, which is not the same thing at all.",
+      "blocked_by": "a way to declare that two hand-drawn passages depict one object seen twice. The medium can repeat a subtree, which is a copy and is exactly what this position refuses, but it has no way to say that these forty marks and those forty marks are two separate drawings of the same room — and that identity, not the mark count, is the entire claim"
+    },
+    {
+      "id": "j-where",
+      "kind": "rubric",
+      "params": {
+        "text": "Say what room this is and what it is for, from the image alone, in one sentence. Then find the traces of a person: something moved, left behind, worn down, or not put back. Name them. A room with no such trace has been rendered from a specification rather than drawn from a chair in it, and this practice has nothing to say about specifications. Finally, say whether you would be able to tell this room from one in another city, and what by."
+      },
+      "scope": "judge",
+      "severity": "hard",
+      "why": "The whole position in a question a viewer can answer. A tree can hold six fragments and six strokes while depicting no room; only somebody looking can say whether there is a place here and whether anybody has been in it."
+    },
+    {
+      "id": "j-by-hand",
+      "kind": "rubric",
+      "params": {
+        "text": "Find two passages here that are supposed to be the same thing — the same chair, the same window, the same edge of the same table. Say how they differ. If they are identical, they were copied, and the practice has conceded the argument it exists to make. If nothing here recurs at all, the sheet is a single interior and the convergence is being asserted rather than shown. Say which of the two has happened, or that neither has."
+      },
+      "scope": "judge",
+      "severity": "soft",
+      "why": "The second tension, asked of the result. Whether a recurrence was made twice or copied once is invisible in the tree the moment the repeat operator is not used, and visible on the sheet."
+    }
+  ],
+  "prohibitions": [
+    {
+      "id": "p-no-repeat",
+      "kind": "maxRepeatDepth",
+      "params": { "max": 0 },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "The repeat operator is the machine's own account of how these rooms came to be alike, and this position disputes it. Everything that recurs here has to be made again."
+    },
+    {
+      "id": "p-no-caption",
+      "kind": "forbidNode",
+      "params": { "ops": ["text"] },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "A word on the sheet states the argument, and the argument is supposed to arrive from having drawn the same thing twice. Soft, because a room can legitimately contain a sign."
+    },
+    {
+      "id": "r-furnished",
+      "kind": "inkDensityRange",
+      "params": { "min": 0.3, "max": 0.85 },
+      "scope": "render",
+      "severity": "hard",
+      "why": "A room with things in it, and not a black rectangle. Below the floor the sheet is a plan of a room rather than a view of one; above the ceiling nothing in it can be told apart, which is the failure this position is arguing against."
+    }
+  ],
+  "generative_rules": [
+    {
+      "rule": "Draw the same room more than once on the sheet, from different corners, and never by copying. If two passages match, they match because the hand made them match.",
+      "constraint": {
+        "id": "g-many",
+        "kind": "nodeCount",
+        "params": { "min": 24 },
+        "scope": "tree",
+        "severity": "soft",
+        "why": "Twenty-four authored elements is roughly where a sheet can hold a furnished room and something of a second one. A floor on the tendency, not a claim about the twenty-third."
+      }
+    },
+    {
+      "rule": "Put the traces of a person in: the pulled-out chair, the cup, the coat over the back of the seat. The room was optimised and the person in it was not, and the picture lives in that gap."
+    },
+    {
+      "rule": "Take the palette from the room. Pale wood, off-white, black metal, one green. Reaching for a colour the room does not have is deciding the room is more interesting than it is."
+    },
+    {
+      "rule": "Let the drawings disagree. Do not correct the second against the first. The disagreements are the only evidence that a hand was here rather than a process."
+    }
+  ],
+  "cliches": [
+    "a grid of identical thumbnails, offered as evidence of sameness",
+    "a monstera in a terracotta pot",
+    "the word 'authentic' set in a geometric sans",
+    "one form morphing into another across a gradient",
+    "many faces averaged into a single face",
+    "a QR code",
+    "a shopfront with the sign removed",
+    "a beige swatch presented as a palette",
+    "rows of identical houses seen from above"
+  ],
+  "meta": {
+    "practice": {
+      "origin": "Sitting in the same kind of room in four cities and drawing it each time out of boredom, then laying the drawings side by side and finding they were not the same drawing. The vocabulary comes from that: pale wood, felt, black steel, overhead track lighting, and a hand that cannot help varying.",
+      "doing": "Depicting one ordinary interior, more than once, by hand, so that the recurrence is made rather than copied. What it is about is the difference between a world that has converged and a world that is identical, which is a difference only a hand can demonstrate.",
+      "period": "2012 to 2020, the decade in which the same room opened everywhere at once and nobody could name who had decided it.",
+      "register": "Third person, present tense, deliberate and material. It describes the furniture as surfaces — the grain of the plywood, the felt of the seat, the cold of the steel leg — and does not say who chose it or complain about the choice.",
+      "refusals": [
+        "It will not use the repeat operator. A copied subtree is the machine's account of how these rooms came to be alike, and that account is the thing being disputed.",
+        "It will not make the room ugly or beautiful to score a point. The room is pleasant and empty, and any exaggeration in either direction hands the argument away.",
+        "It will not draw the algorithm. No screens, no feeds, no interfaces; the cause is offstage and the room is what arrived.",
+        "It will not correct one drawing against another. The disagreement between two passes is the finding, and tidying it is deleting the result."
+      ]
+    },
+    "temperament": 0.3,
+    "temperamentWhy": "Curious rather than resigned. It has drawn this room four times in four countries and each time the hand found something the photograph did not — the texture of the plywood, the weight of the pendant, the warmth where the light hits the table. The disquiet is real, and the pleasure of getting the surface right is also real."
+  }
+}

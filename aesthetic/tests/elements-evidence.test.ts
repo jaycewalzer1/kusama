@@ -16,7 +16,7 @@ import { ROOT } from '../../env/browser.js';
 import path from 'node:path';
 
 /** The live catalogue, not a fixture: the point is what the real default configuration profiles as. */
-const position = () => loadAestheticProgram(path.join(ROOT, 'aesthetic', 'positions', 'withheld.json'));
+const position = () => loadAestheticProgram(path.join(ROOT, 'aesthetic', 'positions', 'switchback.json'));
 
 function base(): LineageElement {
   return {

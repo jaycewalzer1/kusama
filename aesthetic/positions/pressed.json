@@ -1,0 +1,185 @@
+{
+  "version": "1.0",
+  "id": "pressed",
+  "name": "Pressed",
+  "lineage": [
+    {
+      "ref": "Emily Dickinson's herbarium (1839-1846)",
+      "why": "Flowers pressed into a book by a child, kept because they were kept. The flatness is not a technique; it is what happened to them."
+    },
+    {
+      "ref": "Anna Atkins, \"Photographs of British Algae: Cyanotype Impressions\" (1843)",
+      "why": "A plant laid on a sheet and exposed to light. The result is a silhouette, not a drawing, and the silhouette is evidence, not description."
+    },
+    {
+      "ref": "Agnes Martin, the grid paintings (1960s-1970s)",
+      "why": "A surface so quiet it is almost not there. Establishes how little a sheet can carry and still be a picture of something the maker saw."
+    },
+    {
+      "ref": "Giorgio Morandi, the late etchings (1950s-1960s)",
+      "why": "Objects drawn in hatched tone until they are nearly the same value as the air around them. The disappearance is gradual and the hand stays steady through it."
+    },
+    {
+      "ref": "Vija Celmins, the ocean and desert prints (1970s-1980s)",
+      "why": "A surface rendered in such even tone that the subject becomes the grain of the medium. Shows what happens when the hand refuses to emphasise."
+    },
+    {
+      "ref": "William Henry Fox Talbot, \"The Pencil of Nature\" (1844-1846)",
+      "why": "A leaf recorded by its own shadow. The plant was the printing plate, and the picture is what it left behind when it was taken away."
+    }
+  ],
+  "worldview": "A pressed flower is a flower with the life squeezed out of it and the shape left behind: flat, dry, brittle, no colour, almost transparent. Draw it that way — in washes so pale they barely read, with hatched passages for the veins and the dry edges, and nothing opaque anywhere. The flower is not being depicted; it is being remembered through what a press leaves behind. If the sheet looks like a flower it has put too much back. If it looks like nothing it has taken too much away. The picture is the residue, not the subject.",
+  "tensions": [
+    {
+      "between": "a trace that is barely there",
+      "and": "a sheet that has to be worth looking at",
+      "claim": "The thing depicted is almost nothing — a dry membrane between two pages. A picture of almost nothing is either very quiet or very empty, and those are not the same."
+    },
+    {
+      "between": "flatness, which is the fact",
+      "and": "depth, which is how a sheet reads",
+      "claim": "A pressed flower has no depth. A wash on paper has depth by nature. Every tonal passage that makes the sheet alive puts back a dimension the press took out."
+    },
+    {
+      "between": "recording what was left behind",
+      "and": "drawing what was there before",
+      "claim": "The pressed flower and the living flower are different subjects. Drawing the living one from memory and then fading it is not the same as drawing the dead one from the page it is stuck to."
+    }
+  ],
+  "commitments": [
+    {
+      "id": "c-washes",
+      "kind": "requireNode",
+      "params": { "op": "wash", "min": 3 },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "Three wet passages. The pressed flower is translucent, and a wash is the only mark that lets the paper show through it."
+    },
+    {
+      "id": "c-veins",
+      "kind": "requireMark",
+      "params": { "styles": ["hatch"], "min": 3 },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "Three hatched passages — veins, dried edges, the crease where the petal folded. The structure of the dead flower is linear and dry."
+    },
+    {
+      "id": "c-scatter",
+      "kind": "requireNode",
+      "params": { "op": "fragment", "min": 2 },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "Two passages of scattered small marks — pollen dust, a broken petal edge, the crumbs a pressed flower leaves. It fell apart when the book opened."
+    },
+    {
+      "id": "c-drawn",
+      "kind": "requireNode",
+      "params": { "op": "stroke", "min": 2 },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "Two strokes — a stem, a vein, the edge of the page it was pressed in. Something here was drawn, not only washed."
+    },
+    {
+      "id": "c-monochrome",
+      "kind": "maxDistinctColors",
+      "params": { "max": 2, "includeGround": true },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "One ink and one ground. A pressed flower has no colour left; a third value on the sheet is putting back what the months took out."
+    },
+    {
+      "id": "r-light",
+      "kind": "inkDensityRange",
+      "params": { "min": 0.08, "max": 0.55 },
+      "scope": "render",
+      "severity": "hard",
+      "why": "Mostly paper. A pressed flower is translucent and the sheet should be too — more ground than ink, but not blank."
+    },
+    {
+      "id": "j-residue",
+      "kind": "rubric",
+      "params": {
+        "text": "Say what is on this sheet without using the word flower, plant, or leaf. Describe only what you see: shapes, tones, edges, marks. Then say whether the thing depicted looks like it was once alive. If the answer is immediate and obvious the picture has put too much back. If there is no organic trace at all it has erased the subject. Say which."
+      },
+      "scope": "judge",
+      "severity": "hard",
+      "why": "The central test. A tree full of washes and hatches can depict anything or nothing; only a viewer can say whether the residue reads as a residue."
+    },
+    {
+      "id": "j-quiet",
+      "kind": "rubric",
+      "params": {
+        "text": "Find the lightest passage on the sheet — the place where the ink is thinnest. Say whether it is doing something (holding a vein, marking an edge, carrying the translucence of a membrane) or whether it is just faint. Then say whether the sheet as a whole feels quiet or empty, and what makes the difference."
+      },
+      "scope": "judge",
+      "severity": "soft",
+      "why": "The first tension asked of the result. Quiet and empty look the same in a tree; they do not look the same on a sheet."
+    }
+  ],
+  "prohibitions": [
+    {
+      "id": "p-no-flat",
+      "kind": "forbidMark",
+      "params": { "styles": ["solid"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "Nothing here is opaque. A solid fill is a living petal's claim, and this flower is dead and dry."
+    },
+    {
+      "id": "p-no-frame",
+      "kind": "forbidNode",
+      "params": { "macros": ["frame"] },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "A frame presents the flower. This one was found between pages, not presented."
+    }
+  ],
+  "generative_rules": [
+    {
+      "rule": "Lay the palest wash first, covering most of the sheet. The ground tone of a pressed flower is the paper it was pressed into, barely stained.",
+      "constraint": {
+        "id": "g-pale-ground",
+        "kind": "requireNode",
+        "params": { "op": "wash", "min": 1 },
+        "scope": "tree",
+        "severity": "soft",
+        "why": "At least one wash sets the ground tone. Without it the flower sits on raw paper rather than on the stain it left."
+      }
+    },
+    {
+      "rule": "Hatch the veins and the dried edges after the wash is down. The structure of a pressed flower is what did not dissolve."
+    },
+    {
+      "rule": "Scatter the fragments last — the dust, the broken tip, the crumb that fell when the page turned. They are the evidence that this was once three-dimensional."
+    },
+    {
+      "rule": "Keep the whole sheet light. If any passage is darker than a mid-grey it is drawing the living flower, not the pressed one."
+    }
+  ],
+  "cliches": [
+    "a flower drawn in full colour and then desaturated, which is a filter",
+    "a botanical cross-section with labelled parts",
+    "a symmetrical bloom centred on a white field",
+    "dried flowers in a vase, meaning nostalgia",
+    "a rose with a single falling petal, meaning time",
+    "a flower pressed under glass in a gilt frame",
+    "a herbarium sheet with a Latin name in copperplate",
+    "a wilting flower next to a fresh one, meaning before and after"
+  ],
+  "meta": {
+    "practice": {
+      "origin": "Opening an old book and finding a flower pressed between the pages, flat and dry and almost the colour of the paper. The vocabulary comes from trying to draw that — not the flower it was, but the thing it became: a membrane with veins, a stain, a shape the book remembered.",
+      "doing": "Drawing the residue a pressed flower leaves — the stain, the vein, the outline where the petal dried against the page — in pale washes and dry hatching, without putting back the colour or the depth the press took out. What it is about is the difference between a trace and a picture.",
+      "period": "No period. Pressed flowers exist outside of time; that is their property and their subject.",
+      "register": "Third person, past tense, quiet. It describes what was left behind — the stain on the page, the crease in the petal, the dust — and does not say what the flower looked like when it was alive.",
+      "refusals": [
+        "It will not draw the living flower. The subject is the pressed one, and they are different things.",
+        "It will not use colour. The press took the colour out and putting it back is a lie about what a press does.",
+        "It will not fill anything opaque. A pressed flower is translucent; the light comes through it.",
+        "It will not centre or frame the flower. It was found between pages, not arranged for display."
+      ]
+    },
+    "temperament": 0.15,
+    "temperamentWhy": "Very still. It is drawing something that has not moved in years and will not move again, and the hand matches that stillness — pale washes, light hatch, no urgency."
+  }
+}

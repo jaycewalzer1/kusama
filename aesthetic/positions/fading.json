@@ -1,0 +1,185 @@
+{
+  "version": "1.0",
+  "id": "fading",
+  "name": "Fading",
+  "lineage": [
+    {
+      "ref": "Charles Demuth, \"Flowers\" watercolours (1910s-1920s)",
+      "why": "Wet colour laid down so fast the edges bleed into paper. The flower is there because the water stopped, not because a line drew it."
+    },
+    {
+      "ref": "Emil Nolde, the garden watercolours (1930s-1940s)",
+      "why": "Colour pushed past the petal into the air around it. Shows how far a wash can run before the subject disappears."
+    },
+    {
+      "ref": "Georgia O'Keeffe, \"Black Iris III\" (1926)",
+      "why": "A flower enlarged until it stops being a flower and becomes a field of tone. The legibility goes last, not first."
+    },
+    {
+      "ref": "Odilon Redon, the pastel flower vases (1900s-1910s)",
+      "why": "Colour that belongs to the medium, not the petal. The vase holds a shape the eye reads as a flower only because it expects one."
+    },
+    {
+      "ref": "Albrecht Durer, \"The Large Piece of Turf\" (1503)",
+      "why": "Every blade accounted for. The opposite pole: what this position is dissolving away from, and the proof that the subject can survive close attention."
+    },
+    {
+      "ref": "Cy Twombly, the late rose paintings (2008)",
+      "why": "A flower reduced to a smear of wet pigment on a ground. The name in the title is the only reason the eye finds a petal."
+    }
+  ],
+  "worldview": "A flower in a glass of water is the first thing anybody draws and the last thing anybody sees clearly. Draw it in washes — wet into wet, no outline, no flat fill — so that the form arrives from where the water stopped and not from where a line was put. Nothing here has colour: the ink is one grey and the ground is the paper. If the flower is still legible as a flower the washes have not done enough. If it is not legible as anything the washes have done too much. The picture lives in the hour between those two, which is the hour the petals actually occupy on the sill.",
+  "tensions": [
+    {
+      "between": "a flower everybody recognises",
+      "and": "a sheet nobody can read",
+      "claim": "The subject is the most legible thing in the world and the method dissolves legibility. Every wash that builds the form also takes a petal away."
+    },
+    {
+      "between": "wet marks that bleed",
+      "and": "a shape that holds",
+      "claim": "A wash wants to spread and a petal has an edge. The picture is the negotiation between those two facts, and neither one can win outright."
+    },
+    {
+      "between": "no colour at all",
+      "and": "a subject whose whole appeal is colour",
+      "claim": "A flower without colour is a flower without its argument. What remains is the weight of the head on the stem, the curl at the edge, the droop — the drawing, not the decoration."
+    }
+  ],
+  "commitments": [
+    {
+      "id": "c-washes",
+      "kind": "requireNode",
+      "params": { "op": "wash", "min": 4 },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "Four wet passages. The medium here is water, and four is the floor at which something is being built in washes rather than decorated with one."
+    },
+    {
+      "id": "c-scatter",
+      "kind": "requireNode",
+      "params": { "op": "fragment", "min": 2 },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "Two scattered passages — fallen petals, pollen, the ring the glass leaves. A flower with nothing around it was placed, not observed."
+    },
+    {
+      "id": "c-drawn",
+      "kind": "requireNode",
+      "params": { "op": "stroke", "min": 2 },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "Two drawn runs — a stem, the lip of the glass. Not everything can be wash; something has to hold."
+    },
+    {
+      "id": "c-tone",
+      "kind": "requireMark",
+      "params": { "styles": ["wash", "hatch"], "min": 5 },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "Five wet or built passages. The sheet is made of tone, not line, and five is the floor at which tone is doing the structural work."
+    },
+    {
+      "id": "c-monochrome",
+      "kind": "maxDistinctColors",
+      "params": { "max": 2, "includeGround": true },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "One ink and one ground. A flower without colour is the whole premise; a third value is a colour pretending to be a grey."
+    },
+    {
+      "id": "r-density",
+      "kind": "inkDensityRange",
+      "params": { "min": 0.15, "max": 0.75 },
+      "scope": "render",
+      "severity": "hard",
+      "why": "Not empty, not black. The washes need enough ink to read as tonal passages and enough paper to read as light."
+    },
+    {
+      "id": "j-what",
+      "kind": "rubric",
+      "params": {
+        "text": "Without being told the subject, say what you see. If your first word is 'flower' the picture has failed to dissolve far enough. If you cannot find any organic form at all — no curve that could be a petal, no droop that could be a stem — the picture has dissolved too far. Say which condition holds, or say what you almost see."
+      },
+      "scope": "judge",
+      "severity": "hard",
+      "why": "The only test for the central tension. A tree can hold four washes and two strokes while depicting nothing, or while depicting a perfectly legible daisy. Only a viewer can say whether the form is in the hour between."
+    },
+    {
+      "id": "j-water",
+      "kind": "rubric",
+      "params": {
+        "text": "Find the wettest passage on the sheet — the place where a wash bled furthest from whatever it was describing. Say whether that bleed is doing something (carrying light, dissolving an edge, pushing the form into the ground) or whether it is a stain with no job. Then find the driest mark and say whether the two feel like the same hand in the same hour."
+      },
+      "scope": "judge",
+      "severity": "soft",
+      "why": "The second tension, asked of the result. A wash that bleeds everywhere is a puddle; a wash that stays put is a fill renamed."
+    }
+  ],
+  "prohibitions": [
+    {
+      "id": "p-no-flat",
+      "kind": "forbidMark",
+      "params": { "styles": ["solid"] },
+      "scope": "tree",
+      "severity": "hard",
+      "why": "A flat fill is opaque and a wash is not. The whole method is wet transparency; one solid area kills it."
+    },
+    {
+      "id": "p-no-frame",
+      "kind": "forbidNode",
+      "params": { "macros": ["frame"] },
+      "scope": "tree",
+      "severity": "soft",
+      "why": "A frame contains the bleed, and the bleed is the point. The washes run to the edge of the paper or they are not washes."
+    }
+  ],
+  "generative_rules": [
+    {
+      "rule": "Start wet. Lay the largest wash first and let it set the tone of the whole sheet before any line goes down.",
+      "constraint": {
+        "id": "g-wet-first",
+        "kind": "requireNode",
+        "params": { "op": "wash", "min": 2 },
+        "scope": "tree",
+        "severity": "soft",
+        "why": "Two washes at the foundation. A sheet that starts with line and adds a wash later has the relationship backwards."
+      }
+    },
+    {
+      "rule": "Let the washes overlap. Two wet passages that share an edge are two fills; two that bleed into each other are watercolour."
+    },
+    {
+      "rule": "Put the stem in last, as a stroke, after the head has already bled into the ground. The stem is what the eye follows back to the flower."
+    },
+    {
+      "rule": "Leave the paper showing. The ground is the light, and a sheet with no ground left is a sheet with no light."
+    }
+  ],
+  "cliches": [
+    "a perfectly outlined flower coloured in with a wash, which is a colouring book",
+    "a symmetrical bloom seen dead-on from above",
+    "petals drawn as separate closed shapes and filled individually",
+    "a vase centred on the sheet with two flowers arranged for balance",
+    "a botanical illustration with labelled parts",
+    "a black silhouette of a flower against white",
+    "watercolour splashes with no subject at all, offered as expressive",
+    "a single long-stemmed rose, meaning romance"
+  ],
+  "meta": {
+    "practice": {
+      "origin": "Sitting at a table with a glass of water and whatever was cut that morning, a brush and one ink, and trying to get the weight of the head down before it moves. The vocabulary comes from what water does on paper when you do not wait for it to dry.",
+      "doing": "Dissolving a flower in washes until the form is almost gone and then stopping. What it is about is the hour between legible and lost, which is also the hour the flower is in.",
+      "period": "Any morning. The practice has no period because cut flowers have no period.",
+      "register": "First person, present tense, quiet. It says what the water did and where the paper caught it.",
+      "refusals": [
+        "It will not outline the flower. An outline is a decision that the form is known, and the whole method is finding out where the form is by finding out where the water stops.",
+        "It will not use colour. The flower's colour is its charm, and charm is not the subject.",
+        "It will not fill anything flat. A flat area is dry, and this practice is wet.",
+        "It will not make the flower legible. If it is recognisable at a glance the washes have not worked."
+      ]
+    },
+    "temperament": 0.25,
+    "temperamentWhy": "Patient and attentive to what the water does. It watches the wash spread and decides whether to add another or stop, and the stopping is the whole skill."
+  }
+}

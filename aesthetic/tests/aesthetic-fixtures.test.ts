@@ -219,18 +219,27 @@ test('render scope is unverified and judge rubrics are returned unread when noth
 });
 
 test('scoring weights hard double and excludes everything undecided', () => {
-  const ap = loadAestheticProgram(programFile('interference'));
-  const pass = checkProgram(fixture('interference', 'pass'), ap);
-  const fail = checkProgram(fixture('interference', 'fail'), ap);
+  const ap = loadAestheticProgram(programFile('same-everywhere'));
+  const pass = checkProgram(fixture('same-everywhere', 'pass'), ap);
+  const fail = checkProgram(fixture('same-everywhere', 'fail'), ap);
 
-  // Both fixtures have the same shape of decidable tree constraints; the fail one misses two hard.
+  // Both fixtures have the same shape of decidable tree constraints; the fail one misses two.
   const decidable = pass.results.filter((r) => r.scope === 'tree' && r.status !== 'unverified');
   const total = decidable.reduce((n, r) => n + (r.severity === 'hard' ? 2 : 1), 0);
-  const lost = fail.results
-    .filter((r) => r.status === 'violated')
-    .reduce((n, r) => n + (r.severity === 'hard' ? 2 : 1), 0);
+  const violated = fail.results.filter((r) => r.status === 'violated');
+  const lost = violated.reduce((n, r) => n + (r.severity === 'hard' ? 2 : 1), 0);
 
   assert.equal(pass.treeScore, 1);
   assert.equal(fail.treeScore, (total - lost) / total);
-  assert.ok(lost === 4, 'both of this fixture\'s violations are hard, so it should lose four weighted points');
+
+  // The weighting is only actually exercised if this fixture breaks at least one hard constraint and
+  // one soft one; otherwise the line above would pass just as well against a scorer that weighted
+  // everything the same. Derived from the fixture rather than pinned to a constant, because the
+  // constant is a fact about whichever fixture happens to be named here and silently stops being
+  // true when it is swapped — which is exactly how this test broke.
+  const hard = violated.filter((r) => r.severity === 'hard').length;
+  const soft = violated.length - hard;
+  assert.ok(hard >= 1, 'this fixture breaks no hard constraint, so the doubling is untested');
+  assert.ok(soft >= 1, 'this fixture breaks no soft constraint, so the weighting is untested');
+  assert.equal(lost, hard * 2 + soft);
 });

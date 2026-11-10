@@ -1,0 +1,239 @@
+{
+  "positionId": "overlooked",
+  "practice": {
+    "origin": "Sitting with recorded footage for long enough to get bored of it. The vocabulary comes from what a wide fixed lens does to an interior — the barrel, the ceiling in shot, the flat overhead light, the way a person crossing at the far end is four marks — and from drawing those conditions by hand instead of accepting them.",
+    "doing": "Depicting an ordinary interior at an ordinary hour from the position of a mounted camera, with the people in it kept particular. What it is about is the asymmetry: this view exists, of these people, and they did not agree to it and would not be interested if they had.",
+    "period": "1970 to 1990, when the fixed camera became ordinary furniture in public buildings and before anybody thought of the footage as data.",
+    "register": "Third person, present tense, steady and attentive. It describes what is in the view — the overhead light pooling on linoleum, the scuff marks, the coat over the chair — and never says who is watching or why.",
+    "refusals": [
+      "It will not draw the apparatus. No camera, no monitor, no wall of screens; the apparatus is the vantage, and putting it in the picture converts the condition into an illustration of itself.",
+      "It will not make anybody anonymous. A figure that could be anyone has been processed rather than drawn, and that processing is the thing being objected to.",
+      "It will not stage an incident. An event gives the view a reason to exist, and the whole claim is that it exists without one.",
+      "It will not label the picture. No timecode, no caption, no words at all."
+    ]
+  },
+  "borrowed": [
+    {
+      "id": "m1",
+      "works": [
+        "met:39899",
+        "met:36142"
+      ],
+      "borrowing": "Turn the room into a dark ground and let light exist as reserves and abrasions. Overhead fixtures and scuffed floor appear by lift and rub, not by added white, so the bad light feels inherent to the sheet."
+    },
+    {
+      "id": "m2",
+      "works": [
+        "met:36142"
+      ],
+      "borrowing": "Introduce blank or near‑blank stamp blocks as nonverbal incidents along margins and case faces. They puncture the monotone and register handling without caption, shifting the surface from image to record."
+    },
+    {
+      "id": "m3",
+      "works": [
+        "met:40408"
+      ],
+      "borrowing": "Use clustered, directional striations to state coats, hair, and mop bristles quickly, keeping people particular without shading; confine small episodes within thin structural edges rather than framing the whole view."
+    },
+    {
+      "id": "m4",
+      "works": [
+        "aic:155386"
+      ],
+      "borrowing": "Render dirty air and timer light with a rosin‑like grain across the whole sheet; lamps are kept as pale reserves within that haze so the ceiling and floor share one atmosphere."
+    },
+    {
+      "id": "m5",
+      "works": [
+        "aic:156397"
+      ],
+      "borrowing": "Let wiping accidents and peppering occupy large walls while faces and hands are set by a few firm strokes. This keeps people legible without sliding into silhouette."
+    },
+    {
+      "id": "m6",
+      "works": [
+        "aic:158238"
+      ],
+      "borrowing": "Crosshatch the woodwork and case rims hard so the room’s geometry carries the vantage. Grids and lattices deliver the straight runs without centering anyone."
+    },
+    {
+      "id": "m7",
+      "works": [
+        "aic:189152"
+      ],
+      "borrowing": "Use lift‑out, blooms, and scrapes on glass and linoleum so light at four o’clock lands as stains and tide‑marks, not as drawn halos or outlines of what is gone."
+    },
+    {
+      "id": "m8",
+      "works": [
+        "met:424121"
+      ],
+      "borrowing": "Assemble the room from pasted swatches—rubbings of ceiling grid, handrail, floor—so joins and paper tones act like administrative seams, declaring handling without words."
+    },
+    {
+      "id": "m9",
+      "works": [
+        "cma:146908"
+      ],
+      "borrowing": "Mass corners and the ceiling in charcoal, then paint fluorescents and glass with opaque light. It makes the fixtures factual cuts in the murk instead of descriptive outlines."
+    },
+    {
+      "id": "m10",
+      "works": [
+        "aic:239839"
+      ],
+      "borrowing": "Let coats and hair disappear into the room’s dark while hands, a bag, and one small shine carry identity. Three passages of exactness keep people tellable apart."
+    },
+    {
+      "id": "m11",
+      "works": [
+        "aic:212130",
+        "aic:234575",
+        "cma:92759"
+      ],
+      "borrowing": "Target a silver‑print grey by long graphite slopes and a faint airbrushed flare around lamps, keeping the sheet cool and continuous rather than high‑contrast."
+    },
+    {
+      "id": "m12",
+      "works": [
+        "aic:180720",
+        "aic:79063",
+        "aic:180877"
+      ],
+      "borrowing": "Edge figures and handrails with burr‑like, feathered lines and keep a general wiped veil so nothing reads as staged event; depth comes from wiping, not heavy wash."
+    },
+    {
+      "id": "m13",
+      "works": [
+        "met:363859"
+      ],
+      "borrowing": "Lock the room with ruled ink over a light graphite grid; any color is confined to small notations inside this armature, firming the vantage without adding a frame."
+    },
+    {
+      "id": "m14",
+      "works": [
+        "cma:124673"
+      ],
+      "borrowing": "Flood broad ceiling and floor with settling wash and restate only edges that matter in graphite; the rest stays unresolved, keeping the hour ordinary and unillustrated."
+    }
+  ],
+  "fertile": [
+    {
+      "id": "mould-minus#s4",
+      "what": "Make the nine read as weight alone by crosshatching only the edges that bore them—rims, screw cups, and shelf undersides—so mass migrates to supports and the objects appear as stresses without any interior line.",
+      "why": "won 4 of 4 pairwise comparisons and was committed to"
+    },
+    {
+      "id": "served-light#s2",
+      "what": "Make the four‑o’clock flip a wiped reserve band inside a rosin‑grain haze, with ceiling lamps held as pale discs that read brighter left and dulled right as if the plate were re‑inked over time.",
+      "why": "won 1 of 1 pairwise comparisons and was committed to"
+    }
+  ],
+  "rejected": [
+    {
+      "id": "l2",
+      "what": "Reverse the room so mounts and pressure faces print as lifted, pale scuffs in a black field while the voids remain un‑inked, making the missing bodies legible by what rejects ink instead of contour.",
+      "why": "Emergent claim survives deleting the rubbing: “prove absence by supports” works without reversal print logic; this reduces to restating mould-minus."
+    },
+    {
+      "id": "l3",
+      "what": "Plant mute stamp blocks along case rims and label rails as dry, near‑blank incidents, each a handled interruption that punctures the monotone of the cases without caption or gift.",
+      "why": "Turns handling into visible stamps that read as annotation; it drifts toward captioning/legend, violating the no‑words spirit rather than structuring readiness."
+    },
+    {
+      "id": "l4",
+      "what": "Keep the room in a long, cool slope so the timer’s on/off blooms halate at fixture edges, letting four o’clock register as a faint fringe that travels down walls instead of a graphic switch.",
+      "why": "Shared property only: halation is a generic optical bloom. The time seam does not depend on silver‑print logic; the claim holds if the source is deleted."
+    },
+    {
+      "id": "l7",
+      "what": "Let the 4 p.m. flip pass as a traveling bloom across glass and linoleum, lifted glare riding the tide‑mark so time is a stain the sheet had to undergo rather than a note beside it.",
+      "why": "Hydrology is a poetic swap, not a deep correspondence; a capillary bloom is not tied to a timed electrical flip. The mapping is thematic, not structural."
+    },
+    {
+      "id": "l9",
+      "what": "Show the case lighting as present but held—draw hasps, tag loops, and a dangling key shadow at one switch—so the room reads as enabled and purposely paused, not empty.",
+      "why": "Reads as instruction/control hardware; introduces policy signage. That contravenes the situation’s ban on anything legible as guidance to claimants."
+    },
+    {
+      "id": "l10",
+      "what": "Feather handrails and door edges with burr so the flip at four drags a fragile brightness along them, the veil thinning where the day burns through and filling back as the timer dies.",
+      "why": "Redundant with l1: “duration as labored wipe” stands without drypoint burr. The burr adds texture but no necessary structure to time’s appearance."
+    },
+    {
+      "id": "l11",
+      "what": "Heap the room in charcoal and cut only small gouache strikes where mounts would flash, so the bodies read as where paint refuses to land and glare locates the bearing faces.",
+      "why": "Medium substitution only: charcoal mass plus gouache strikes just rephrases “light at mounts, voids unmodeled.” The claim stands if the medium is removed."
+    },
+    {
+      "id": "l12",
+      "what": "Assemble the room from pasted swatches—ceiling grid, rail, floor—so an off‑square scrap sits over the access panel, its mismatch turning utilities into administrative seams of readiness.",
+      "why": "Panelized collage introduces literal joins that behave like frames; it courts the forbidden monitor/panel reading and relocates attention to assembly."
+    },
+    {
+      "id": "l13",
+      "what": "Let the lamp seam drift sheet to sheet by a small seasonal creep, so the flip is solar rather than scheduled; a moving band of halation records the year’s slide.",
+      "why": "Requires multi‑sheet drift or a caption to read; on one sheet the seasonal creep is invisible. The mechanism imported is off‑site and unproven here."
+    },
+    {
+      "id": "l14",
+      "what": "Use tight directional striations only on foam lips and brass pins that touched bodies; the voids take no stroke, so what is gone is made exact by the talk at its periphery.",
+      "why": "Technique swap of edge chatter; the structure is identical to l8’s “load to supports.” Striation adds style, not a new inference mechanism."
+    },
+    {
+      "id": "l15",
+      "what": "Lay a faint columnar order across the cases, ticking switches, cords, and dustless rectangles as checked entries; nothing is explained, only reconciled where presence should balance.",
+      "why": "Restates the stakes as an audit metaphor; ledger ticks read as clerical annotation rather than a visual law, sliding toward caption in disguise."
+    },
+    {
+      "id": "l16",
+      "what": "Flood ceiling and floor with wash that settles darker at coves and sills; graphite restates only the seam the timer makes as a mobile drying edge sliding through at four.",
+      "why": "Diagrammatic wash edge repeats l1’s seam without adding structure; the drying morphology is generic and reads as a graphic switch line."
+    },
+    {
+      "id": "l17",
+      "what": "Treat each mount as if it once drew hot plastic: show vents, draft, and softened inner corners on supports, implying volume by pull‑marks while keeping cavities blank.",
+      "why": "Imports process scars (vents, draft) that would be fictive in this room; it fabricates evidence and breaks the ordinary‑hour truth condition."
+    },
+    {
+      "id": "l18",
+      "what": "Embed tiny, repeated ticks at outlets and access hatches—initial‑like strokes placed where a porter would check—so the room carries proof of tending rather than a show of loss.",
+      "why": "Checklist ticks are annotation, not structure. They center the museum’s care as subject and brush the prohibition against words/legends."
+    },
+    {
+      "id": "l19",
+      "what": "Let the room be a ghost from foul‑bite grain, with four o’clock arriving as the only crispness—a wiped corridor through speckle—so clarity gathers and loosens with the timer.",
+      "why": "Overlaps l1 conceptually and makes print artifacts the event; sharpness migrating risks reading as staged emphasis rather than lived duration."
+    },
+    {
+      "id": "l20",
+      "what": "Pin datum lines and measurement ticks for mounts as shop drawing, but never project object silhouettes; the nine are evidenced solely by tolerances and bolt patterns.",
+      "why": "Converts the view into a shop drawing; tolerances and datums flatten vantage. It restates “prove by holes” while discarding the machine’s vantage."
+    },
+    {
+      "id": "l21",
+      "what": "Render the flip as a hum of repeat marks and a faint lagging halo that takes a beat to settle along the tubes, so the change is felt as a physiological stutter in the light.",
+      "why": "Ballast stutter mismatches the condition (a scheduled flip, not warm‑up). The effect is contingent trivia, not a necessary structural tie."
+    },
+    {
+      "id": "l22",
+      "what": "Let switches, cord grips, and hinge knuckles be the only things that pick up pale reserves; the rest is rubbed down to field, so readiness shines solely where a hand once pressed.",
+      "why": "Reuses rubbing logic from l2 without adding structure; plus “where a hand pressed” slides toward possession‑by‑touch, too close to the felt outline."
+    },
+    {
+      "id": "l23",
+      "what": "Print the room as held and burned zones where four o’clock is the hinge: a corridor is dodged to lift for a moment then allowed to sink, making the timer’s change a tonal edit.",
+      "why": "Darkroom dodging/burning makes authorial process the subject; the seam reads as print technique, a meta‑caption for time rather than a room law."
+    },
+    {
+      "id": "l24",
+      "what": "Catalogue only the pins, saddles, and witness dots the mounts would present, letting their pattern—not the bodies—declare nine distinct supports in plan and elevation.",
+      "why": "Same domain as the problem—conservation mounts about mounts—so it is a restatement, not a cross‑domain correspondence that yields new structure."
+    }
+  ],
+  "trajectoryId": "f5ce29d7a8e5dca9",
+  "changed": "01. The run fixed the hour and the weight with two commitments and trimmed the rest. I locked the time seam to served-light#s2: four‑o’clock reads as a wiped reserve band inside a rosin‑grain haze taken from aic:155386 and held together with dark‑ground reserves from met:36142 ([m4] with [m1]). Lamps sit as pale discs that grade left to right; this replaced the older habit of stating the hour as a mere tonal slope and gave me a material operation I can repeat without caption. I paired that with mould‑minus#s4: mass migrates to supports by crosshatching only rims, screw cups, and shelf undersides; that shifted figure inference from silhouettes to stresses and made the nine legible without interior line.\n\nWhat stayed: I kept the room’s armature by taking the hard lattice from aic:158238 ([m6]) and let it carry vantage while avoiding a frame. I used quick, directional striations from met:40408 ([m3]) to keep coats, hair, and mop particular without shading, and I limited identity to a few exact shines per aic:239839 ([m10]) so hands and a bag can carry who is who without anonymizing the rest. I massed corners and ceiling, then cut fluorescents in opaque light from cma:146908 ([m9]) so fixtures are factual cuts in murk, not descriptive outlines. The sheet’s atmosphere is rosin‑like grain across the field from aic:155386 ([m4]) with lamps left as reserves; met:36142’s lifted abrasions ([m1]) do the dirty light and floor scuffs without added white.\n\nWhat I corrected: I trimmed m2 to the sheet edges only—handling blocks may ride the margin but not the case rims—because l3 read as annotation along label rails and drifted toward caption; I cut l3. I cut l12 because panelized collage read like monitor/panels and pulled the apparatus into view, breaking the refusal. I cut l20; datum ticks flattened the vantage into shop drawing and restated “prove by holes” without the camera’s claim. I cut l23; dodging/burning made the seam into authorial darkroom talk rather than a room law. I also rejected l9 (switch and key shadow) because it smuggled policy signage into the scene.\n\nWhat this changed in the practice: the hour is now a specific wipe inside a common haze, not a diagram or poem; weight is carried by supports, not by void modeling. The grid and woodwork now bear the perspective so people can stay particular without being centered. Margin incidents survive only as handling, never as legend. Collage, shop‑ticks, and control hardware are out. The net effect is a stricter sheet where time is physically earned and the nine are proven by what bore them, not by what is drawn inside their absence.",
+  "version": 1,
+  "parent": null,
+  "hash": "e13bef18f6b427279c354941ecab949f20d2477931ad988f9db8b88cd32d638e"
+}
