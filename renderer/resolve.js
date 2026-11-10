@@ -164,7 +164,13 @@ export function clipSegment(p, q, clip) {
     const b = oriented[(i + 1) % oriented.length];
     const ex = b[0] - a[0];
     const ey = b[1] - a[1];
-    // inside test: cross(edge, point - a) >= 0
+    // Inside test on the point P(t) = p + t*d: cross(edge, P(t) - a) >= 0, which expands to
+    // num - t*den >= 0. So den > 0 bounds t from ABOVE (the segment leaves through this edge) and
+    // den < 0 bounds it from BELOW (it enters here). These two were swapped, which made every
+    // crossing produce t1 < t0 and every segment -- including ones lying wholly inside the clip --
+    // come back null. clipPolyline then returned [] for everything, so opStroke and opRule painted
+    // nothing at all under a clip while clipPolygon kept filling correctly: brushwork vanished and
+    // flats survived.
     const num = ex * (p[1] - a[1]) - ey * (p[0] - a[0]);
     const den = -(ex * dy - ey * dx);
     if (Math.abs(den) < EPS) {
@@ -173,11 +179,11 @@ export function clipSegment(p, q, clip) {
     }
     const t = num / den;
     if (den > 0) {
-      if (t > t1) return null;
-      if (t > t0) t0 = t;
-    } else {
       if (t < t0) return null;
       if (t < t1) t1 = t;
+    } else {
+      if (t > t1) return null;
+      if (t > t0) t0 = t;
     }
   }
   if (t1 < t0) return null;
