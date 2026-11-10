@@ -14,7 +14,7 @@
 // and the original program object handed straight back.
 
 import type { AssetPack } from './pack.js';
-import type { MediumProfile } from './profile.js';
+import { saySpend, type MediumProfile } from './profile.js';
 import { validateEditAction, validateProgram, type Issue } from './validate.js';
 
 export type Program = Record<string, unknown>;
@@ -110,7 +110,19 @@ export function applyEdit(
   if ('reason' in applied) return refuse(program, applied.reason);
 
   const after = validateProgram(next, profile, pack);
-  if (!after.valid) return refuse(program, `the edit would make the program invalid: ${say(after.issues)}`);
+  if (!after.valid) {
+    // A budget refusal names a total and, on its own, nothing that can be changed. The breakdown is
+    // appended only for that code because it is the only one whose cause is spread across the whole
+    // program rather than sitting at the path the issue already names: measured over `out/`, 43 of
+    // 63 refusals were the mark limit, and one sketch spent both its attempts walking 15242 -> 13674
+    // -> 12502 without landing, which is what is left to do when you are told a sum and not a term.
+    const overBudget = after.issues.some((i) => i.code === 'budget') && after.budget;
+    const spend = overBudget ? saySpend(after.budget!) : '';
+    return refuse(
+      program,
+      `the edit would make the program invalid: ${say(after.issues)}${spend ? `. ${spend}` : ''}`
+    );
+  }
 
   const cost = after.budget!.cost - before.budget!.cost;
 

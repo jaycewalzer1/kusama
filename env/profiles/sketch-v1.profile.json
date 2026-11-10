@@ -105,8 +105,8 @@
     "maxFragments": 12,
     "maxTextOps": 12,
     "maxTextLength": 120,
-    "maxEstimatedMarks": 12000,
-    "maxRenderCost": 48000,
+    "maxEstimatedMarks": 24000,
+    "maxRenderCost": 96000,
     "maxPrintStages": 0,
     "maxTearPoints": 200,
     "maxSprayParticles": 1000

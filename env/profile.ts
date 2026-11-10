@@ -99,12 +99,28 @@ export function loadProfileFor(program: unknown, override?: string): { profile: 
   return loadProfile(named);
 }
 
+/** One source node's share of the marks, named so that it can be edited. */
+export interface MarkShare {
+  /** The id as written in the program, not the resolved id: this is what a `set_arg` targets. */
+  sourceId: string;
+  op: string;
+  /** The paint style, when the op takes one. `hatch` and `solid` are the same op and differ by 10,000x. */
+  kind: string | null;
+  marks: number;
+}
+
 export interface Budget {
   resolvedNodes: number;
   repeatInstances: number;
   marks: number;
   cost: number;
   perOp: Record<string, number>;
+  /**
+   * Marks by source node, heaviest first. `perOp` cannot answer the only question worth asking when
+   * a budget is blown — WHICH node to shrink — because `solid` and `hatch` are both the `paint` op
+   * and differ by four orders of magnitude, so they sum into one indistinguishable bucket.
+   */
+  heaviest: MarkShare[];
   /** Limits this program is over, as readable sentences. Empty means it may be rendered. */
   over: string[];
 }
@@ -116,6 +132,7 @@ export interface Budget {
  */
 export function estimateBudget(resolved: ResolvedProgram, profile: MediumProfile): Budget {
   const perOp: Record<string, number> = {};
+  const bySource = new Map<string, MarkShare>();
   let marks = 0;
   let cost = 0;
   for (const node of resolved.nodes) {
@@ -123,7 +140,16 @@ export function estimateBudget(resolved: ResolvedProgram, profile: MediumProfile
     marks += m;
     cost += m * costWeight(node);
     perOp[node.op] = (perOp[node.op] ?? 0) + m;
+    // Summed per source node, not per resolved node: a `repeat` of 40 instances is one thing the
+    // artist can edit, and listing its instances separately would bury the node that matters under
+    // forty rows naming an id that appears nowhere in the program it is reading.
+    const seen = bySource.get(node.sourceId);
+    if (seen) seen.marks += m;
+    else bySource.set(node.sourceId, { sourceId: node.sourceId, op: node.op, kind: kindOf(node), marks: m });
   }
+  const heaviest = [...bySource.values()]
+    .map((s) => ({ ...s, marks: Math.round(s.marks) }))
+    .sort((a, b) => b.marks - a.marks || (a.sourceId < b.sourceId ? -1 : 1));
   const over: string[] = [];
   const check = (what: string, got: number, max: number) => {
     if (got > max) over.push(`${what} ${Math.round(got)} exceeds the profile's limit of ${max}`);
@@ -138,13 +164,35 @@ export function estimateBudget(resolved: ResolvedProgram, profile: MediumProfile
     marks: Math.round(marks),
     cost: Math.round(cost),
     perOp,
+    heaviest,
     over,
   };
+}
+
+/**
+ * The heaviest nodes as a sentence, for a refusal that would otherwise name only a total.
+ *
+ * "estimated marks 15909 exceeds the profile's limit of 12000" is true and unactionable: it does not
+ * say that one crosshatch is 10,111 of them. Measured over `out/`, 43 of 63 edit refusals ever
+ * recorded were this one limit, and one sketch walked 15242 -> 13674 -> 12502 across a retry without
+ * landing, which is what bisecting against a total with no breakdown looks like from inside.
+ */
+export function saySpend(budget: Budget, top = 3): string {
+  const rows = budget.heaviest.filter((s) => s.marks > 0).slice(0, top);
+  if (rows.length === 0) return '';
+  const named = rows.map((s) => `${s.sourceId} (${s.kind ? `${s.op}/${s.kind}` : s.op}) ${s.marks}`);
+  return `heaviest nodes, in marks: ${named.join(', ')} — of ${budget.marks} total`;
 }
 
 function styleOf(node: ResolvedLeaf): Record<string, number | string> | null {
   const s = (node.args as { style?: Record<string, number | string> }).style;
   return s ?? null;
+}
+
+/** The paint style's discriminator, or null for an op that takes no style (or takes a keyword). */
+function kindOf(node: ResolvedLeaf): string | null {
+  const kind = styleOf(node)?.['kind'];
+  return typeof kind === 'string' ? kind : null;
 }
 
 function estimateMarks(node: ResolvedLeaf): number {
@@ -158,10 +206,14 @@ function estimateMarks(node: ResolvedLeaf): number {
     case 'rule':
       return Math.max(2, perimeter / 8);
     case 'stroke': {
+      // A stroke's render cost is dominated by the brush, not the geometry. The old divisor (5)
+      // priced a sheet-diagonal at ~211 marks vs 1 for a solid fill — 200x apart — which made the
+      // budget refuse exactly the accumulation the rubric demands. 40 puts a diagonal at ~25: still
+      // more expensive than a fill, but no longer a budget-killer.
       const pts = (a['points'] as [number, number][]) ?? [];
       let len = 0;
       for (let i = 1; i < pts.length; i++) len += Math.hypot(pts[i]![0] - pts[i - 1]![0], pts[i]![1] - pts[i - 1]![1]);
-      return pts.length + len / 5;
+      return pts.length + len / 40;
     }
     case 'cover':
       return 40 + Number(a['softness'] ?? 0) * 400;
@@ -198,16 +250,80 @@ function estimateMarks(node: ResolvedLeaf): number {
   }
 }
 
+/**
+ * What each fill costs, measured by running the estimator rather than by describing it.
+ *
+ * `maxEstimatedMarks` is printed to the artist as a bare number and the function that spends it is
+ * not printed at all, so the one fact that governs the budget — that `solid` is 1 mark whatever its
+ * size and a `hatch` of the same region is hundreds, growing with area — is unavailable to the thing
+ * being held to it. Stating it in prose would put a copy of `estimateMarks` in a text file, which is
+ * the drift `capability-sheet.ts` exists to avoid, so the rates are probed out of the real function.
+ *
+ * Two boxes rather than one because the scaling law is the point: 300x300 is nine times the area of
+ * 100x100, and reading `1 -> 1` beside `278 -> 2500` teaches the whole cost model in one line.
+ */
+export interface MarkRate {
+  kind: string;
+  /** The arguments the rate was measured at, since a hatch's cost is mostly its spacing. */
+  params: string;
+  marks: number;
+}
+
+function within(profile: MediumProfile, field: string, value: number): number {
+  const r = profile.ranges[field];
+  return r ? Math.min(r[1], Math.max(r[0], value)) : value;
+}
+
+/** What each of this profile's fills costs over one box, at representative arguments. */
+export function markRates(profile: MediumProfile, box: { w: number; h: number }): MarkRate[] {
+  return (profile.styles ?? []).map((kind) => {
+    // A style this switch does not know still gets a row, at whatever the estimator says a bare one
+    // costs. Dropping it would hide a gap in the exact table whose job is to have none.
+    let style: Record<string, unknown> = {};
+    let params = '';
+    if (kind === 'wash') {
+      style = { bleed: 0.3 };
+      params = 'bleed 0.3';
+    } else if (kind === 'hatch') {
+      const spacing = within(profile, 'spacing', 6);
+      style = { spacing, layers: 1 };
+      params = `spacing ${spacing}, layers 1 — halve the spacing or double the layers and this doubles`;
+    } else if (kind === 'field') {
+      const density = within(profile, 'density', 1);
+      style = { density, marks: 'dots' };
+      params = `density ${density}, dots — scribble is 3x`;
+    }
+    return {
+      kind,
+      params,
+      marks: Math.round(
+        estimateMarks({
+          op: 'paint',
+          args: { style: { kind, ...style } },
+          bounds: { x: 0, y: 0, w: box.w, h: box.h },
+        } as unknown as ResolvedLeaf)
+      ),
+    };
+  });
+}
+
+/** The two boxes the capability sheet quotes rates over. 300x300 is nine times the area of 100x100. */
+export const PROBE_SMALL = { w: 100, h: 100 } as const;
+export const PROBE_LARGE = { w: 300, h: 300 } as const;
+
 /** How expensive one mark of this kind is, relative to a hatch stamp. Measured, roughly. */
 function costWeight(node: ResolvedLeaf): number {
   if (node.op === 'text') return 0.5;
+  if (node.op === 'stroke') return 0.15;
+  if (node.op === 'rule') return 0.15;
+  if (node.op === 'spray') return 0.3;
   const kind = styleOf(node)?.['kind'];
   if (node.op === 'cover') return 3;
   switch (kind) {
     case 'solid':
       return 0.1;
     case 'wash':
-      return 3;
+      return 8;
     default:
       return 1;
   }

@@ -101,7 +101,7 @@
     "maxRepeatInstances": 1200,
     "maxRepeatNesting": 2,
     "maxPolygonPoints": 80,
-    "maxStrokePoints": 120,
+    "maxStrokePoints": 400,
     "maxFragments": 40,
     "maxTextOps": 12,
     "maxTextLength": 240,

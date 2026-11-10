@@ -241,6 +241,11 @@ test('an edit that would break the budget is refused before anything is rendered
   });
   assert.equal(result.valid, false);
   assert.match(result.reason!, /exceeds the profile's limit/);
+
+  // A total is not actionable. The refusal has to name the node to shrink, once -- not four hundred
+  // times, which is what listing resolved instances instead of source nodes would do.
+  assert.match(result.reason!, /heaviest nodes, in marks: h1 \(paint\/hatch\) \d+/);
+  assert.equal(result.reason!.match(/h1 \(paint\/hatch\)/g)!.length, 1);
 });
 
 test('an edit that would break the schema is refused the same way', () => {
@@ -249,6 +254,9 @@ test('an edit that would break the schema is refused the same way', () => {
   });
   assert.equal(duplicate.valid, false);
   assert.match(duplicate.reason!, /used more than once/);
+  // The breakdown belongs to the one code whose cause is spread across the program. Every other
+  // issue already names the path it is about, and a spend table beside it is noise.
+  assert.ok(!duplicate.reason!.includes('heaviest nodes'), 'the breakdown is for budget refusals only');
 });
 
 // --- provenance -------------------------------------------------------------------------------------
